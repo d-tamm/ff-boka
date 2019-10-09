@@ -4,7 +4,7 @@ $cfg = array(
 	"dbhost" => "127.0.0.1",
 	"dbname" => "ff-boka",
 	"dbuser" => "ff-boka",
-	"dbpass" => "XgBVcMKFnAcUYoH1",
+	"dbpass" => "", // see credentials.php
 
   // Logging
 	"logMaxSize" => 1*1024*1024, // in bytes
@@ -15,7 +15,7 @@ $cfg = array(
 	"SMTPHost" => 'manu20.manufrog.com',
 	"SMTPPort" => 587,
 	"SMTPUsername" => 'nextcloud@tamm-tamm.de',
-	"SMTPPassword" => 'sPH~b=,mjnEU',
+	"SMTPPassword" => '', // see credentials.php
 	
 	// ReplyTo address of auto-generated emails
 	"mailReplyTo" => "daniel.tamm@friluftsframjandet.se",
