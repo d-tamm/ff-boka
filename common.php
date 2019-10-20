@@ -32,28 +32,64 @@ if (empty($_SESSION['user']['ID']) && !empty($_COOKIE['remember'])) {
 }
 
 
+function getApiToken($userID, $password) {
+	// Fetches a new user token from API. Returns an array.
+	// On success (correct credentials): [ access_token, expires_in, userName ], where userName is the memberID
+	// On failure (e.g. wrong credentials): [ error="invalid_grant", error_description ]
+	global $cfg;
+return array('userName'=>$userID); // TODO: This is for testing only. Remove this line later.
+	$data = array(
+		'username' => $userID,
+		'password' => $password,
+		'grant_type' => 'password'
+	);
+	$options = array('http' => array(
+		'header'  => "Content-type: application/x-www-form-urlencoded\r\n",
+		'method'  => 'POST',
+		'content' => http_build_query($data)
+	));
+	$context  = stream_context_create($options);
+	$result = file_get_contents($cfg['apiUrl']."/token", false, $context);
+	// Sample response: {"access_token":"xxxx","token_type":"bearer","expires_in":28799,"userName":"864015","contactId":"xxxx","impersonateAs":"xxxx","authorizationLevel":"1",".issued":"Thu, 10 Oct 2019 12:29:05 GMT",".expires":"Thu, 10 Oct 2019 20:29:05 GMT"}
+	// If wrong credentials: {"error":"invalid_grant","error_description":"The user name or password is incorrect."}
+	if ($result === FALSE) { 
+		/* Handle error */ 
+		return array("error"=>"Generic error", "error_description"=>"Failed to verify credentials. Please try again later.");
+	} else {
+		return json_decode($result, true);
+	}
+}
+
 function login($ID, $password) {
 	// Checks user data via aktivitetshanteraren's API.
 	// Returns true on success, false otherwise.
 	// On success, sets $_SESSION['user']
-	global $db;
-	if (true) { // TODO: call API
-		// User authenticated.
-		// Get access level from local DB
-		$stmt = $db->query("SELECT * FROM users WHERE ID=$ID"); // TODO: change to ID from API
-		if ($stmt->rowCount()) { $access = $stmt->fetch(PDO::FETCH_ASSOC); }
-		// Get additional LAs from local DB
-		$la = ["Mölndal"]; // TODO: change to LA from API
-		$stmt = $db->query("SELECT * FROM user_la WHERE userID=$ID"); // TODO: change to ID from API
-		while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) { $la[] = $row['laID']; }
-		// Remember data
-		$_SESSION['user'] = array(
-			name => "Daniel Tamm",
-			ID   => 864015,
-			LA   => $la,
-			mail => "daniel.tamm@friluftsframjandet.se",
-			role => "admin"//$access['role']
-		);
+	global $db, $cfg;
+	$apiResult = getApiToken($ID, $password);
+	if ($apiResult['userName']) {
+		// User authenticated. Remember user ID
+		$_SESSION['user'] = array();
+		$_SESSION['user']['ID'] = $apiResult['userName'];
+		// Get additional user data (name, e-mail, phone) from database
+		$stmt = $db->query("SELECT name, mail, phone FROM users WHERE ID={$_SESSION['user']['ID']}");
+		if ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+			$_SESSION['user'] = array_merge($_SESSION['user'], $row);
+		}
+		// Get user's home section 
+		$_SESSION['user']['sectionID'] = 0; // TODO: Need to get sectionID from API
+		$stmt = $db->query("SELECT name FROM sections WHERE sectionID={$_SESSION['user']['sectionID']}");
+		$row = $stmt->fetch(PDO::FETCH_ASSOC);
+		$_SESSION['user']['sectionName'] = $row['name'];
+		// Get assignments from API. /api/feed/Pan_Extbokning_GetAssingmentByMemberNoOrSocSecNo?MNoSocnr=XXXXXX-XXXX
+		$data = json_decode(file_get_contents($cfg['apiUrl']."/api/feed/Pan_Extbokning_GetAssingmentByMemberNoOrSocSecNo?MNoSocnr=".$_SESSION['user']['ID']));
+		$_SESSION['user']['assignments'] = array();
+		foreach ($data->results as $ass) {
+			$_SESSION['user']['assignments'][] = array(
+				'name'  => $ass->cint_assignment_type_id->name,
+				'party' => $ass->cint_assignment_party,
+				'typeID'  => $ass->cint_assignment_party_type->value,
+			);
+		}
 		return true;
 	}
 	else {
@@ -120,16 +156,16 @@ function createToken($use, $forID, $data="", $ttl=86400) {
 }
 
 
-function htmlHead($title) { 
+function htmlHeaders($title) { 
 	// output meta tags and include stylesheets, jquery etc	?>
 	<title><?= $title ?></title>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1"/>
 	<link rel="stylesheet" href="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css" />
 	<link rel="stylesheet" href="css/themes/ff-boka.css" />
+	<link rel="stylesheet" href="css/ff-boka.css" />
 	<link rel="stylesheet" href="css/themes/jquery.mobile.icons.min.css" />
 	<script src="https://code.jquery.com/jquery-1.11.1.min.js"></script>
-	<script src="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
 	<?php
 }
 
@@ -141,22 +177,28 @@ function head($caption) {
 		<ul data-role="listview">
 			<li data-icon="home"><a href="index.php" data-rel="close">Startsida</a></li><?php
 			if (isset($_SESSION['user']['ID'])) { ?>
-				<li>Inloggad som <?= $_SESSION['user']['name'] ?></li>
+				<li data-icon="user"><a href="userdata.php" data-rel="close" data-ajax="false"><?= $_SESSION['user']['name'] ?></a></li>
 				<li data-icon="bullets"><a href="myitems.php" data-rel="close" data-ajax="false">Min utrustning</a></li>
 				<?= $_SESSION['user']['role']==="la_admin" || $_SESSION['user']['role']==="admin" ? "<li data-icon='lock'><a href='la_admin.php' data-rel='close' data-ajax='false'>LA-Admin</a></li>" : "" ?>
-				<?= $_SESSION['user']['role']==="admin" ? "<li data-icon='lock'><a href='admin.php' data-rel='close' data-ajax='false'>Admin</a></li>" : "" ?>
+				<?= $_SESSION['user']['superAdmin'] ? "<li data-icon='lock'><a href='admin.php' data-rel='close' data-ajax='false'>Admin</a></li>" : "" ?>
 				<li data-icon="power"><a href="index.php?logout" data-rel="close" data-ajax="false">Logga ut</a></li><?php
 			} ?>
-			<li data-icon="info"><a href="help.php" data-rel="close" data-ajax="false">Hjälp</a></li>
-			<li data-icon="info"><a href="cookies.php" data-rel="close" data-ajax="false">Om kakor (cookies)</a></li>
+			<li data-icon="info"><a href="help.php" data-rel="close">Hjälp</a></li>
+			<li data-icon="info"><a href="cookies.php" data-rel="close">Om kakor (cookies)</a></li>
 		</ul>
 	</div><!-- /panel -->
 	
 	<div data-role="header">
 		<H1><?= $caption ?></H1>
 		<a href="#navpanel" data-rel="popup" data-transition="pop" data-role="button" data-icon="bars" data-iconpos="notext" class="ui-btn-left ui-nodisc-icon ui-alt-icon">Menu</a>
-		<a href="index.php" data-ajax="false" data-role="button" data-icon="home" data-iconpos="notext" class="ui-btn-right ui-nodisc-icon ui-alt-icon"></a>
-		<?php if (!isset($_COOKIE['cookiesOK'])) { ?>
+		<?php 
+		switch ($_SERVER['PHP_SELF']) {
+		case "/category.php": $href="admin.php?section=cat"; $transition="slidedown"; $icon="back"; break;
+		case "/item.php": $href="category.php?section=items"; $transition="slidedown"; $icon="back"; break;
+		default: $href="index.php"; $icon="home"; $transition="slidedown";
+		}
+		echo "<a href='$href' data-transition='$transition' data-ajax='true' data-role='button' data-icon='$icon' data-iconpos='notext' class='ui-btn-right ui-nodisc-icon ui-alt-icon'></a>";
+		if (!isset($_COOKIE['cookiesOK'])) { // Display cookie chooser ?>
 			<div id="divCookieConsent" data-theme='b' class='ui-bar ui-bar-b' style='font-weight:normal;'>
 				För att vissa funktioner på denna webbplats ska fungera använder vi kakor. <a href='cookies.php' data-role='none'>Läs mer om kakor.</a><br>
 				<button onClick="var d=new Date(); d.setTime(d.getTime()+365*24*60*60*1000); document.cookie='cookiesOK=1; expires='+d.toUTCString()+'; Path=/'; $('#divCookieConsent').hide(); $('#divRememberme').show();">Tillåt kakor</button>
@@ -165,7 +207,6 @@ function head($caption) {
 		<?php } ?>
 	</div>
 	
-	<div role="main" class="ui-content">
 	<?php
 }
 
@@ -213,11 +254,48 @@ function sendmail($to, $subject, $template, $search=NULL, $replace=NULL) {
 	}
 }
 
+function getUploadedImage($file, $maxsize=800, $thumbsize=80) {
+	// Gets an uploaded image file, resizes it, makes a thumbnail, and returns both versions as strings.
+	if (is_uploaded_file($file['tmp_name'])) {
+		// Get the picture and its size
+		// TODO: reject files that are too big.
+		$src = imagecreatefromstring(file_get_contents($file['tmp_name']));
+		$size = getimagesize($file['tmp_name']);
+		$ratio = $size[0]/$size[1];
+		// Rescale to max. $maxsize px
+		if ($ratio > 1) {
+			$tmp = imagecreatetruecolor($maxsize, $maxsize/$ratio);
+			imagecopyresampled($tmp, $src, 0, 0, 0, 0, $maxsize, $maxsize/$ratio, $size[0], $size[1]);
+		}
+		else {
+			$tmp = imagecreatetruecolor($maxsize*$ratio, $maxsize);
+			imagecopyresampled($tmp, $src, 0, 0, 0, 0, $maxsize*$ratio, $maxsize, $size[0], $size[1]);
+		}
+		// Get rescaled jpeg picture as string
+		ob_start();
+		imagejpeg($tmp);
+		$image = ob_get_clean();
+		// Make a square thumbnail
+		$tmp = imagecreatetruecolor($thumbsize, $thumbsize);
+		$bg = imagecolorallocatealpha($tmp, 255, 255, 255, 127);
+		imagefill($tmp, 0, 0, $bg);
+		if ($ratio>1) imagecopyresampled($tmp, $src, $thumbsize/2*(1-1*$ratio), 0, 0, 0, $thumbsize*$ratio, $thumbsize, $size[0], $size[1]);
+		else imagecopyresampled($tmp, $src, 0, $thumbsize/2*(1-1/$ratio), 0, 0, $thumbsize, $thumbsize/$ratio, $size[0], $size[1]);
+		// Get thumbnail as string
+		ob_start();
+		imagepng($tmp);
+		$thumb = ob_get_clean();
+		return array("image"=>$image, "thumb"=>$thumb);
+	} else {
+		return false;
+	}
+}
+
 
 function embed_image($data, $overlay="") {
 	// Returns string for embedded img tag.
 	if (!in_array($overlay, array("accepted", "rejected", "new"))) $overlay="";
-	if (!$data) $data = file_get_contents("img/noimage.png");
+	if (!$data) $data = file_get_contents("resources/noimage.png");
 	$info = getimagesizefromstring($data);
 	if ($overlay) {
 		$imgOverlay = imagecreatefrompng("img/overlay_$overlay.png");
