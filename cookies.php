@@ -6,12 +6,14 @@ require("common.php");
 ?><!DOCTYPE html>
 <html>
 <head>
-	<?php htmlHead("Friluftsfrämjandets resursbokning - Kakor") ?>
+	<?php htmlHeaders("Friluftsfrämjandets resursbokning - Kakor") ?>
+	<script src="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
 </head>
 
 <body>
-<div data-role="page">
+<div data-role="page" id="page_cookies">
 	<?= head("Om kakor") ?>
+	<div role="main" class="ui-content">
 
 	<p>För att få den här webbplatsen att fungera ordentligt skickar vi ibland små filer till din dator. Dessa filer kallas kakor eller ”cookies”. De flesta större webbplatser gör på samma sätt.</p>
 	
@@ -33,7 +35,9 @@ require("common.php");
 	<button id="acceptCookies" style="<?= empty($_COOKIE['cookiesOK']) ? "" : "display:none;" ?>" onClick="var d=new Date(); d.setTime(d.getTime()+365*24*60*60*1000); document.cookie='cookiesOK=1; expires='+d.toUTCString()+'; Path=/'; $('#acceptCookies').hide(); $('#rejectCookies').show(); $('#divCookieConsent').hide(); $('#divRememberme').show();">Tillåt permanenta kakor</button>
 	<button id="rejectCookies" style="<?= empty($_COOKIE['cookiesOK']) ? "display:none;" : "" ?>" onClick="document.cookie='cookiesOK=0; path=/'; $('#acceptCookies').show(); $('#rejectCookies').hide(); $('#divCookieConsent').hide(); $('#divRememberme').hide();">Tillåt inte permanenta kakor</button>
 	
-</div>
+	</div><!--/main-->
+
+</div><!--/page>
 
 </body>
 </html>

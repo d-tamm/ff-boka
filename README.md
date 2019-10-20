@@ -12,7 +12,7 @@ Kör sedan `composer install` för att installera alla beroenden (dependencies).
 
 # Engagera dig
 All hjälp är välkommen! Vi behöver folk som ger inspel till önskad funktion, programmering, layout, tester...
-Börja med att ta kontakt med oss. Vi finns på Slack: ff-boka.slack.com. Eller skicka ett mejl till daniel.tamm(at)friluftsframjandet.se.
+Börja med att ta kontakt med oss: Vi finns på Slack, och om du har en friluftsframjandet.se-adress kan du själv [ansluta dig här](https://join.slack.com/t/ff-boka/signup). Eller skicka ett mejl till daniel.tamm(at)friluftsframjandet.se.
 
 # Demo/testplattform
 Under utvecklingsfasen finns en [installation med aktuell kod](https://boka.tamm-tamm.de).
