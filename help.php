@@ -6,11 +6,13 @@ require("common.php");
 ?><!DOCTYPE html>
 <html>
 <head>
-	<?php htmlHead("Friluftsfrämjandets resursbokning - Hjälp") ?>
+	<?php htmlHeaders("Friluftsfrämjandets resursbokning - Hjälp") ?>
+	<script src="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
 </head>
 <body>
-<div data-role="page">
+<div data-role="page" id="page_help">
 	<?= head("Hjälp till resursbokning") ?>
+	<div role="main" class="ui-content">
 
 	<h3>Inloggning</h3>
 	<p>Resursbokningen använder samma inloggning som Friluftsfrämjandets aktivitetshanterare. Har du problem med inloggningen, vänd dig i första hand till dem som har hand om inloggningen på friluftsframjandet.se.</p>
@@ -35,7 +37,9 @@ require("common.php");
 	<h3>Kontakt</h3>
 	<p>Om du har frågor kan du skicka ett mejl till <?= obfuscated_maillink($cfg['mailReplyTo'], $subject="Fråga om resursbokningen") ?> eller ringa Daniel (076-105 69 75).</p>
 
-</div>
+	</div><!--/main-->
+
+</div><!--/page>
 
 </body>
 </html>

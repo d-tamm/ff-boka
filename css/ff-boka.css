@@ -1,0 +1,40 @@
+/* Styles not belonging to the jQuery mobile framework and/or theme roller */
+
+/* Make more space for text in the header. */
+.ui-header .ui-title {
+	margin: 0 30px;
+}
+
+.confirm-change label, .confirm-change span {
+	background:#75B22A !important;
+}
+
+.check-ass, .prebook-text {
+	transition: all 700ms;
+}
+
+#cat-img-preview {
+	width: 100%;
+	max-width:400px;
+	/*display:none;*/
+}
+
+.item-img-preview {
+	float:left;
+	width:50%;
+	margin-right:10px;
+	margin-bottom:10px;
+}
+
+.ui-slider-track {
+	background: #D0BA8A !important;
+	border: none !important;
+	margin-left:15px !important;
+}
+.ui-slider-input {
+	display: none !important;
+}
+
+.inactive a {
+	color:grey !important;
+}
