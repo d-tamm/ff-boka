@@ -5,36 +5,71 @@
 	margin: 0 30px;
 }
 
-.confirm-change label, .confirm-change span {
+.footer-button-left, .footer-button-right {
+	position: absolute;
+	margin: 0;
+	padding:0;
+	top: auto;
+	bottom: 0.24em;
+}
+.footer-button-left {
+	left: 0.4em;
+}
+.footer-button-left a, .footer-button-right a {
+	margin: 0;
+}
+.footer-button-right {
+	right: 0.4em;
+}
+
+.confirm-change label, .confirm-change span, .item-img-caption.confirm-change {
 	background:#75B22A !important;
 }
 
-.check-ass, .prebook-text {
+.check-ass, .prebook-text, .item-img-caption {
 	transition: all 700ms;
 }
 
 #cat-img-preview {
 	width: 100%;
 	max-width:400px;
-	/*display:none;*/
+}
+
+.cat-list-img {
+	position: absolute;
+	top: 0px;
+	right: 0px;
+	padding:0px;
+}
+
+.item-checked a {
+	background-color:#75B22A !important;
+}
+
+#assigned-cat-access a, #assigned-cat-access p {
+	/* Show whole assignment and access text even on small screens */
+	white-space:normal;
+}
+
+#cat-access-details {
+	display:none;
 }
 
 .item-img-preview {
-	float:left;
-	width:50%;
-	margin-right:10px;
-	margin-bottom:10px;
-}
-
-.ui-slider-track {
-	background: #D0BA8A !important;
-	border: none !important;
-	margin-left:15px !important;
-}
-.ui-slider-input {
-	display: none !important;
+	width:100%;
 }
 
 .inactive a {
 	color:grey !important;
 }
+
+/* User defined icons */
+.ui-icon-carat-ll::after {
+	background-image: url("/resources/carat-ll.png");
+	background-size: 18px 18px;
+}
+.ui-icon-carat-rr::after {
+	background-image: url("/resources/carat-rr.png");
+	background-size: 18px 18px;
+}
+

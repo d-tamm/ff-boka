@@ -1,23 +1,24 @@
 <?php
 session_start();
 require("common.php");
+global $db;
 
 // Show only for logged in users
-if (!$_SESSION['user']['ID']) {
+if (!$_SESSION['user']['userID']) {
 	header("Location: index.php");
 	die();
 }
 
 switch ($_REQUEST['action']) {
 case "deleteAccount":
-	$db->exec("DELETE FROM users WHERE ID='{$_SESSION['user']['ID']}'");
+	$db->exec("DELETE FROM users WHERE userID='{$_SESSION['user']['userID']}'");
 	header("Location: index.php?logout");	
 	break;
 	
 case "save user data":
 	// User shall supply at least one of mail and phone
 	if ($_POST['name'] && ($_POST['mail'] || $_POST['phone'])) {
-		$stmt = $db->prepare("REPLACE INTO users SET ID='{$_SESSION['user']['ID']}', name=:name, mail=:mail, phone=:phone");
+		$stmt = $db->prepare("REPLACE INTO users SET userID='{$_SESSION['user']['ID']}', name=:name, mail=:mail, phone=:phone");
 		$stmt->execute(array(
 			":name"=>$_POST['name'],
 			":mail"=>$_POST['mail'],
@@ -67,49 +68,67 @@ if ($_GET['first_login']) $message = "Välkommen till resursbokningen! Innan du 
 	<?= head("Min sida") ?>
 	<div role="main" class="ui-content">
 
-	<h3>Kontaktuppgifter</h3>
-	<div data-role="popup" data-overlay-theme="b" id="popupMessage" class="ui-content">
-		<p><?= isset($message) ? $message : "" ?></p>
-		<?= isset($dontShowOK) ? "" : "<a href='#' data-rel='back' class='ui-btn ui-btn-icon-left ui-btn-inline ui-corner-all ui-icon-check'>OK</a>" ?>
-	</div>
-	
-	<form action="userdata.php" method="post" data-ajax="false" onSubmit="saveUserData">
-		<p>Uppgifter om dig så andra vet vem du är och hur de får tag i dig. Ange minst ditt namn samt antingen epostadress eller mobilnummer, tack.</p>
-		<input type="hidden" name="action" value="save user data">
-		<div class="ui-field-contain">
-			<label for="userdata_name">Namn:</label>
-			<input type="text" name="name" id="userdata_name" placeholder="Namn" value="<?= $_POST['name'] ? $_POST['name'] : $_SESSION['user']['name'] ?>">
+	<div data-role='collapsibleset' data-inset='false'>
+		
+		<div data-role='collapsible' data-collapsed='false'>
+			<h3>Kontaktuppgifter</h3>
+			<div data-role="popup" data-overlay-theme="b" id="popupMessage" class="ui-content">
+				<p><?= isset($message) ? $message : "" ?></p>
+				<?= isset($dontShowOK) ? "" : "<a href='#' data-rel='back' class='ui-btn ui-btn-icon-left ui-btn-inline ui-corner-all ui-icon-check'>OK</a>" ?>
+			</div>
+			
+			<form action="userdata.php" method="post" data-ajax="false" onSubmit="saveUserData">
+				<p>Uppgifter om dig så andra vet vem du är och hur de får tag i dig. Ange minst ditt namn samt antingen epostadress eller mobilnummer, tack.</p>
+				<input type="hidden" name="action" value="save user data">
+				<div class="ui-field-contain">
+					<label for="userdata_name">Namn:</label>
+					<input type="text" name="name" id="userdata_name" placeholder="Namn" value="<?= $_POST['name'] ? $_POST['name'] : $_SESSION['user']['name'] ?>">
+				</div>
+				<div class="ui-field-contain">
+					<label for="userdata_mail">Epost:</label>
+					<input type="email" name="mail" id="userdata_mail" placeholder="Epost" value="<?= $_POST['mail'] ? $_POST['mail'] : $_SESSION['user']['mail'] ?>">
+				</div>
+				<div class="ui-field-contain">
+					<label for="userdata_phone">Mobil:</label>
+					<input type="tel" name="phone" id="userdata_phone" placeholder="Mobilnummer" value="<?= $_POST['phone'] ? $_POST['phone'] : $_SESSION['user']['phone'] ?>">
+				</div>
+				<input type="submit" value="Spara" data-icon="check">
+			</form>
 		</div>
-		<div class="ui-field-contain">
-			<label for="userdata_mail">Epost:</label>
-			<input type="email" name="mail" id="userdata_mail" placeholder="Epost" value="<?= $_POST['mail'] ? $_POST['mail'] : $_SESSION['user']['mail'] ?>">
-		</div>
-		<div class="ui-field-contain">
-			<label for="userdata_phone">Mobil:</label>
-			<input type="tel" name="phone" id="userdata_phone" placeholder="Mobilnummer" value="<?= $_POST['phone'] ? $_POST['phone'] : $_SESSION['user']['phone'] ?>">
-		</div>
-		<input type="submit" value="Spara" data-icon="check">
-	</form>
 
-	<hr>
 
-	<?php if ($_SESSION['user']['assignments']) { ?>
-	<h3>Uppdrag</h3>
-	<p>Här listas de uppdrag som du har enligt aktivitetshanteraren. De används i resurshanteringen för att tilldela behörigheter.</p>
-	<ul><?php
-		foreach ($_SESSION['user']['assignments'] as $ass) {
-			echo "<li>{$ass['name']} ({$ass['party']})</li>";
-		} ?>
-	</ul>
-	<hr>
-	<?php } ?>
+		<?php if ($_SESSION['user']['assignments']) { ?>
+		<div data-role='collapsible'>
+			<h3>Uppdrag</h3>
+			<p>Här listas de uppdrag som du har enligt aktivitetshanteraren. De används i resurshanteringen för att tilldela behörigheter.</p>
+			<ul><?php
+				foreach ($_SESSION['user']['assignments'] as $ass) {
+					$stmt = $db->query("SELECT name FROM sections WHERE sectionID={$ass['sectionID']}");
+					$row = $stmt->fetch(PDO::FETCH_ASSOC);
+					echo "<li>{$ass['name']} ({$row['name']})</li>";
+				} ?>
+			</ul>
+		</div>
+		<?php } ?>
 	
-	<h3>Radera kontot</h3>
-	<p>Om du inte längre vill använda resursbokningen kan du radera personuppgifterna ovan. Om du gör det loggas du ut, och ditt konto raderas. Nästa gång du loggar in igen måste du ange nya personuppgifter innan du kan använda tjänsten igen.<br>
-	Att radera ditt konto här påverkar inte ditt konto i aktivitetshanteraren.</p>
-	<button class="ui-btn ui-btn-b" onClick="deleteAccount();">Radera mina uppgifter</button>
+		<div data-role='collapsible'>
+			<h3>Radera kontot</h3>
+			<p>Om du inte längre vill använda resursbokningen kan du radera personuppgifterna ovan. Om du gör det loggas du ut, och ditt konto raderas. Nästa gång du loggar in igen måste du ange nya personuppgifter innan du kan använda tjänsten igen.</p>
+			<p>Att radera ditt konto här påverkar inte ditt konto i aktivitetshanteraren.</p>
+			<button class="ui-btn ui-btn-c" onClick="deleteAccount();">Radera mina uppgifter</button>
+		</div>
+	
+	
+		<div data-role='collapsible'>
+			<h3>Sessionsdata</h3><!-- TODO ta bort efter testfasen -->
+			<p>Visas för teständamål. Tas bort i produktion.</p>
+			<pre><?php print_r($_SESSION['user']); ?></pre>
+		</div>
+
+	</div><!--/collapsibleset-->
+	
 	</div><!--/main-->
 
-</div><!--/page>
+</div><!--/page-->
 </body>
 </html>

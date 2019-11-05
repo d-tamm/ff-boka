@@ -1,6 +1,7 @@
 <?php
 session_start();
 require("common.php");
+global $db, $cfg;
 
 // Check permissions
 if (!isset($_SESSION['sectionID'])) {
@@ -9,12 +10,12 @@ if (!isset($_SESSION['sectionID'])) {
 }
 $where = array();
 foreach ($_SESSION['user']['assignments'] as $ass) {
-	if ($ass['typeID']==478880001 && in_array($ass['name'], $cfg['sectionAdmins']) && $ass['party']==$_SESSION['sectionName']) {
+	if ($ass['typeID']==478880001 && in_array($ass['name'], $cfg['sectionAdmins']) && $ass['sectionID']==$_SESSION['sectionID']) {
 		// User is section admin by cfg setting
 		$adminOK = true;
 		break;
 	}
-	if ($ass['typeID']==478880001) { $where[] = "(name='{$ass['party']}' AND ass_name='{$ass['name']}')"; }
+	if ($ass['typeID']==478880001) { $where[] = "(sectionID='{$ass['sectionID']}' AND ass_name='{$ass['name']}')"; }
 }
 if (!$adminOK) {
 	$stmt = $db->query("SELECT sectionID, name FROM section_admins INNER JOIN sections USING (sectionID) WHERE " . implode(" OR ", $where));
@@ -25,23 +26,42 @@ if (!$adminOK) {
 }
 
 
+function displayCatAccess() {
+	// Returns html code for displaying the category access as a list
+	global $db, $cfg;
+	$stmt = $db->query("SELECT * FROM categories WHERE catID={$_SESSION['catID']}");
+	$row = $stmt->fetch(PDO::FETCH_ASSOC);
+	$ret = "";
+	if ($row['access_external']) $ret .= "<li><a href='#' onclick=\"unsetCatAccess('access_external');\">Icke-medlemmar<p>{$cfg['catAccessLevels'][$row['access_external']]}</p></a></li>";
+	if ($row['access_member']) $ret .= "<li><a href='#' onclick=\"unsetCatAccess('access_member');\">Medlem i valfri lokalavdelning<p>{$cfg['catAccessLevels'][$row['access_member']]}</p></a></li>";
+	if ($row['access_local_member']) $ret .= "<li><a href='#' onclick=\"unsetCatAccess('access_local_member');\">Lokal medlem<p>{$cfg['catAccessLevels'][$row['access_local_member']]}</p></a></li>";
+	$stmt = $db->query("SELECT * FROM cat_access WHERE catID={$_SESSION['catID']}");
+	while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+		$ret .= "<li><a href='#' onclick=\"unsetCatAccess('{$row['ass_name']}');\">{$row['ass_name']}<p>{$cfg['catAccessLevels'][$row['cat_access']]}</p></a></li>";
+	}
+	if ($ret) return "<p>Tilldelade behörigheter:</p><ul data-role='listview' data-inset='true' data-icon='delete'>$ret</ul>";
+	return "<p>Inga behörigheter har tilldelats än. Använd knappen nedan för att ställa in behörigheterna.</p>";
+}
+
+
 switch ($_REQUEST['action']) {
 case "delete_cat":
 	$stmt = $db->prepare("DELETE FROM categories WHERE catID=?");
 	$stmt->execute(array($_GET['catID']));
-	header("Location: admin.php?section=cat");
+	header("Location: admin.php");
 	die();		
 	break;
 	
 case "save category":
 	if ($_REQUEST['catID']) {
-		$stmt = $db->prepare("UPDATE categories SET name=:name, contact_name=:contact_name, contact_mail=:contact_mail, contact_phone=:contact_phone WHERE catID=:catID");
+		$stmt = $db->prepare("UPDATE categories SET caption=:caption, booking_msg=:booking_msg, contact_name=:contact_name, contact_mail=:contact_mail, contact_phone=:contact_phone WHERE catID=:catID");
 		$stmt->bindValue(":catID", $_REQUEST['catID']);
 	} else {
-		$stmt = $db->prepare("INSERT INTO categories SET sectionID=:sectionID, name=:name");
+		$stmt = $db->prepare("INSERT INTO categories SET sectionID=:sectionID, caption=:caption, booking_msg=:booking_msg, contact_name=:contact_name, contact_mail=:contact_mail, contact_phone=:contact_phone");
 		$stmt->bindValue(":sectionID", $_SESSION['sectionID']);
 	}
-	$stmt->bindValue(":name", $_REQUEST['name']);
+	$stmt->bindValue(":caption", $_REQUEST['caption']);
+	$stmt->bindValue(":booking_msg", $_REQUEST['booking_msg']);
 	$stmt->bindValue(":contact_name", $_REQUEST['contact_name']);
 	$stmt->bindValue(":contact_mail", $_REQUEST['contact_mail']);
 	$stmt->bindValue(":contact_phone", $_REQUEST['contact_phone']);
@@ -62,7 +82,7 @@ case "save category":
 		}
 	}
 	if (!$stayOnPage) {
-		header("Location: admin.php?section=cat");
+		header("Location: admin.php");
 		die();
 	}
 	break;
@@ -71,31 +91,36 @@ case "setCatAccess":
 	switch ($_GET['ass']) {
 	case "access_external":
 	case "access_member":
-	case "access_smember":
-		$stmt = $db->prepare("UPDATE categories SET {$_GET['ass']}=:prebook WHERE catID=:catID");
-		if ($stmt->execute(array(
-			":prebook"=>$_GET['prebook'],
+	case "access_local_member":
+		$stmt = $db->prepare("UPDATE categories SET {$_GET['ass']}=:cat_access WHERE catID=:catID");
+		if (!$stmt->execute(array(
+			":cat_access"=>$_GET['cat_access'],
 			":catID"=>$_SESSION['catID'],
-		))) die($_GET['ass']);
+		))) die(0);
 		break;
 	default:
-		$ass = substr($_GET['ass'], strpos($_GET['ass'], "_")+1);
-		if ($_GET['prebook']) {
-			$stmt = $db->prepare("INSERT INTO cat_access SET catID=:catID, ass_name=:ass, prebook=:prebook ON DUPLICATE KEY UPDATE prebook=VALUES(prebook)");
-			if ($stmt->execute(array(
-				":catID"=>$_SESSION['catID'],
-				":ass"=>$ass,
-				":prebook"=>$_GET['prebook'],
-			))) die($_GET['ass']);
-		} else {
-			$stmt = $db->prepare("DELETE FROM cat_access WHERE catID=:catID AND ass_name=:ass");
-			if ($stmt->execute(array(
-				":catID"=>$_SESSION['catID'],
-				":ass"=>$ass,
-			))) die($_GET['ass']);
-		}
+		$stmt = $db->prepare("INSERT INTO cat_access SET catID=:catID, ass_name=:ass, cat_access=:cat_access ON DUPLICATE KEY UPDATE cat_access=VALUES(cat_access)");
+		if (!$stmt->execute(array(
+			":catID"=>$_SESSION['catID'],
+			":ass"=>$_GET['ass'],
+			":cat_access"=>$_GET['cat_access'],
+		))) die(0);
 	}
-	die();
+	die(displayCatAccess());
+	break;
+	
+case "unsetCatAccess":
+	switch ($_GET['ass']) {
+	case "access_external":
+	case "access_member":
+	case "access_local_member":
+		$db->exec("UPDATE categories SET {$_GET['ass']}=0 WHERE catID={$_SESSION['catID']}");
+		break;
+	default:
+		$stmt = $db->prepare("DELETE FROM cat_access WHERE catID={$_SESSION['catID']} AND ass_name=?");
+		if (!$stmt->execute(array($_GET['ass']))) die(0);
+	}
+	die(displayCatAccess());
 	break;
 }
 
@@ -118,7 +143,7 @@ if ($_SESSION['catID']) {
 
 <body>
 <div data-role="page" id="page_category">
-	<?= head($cat['name'] ? $cat['name'] : "Ny kategori") ?>
+	<?= head($cat['caption'] ? $cat['caption'] : "Ny kategori") ?>
 	<div role="main" class="ui-content">
 		
 	<div data-role="collapsibleset" data-inset="false">
@@ -126,9 +151,10 @@ if ($_SESSION['catID']) {
 			<h2>Allmänt</h2>
 			<input type="hidden" name="action" value="save category">
 			<input type="hidden" name="catID" value="<?= $cat['catID'] ?>">
+			<p>Tillhör <a href="admin.php">LA <?= $_SESSION['sectionName'] ?></a></p>
 			<div class="ui-field-contain">
-				<label for="cat-name">Kategorinamn:</label>
-				<input name="name" id="cat-name" placeholder="Kategorinamn" value="<?= $cat['name'] ?>">
+				<label for="cat-caption">Rubrik:</label>
+				<input name="caption" id="cat-caption" placeholder="Namn till kategorin" value="<?= $cat['caption'] ?>">
 			</div>
 			<?php if ($cat['image']) { ?>
 			<div class='img-preview'>
@@ -139,63 +165,77 @@ if ($_SESSION['catID']) {
 				<label for="file-cat-img">Ladda upp ny bild:</label>
 				<input type="file" name="image" id="file-cat-img">
 			</div>
+			<label for="cat-booking-msg">Text som ska visas när användare vill boka resurser från denna kategori:</label>
+			<textarea name="booking_msg" id="cat-booking-msg" placeholder="Exempel: Kom ihåg att ta höjd för torkningstiden efter användningen!"><?= $cat['booking_msg'] ?></textarea>
 			<h3>Kontaktuppgifter</h3>
-			<label for="cat-name" class="ui-hidden-accessible">Namn:</label>
+			<label for="cat-contact-name" class="ui-hidden-accessible">Namn:</label>
 			<input name="contact_name" id="cat-contact-name" placeholder="Kontaktpersonens namn" value="<?= $cat['contact_name'] ?>">
-			<label for="cat-name" class="ui-hidden-accessible">Epost:</label>
+			<label for="cat-contact-mail" class="ui-hidden-accessible">Epost:</label>
 			<input type="email" name="contact_mail" id="cat-contact-mail" placeholder="Epost-adress" value="<?= $cat['contact_mail'] ?>">
-			<label for="cat-name" class="ui-hidden-accessible">Telefon:</label>
+			<label for="cat-contact-phone" class="ui-hidden-accessible">Telefon:</label>
 			<input type="tel" name="contact_phone" id="cat-contact-phone" placeholder="Telefon" value="<?= $cat['contact_phone'] ?>">
 			<?php if ($cat['catID']) { ?>
 			<div class="ui-grid-a">
-				<div class="ui-block-a"><input type="submit" value="Spara" data-theme="b"></div>
-				<div class='ui-block-b'><input type='button' id='delete_cat' value='Ta bort' data-theme='c'></div>
+				<div class="ui-block-a"><input type="submit" data-corners="false" value="Spara" data-theme="b"></div>
+				<div class='ui-block-b'><input type='button' data-corners="false" id='delete_cat' value='Ta bort' data-theme='c'></div>
 			</div>
 			<?php } else { ?>
 			<input type="submit" value="Fortsätt">
-			<?php } ?>
+			<?php } // TODO: add settings for limiting booking time span (Github issue #6) ?>
 		</form>
 
 		<?php if ($cat['catID']) { ?>
 		<form data-role="collapsible" data-collapsed="<?= $stayOnPage ? "false" : "true" ?>">
-			<h2>Behörighet</h2>
-			<p>Här bestäms vem som får boka utrustningen i denna kategori, samt hur många dagar i förväg.</p>
-			<h4>Generella grupper:</h4>
-			<div class="ui-field-contain">
-				<label for='cat_access_external'>Icke-medlemmar: <span class='prebook-text'><?= $cat['access_external'] ? $cfg['prebookDays'][$cat['access_external']]." dagar" : "Ingen behörighet" ?></span></label>
-				<input class='cat-access' type='range' data-highlight='true' name='access_external' id='cat_access_external' min='0' max='<?= count($cfg['prebookDays'])-1 ?>' value='<?= $cat['access_external'] ?>'>
+			<h2>Behörigheter</h2>
+			<div data-role="collapsible" data-inset="true" data-mini="true" data-collapsed-icon="info">
+				<h4>Hur gör jag?</h4>
+				<p>Här bestäms vem som får se och boka resurserna i kategorin <?= $cat['caption'] ?>. Först väljer du gruppen som ska få behörighet. Sedan väljer du vilken behörighetsnivå gruppen ska få.</p>
+				<p>Återkalla behörigheter genom att klicka på dem.</p>
+				<p>Om en användare tillhör flera grupper gäller den högsta tilldelade behörigheten.</p>
 			</div>
-			<div class="ui-field-contain">
-				<label for='cat_access_member'>Medlemmar i valfri LA: <span class='prebook-text'><?= $cat['access_member'] ? $cfg['prebookDays'][$cat['access_member']]." dagar" : "Ingen behörighet" ?></span></label>
-				<input class='cat-access' type='range' data-highlight='true' name='access_member' id='cat_access_member' min='0' max='<?= count($cfg['prebookDays'])-1 ?>' value='<?= $cat['access_member'] ?>'>
+			
+			<div id="assigned-cat-access"><?= displayCatAccess() ?></div>
+
+			<p>Tilldela ny behörighet:</p>
+			<fieldset data-role="controlgroup">
+			<select id="cat-access-grp">
+				<option value="">1. Välj användargrupp här</option>
+				<optgroup label="Allmänna grupper:">
+					<option value="access_external">Icke-medlemmar</option>
+					<option value="access_member">Medlem i valfri lokalavdelning</option>
+					<option value="access_local_member">Lokal medlem</option>
+				</optgroup>
+				<optgroup label="Enligt tilldelat uppdrag:">
+					<?php
+					$stmt = $db->query("SELECT ass_name FROM assignments WHERE typeID=".TYPE_SECTION);
+					while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+						echo "<option>{$row['ass_name']}</option>";
+					} ?>
+				</optgroup>
+			</select>
+			
+			<div id="cat-access-details">
+				<p>2. Välj behörighetsnivå här:</p>
+				<input type="radio" class="cat-access-choice" name="cat-access" id="cat-access-1" value="1">
+				<label for="cat-access-1"> <?= $cfg['catAccessLevels'][1] ?></label>
+				<input type="radio" class="cat-access-choice" name="cat-access" id="cat-access-2" value="2">
+				<label for="cat-access-2"> <?= $cfg['catAccessLevels'][2] ?></label>
+				<input type="radio" class="cat-access-choice" name="cat-access" id="cat-access-3" value="3">
+				<label for="cat-access-3"> <?= $cfg['catAccessLevels'][3] ?></label>
+				<button id="cat-access-cancel" class="ui-btn">Avbryt</button>
 			</div>
-			<div class="ui-field-contain">
-				<label for='cat_access_smember'>Medlemmar i FF <?= $_SESSION['sectionName']?>: <span class='prebook-text'><?= $cat['access_smember'] ? $cfg['prebookDays'][$cat['access_smember']]." dagar" : "Ingen behörighet" ?></span></label>
-				<input class='cat-access' type='range' data-highlight='true' name='access_smember' id='cat_access_smember' min='0' max='<?= count($cfg['prebookDays'])-1 ?>' value='<?= $cat['access_smember'] ?>'>
-			</div>
-			<h4>Uppdrag i FF <?= $_SESSION['sectionName'] ?>:</h4>
-			<?php // show a list of all assignments at section level
-			$stmt=$db->prepare("SELECT ass_name, catID, prebook FROM assignments LEFT JOIN cat_access USING (ass_name) WHERE typeID=478880001 AND (catID=? OR catID IS NULL)");
-			$stmt->execute(array($cat['catID']));
-			$assID=0;
-			while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-				echo "<div class='ui-field-contain'>\n";
-				echo "\t<label for='cat_access_$assID'>{$row['ass_name']}: <span class='prebook-text'>" . ($row['prebook'] ? $cfg['prebookDays'][$row['prebook']]." dagar" : "Ingen behörighet") . "</span></label>\n";
-				echo "\t<input class='cat-access' type='range' data-highlight='true' name='access_{$row['ass_name']}' id='cat_access_$assID' min='0' max='" . (count($cfg['prebookDays'])-1) . "' value='" . ($row['prebook']+0) . "'>\n";
-				echo "</div>\n";
-				$assID++;
-			} ?>
+			</fieldset>
 		</form>
 		
-		<div data-role="collapsible" data-collapsed="<?= $_REQUEST['section']=="items" ? "false" : "true" ?>">
-			<h2>Utrustning</h2>
+		<div data-role="collapsible" data-collapsed="<?= $_REQUEST['expand']!="items" ? "true" : "false" ?>">
+			<h2>Resurser</h2>
 			<ul data-role="listview" data-filter="true">
 				<?php
 				$stmt = $db->prepare("SELECT items.*, item_images.thumb FROM items LEFT JOIN item_images USING (imageID) WHERE catID=? ORDER BY caption");
 				$stmt->execute(array($cat['catID']));
 				while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 					echo "<li" . ($row['active'] ? "" : " class='inactive'") . "><a href='item.php?itemID={$row['itemID']}'>" .
-						embed_image($row['thumb']) .
+						embedImage($row['thumb']) .
 						"<h3>{$row['caption']}</h3>" .
 						"<p>" . ($row['active'] ? $row['description'] : "(inaktiv)") . "</p>" .
 						"</a></li>";
@@ -209,36 +249,52 @@ if ($_SESSION['catID']) {
 	</div><!--/main-->
 
 	<script>
+		var chosenGrp=0;
+
 		$("#delete_cat").click(function() {
 			if (confirm("Du håller på att ta bort kategorin och alla poster i den. Fortsätta?")) {
 				location.href="?action=delete_cat&catID=<?= $cat['catID'] ?>";
 			}
 		});
 
-		$(document).ready( function(){
-			// Ajax request for saving access to category
-			var prebookDays=<?= json_encode($cfg['prebookDays']) ?>;
-			$( ".cat-access" ).on( "change", function( event, ui ) {
-				switch (prebookDays[this.value]) {
-					case 0: var text = "Ingen behörighet"; break;
-					case 1: text = "1 dag"; break;
-					default: text = prebookDays[this.value]+" dagar";
+		$("#cat-access-grp").change(function() {
+			$(".cat-access-choice").attr("checked", false).checkboxradio("refresh");
+			chosenGrp = this.value;
+			$("#cat-access-details").show();
+		});
+		$("#cat-access-cancel").click(function() {
+			$("#cat-access-details").hide();
+			$("#cat-access-grp").val("").selectmenu("refresh");
+			return false;
+		});
+
+		$(".cat-access-choice").click(function() {
+			$.mobile.loading("show", {});
+			$("#cat-access-details").hide();
+			$("#cat-access-grp").val("").selectmenu("refresh");
+			$.get("?action=setCatAccess&ass="+encodeURIComponent(chosenGrp)+"&cat_access="+this.value, function(data, status) {
+				if (data!=0) {
+					$("#assigned-cat-access").html(data).enhanceWithin();
+				} else {
+					alert("Kunde inte spara behörigheten.");
 				}
-				$(this).parent().siblings('label').children('.prebook-text').html(text);
-				
-				var _this = this;
-				$.get("?action=setCatAccess&ass="+encodeURIComponent(this.name)+"&prebook="+this.value, function(data, status) {
-					if (data!=0) {
-						$(_this).parent().siblings('label').addClass("confirm-change");
-						setTimeout(function(){
-							$(_this).parent().siblings('label').removeClass("confirm-change");
-						},1000);
-					}
-				});
+				$.mobile.loading("hide", {});
 			});
 		});
+		
+		function unsetCatAccess(ass) {
+			$.mobile.loading("show", {});
+			$.get("?action=unsetCatAccess&ass="+encodeURIComponent(ass), function(data, status) {
+				if (data!=0) {
+					$("#assigned-cat-access").html(data).enhanceWithin();
+				} else {
+					alert("Kunde inte återkalla behörigheten.");
+				}
+				$.mobile.loading("hide", {});
+			});
+		}
 	</script>
 
-</div><!--/page>
+</div><!--/page-->
 </body>
 </html>

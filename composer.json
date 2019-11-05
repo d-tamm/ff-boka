@@ -1,5 +1,29 @@
 {
-    "require": {
-        "phpmailer/phpmailer": "^6.1"
-    }
+	"require" : {
+		"phpmailer/phpmailer" : "^6.1"
+	},
+	"repositories" : [{
+			"type" : "git",
+			"url" : "https://github.com/d-tamm/ff-boka",
+			"name" : "ff-boka on Github"
+		}
+	],
+	"name" : "ff-boka",
+	"description" : "Friluftsfrämjandets resursbokning",
+	"license" : "GPL-3.0+",
+	"authors" : [{
+			"name" : "Daniel Tamm",
+			"email" : "daniel.tamm@friluftsframjandet.se",
+			"role" : "Lead developer"
+		}
+	],
+	"support" : {
+		"issues" : "https://github.com/d-tamm/ff-boka/issues",
+		"wiki" : "https://github.com/d-tamm/ff-boka/wiki",
+		"irc" : "https://ff-boka.slack.com",
+		"source" : "https://github.com/d-tamm/ff-boka"
+	},
+	"keywords" : [
+		"bokning resurs friluftsfrämjandet uthyrning"
+	]
 }
