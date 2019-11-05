@@ -1,9 +1,11 @@
 <?php
 require_once __DIR__ . "/vendor/autoload.php";
 require_once "config.php";
+global $cfg;
 
 // Set locale
 setlocale(LC_ALL, $cfg['locale']);
+setlocale(LC_NUMERIC, "en_US.utf8");
 
 // Load mail functions
 use PHPMailer\PHPMailer\PHPMailer;
@@ -15,29 +17,35 @@ use PHPMailer\PHPMailer\Exception;
 // Connect to database
 $db = new PDO("mysql:host={$cfg['dbhost']};dbname={$cfg['dbname']};charset=utf8", $cfg['dbuser'], $cfg['dbpass']);
 
-
 // Check if there is a persistent login cookie
 //https://stackoverflow.com/questions/3128985/php-login-system-remember-me-persistent-cookie
-// TODO: adapt to FF's API (update data from API each time)
-if (empty($_SESSION['user']['ID']) && !empty($_COOKIE['remember'])) {
+if (empty($_SESSION['user']['userID']) && !empty($_COOKIE['remember'])) {
 	list($selector, $authenticator) = explode(':', $_COOKIE['remember']);
-	$stmt = $db->prepare("SELECT * FROM tokens WHERE usefor='persistent login' AND token = ?");
+	$stmt = $db->prepare("SELECT * FROM tokens WHERE usefor='persistent login' AND token=?");
 	$stmt->execute(array($selector));
-	$row = $stmt->fetch(PDO::FETCH_ASSOC);
-	if (hash_equals($row['data'], hash('sha256', base64_decode($authenticator)))) {
-		$_SESSION['user']['ID'] = $row['forID'];
-		// Regenerate login token
-		createPersistentAuth($row['forID']);
+	if ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+		if (hash_equals($row['data'], hash('sha256', base64_decode($authenticator)))) {
+			// User authenticated. Get additional user data from database
+			$stmt = $db->query("SELECT * FROM users WHERE userID={$row['forID']}");
+			if ($stmt->rowCount()) $_SESSION['user'] = $stmt->fetch(PDO::FETCH_ASSOC);
+			else $_SESSION['user'] = array("userID"=>$row['forID']);
+			// Get user's home section
+			$_SESSION['user']['sectionID'] = getUserHome($row['forID']);
+			// Get assignments from API.
+			$_SESSION['user']['assignments'] = getUserAssignments($row['forID']);
+			// Regenerate login token
+			createPersistentAuth($row['forID']);
+		}
 	}
 }
 
-
-function getApiToken($userID, $password) {
+/* function getApiToken($userID, $password) {
 	// Fetches a new user token from API. Returns an array.
 	// On success (correct credentials): [ access_token, expires_in, userName ], where userName is the memberID
 	// On failure (e.g. wrong credentials): [ error="invalid_grant", error_description ]
+	// TODO: This method is deprecated since it fetches a token from the API giving elevated access
+	// to user data at FF. Here, we just want to verify the password, don't need the token.
 	global $cfg;
-return array('userName'=>$userID); // TODO: This is for testing only. Remove this line later.
 	$data = array(
 		'username' => $userID,
 		'password' => $password,
@@ -53,43 +61,61 @@ return array('userName'=>$userID); // TODO: This is for testing only. Remove thi
 	// Sample response: {"access_token":"xxxx","token_type":"bearer","expires_in":28799,"userName":"864015","contactId":"xxxx","impersonateAs":"xxxx","authorizationLevel":"1",".issued":"Thu, 10 Oct 2019 12:29:05 GMT",".expires":"Thu, 10 Oct 2019 20:29:05 GMT"}
 	// If wrong credentials: {"error":"invalid_grant","error_description":"The user name or password is incorrect."}
 	if ($result === FALSE) { 
-		/* Handle error */ 
 		return array("error"=>"Generic error", "error_description"=>"Failed to verify credentials. Please try again later.");
 	} else {
 		return json_decode($result, true);
 	}
+} */
+
+
+function authenticateByAPI($userID, $password) {
+	// Authenticates the given user data by querying the FF API.
+	// Returns false on failure, and the member number on success.
+	// TODO: Currently, there is no such function in the API. Hope this comes in early 2020.
+	//global $cfg;
+	return $userID;
+	return false;
+}
+
+function getUserHome($userID) {
+	// Returns the home section ID of the user from the FF API.
+	// If user is unknown in the API, returns 0.
+	// TODO: replace by call to API feed (which does not yet exist?).
+	//global $cfg;
+	return 52;
+}
+
+function getUserAssignments($userID) {
+	// Returns the user's assignments from the FF API as an array(name, sectionID, typeID)
+	global $cfg;
+	$assignments = array();
+	$data = json_decode(file_get_contents("{$cfg['apiUrl']}/api/feed/Pan_Extbokning_GetAssingmentByMemberNoOrSocSecNo?MNoSocnr=$userID"));
+	foreach ($data->results as $ass) {
+		$assignments[] = array(
+			'name'  => $ass->cint_assignment_type_id->name,
+			'sectionID' => $ass->section__cint_nummer,
+			'typeID'  => $ass->cint_assignment_party_type->value,
+		);
+	}
+	return $assignments;
 }
 
 function login($ID, $password) {
 	// Checks user data via aktivitetshanteraren's API.
 	// Returns true on success, false otherwise.
 	// On success, sets $_SESSION['user']
-	global $db, $cfg;
-	$apiResult = getApiToken($ID, $password);
-	if ($apiResult['userName']) {
-		// User authenticated. Remember user ID
-		$_SESSION['user'] = array();
-		$_SESSION['user']['ID'] = $apiResult['userName'];
-		// Get additional user data (name, e-mail, phone) from database
-		$stmt = $db->query("SELECT name, mail, phone FROM users WHERE ID={$_SESSION['user']['ID']}");
-		if ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-			$_SESSION['user'] = array_merge($_SESSION['user'], $row);
-		}
-		// Get user's home section 
-		$_SESSION['user']['sectionID'] = 0; // TODO: Need to get sectionID from API
-		$stmt = $db->query("SELECT name FROM sections WHERE sectionID={$_SESSION['user']['sectionID']}");
-		$row = $stmt->fetch(PDO::FETCH_ASSOC);
-		$_SESSION['user']['sectionName'] = $row['name'];
-		// Get assignments from API. /api/feed/Pan_Extbokning_GetAssingmentByMemberNoOrSocSecNo?MNoSocnr=XXXXXX-XXXX
-		$data = json_decode(file_get_contents($cfg['apiUrl']."/api/feed/Pan_Extbokning_GetAssingmentByMemberNoOrSocSecNo?MNoSocnr=".$_SESSION['user']['ID']));
-		$_SESSION['user']['assignments'] = array();
-		foreach ($data->results as $ass) {
-			$_SESSION['user']['assignments'][] = array(
-				'name'  => $ass->cint_assignment_type_id->name,
-				'party' => $ass->cint_assignment_party,
-				'typeID'  => $ass->cint_assignment_party_type->value,
-			);
-		}
+	global $db;
+	if ($apiResult = authenticateByAPI($ID, $password)) {
+		// User authenticated. Get additional user data from database
+		$stmt = $db->query("SELECT * FROM users WHERE userID=$apiResult");
+		if ($stmt->rowCount()) $_SESSION['user'] = $stmt->fetch(PDO::FETCH_ASSOC);
+		else $_SESSION['user'] = array("userID"=>$apiResult);
+		// Get user's home section
+		$_SESSION['user']['sectionID'] = getUserHome($apiResult);
+		$_SESSION['user']['sectionID'] = (int)$password+0; // TODO: remove this line after test phase.
+		// Get assignments from API.
+		$_SESSION['user']['assignments'] = getUserAssignments($apiResult);
+		if ((int)$password) $_SESSION['user']['assignments'][] = array('name'=>'Ordförande','sectionID'=>(int)$password,'typeID'=>478880001);  // TODO: remove this line after test phase.
 		return true;
 	}
 	else {
@@ -112,7 +138,7 @@ function createPersistentAuth($userID) {
 		'remember',
 		$selector.':'.base64_encode($authenticator),
 		time() + $cfg['persistLogin'],
-		dirname($_SERVER['SCRIPT_NAME']) . "/",
+		dirname($_SERVER['SCRIPT_NAME']),
 		$_SERVER['SERVER_NAME'],
 		true, // TLS-only
 		true  // http-only
@@ -134,7 +160,7 @@ function removePersistentAuth($userID) {
 		'remember',
 		'',
 		time() - 3600,
-		dirname($_SERVER['SCRIPT_NAME']) . "/",
+		dirname($_SERVER['SCRIPT_NAME']),
 		$_SERVER['SERVER_NAME'],
 		true, // TLS-only
 		true  // http-only
@@ -156,6 +182,70 @@ function createToken($use, $forID, $data="", $ttl=86400) {
 }
 
 
+function isSectionAdmin($sectionID) {
+	// Checks if user has admin permission in current section
+	global $db, $cfg;
+	if (!$_SESSION['user']['assignments']) return false; // user must have assignments
+	if (!count($assInSection = userAssignmentsInSection($sectionID))) return false; // User does not have any assignments in this section.
+	if (count(array_intersect($assInSection, $cfg['sectionAdmins']))) return true; // User is section admin by cfg setting
+	$stmt = $db->query("SELECT sectionID FROM section_admins WHERE sectionID=$sectionID AND (ass_name='" . implode("' OR ass_name='", $assInSection) . "')");
+	if ($stmt->rowCount()) return true; // User has at least one assignment which is set as admin assignment for this section.
+	return false; // None of the user's assignments is set as admin assignment for this section.
+}
+
+
+function secHasAccessibleCats($sectionID) {
+	// Returns whether the section has categories where the current user has at least read access
+	global $db;
+	$assInSection = userAssignmentsInSection($sectionID);
+	// Go through categories in section
+	$stmt = $db->query("SELECT catID, access_member, access_local_member FROM categories WHERE sectionID=$sectionID");
+	while ($cat = $stmt->fetch(PDO::FETCH_ASSOC)) {
+		if ($cat['access_member']) return true;
+		if ($cat['access_local_member'] && $sectionID==$_SESSION['user']['sectionID']) return true;
+		$stmt2 = $db->query("SELECT * FROM cat_access WHERE catID={$cat['catID']} AND (ass_name='" . implode("' OR ass_name='", $assInSection) . "')");
+		if ($stmt2->rowCount()) return true;
+	}
+	return false;
+}
+
+
+function catAccess($catID) {
+	// Returns the access level of this category
+	global $db;
+	// Go through categories in section
+	$stmt = $db->query("SELECT sectionID, access_external, access_member, access_local_member FROM categories WHERE catID=$catID");
+	$cat = $stmt->fetch(PDO::FETCH_ASSOC);
+	$maxAccess = $cat['access_external'];
+	if ($_SESSION['user']['userID']) $maxAccess = max($maxAccess, $cat['access_member']);
+	if ($cat['sectionID']==$_SESSION['user']['sectionID']) $maxAccess = max($maxAccess, $cat['access_local_member']);
+	$assInSection = userAssignmentsInSection($cat['sectionID']);
+	$stmt2 = $db->query("SELECT cat_access FROM cat_access WHERE catID=$catID AND (ass_name='" . implode("' OR ass_name='", $assInSection) . "')");
+	while ($row = $stmt2->fetch(PDO::FETCH_ASSOC)) {
+		$maxAccess = max($maxAccess, $row['cat_access']);
+	}
+	return $maxAccess;
+}
+
+
+function userAssignmentsInSection($sectionID) {
+	// Get all assignments the current user has in the section
+	if (!isset($_SESSION['user']['assignments'])) return array();
+	return array_column(
+		array_filter($_SESSION['user']['assignments'], function($ass) use ($sectionID) {
+			return $ass['typeID']==TYPE_SECTION && $ass['sectionID']==$sectionID;
+		}),
+		'name'
+	);
+}
+
+function sectionName($sectionID) {
+	global $db;
+	$stmt = $db->query("SELECT name FROM sections WHERE sectionID=$sectionID");
+	$row = $stmt->fetch(PDO::FETCH_ASSOC);
+	return $row['name'];
+}
+
 function htmlHeaders($title) { 
 	// output meta tags and include stylesheets, jquery etc	?>
 	<title><?= $title ?></title>
@@ -176,7 +266,7 @@ function head($caption) {
 	<div data-role="panel" data-theme="b" data-position-fixed="true" data-display="push" id="navpanel">
 		<ul data-role="listview">
 			<li data-icon="home"><a href="index.php" data-rel="close">Startsida</a></li><?php
-			if (isset($_SESSION['user']['ID'])) { ?>
+			if (isset($_SESSION['user']['userID'])) { ?>
 				<li data-icon="user"><a href="userdata.php" data-rel="close" data-ajax="false"><?= $_SESSION['user']['name'] ?></a></li>
 				<li data-icon="bullets"><a href="myitems.php" data-rel="close" data-ajax="false">Min utrustning</a></li>
 				<?= $_SESSION['user']['role']==="la_admin" || $_SESSION['user']['role']==="admin" ? "<li data-icon='lock'><a href='la_admin.php' data-rel='close' data-ajax='false'>LA-Admin</a></li>" : "" ?>
@@ -193,8 +283,8 @@ function head($caption) {
 		<a href="#navpanel" data-rel="popup" data-transition="pop" data-role="button" data-icon="bars" data-iconpos="notext" class="ui-btn-left ui-nodisc-icon ui-alt-icon">Menu</a>
 		<?php 
 		switch ($_SERVER['PHP_SELF']) {
-		case "/category.php": $href="admin.php?section=cat"; $transition="slidedown"; $icon="back"; break;
-		case "/item.php": $href="category.php?section=items"; $transition="slidedown"; $icon="back"; break;
+		case "/category.php": $href="admin.php"; $transition="slidedown"; $icon="back"; break;
+		case "/item.php": $href="category.php?expand=items"; $transition="slidedown"; $icon="back"; break;
 		default: $href="index.php"; $icon="home"; $transition="slidedown";
 		}
 		echo "<a href='$href' data-transition='$transition' data-ajax='true' data-role='button' data-icon='$icon' data-iconpos='notext' class='ui-btn-right ui-nodisc-icon ui-alt-icon'></a>";
@@ -255,10 +345,12 @@ function sendmail($to, $subject, $template, $search=NULL, $replace=NULL) {
 }
 
 function getUploadedImage($file, $maxsize=800, $thumbsize=80) {
+    global $cfg;
 	// Gets an uploaded image file, resizes it, makes a thumbnail, and returns both versions as strings.
 	if (is_uploaded_file($file['tmp_name'])) {
+		// reject files that are too big
+		if (filesize($file['tmp_name'])>$cfg['uploadMaxFileSize']) return false;
 		// Get the picture and its size
-		// TODO: reject files that are too big.
 		$src = imagecreatefromstring(file_get_contents($file['tmp_name']));
 		$size = getimagesize($file['tmp_name']);
 		$ratio = $size[0]/$size[1];
@@ -292,7 +384,7 @@ function getUploadedImage($file, $maxsize=800, $thumbsize=80) {
 }
 
 
-function embed_image($data, $overlay="") {
+function embedImage($data, $overlay="") {
 	// Returns string for embedded img tag.
 	if (!in_array($overlay, array("accepted", "rejected", "new"))) $overlay="";
 	if (!$data) $data = file_get_contents("resources/noimage.png");
@@ -310,8 +402,21 @@ function embed_image($data, $overlay="") {
 	return("<img src='data:" . $info['mime'] . ";base64," . base64_encode($data) . "'>");
 }
 
+function bookingBar($itemID, $start, $range="week") {
+	global $db;
+	$stmt = $db->query("SELECT UNIX_TIMESTAMP(start) start, UNIX_TIMESTAMP(end) end FROM `booked_items` INNER JOIN subbookings USING (subbookingID) WHERE itemID=$itemID"); // TODO: limit query to only relevant rows.
+	$ret = "<div style='width:100%; height:20px; position:relative; background-color:#D0BA8A; font-weight:normal; font-size:small;'>";
+	while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+		$ret .= "<div style='position:absolute; top:0px; height:100%; left:" . (($row['start']-$start)/6048) . "%; width:" . (($row['end']-$row['start'])/6048) . "%; background-color:#E84F1C;'></div>\n";		
+	}
+	for ($day=1; $day<7; $day++) {
+		$ret .= "<div style='position:absolute; top:0px; height:100%; left:" . (100/7*$day) . "%; border-left:1px solid #54544A;'></div>\n";
+	}
+	$ret .= "</div>";
+	return $ret;
+}
 
-function obfuscated_maillink($to, $subject="") {
+function obfuscatedMaillink($to, $subject="") {
 	// Obfuscates email addresses.
 	$id = "obfmail".substr(sha1($to), 0, 8);
 	return "<span id='$id'></span><script>$('#$id').html(\"<a href='mailto:\" + atob('" . base64_encode($to) . "') + \"" . ($subject ? "?subject=".rawurlencode($subject) : "") . "'>\"+atob('" . base64_encode($to) . "')+\"</a>\");</script>";

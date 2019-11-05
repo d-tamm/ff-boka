@@ -1,6 +1,7 @@
 <?php
 session_start();
 require("common.php");
+global $db;
 
 // TODO: authenticate
 switch ($_GET['type']) {

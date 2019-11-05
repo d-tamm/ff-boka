@@ -1,27 +1,11 @@
 <?php
 session_start();
 require("common.php");
+global $db;
 
-// Check permissions
-if (!isset($_SESSION['sectionID'])) {
+if (!isSectionAdmin($_SESSION['sectionID'])) {
 	header("Location: index.php");
 	die();
-}
-$where = array();
-foreach ($_SESSION['user']['assignments'] as $ass) {
-	if ($ass['typeID']==478880001 && in_array($ass['name'], $cfg['sectionAdmins']) && $ass['party']==$_SESSION['sectionName']) {
-		// User is section admin by cfg setting
-		$adminOK = true;
-		break;
-	}
-	if ($ass['typeID']==478880001) { $where[] = "(name='{$ass['party']}' AND ass_name='{$ass['name']}')"; }
-}
-if (!$adminOK) {
-	$stmt = $db->query("SELECT sectionID, name FROM section_admins INNER JOIN sections USING (sectionID) WHERE " . implode(" OR ", $where));
-	if (!$stmt->rowCount()) {
-		header("Location: index.php");
-		die();
-	}
 }
 
 
@@ -29,12 +13,15 @@ function imageHtml($itemID) {
 	// Returns HTML code for the image block.
 	global $db;
 	if (!$itemID) return "";
-	$stmt = $db->query("SELECT item_images.imageID AS imageID, thumb, items.imageID AS featured_image FROM item_images INNER JOIN items USING (itemID) WHERE itemID=$itemID");
+	$stmt = $db->query("SELECT item_images.imageID AS imageID, item_images.caption, thumb, items.imageID AS featured_image FROM item_images INNER JOIN items USING (itemID) WHERE itemID=$itemID");
 	while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+		$ret .= "<div class='ui-body ui-body-a ui-corner-all'>\n";
 		$ret .= "<img class='item-img-preview' src='image.php?type=item&ID={$row['imageID']}'>";
-		$ret .= "<label><input type='radio' name='main_image' onClick='setFeaturedImg({$row['imageID']});' value='{$row['imageID']}' " . ($row['imageID']==$row['featured_image'] ? "checked='true'" : "") . ">Huvudbild</label>";
-		$ret .= "<input type='button' class='ui-btn ui-corner-all' value='Ta bort' onClick='delItemImg({$row['imageID']});'>";
-		$ret .= "<div style='clear:both;'></div>\n";
+		$ret .= "<textarea class='item-img-caption' placeholder='Bildtext' data-image-id='{$row['imageID']}'>{$row['caption']}</textarea>";
+		$ret .= "<div class='ui-grid-a'>";
+		$ret .= "<div class='ui-block-a'><label><input type='radio' name='main_image' onClick='setFeaturedImg({$row['imageID']});' value='{$row['imageID']}' " . ($row['imageID']==$row['featured_image'] ? "checked='true'" : "") . ">Huvudbild</label></div>";
+		$ret .= "<div class='ui-block-b'><input type='button' data-corners='false' class='ui-btn ui-corner-all' value='Ta bort' onClick='delItemImg({$row['imageID']});'></div>";
+		$ret .= "</div></div><br>";
 	}
 	return $ret;
 }
@@ -58,7 +45,7 @@ case "save item":
 		$stayOnPage = true;
 	}
 	if (!$stayOnPage) {
-		header("Location: category.php?section=items");
+		header("Location: category.php?expand=items");
 		die();
 	}
 	break;
@@ -66,7 +53,7 @@ case "save item":
 case "delete_item":
 	$stmt = $db->prepare("DELETE FROM items WHERE itemID=?");
 	$stmt->execute(array($_GET['itemID']));
-	header("Location: category.php?section=items");
+	header("Location: category.php?expand=items");
 	break;
 	
 case "copy_item":
@@ -108,6 +95,15 @@ case "delete_image":
 	die(imageHtml($_REQUEST['itemID']));
 	break;
 	
+case "save_img_caption":
+	$stmt = $db->prepare("UPDATE item_images SET caption=:caption WHERE imageID=:imageID");
+	$stmt->execute(array(
+		":imageID"=>$_GET['imageID'],
+		":caption"=>$_GET['caption'],
+	));
+	die($_GET['imageID']);
+	break;
+	
 case "set_featured_img":
 	$stmt = $db->prepare("UPDATE items SET imageID=:imageID WHERE itemID=:itemID");
 	$stmt->execute(array(
@@ -120,10 +116,10 @@ case "set_featured_img":
 
 // Get item data
 if ($_REQUEST['itemID']) {
-	$stmt = $db->prepare("SELECT items.*, categories.name AS catName FROM items INNER JOIN categories ON (items.catID=categories.catID) WHERE itemID=?");
+	$stmt = $db->prepare("SELECT items.*, categories.caption AS catCaption FROM items INNER JOIN categories ON (items.catID=categories.catID) WHERE itemID=?");
 	$stmt->execute(array($_REQUEST['itemID']));
 } else {
-	$stmt = $db->query("SELECT categories.name AS catName FROM categories WHERE catID={$_SESSION['catID']}");
+	$stmt = $db->query("SELECT categories.caption AS catCaption FROM categories WHERE catID={$_SESSION['catID']}");
 }
 $item = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -146,7 +142,7 @@ $item = $stmt->fetch(PDO::FETCH_ASSOC);
 	<form action="" method="post" enctype="multipart/form-data" data-ajax="false">
 		<input type="hidden" name="action" value="save item">
 		<input type="hidden" name="itemID" value="<?= $item['itemID'] ?>">
-		<p>Kategori: <?= $item['catName'] ?></p>
+		<p><a href='admin.php'>LA <?= $_SESSION['sectionName'] . "</a> &rarr; <a href='category.php'>" . $item['catCaption'] ?></a></p>
 		<div class="ui-field-contain">
 			<label for="item-caption">Rubrik:</label>
 			<input name="caption" id="item-caption" placeholder="Rubrik" value="<?= $item['caption'] ?>">
@@ -161,11 +157,11 @@ $item = $stmt->fetch(PDO::FETCH_ASSOC);
 		</div>
 		<?php if ($item['itemID']) { ?>
 		<div class="ui-grid-a">
-			<div class="ui-block-a"><input type="submit" value="Spara" data-theme="b"></div>
-			<div class='ui-block-b'><input type='button' id='delete_item' value='Ta bort' data-theme='c'></div>
+			<div class="ui-block-a"><input type="submit" data-corners="false" value="Spara" data-theme="b"></div>
+			<div class='ui-block-b'><input type='button' data-corners="false" id='delete_item' value='Ta bort' data-theme='c'></div>
 		</div>
 		<div class='ui-grid-solo'>
-			<div class='ui-block-a'><input type='button' value='Duplicera posten' onClick="location.href='?action=copy_item&itemID=<?= $item['itemID'] ?>';"></div>
+			<div class='ui-block-a'><input type='button' data-corners="false" value='Duplicera posten' onClick="location.href='?action=copy_item&itemID=<?= $item['itemID'] ?>';"></div>
 		</div>
 		<?php } else { ?>
 		<input type="submit" value="Fortsätt">
@@ -185,6 +181,8 @@ $item = $stmt->fetch(PDO::FETCH_ASSOC);
 	</div><!--/main-->
 
 	<script>
+		var toutSavedIndicator;
+		
 		$("#delete_item").click(function() {
 			if (confirm("Du håller på att ta bort utrustningen. Fortsätta?")) {
 				location.href="?action=delete_item&itemID=<?= $item['itemID'] ?>";
@@ -219,9 +217,22 @@ $item = $stmt->fetch(PDO::FETCH_ASSOC);
 			});
 		});
 		
+		$(".item-img-caption").on('input', function() {
+			// Save image caption to DB via ajax
+			var _this = this;
+			clearTimeout(toutSavedIndicator);
+			toutSavedIndicator = setTimeout(function() {
+				$.get("?action=save_img_caption&imageID="+$(_this).data('image-id')+"&caption="+encodeURIComponent(_this.value), function(data, status) {
+					$(_this).addClass("confirm-change");
+					setTimeout(function(){
+						$(_this).removeClass("confirm-change");
+					},1000);
+				});
+			}, 1000);
+		});
+		
 		function setFeaturedImg(imageID) {
 			$.get("?action=set_featured_img&itemID=<?= $item['itemID'] ?>&imageID="+imageID, function(data, status) {
-				console.log("Set featured image: "+data);
 			});
 		}
 		
@@ -235,6 +246,6 @@ $item = $stmt->fetch(PDO::FETCH_ASSOC);
 				
 	</script>
 
-</div><!--/page>
+</div><!--/page-->
 </body>
 </html>

@@ -1,6 +1,7 @@
 <?php
 session_start();
 require("common.php");
+global $db, $cfg;
 
 if (isset($_POST['login'])) {
 	// User trying to log in.
@@ -14,7 +15,7 @@ if (isset($_POST['login'])) {
 		if (login($_POST['ID'], $_POST['password'])) {
 			$db->exec("INSERT INTO logins (IP, success) VALUES (INET_ATON('{$_SERVER['REMOTE_ADDR']}'), 1)");
 			// If requested, set persistent login cookie
-			if (isset($_POST['rememberme'])) createPersistentAuth($_SESSION['user']['ID']);
+			if (isset($_POST['rememberme'])) createPersistentAuth($_SESSION['user']['userID']);
 			// Redirect if requested by login form
 			if ($_POST['redirect']) {
 				header("Location: {$_POST['redirect']}");
@@ -31,7 +32,7 @@ if (isset($_POST['login'])) {
 
 if (isset($_REQUEST['logout'])) {
 	// Remove persistent login cookie
-	removePersistentAuth($user['ID']);
+	removePersistentAuth($_SESSION['user']['userID']);
 	// Remove session
 	session_unset();
 	session_destroy();
@@ -56,12 +57,11 @@ if (isset($_REQUEST['t'])) {
 }
 
 
-if ($_SESSION['user']['ID'] && (!isset($_SESSION['user']['name']) || !isset($_SESSION['user']['mail']) || !isset($_SESSION['user']['phone']))) {
+if ($_SESSION['user']['userID'] && (!isset($_SESSION['user']['name']) || !isset($_SESSION['user']['mail']) || !isset($_SESSION['user']['phone']))) {
 	// First time user logs in. Redirect to page where he/she must supply some contact data
 	header("Location: userdata.php?first_login=1");
 	die();
 }
-
 
 ?><!DOCTYPE html>
 <html>
@@ -95,62 +95,62 @@ if ($_SESSION['user']['ID'] && (!isset($_SESSION['user']['name']) || !isset($_SE
 
 	<img src="resources/liggande-bla.png" width="100%">
 
-	<?php if (isset($_SESSION['user']['ID'])) { ?>
-		
-		<div data-role='collapsibleset' data-inset='false'>
-		
-			<div data-role='collapsible' data-collapsed='false'>
-			<h3>Boka</h3>
+	<div data-role='collapsibleset' data-inset='false'>
+		<?php if (isset($_SESSION['user']['userID'])) { ?>
+		<div data-role='collapsible' data-collapsed='false'>
+			<h3>Boka som medlem</h3>
 			<?php
-			// Make a list of all sections where user may book equipment
-			
+			// Make a list of all sections with categories where user may book equipment
+			$sectionList = "";
+			$stmt = $db->query("SELECT sectionID, name FROM sections ORDER BY sectionID={$_SESSION['user']['sectionID']} DESC, name");
+			while ($row=$stmt->fetch(PDO::FETCH_ASSOC)) {
+				if (secHasAccessibleCats($row['sectionID'])) {
+					$sectionList .= "<a href='book.php?sectionID={$row['sectionID']}' class='ui-btn'>{$row['name']}</a>";
+				}
+			}
+			if ($sectionList) echo $sectionList;
+			else echo "<p>Det finns inga resurser du kan boka som medlem i din lokalavdelning.</p>";
 			?>
-			<a href="boka.php" class="ui-btn">Boka</a>
-			</div>
-			
-			<?php
-			// Make a list of all sections where user has admin role
-			if ($_SESSION['user']['assignments']) {
-				$where = array();
-				$union = "";
-				foreach ($_SESSION['user']['assignments'] as $ass) {
-					if ($ass['typeID']==478880001) { $where[] = "(name='{$ass['party']}' AND ass_name='{$ass['name']}')"; }
-					// Add result rows for section admin by cfg setting
-					if ($ass['typeID']==478880001 && in_array($ass['name'], $cfg['sectionAdmins'])) {
-						$union .= " UNION DISTINCT SELECT sectionID, name FROM sections WHERE name='{$ass['party']}'";
-					}
-				}
-				$stmt = $db->query("SELECT DISTINCTROW sectionID, name FROM section_admins INNER JOIN sections USING (sectionID) WHERE " . implode(" OR ", $where) . "$union ORDER BY name");
-				if ($stmt->rowCount()) {
-					echo "<div data-role='collapsible' data-collapsed='true'>";
-					echo "<h3>Administrera</h3>";
-					while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-						echo "<a href='admin.php?sectionID={$row['sectionID']}&sectionName={$row['name']}' class='ui-btn'>{$row['name']}</a>";
-					}
-					echo "</div>";
-				}
+		</div>
+
+		<?php
+		// Make a list of all sections where user has admin role
+		$stmt = $db->query("SELECT sectionID, name FROM sections ORDER BY name");
+		$sectionList = "";
+		while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+			if (isSectionAdmin($row['sectionID'])) {
+				$sectionList .= "<a href='admin.php?sectionID={$row['sectionID']}' class='ui-btn'>{$row['name']}</a>";
+			}
+		}
+		if ($sectionList) echo "<div data-role='collapsible' data-collapsed='true'><h3>Administrera</h3>$sectionList</div>";
+		} ?>
+
+		<div data-role='collapsible' data-collapsed='true'>
+			<h3>Boka som gäst</h3>
+			<?php // List of sections with categories open for guests
+			$stmt = $db->query("SELECT sections.* FROM categories INNER JOIN sections USING (sectionID) WHERE access_external GROUP BY sections.name");
+			if (!$stmt->rowCount()) echo "<p>Det finns inget att boka som gäst just nu.</p>";
+			while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+				echo "<a href='book.php?sectionID={$row['sectionID']}&guest' class='ui-btn'>{$row['name']}</a>";
 			} ?>
-		</div><!-- /collapsibleset -->
+		</div>
+	</div><!-- /collapsibleset -->
 
-		<p><pre><?php print_r($_SESSION['user']); ?></pre></p>
-
-	<?php } else { ?>
-
+	<?php if (!isset($_SESSION['user']['userID'])) { ?>
 		<form id="formLogin" style="padding:10px 20px;" data-ajax="false" method="POST" action="index.php">
 			<h3>Inloggning</h3>
 			<p>Du loggar in med samma lösenord som i aktivitetshanteraren.</p>
+			<p class="ui-body ui-body-b">Under testfasen räcker det med ditt medlemsnummer. Inget lösenord behövs. Men du kan ange numret till en lokalavdelning som lösenord för att simulera att du tillhör den lokalavdelningen (testa 52=Mölndal). Då tilldelas du även uppdraget Ordförande i den lokalavdelningen, så att du kan komma åt admin-gränssnittet.</p>
 			<input type="hidden" name="redirect" id="loginRedirect" value="">
 			<input name="ID" value="" placeholder="medlems- eller personnr" required>
 			<input name="password" value="" placeholder="Lösenord" type="password">
 			<div id="divRememberme" style="<?= empty($_COOKIE['cookiesOK']) ? "display:none;" : "" ?>"><label><input data-mini='true' name='rememberme' value='1' type='checkbox'> Kom ihåg mig</label></div>
-			<button name="login" value="login" class="ui-btn ui-corner-all ui-shadow ui-btn-b ui-btn-icon-right ui-icon-user">Logga in</button>
-			<button name="guest" value="guest" class="ui-btn ui-corner-all ui-shadow ui-btn-b ui-btn-icon-right ui-icon-arrow-r">Boka som gäst</button>
+			<button name="login" value="login" class="ui-btn ui-shadow ui-btn-b ui-btn-icon-right ui-icon-user">Logga in</button>
 		</form>
-
 	<?php } ?>
 	
 	</div><!--/main-->
 
-</div><!--/page>
+</div><!--/page-->
 </body>
 </html>

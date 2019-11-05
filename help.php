@@ -1,6 +1,7 @@
 <?php
 session_start();
 require("common.php");
+global $cfg;
 
 
 ?><!DOCTYPE html>
@@ -35,11 +36,11 @@ require("common.php");
 	<p>Du kan alltid höra av dig till oss för att ta reda på vad som är sparat om just dig.</p>
 
 	<h3>Kontakt</h3>
-	<p>Om du har frågor kan du skicka ett mejl till <?= obfuscated_maillink($cfg['mailReplyTo'], $subject="Fråga om resursbokningen") ?> eller ringa Daniel (076-105 69 75).</p>
+	<p>Om du har frågor kan du skicka ett mejl till <?= obfuscated_maillink($cfg['mailReplyTo'], "Fråga om resursbokningen") ?> eller ringa Daniel (076-105 69 75).</p>
 
 	</div><!--/main-->
 
-</div><!--/page>
+</div><!--/page-->
 
 </body>
 </html>

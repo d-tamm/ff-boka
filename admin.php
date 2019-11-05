@@ -1,33 +1,21 @@
 <?php
 session_start();
 require("common.php");
+global $db, $cfg;
 
 // Remember section name and ID
 if ($_GET['sectionID']) {
-	$_SESSION['sectionID'] = $_GET['sectionID'];
-	$_SESSION['sectionName'] = $_GET['sectionName'];
+	$stmt = $db->prepare("SELECT sectionID, name FROM sections WHERE sectionID=?");
+	$stmt->execute(array($_GET['sectionID']));
+	$row = $stmt->fetch(PDO::FETCH_ASSOC);
+	$_SESSION['sectionID'] = $row['sectionID'];
+	$_SESSION['sectionName'] = $row['name'];
 }
+unset($_SESSION['catID']);
 
-// Check permissions
-if (!isset($_SESSION['sectionID']) || !$_SESSION['user']['assignments']) {
+if (!isSectionAdmin($_SESSION['sectionID'])) {
 	header("Location: index.php");
 	die();
-}
-$where = array();
-foreach ($_SESSION['user']['assignments'] as $ass) {
-	if ($ass['typeID']==478880001 && in_array($ass['name'], $cfg['sectionAdmins']) && $ass['party']==$_SESSION['sectionName']) {
-		// User is section admin by cfg setting
-		$adminOK = true;
-		break;
-	}
-	if ($ass['typeID']==478880001) { $where[] = "(name='{$ass['party']}' AND ass_name='{$ass['name']}')"; }
-}
-if (!$adminOK) {
-	$stmt = $db->query("SELECT sectionID, name FROM section_admins INNER JOIN sections USING (sectionID) WHERE " . implode(" OR ", $where));
-	if (!$stmt->rowCount()) {
-		header("Location: index.php");
-		die();
-	}
 }
 
 
@@ -60,16 +48,16 @@ case "setSectionAdmin":
 	<div role="main" class="ui-content">
 
 	<div data-role="collapsibleset" data-inset="false">
-		<div data-role="collapsible" data-collapsed="<?= $_REQUEST['section']=="cat" ? "false" : "true" ?>">
+		<div data-role="collapsible" data-collapsed="<?= isset($_REQUEST['expand']) ? "true" : "false" ?>">
 			<h2>Kategorier</h2>
 			<ul data-role="listview">
 			<?php
-			$stmt = $db->prepare("SELECT * FROM categories WHERE sectionID=? ORDER BY name");
+			$stmt = $db->prepare("SELECT * FROM categories WHERE sectionID=? ORDER BY caption");
 			$stmt->execute(array($_SESSION['sectionID']));
 			while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 				echo "<li><a href='category.php?catID={$row['catID']}' data-ajax='false'>
-					{$row['name']}
-					" . embed_image($row['thumb']) . "
+					{$row['caption']}
+					" . embedImage($row['thumb']) . "
 					</a></li>";
 			} ?>
 			<li><a href="category.php">Skapa ny kategori</a></li>
@@ -82,10 +70,19 @@ case "setSectionAdmin":
 			<form>
 				<fieldset data-role='controlgroup'>
 					<?php
-					$stmt=$db->prepare("SELECT ass_name, sectionID FROM assignments LEFT JOIN section_admins USING (ass_name) WHERE typeID=478880001 AND (sectionID=? OR sectionID IS NULL)");
-					$stmt->execute(array($_SESSION['sectionID']));
+					// First list all assignments which are set in config or have been set earlier
+					foreach ($cfg['sectionAdmins'] as $ass) {
+						echo "<label class='check-ass'><input class='section-admin' type='checkbox' value='$ass' data-mini='true' checked='true' disabled='true'> $ass</label>";
+					}
+					$stmt = $db->query("SELECT * FROM section_admins WHERE sectionID={$_SESSION['sectionID']}");
 					while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-						echo "<label class='check-ass'><input class='section-admin' type='checkbox' value='{$row['ass_name']}' data-mini='true'" . ($row['sectionID'] ? " checked='true'" : "") . (in_array($row['ass_name'], $cfg['sectionAdmins']) ? " checked='true' disabled='true'" : "") . "> {$row['ass_name']}</label>";
+						echo "<label class='check-ass'><input class='section-admin' type='checkbox' value='{$row['ass_name']}' data-mini='true' checked='true'> {$row['ass_name']}</label>";
+					}
+					// Then all others
+					$stmt1 = $db->query("SELECT ass_name FROM assignments WHERE typeID=".TYPE_SECTION);
+					while ($row = $stmt1->fetch(PDO::FETCH_ASSOC)) {
+						$stmt2 = $db->query("SELECT ID FROM section_admins WHERE sectionID={$_SESSION['sectionID']} AND ass_name='{$row['ass_name']}'");
+						if (!$stmt2->rowCount() && !in_array($row['ass_name'], $cfg['sectionAdmins'])) echo "<label class='check-ass'><input class='section-admin' type='checkbox' value='{$row['ass_name']}' data-mini='true'> {$row['ass_name']}</label>";
 					} ?>
 				</fieldset>
 			</form>
@@ -98,14 +95,18 @@ case "setSectionAdmin":
 		$(".section-admin").change(function(){
 			var _this = this;
 			$.get("?action=setSectionAdmin&ass="+this.value+"&value="+this.checked, function(data, status) {
-				$(_this).parent().addClass("confirm-change");
-				setTimeout(function(){
-					$(_this).parent().removeClass("confirm-change");
-				},1000);
+				if (data=="OK") {
+					$(_this).parent().addClass("confirm-change");
+					setTimeout(function(){
+						$(_this).parent().removeClass("confirm-change");
+					},1000);
+				} else {
+					alert("Kunde inte spara ditt val.");
+				}
 			});
 		});
 	</script>
 
-</div><!--/page>
+</div><!--/page-->
 </body>
 </html>

@@ -37,7 +37,7 @@ require("common.php");
 	
 	</div><!--/main-->
 
-</div><!--/page>
+</div><!--/page-->
 
 </body>
 </html>
