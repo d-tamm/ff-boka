@@ -1,7 +1,27 @@
 <?php
+use FFBoka\FFBoka;
+use FFBoka\User;
+use FFBoka\Section;
+
 session_start();
-require("common.php");
-global $db, $cfg;
+require(__DIR__."/inc/common.php");
+global $db, $cfg, $FF;
+
+if (isset($_REQUEST['action'])) {
+    switch ($_REQUEST['action']) {
+        case "make me admin":
+            $section = new Section(52);
+            if ($section->addAdmin($_SESSION['authenticatedUser'])) {
+                $message = "Bra jobbat! Du har nu administratörsrollen i Mölndal. Titta gärna runt och återkoppla till Daniel med dina erfarenheter!";
+            } else {
+                $message = "Något har gått fel.";
+            }
+            break;
+		case "accountDeleted":
+			$message = "Ditt konto har nu raderats. Välkommen åter!";
+			break;
+    }
+}
 
 if (isset($_POST['login'])) {
 	// User trying to log in.
@@ -9,38 +29,35 @@ if (isset($_POST['login'])) {
 	$stmt = $db->query("SELECT * FROM logins WHERE INET_NTOA(IP)='{$_SERVER['REMOTE_ADDR']}' AND TIMESTAMPDIFF(SECOND, timestamp, NOW()) < {$cfg['DoSDelay']} AND NOT success");
 	if ($stmt->rowCount() > $cfg['DoSCount']) {
 		// Too many attempts. We do not even bother to log this to login log.
-		$message = "För många inloggningsförsök.";
+		$message = "För många inloggningsförsök. Försök igen om {$cfg['DoSDelay']} sekunder.";
 	} else {
-		// Check member ID and password via API
-		if (login($_POST['ID'], $_POST['password'])) {
-			$db->exec("INSERT INTO logins (IP, success) VALUES (INET_ATON('{$_SERVER['REMOTE_ADDR']}'), 1)");
-			// If requested, set persistent login cookie
-			if (isset($_POST['rememberme'])) createPersistentAuth($_SESSION['user']['userID']);
-			// Redirect if requested by login form
-			if ($_POST['redirect']) {
-				header("Location: {$_POST['redirect']}");
-				die();
-			}
-		}
-		else {
-			// Password wrong.
-			$message = "Fel medlemsnummer eller lösenord.";
-			$db->exec("INSERT INTO logins (IP, success) VALUES (INET_ATON('{$_SERVER['REMOTE_ADDR']}'), 0)");
+	    if ($_SESSION['authenticatedUser'] = $FF->authenticateUser($_POST['id'], $_POST['password'])) {
+			$u = new User($_SESSION['authenticatedUser']);
+			if (!$u->updateLastLogin()) die("Cannot update user.");
+	        $db->exec("INSERT INTO logins (ip, success) VALUES (INET_ATON('{$_SERVER['REMOTE_ADDR']}'), 1)");
+            // If requested, set persistent login cookie
+            if (isset($_POST['rememberMe'])) createPersistentAuth($_POST['id']);
+            // Redirect if requested by login form
+            if ($_POST['redirect']) {
+                header("Location: {$_POST['redirect']}");
+                die();
+            }
+        } else {
+	        // Password wrong.
+	        $message = "Fel medlemsnummer eller lösenord.";
+	        $db->exec("INSERT INTO logins (ip, success) VALUES (INET_ATON('{$_SERVER['REMOTE_ADDR']}'), 0)");
 		}
 	}
 }
 
 if (isset($_REQUEST['logout'])) {
 	// Remove persistent login cookie
-	removePersistentAuth($_SESSION['user']['userID']);
+	removePersistentAuth($_SESSION['authenticatedUser']);
 	// Remove session
 	session_unset();
 	session_destroy();
 	session_write_close();
 	setcookie(session_name(), "", 0, "/");
-	session_regenerate_id(true);
-	header("Location: index.php");
-	die();
 }
 
 
@@ -51,17 +68,22 @@ if (isset($_REQUEST['t'])) {
 	if (!$row = $stmt->fetch(PDO::FETCH_ASSOC)) $message = "Ogiltig kod.";
 	elseif (time() > $row['unixtime']+$row['ttl']) $message = "Koden har förfallit.";
 	else {
-		switch ($row['usefor']) {
+		switch ($row['useFor']) {
 		}
 	}
 }
 
-
-if ($_SESSION['user']['userID'] && (!isset($_SESSION['user']['name']) || !isset($_SESSION['user']['mail']) || !isset($_SESSION['user']['phone']))) {
-	// First time user logs in. Redirect to page where he/she must supply some contact data
-	header("Location: userdata.php?first_login=1");
-	die();
+if ($_SESSION['authenticatedUser']) {
+    $currentUser = new User($_SESSION['authenticatedUser']);
+    if (!$currentUser->name || !$currentUser->mail || !$currentUser->phone) {
+    	// We are missing contact details for this user. Redirect to page where he/she must supply them.
+    	// (We don't allow to use the system without contact data.)
+    	header("Location: userdata.php?first_login=1");
+    	die();
+    }
 }
+
+if (isset($_REQUEST['message'])) $message .= "<br>".$_REQUEST['message'];
 
 ?><!DOCTYPE html>
 <html>
@@ -85,66 +107,76 @@ if ($_SESSION['user']['userID'] && (!isset($_SESSION['user']['name']) || !isset(
 
 <body>
 <div data-role="page" id="page_start">
-	<?= head("Resursbokning") ?>
+	<?= head("Resursbokning", $currentUser) ?>
 	<div role="main" class="ui-content">
 
 	<div data-role="popup" data-overlay-theme="b" id="popupMessage" class="ui-content">
 		<p><?= isset($message) ? $message : "" ?></p>
-		<?= isset($dontShowOK) ? "" : "<a href='#' data-rel='back' class='ui-btn ui-btn-icon-left ui-btn-inline ui-corner-all ui-icon-check'>OK</a>" ?>
+		<a href='#' data-rel='back' class='ui-btn ui-btn-icon-left ui-btn-inline ui-corner-all ui-icon-check'>OK</a>
 	</div>
+
+	<p class="ui-body ui-body-c">Resursbokningen genomgår just nu en större omstrukturering av koden för att få en bättre bas att stå på. Du är välkommen ändå, men räkna med att inte allt fungerar.</p>
 
 	<img src="resources/liggande-bla.png" width="100%">
 
 	<div data-role='collapsibleset' data-inset='false'>
-		<?php if (isset($_SESSION['user']['userID'])) { ?>
+		<?php if ($_SESSION['authenticatedUser']) { ?>
 		<div data-role='collapsible' data-collapsed='false'>
 			<h3>Boka som medlem</h3>
 			<?php
-			// Make a list of all sections with categories where user may book equipment
+			// Show a list of all sections with categories where user may book resources
 			$sectionList = "";
-			$stmt = $db->query("SELECT sectionID, name FROM sections ORDER BY sectionID={$_SESSION['user']['sectionID']} DESC, name");
-			while ($row=$stmt->fetch(PDO::FETCH_ASSOC)) {
-				if (secHasAccessibleCats($row['sectionID'])) {
-					$sectionList .= "<a href='book.php?sectionID={$row['sectionID']}' class='ui-btn'>{$row['name']}</a>";
+			foreach ($FF->getAllSections($currentUser->sectionId) as $section) {
+			    if ($section->showFor($currentUser)) {
+					$sectionList .= "<a href='book.php?sectionId={$section->id}' class='ui-btn'>{$section->name}</a>";
 				}
 			}
 			if ($sectionList) echo $sectionList;
-			else echo "<p>Det finns inga resurser du kan boka som medlem i din lokalavdelning.</p>";
-			?>
+			else echo "<p>Det finns inga resurser du kan boka som medlem i din lokalavdelning.</p>"; ?>
 		</div>
 
 		<?php
-		// Make a list of all sections where user has admin role
-		$stmt = $db->query("SELECT sectionID, name FROM sections ORDER BY name");
+		// Show a list of all sections where user has admin role
 		$sectionList = "";
-		while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-			if (isSectionAdmin($row['sectionID'])) {
-				$sectionList .= "<a href='admin.php?sectionID={$row['sectionID']}' class='ui-btn'>{$row['name']}</a>";
+		foreach ($FF->getAllSections() as $section) {
+			if ($section->getAccess($currentUser) >= FFBoka::ACCESS_CONFIRM) {
+				$sectionList .= "<a href='admin/?sectionId={$section->id}' class='ui-btn' data-ajax='false'>{$section->name}</a>";
 			}
 		}
 		if ($sectionList) echo "<div data-role='collapsible' data-collapsed='true'><h3>Administrera</h3>$sectionList</div>";
-		} ?>
+
+		// TODO: This is for testing only. Remove before switching to production!
+		$molndal = new Section(52);
+		if (!($molndal->getAccess($currentUser) & FFBoka::ACCESS_SECTIONADMIN)) { ?>
+		    <form data-ajax="false">
+		    	<p>Under testfasen kan du ge dig själv administratörs-behörighet i LA Mölndal för att testa:</p>
+		    	<input type="hidden" name="action" value="make me admin">
+		    	<input data-theme="b" type="submit" value="Gör mig till admin i LA Mölndal">
+		    </form><?php
+		}
+        } ?>
+		
 
 		<div data-role='collapsible' data-collapsed='true'>
 			<h3>Boka som gäst</h3>
 			<?php // List of sections with categories open for guests
-			$stmt = $db->query("SELECT sections.* FROM categories INNER JOIN sections USING (sectionID) WHERE access_external GROUP BY sections.name");
-			if (!$stmt->rowCount()) echo "<p>Det finns inget att boka som gäst just nu.</p>";
-			while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-				echo "<a href='book.php?sectionID={$row['sectionID']}&guest' class='ui-btn'>{$row['name']}</a>";
+			foreach ($FF->getAllSections() as $section) {
+				if ($section->showFor(new User(0))) {
+					echo "<a href='book.php?sectionId={$section->id}&guest' class='ui-btn'>{$section->name}</a>";
+				}
 			} ?>
 		</div>
 	</div><!-- /collapsibleset -->
 
-	<?php if (!isset($_SESSION['user']['userID'])) { ?>
+	<?php if (!($_SESSION['authenticatedUser'])) { ?>
 		<form id="formLogin" style="padding:10px 20px;" data-ajax="false" method="POST" action="index.php">
 			<h3>Inloggning</h3>
 			<p>Du loggar in med samma lösenord som i aktivitetshanteraren.</p>
-			<p class="ui-body ui-body-b">Under testfasen räcker det med ditt medlemsnummer. Inget lösenord behövs. Men du kan ange numret till en lokalavdelning som lösenord för att simulera att du tillhör den lokalavdelningen (testa 52=Mölndal). Då tilldelas du även uppdraget Ordförande i den lokalavdelningen, så att du kan komma åt admin-gränssnittet.</p>
+			<p class="ui-body ui-body-b">Under testfasen räcker det med ditt medlemsnummer. Inget lösenord behövs.</p>
 			<input type="hidden" name="redirect" id="loginRedirect" value="">
-			<input name="ID" value="" placeholder="medlems- eller personnr" required>
+			<input name="id" value="" placeholder="medlems- eller personnr" required>
 			<input name="password" value="" placeholder="Lösenord" type="password">
-			<div id="divRememberme" style="<?= empty($_COOKIE['cookiesOK']) ? "display:none;" : "" ?>"><label><input data-mini='true' name='rememberme' value='1' type='checkbox'> Kom ihåg mig</label></div>
+			<div id="div-remember-me" style="<?= empty($_COOKIE['cookiesOK']) ? "display:none;" : "" ?>"><label><input data-mini='true' name='rememberMe' value='1' type='checkbox'> Kom ihåg mig</label></div>
 			<button name="login" value="login" class="ui-btn ui-shadow ui-btn-b ui-btn-icon-right ui-icon-user">Logga in</button>
 		</form>
 	<?php } ?>

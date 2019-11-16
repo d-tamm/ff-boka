@@ -1,6 +1,6 @@
 <?php
 session_start();
-require("common.php");
+require(__DIR__."/inc/common.php");
 global $db;
 
 if (isset($_REQUEST['sectionID'])) {

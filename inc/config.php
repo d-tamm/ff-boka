@@ -1,4 +1,6 @@
 <?php
+use FFBoka\FFBoka;
+
 $cfg = array(
 	// Database connection settings
 	"dbhost" => "127.0.0.1",
@@ -38,17 +40,22 @@ $cfg = array(
 
 	// Section bound assignments always giving admin access to section
 	"sectionAdmins" => array('Ordförande', 'Vice ordförande'),
-	"catAccessLevels" => array("Ingen behörighet", "Kan visa kategorin och göra förfrågningar", "Kan boka själv", "Kan boka och bekräfta förfrågningar"),
+	"catAccessLevels" => array(
+	    FFBoka::ACCESS_NONE     => "Ingen behörighet",
+	    FFBoka::ACCESS_READASK  => "Kan göra förfrågningar men inte se upptaget-information",
+	    FFBoka::ACCESS_PREBOOK  => "Kan se upptaget-information och preliminärboka",
+	    FFBoka::ACCESS_BOOK     => "Kan boka själv",
+	    FFBoka::ACCESS_CONFIRM  => "Kan bekräfta förfrågningar och ändra bokningar",
+        FFBoka::ACCESS_CATADMIN => "Kategoriadmin: Full behörighet"
+    ),
 
 	// DoS prevention, throttling
 	"DoSCount" => 5,		// How many login attempts are allowed within DoSDelay seconds
-	"DoSDelay" => 180,   // delay in seconds after DoSCount unsuccessful logins
+	"DoSDelay" => 18,   // delay in seconds after DoSCount unsuccessful logins
 	
 	// How long shall persistent login ("remember me") be valid? (seconds)
 	"persistLogin" => 60*60*24*365,
 );
 
-define("TYPE_SECTION", 478880001); // GUID indicating sections
-
 // Include secret settings, too (those not to be synchronized to Github).
-include "credentials.php";
+include __DIR__."/credentials.php";

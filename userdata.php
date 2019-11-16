@@ -1,35 +1,38 @@
 <?php
+use FFBoka\User;
+use FFBoka\Section;
+
 session_start();
-require("common.php");
+require(__DIR__."/inc/common.php");
 global $db;
 
-// Show only for logged in users
-if (!$_SESSION['user']['userID']) {
-	header("Location: index.php");
-	die();
+// This page may only be accessed by registered users
+if (!$_SESSION['authenticatedUser']) {
+    header("Location: /");
+    die();
 }
+
+$currentUser = new User($_SESSION['authenticatedUser']);
 
 switch ($_REQUEST['action']) {
 case "deleteAccount":
-	$db->exec("DELETE FROM users WHERE userID='{$_SESSION['user']['userID']}'");
-	header("Location: index.php?logout");	
-	break;
+    if ($currentUser->delete()) {
+    	header("Location: index.php?logout&action=accountDeleted");
+        break;
+    } else {
+        $message = "Något gick fel. Kontakta webmaster tack.";
+    }
+    break;
 	
 case "save user data":
-	// User shall supply at least one of mail and phone
-	if ($_POST['name'] && ($_POST['mail'] || $_POST['phone'])) {
-		$stmt = $db->prepare("REPLACE INTO users SET userID='{$_SESSION['user']['ID']}', name=:name, mail=:mail, phone=:phone");
-		$stmt->execute(array(
-			":name"=>$_POST['name'],
-			":mail"=>$_POST['mail'],
-			":phone"=>$_POST['phone'],
-		));
-		$_SESSION['user']['name'] = $_POST['name'];
-		$_SESSION['user']['mail'] = $_POST['mail'];
-		$_SESSION['user']['phone'] = $_POST['phone'];
-		header("Location: index.php");
+	// User shall supply name, mail and phone
+	if ($_POST['name'] && $_POST['mail'] && $_POST['phone']) {
+	    $currentUser->name = $_POST['name'];
+	    $currentUser->mail = $_POST['mail'];
+	    $currentUser->phone = $_POST['phone'];
+		header("Location: index.php?message=" . urlencode("Dina kontaktuppgifter har sparats."));
 	} else {
-		$message = "Ange minst ditt namn samt antingen epostadress eller mobilnummer, tack.";
+		$message = "Fyll i namn, epostadress och mobilnummer, tack.";
 	}
 	break;
 }
@@ -54,7 +57,7 @@ if ($_GET['first_login']) $message = "Välkommen till resursbokningen! Innan du 
 	});
 	
 	function deleteAccount() {
-		if (window.confirm("Bekräfta att du vill radera ditt konto i resursbokningen.")) {
+		if (window.confirm("Bekräfta att du vill radera ditt konto i resursbokningen. Alla dina bokningar och persondata tas bort från systemet och kan inte återställas!")) {
 			location.href="userdata.php?action=deleteAccount";
 		}
 	}
@@ -65,47 +68,50 @@ if ($_GET['first_login']) $message = "Välkommen till resursbokningen! Innan du 
 
 <body>
 <div data-role="page" id="page_userdata">
-	<?= head("Min sida") ?>
+	<?= head("Min sida", $currentUser) ?>
 	<div role="main" class="ui-content">
+    <div data-role="popup" data-overlay-theme="b" id="popupMessage" class="ui-content">
+    	<p><?= isset($message) ? $message : "" ?></p>
+    	<a href='#' data-rel='back' class='ui-btn ui-btn-icon-left ui-btn-inline ui-corner-all ui-icon-check'>OK</a>
+    </div>
 
 	<div data-role='collapsibleset' data-inset='false'>
 		
 		<div data-role='collapsible' data-collapsed='false'>
 			<h3>Kontaktuppgifter</h3>
-			<div data-role="popup" data-overlay-theme="b" id="popupMessage" class="ui-content">
-				<p><?= isset($message) ? $message : "" ?></p>
-				<?= isset($dontShowOK) ? "" : "<a href='#' data-rel='back' class='ui-btn ui-btn-icon-left ui-btn-inline ui-corner-all ui-icon-check'>OK</a>" ?>
-			</div>
 			
-			<form action="userdata.php" method="post" data-ajax="false" onSubmit="saveUserData">
-				<p>Uppgifter om dig så andra vet vem du är och hur de får tag i dig. Ange minst ditt namn samt antingen epostadress eller mobilnummer, tack.</p>
+			<form action="" method="post" data-ajax="false">
+				<p>Uppgifter om dig så andra vet vem du är och hur de kan får tag i dig.</p>
 				<input type="hidden" name="action" value="save user data">
+				<p>Medlemsnummer: <?= $currentUser->id ?></p>
 				<div class="ui-field-contain">
-					<label for="userdata_name">Namn:</label>
-					<input type="text" name="name" id="userdata_name" placeholder="Namn" value="<?= $_POST['name'] ? $_POST['name'] : $_SESSION['user']['name'] ?>">
+					<label for="userdata_name" class="required">Namn:</label>
+					<input type="text" name="name" id="userdata_name" required placeholder="Namn" value="<?= $_POST['name'] ? $_POST['name'] : $currentUser->name ?>">
 				</div>
 				<div class="ui-field-contain">
-					<label for="userdata_mail">Epost:</label>
-					<input type="email" name="mail" id="userdata_mail" placeholder="Epost" value="<?= $_POST['mail'] ? $_POST['mail'] : $_SESSION['user']['mail'] ?>">
+					<label for="userdata_mail" class="required">Epost:</label>
+					<input type="email" name="mail" id="userdata_mail" required placeholder="Epost" value="<?= $_POST['mail'] ? $_POST['mail'] : $currentUser->mail ?>">
 				</div>
 				<div class="ui-field-contain">
-					<label for="userdata_phone">Mobil:</label>
-					<input type="tel" name="phone" id="userdata_phone" placeholder="Mobilnummer" value="<?= $_POST['phone'] ? $_POST['phone'] : $_SESSION['user']['phone'] ?>">
+					<label for="userdata_phone" class="required">Telefon:</label>
+					<input type="tel" name="phone" id="userdata_phone" required placeholder="Mobilnummer" value="<?= $_POST['phone'] ? $_POST['phone'] : $currentUser->phone ?>">
 				</div>
 				<input type="submit" value="Spara" data-icon="check">
+				<p>Ditt lösenord hanteras på <a href="https://www.friluftsframjandet.se" target="_blank">Friluftsfrämjandets hemsida</a>. Du kan inte ändra det här.</p>
 			</form>
 		</div>
 
 
-		<?php if ($_SESSION['user']['assignments']) { ?>
+		<?php if ($currentUser->assignments) { ?>
 		<div data-role='collapsible'>
 			<h3>Uppdrag</h3>
 			<p>Här listas de uppdrag som du har enligt aktivitetshanteraren. De används i resurshanteringen för att tilldela behörigheter.</p>
 			<ul><?php
-				foreach ($_SESSION['user']['assignments'] as $ass) {
-					$stmt = $db->query("SELECT name FROM sections WHERE sectionID={$ass['sectionID']}");
-					$row = $stmt->fetch(PDO::FETCH_ASSOC);
-					echo "<li>{$ass['name']} ({$row['name']})</li>";
+				foreach ($currentUser->assignments as $sectionId=>$assInSec) {
+				    $section = new Section($sectionId);
+				    foreach ($assInSec as $ass) {
+    					echo "<li>$ass ({$section->name})</li>";
+				    }
 				} ?>
 			</ul>
 		</div>
@@ -113,16 +119,16 @@ if ($_GET['first_login']) $message = "Välkommen till resursbokningen! Innan du 
 	
 		<div data-role='collapsible'>
 			<h3>Radera kontot</h3>
-			<p>Om du inte längre vill använda resursbokningen kan du radera personuppgifterna ovan. Om du gör det loggas du ut, och ditt konto raderas. Nästa gång du loggar in igen måste du ange nya personuppgifter innan du kan använda tjänsten igen.</p>
+			<p>Om du inte längre vill använda resursbokningen kan du radera alla dina personuppgifter i systemet. Om du gör det loggas du ut, och ditt konto med alla relaterade uppgifter raderas. Om du åter vill använda tjänsten loggar du in igen med ditt medlemsnummer och måste då ange dina personuppgifter på nytt.</p>
 			<p>Att radera ditt konto här påverkar inte ditt konto i aktivitetshanteraren.</p>
-			<button class="ui-btn ui-btn-c" onClick="deleteAccount();">Radera mina uppgifter</button>
+			<button class="ui-btn ui-btn-c" onClick="deleteAccount();" data-ajax='false'>Radera mina uppgifter</button>
 		</div>
 	
 	
 		<div data-role='collapsible'>
 			<h3>Sessionsdata</h3><!-- TODO ta bort efter testfasen -->
 			<p>Visas för teständamål. Tas bort i produktion.</p>
-			<pre><?php print_r($_SESSION['user']); ?></pre>
+			<pre><?php print_r($_SESSION); ?></pre>
 		</div>
 
 	</div><!--/collapsibleset-->
