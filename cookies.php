@@ -1,6 +1,6 @@
 <?php
 session_start();
-require("common.php");
+require("inc/common.php");
 
 
 ?><!DOCTYPE html>
