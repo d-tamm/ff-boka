@@ -1,6 +1,6 @@
 <?php
 session_start();
-require("common.php");
+require(__DIR__."/../inc/common.php");
 global $db;
 
 if (!isSectionAdmin($_SESSION['sectionID'])) {
@@ -16,7 +16,7 @@ function imageHtml($itemID) {
 	$stmt = $db->query("SELECT item_images.imageID AS imageID, item_images.caption, thumb, items.imageID AS featured_image FROM item_images INNER JOIN items USING (itemID) WHERE itemID=$itemID");
 	while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 		$ret .= "<div class='ui-body ui-body-a ui-corner-all'>\n";
-		$ret .= "<img class='item-img-preview' src='image.php?type=item&ID={$row['imageID']}'>";
+		$ret .= "<img class='item-img-preview' src='/image.php?type=item&ID={$row['imageID']}'>";
 		$ret .= "<textarea class='item-img-caption' placeholder='Bildtext' data-image-id='{$row['imageID']}'>{$row['caption']}</textarea>";
 		$ret .= "<div class='ui-grid-a'>";
 		$ret .= "<div class='ui-block-a'><label><input type='radio' name='main_image' onClick='setFeaturedImg({$row['imageID']});' value='{$row['imageID']}' " . ($row['imageID']==$row['featured_image'] ? "checked='true'" : "") . ">Huvudbild</label></div>";
