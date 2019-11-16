@@ -22,11 +22,24 @@
 	right: 0.4em;
 }
 
+/* required fields in forms */
+label.required:after {
+	content: " *";
+	font-weight: bold;
+	color: red;
+}
+input:invalid {
+	border:1px solid red;
+}
+
 .confirm-change label, .confirm-change span, .item-img-caption.confirm-change {
 	background:#75B22A !important;
 }
+input.change-confirmed, textarea.change-confirmed {
+	background:#75B22A !important;
+}
 
-.check-ass, .prebook-text, .item-img-caption {
+.ajax-input, .check-ass, .prebook-text, .item-img-caption {
 	transition: all 700ms;
 }
 
@@ -49,10 +62,6 @@
 #assigned-cat-access a, #assigned-cat-access p {
 	/* Show whole assignment and access text even on small screens */
 	white-space:normal;
-}
-
-#cat-access-details {
-	display:none;
 }
 
 .item-img-preview {
