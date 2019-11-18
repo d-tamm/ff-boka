@@ -35,7 +35,7 @@ $section = new Section($_SESSION['sectionId']);
 $currentUser = new User($_SESSION['authenticatedUser']);
 
 // Only allow users which have at least some admin role in this section
-if (!$section->showFor($currentUser, FFBoka::ACCESS_CONFIRM)) {
+if (!$section->showFor($currentUser, FFBoka::ACCESS_CATADMIN)) {
 	header("Location: ..");
 	die();
 }
@@ -109,7 +109,7 @@ unset($_SESSION['catId']);
 			<ul data-role="listview">
 			<?php
 			foreach ($section->getMainCategories() as $cat) {
-			    if ($cat->showFor($currentUser, FFBoka::ACCESS_CONFIRM)) {
+			    if ($cat->showFor($currentUser, FFBoka::ACCESS_CATADMIN)) {
     				echo "<li><a href='category.php?catId={$cat->id}' data-ajax='false'>
     					{$cat->caption}
     					" . embedImage($cat->thumb);
@@ -119,7 +119,7 @@ unset($_SESSION['catId']);
     				echo "<span class='ui-li-count'>{$cat->itemCount}</span></a></li>";
 			    }
 			}
-			if ($section->getAccess($currentUser) & FFBoka::ACCESS_SECTIONADMIN) echo "<li><a href='#' onClick='newCat();'>Skapa ny kategori</a></li>"; ?>
+			if ($section->getAccess($currentUser) & FFBoka::ACCESS_SECTIONADMIN) echo "<li><a href='category.php?action=new' data-ajax='false'>Skapa ny kategori</a></li>"; ?>
 			</ul>
 			<br>
 		</div>
@@ -209,14 +209,6 @@ unset($_SESSION['catId']);
         			}
     			});
 			}
-		}
-
-		function newCat() {
-			caption = prompt("Rubrik på nya kategorin:");
-			if (caption != null & caption.length>0) {
-				location.href="category.php?action=newCat&caption=" + encodeURIComponent(caption);
-			}
-			return false;
 		}
 	</script>
 

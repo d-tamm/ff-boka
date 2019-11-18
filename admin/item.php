@@ -1,26 +1,45 @@
 <?php
-session_start();
-require(__DIR__."/../inc/common.php");
-global $db;
+use FFBoka\User;
+use FFBoka\Category;
+use FFBoka\FFBoka;
+use FFBoka\Item;
+use FFBoka\Image;
+global $cfg;
 
-if (!isSectionAdmin($_SESSION['sectionID'])) {
-	header("Location: index.php");
-	die();
+session_start();
+require(__DIR__ . "/../inc/common.php");
+
+if (!isset($_SESSION['catId'])) {
+    header("Location: index.php");
+    die();
+}
+
+if (isset($_REQUEST['itemId'])) $_SESSION['itemId'] = $_REQUEST['itemId'];
+$item = new Item($_SESSION['itemId']);
+$currentUser = new User($_SESSION['authenticatedUser']);
+$cat = new Category($_SESSION['catId']);
+
+// Check access permissions.
+if (!$cat->showFor($currentUser, FFBoka::ACCESS_CATADMIN)) {
+    header("Location: ..");
+    die();
 }
 
 
-function imageHtml($itemID) {
-	// Returns HTML code for the image block.
-	global $db;
-	if (!$itemID) return "";
-	$stmt = $db->query("SELECT item_images.imageID AS imageID, item_images.caption, thumb, items.imageID AS featured_image FROM item_images INNER JOIN items USING (itemID) WHERE itemID=$itemID");
-	while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+/**
+ * Composes an HTML string showing the item's images 
+ * @param Item $item
+ * @return string Returns HTML code for the image block.
+ */
+function imageHtml(Item $item) {
+    $ret = "";
+    foreach ($item->images() as $image) {
 		$ret .= "<div class='ui-body ui-body-a ui-corner-all'>\n";
-		$ret .= "<img class='item-img-preview' src='/image.php?type=item&ID={$row['imageID']}'>";
-		$ret .= "<textarea class='item-img-caption' placeholder='Bildtext' data-image-id='{$row['imageID']}'>{$row['caption']}</textarea>";
+		$ret .= "<img class='item-img-preview' src='../image.php?type=itemImage&id={$image->id}'>";
+		$ret .= "<textarea class='item-img-caption ajax-input' placeholder='Bildtext' data-id='{$image->id}'>{$image->caption}</textarea>";
 		$ret .= "<div class='ui-grid-a'>";
-		$ret .= "<div class='ui-block-a'><label><input type='radio' name='main_image' onClick='setFeaturedImg({$row['imageID']});' value='{$row['imageID']}' " . ($row['imageID']==$row['featured_image'] ? "checked='true'" : "") . ">Huvudbild</label></div>";
-		$ret .= "<div class='ui-block-b'><input type='button' data-corners='false' class='ui-btn ui-corner-all' value='Ta bort' onClick='delItemImg({$row['imageID']});'></div>";
+		$ret .= "<div class='ui-block-a'><label><input type='radio' name='imageId' onClick='setFeaturedImg({$image->id});' value='{$image->id}' " . ($image->id==$item->imageId ? "checked='true'" : "") . ">Huvudbild</label></div>";
+		$ret .= "<div class='ui-block-b'><input type='button' data-corners='false' class='ui-btn ui-corner-all' value='Ta bort' onClick='deleteImage({$image->id});'></div>";
 		$ret .= "</div></div><br>";
 	}
 	return $ret;
@@ -28,100 +47,64 @@ function imageHtml($itemID) {
 
 
 switch ($_REQUEST['action']) {
-case "save item":
-	if ($_REQUEST['itemID']) {
-		$stmt = $db->prepare("UPDATE items SET caption=:caption, description=:description, active=:active WHERE itemID=:itemID");
-		$stmt->bindValue(":itemID", $_REQUEST['itemID']);
-	} else {
-		$stmt = $db->prepare("INSERT INTO items SET catID=:catID, caption=:caption, description=:description, active=:active");
-		$stmt->bindValue(":catID", $_SESSION['catID']);
-	}
-	$stmt->bindValue(":caption", $_REQUEST['caption']);
-	$stmt->bindValue(":description", $_REQUEST['description']);
-	$stmt->bindValue(":active", $_REQUEST['active']+0);
-	$stmt->execute();
-	if (!$_REQUEST['itemID']) {
-		$_REQUEST['itemID'] = $db->lastInsertId();
-		$stayOnPage = true;
-	}
-	if (!$stayOnPage) {
-		header("Location: category.php?expand=items");
-		die();
-	}
-	break;
-	
-case "delete_item":
-	$stmt = $db->prepare("DELETE FROM items WHERE itemID=?");
-	$stmt->execute(array($_GET['itemID']));
-	header("Location: category.php?expand=items");
-	break;
-	
-case "copy_item":
-	// copy the item itself
-	$stmt = $db->prepare("INSERT INTO items (catID, caption, description) SELECT catID, caption, description FROM items WHERE itemID=?");
-	$stmt->execute(array($_GET['itemID']));
-	$newItemID = $db->lastInsertId();
-	// copy the associated item images
-	$stmt = $db->prepare("INSERT INTO item_images (itemID, image, thumb) SELECT $newItemID, image, thumb FROM item_images WHERE itemID=?");
-	$stmt->execute(array($_GET['itemID']));
-	$_REQUEST['itemID'] = $newItemID;
-	break;
-	
-case "add image":
-	if (is_uploaded_file($_FILES['image']['tmp_name'])) {
-		if ($image = getUploadedImage($_FILES['image'])) {
-			$stmt = $db->prepare("INSERT INTO item_images SET itemID=:itemID, image=:image, thumb=:thumb");
-			$stmt->execute(array(
-				":itemID" => $_REQUEST['itemID'],
-				":image" => $image['image'],
-				":thumb" => $image['thumb'],
-			));
-			// Set as featured image if it is the first one for this item
-			$stmt = $db->prepare("UPDATE items SET imageID=:imageID WHERE itemID=:itemID AND imageID IS NULL");
-			$stmt->execute(array(
-				":imageID"=>$db->lastInsertId(),
-				":itemID"=>$_REQUEST['itemID'],
-			));
-			die(json_encode(array("html"=>imageHtml($_REQUEST['itemID']))));
-		}
-		die(json_encode(array("error"=>"Wrong file type")));
-	}
-	die(json_encode(array("error"=>"File is not an uploaded file")));
-	break;
-	
-case "delete_image":
-	$stmt = $db->prepare("DELETE FROM item_images WHERE imageID=?");
-	$stmt->execute(array($_GET['imageID']));
-	die(imageHtml($_REQUEST['itemID']));
-	break;
-	
-case "save_img_caption":
-	$stmt = $db->prepare("UPDATE item_images SET caption=:caption WHERE imageID=:imageID");
-	$stmt->execute(array(
-		":imageID"=>$_GET['imageID'],
-		":caption"=>$_GET['caption'],
-	));
-	die($_GET['imageID']);
-	break;
-	
-case "set_featured_img":
-	$stmt = $db->prepare("UPDATE items SET imageID=:imageID WHERE itemID=:itemID");
-	$stmt->execute(array(
-		":imageID"=>$_GET['imageID'],
-		":itemID"=>$_GET['itemID'],
-	));
-	die($_GET['imageID']);
-	break;
-}
+    case "newItem":
+        $item = $cat->addItem();
+        $_SESSION['itemId'] = $item->id;
+        break;
 
-// Get item data
-if ($_REQUEST['itemID']) {
-	$stmt = $db->prepare("SELECT items.*, categories.caption AS catCaption FROM items INNER JOIN categories ON (items.catID=categories.catID) WHERE itemID=?");
-	$stmt->execute(array($_REQUEST['itemID']));
-} else {
-	$stmt = $db->query("SELECT categories.caption AS catCaption FROM categories WHERE catID={$_SESSION['catID']}");
+    case "copyItem":
+        $item = $item->copy();
+        $_SESSION['itemId'] = $item->id;
+        break;
+        
+    case "setItemProp":
+        // Reply to AJAX request
+        switch ($_REQUEST['name']) {
+            case "caption":
+            case "description":
+            case "active":
+            case "imageId":
+                header("Content-Type: application/json");
+                if ($_REQUEST['value']=="NULL") $item->{$_REQUEST['name']} = null;
+                else $item->{$_REQUEST['name']} = htmlentities($_REQUEST['value']);
+                die(json_encode(["status"=>"OK"]));
+        }
+        break;
+
+    case "deleteItem":
+        $item->delete();
+    	header("Location: category.php?expand=items");
+        break;
+    	
+    case "addImage":
+        // Reply to AJAX request
+        header("Content-Type: application/json");
+        if (is_uploaded_file($_FILES['image']['tmp_name'])) {
+    	    $image = $item->addImage();
+    	    if (!$image->setImage($_FILES['image'], $cfg['maxImgSize'], 80, $cfg['uploadMaxFileSize'])) {
+    	        die(json_encode(array("error"=>"Fel filtyp eller för stor fil. Prova med en jpg- eller png-bild som är mindre än {$cfg['uploadMaxFileSize']}.")));
+    	    }
+			// Set as featured image if it is the first one for this item
+			if (!$item->imageId) $item->imageId = $image->id;
+			die(json_encode(array("html"=>imageHtml($item))));
+    	}
+    	die(json_encode(array("error"=>"File is not an uploaded file")));
+    	
+    case "deleteImage":
+        // Reply to AJAX request
+        header("Content-Type: application/json");
+        $image = new Image($_GET['id']);
+        $image->delete();
+        die(json_encode(array("html"=>imageHtml($item))));
+    	
+    case "saveImgCaption":
+        // Reply to AJAX request
+        header("Content-Type: application/json");
+        $image = new Image($_GET['id']);
+        $image->caption = htmlentities($_GET['caption']);
+        die(json_encode(array("html"=>$image->caption)));
+    	
 }
-$item = $stmt->fetch(PDO::FETCH_ASSOC);
 
 
 ?><!DOCTYPE html>
@@ -134,47 +117,42 @@ $item = $stmt->fetch(PDO::FETCH_ASSOC);
 
 <body>
 <div data-role="page" id="page_item">
-	<?= head($item['caption'] ? $item['caption'] : "Ny utrustning") ?>
+	<?= head($item->caption ? $item->caption : "Ny utrustning") ?>
 	<div role="main" class="ui-content">
-	
-	<?= $newItemID ? "<div class='ui-body ui-body-b ui-corner-all'><p>Här visas den nya kopian av din post.</p><p><b>OBS:</b> Posten är inte ännu aktiverad. Du måste också välja huvudbild igen.</p><p>Du kanske vill justera rubriken?</p></div>" : "" ?>
 	
 	<form action="" method="post" enctype="multipart/form-data" data-ajax="false">
 		<input type="hidden" name="action" value="save item">
-		<input type="hidden" name="itemID" value="<?= $item['itemID'] ?>">
-		<p><a href='admin.php'>LA <?= $_SESSION['sectionName'] . "</a> &rarr; <a href='category.php'>" . $item['catCaption'] ?></a></p>
+		<input type="hidden" name="itemID" value="<?= $item->id ?>">
+
+		<p><?php
+		foreach ($cat->getPath() as $p) {
+		    if ($p['id']) echo " &rarr; ";
+		    echo "<a href='" . ($p['id'] ? "category.php?catId={$p['id']}" : "index.php") . "'>{$p['caption']}</a>";
+		}?></p>
+		
 		<div class="ui-field-contain">
 			<label for="item-caption">Rubrik:</label>
-			<input name="caption" id="item-caption" placeholder="Rubrik" value="<?= $item['caption'] ?>">
+			<input name="caption" class="ajax-input" id="item-caption" placeholder="Rubrik" value="<?= $item->caption ?>">
 		</div>
-		<div class="ui-field-contain">
-			<label for="item-desc">Beskrivning:</label>
-			<textarea name="description" id="item-desc" placeholder="Beskrivning"><?= $item['description'] ?></textarea>
-		</div>
-		<div class="ui-field-contain">
-			<label for="item-active">Aktiv (kan bokas)</label>
-			<input type="checkbox" name="active" value="1" id="item-active" <?= $item['active'] ? "checked='true'" : "" ?>>
-		</div>
-		<?php if ($item['itemID']) { ?>
-		<div class="ui-grid-a">
-			<div class="ui-block-a"><input type="submit" data-corners="false" value="Spara" data-theme="b"></div>
-			<div class='ui-block-b'><input type='button' data-corners="false" id='delete_item' value='Ta bort' data-theme='c'></div>
-		</div>
-		<div class='ui-grid-solo'>
-			<div class='ui-block-a'><input type='button' data-corners="false" value='Duplicera posten' onClick="location.href='?action=copy_item&itemID=<?= $item['itemID'] ?>';"></div>
-		</div>
-		<?php } else { ?>
-		<input type="submit" value="Fortsätt">
-		<?php }
 		
-		if ($item['itemID']) { ?>
+		<div class="ui-field-contain">
+			<label for="item-description">Beskrivning:</label>
+			<textarea name="description" class="ajax-input" id="item-description" placeholder="Beskrivning"><?= $item->description ?></textarea>
+		</div>
+		
+		<label>		<input type="checkbox" name="active" value="1" id="item-active" <?= $item->active ? "checked='true'" : "" ?>>Aktiv (kan bokas)</label>
+		
+		<div><input type='button' data-corners="false" id='delete-item' value='Ta bort resursen' data-theme='c'></div>
+		<div><input type='button' data-corners="false" value='Duplicera resursen' onClick="location.href='?action=copyItem';"></div>
+		
+		<hr>
+		
 		<h3>Bilder</h3>
 		<div class="ui-field-contain">
 			<label for="file-item-img">Ladda upp ny bild:</label>
 			<input type="file" name="image" id="file-item-img">
 		</div>
-		<div id='item-images'><?= imageHtml($item['itemID']) ?></div>
-		<?php } ?>
+		<div id='item-images'><?= imageHtml($item) ?></div>
 		
 	</form>
 
@@ -182,10 +160,36 @@ $item = $stmt->fetch(PDO::FETCH_ASSOC);
 
 	<script>
 		var toutSavedIndicator;
+		var toutSetValue;
+
+		function setItemProp(name, val) {
+			$.getJSON("item.php", {action: "setItemProp", name: name, value: val}, function(data, status) {
+				if (data.status=="OK") {
+					$("#item-"+name).addClass("change-confirmed");
+					setTimeout(function(){ $("#item-"+name).removeClass("change-confirmed"); }, 1500);
+				} else {
+					alert("Kan inte spara ändringen :(");
+				}
+			});
+		}
+
+		$("#item-caption").on('input', function() {
+			clearTimeout(toutSetValue);
+			toutSetValue = setTimeout(setItemProp, 1000, "caption", this.value);
+		});
 		
-		$("#delete_item").click(function() {
+		$("#item-description").on('input', function() {
+			clearTimeout(toutSetValue);
+			toutSetValue = setTimeout(setItemProp, 1000, "description", this.value);
+		});
+
+		$("#item-active").click(function() {
+			setItemProp("active", this.checked ? 1 : 0);
+		});
+		
+		$("#delete-item").click(function() {
 			if (confirm("Du håller på att ta bort utrustningen. Fortsätta?")) {
-				location.href="?action=delete_item&itemID=<?= $item['itemID'] ?>";
+				location.href="?action=deleteItem";
 			}
 		});
 
@@ -194,11 +198,8 @@ $item = $stmt->fetch(PDO::FETCH_ASSOC);
 			var fd = new FormData();
 			var file = $('#file-item-img')[0].files[0];
 			fd.append('image',file);
-			fd.append('action', "add image");
-			fd.append('itemID', <?= $item['itemID'] ?>);
-			
+			fd.append('action', "addImage");
 			$.mobile.loading("show", {});
-
 			$.ajax({
 				url: 'item.php',
 				type: 'post',
@@ -211,35 +212,46 @@ $item = $stmt->fetch(PDO::FETCH_ASSOC);
 					if (data.html) {
 						$('#item-images').html(data.html).enhanceWithin();
 					} else {
-						alert('Filen har inte laddats upp. Välj en jpg- eller png-fil.');
+						alert(data.error);
 					}
 				},
 			});
 		});
 		
-		$(".item-img-caption").on('input', function() {
+		$("#item-images").on("input", ".item-img-caption", function(e, data) {
 			// Save image caption to DB via ajax
 			var _this = this;
 			clearTimeout(toutSavedIndicator);
 			toutSavedIndicator = setTimeout(function() {
-				$.get("?action=save_img_caption&imageID="+$(_this).data('image-id')+"&caption="+encodeURIComponent(_this.value), function(data, status) {
-					$(_this).addClass("confirm-change");
-					setTimeout(function(){
-						$(_this).removeClass("confirm-change");
-					},1000);
-				});
+				$.getJSON(
+					"item.php",
+					{ action: 'saveImgCaption', id: $(_this).data('id'), caption: _this.value },
+					function(data, status) {
+						$(_this).addClass("change-confirmed");
+						setTimeout(function(){ $(_this).removeClass("change-confirmed"); },1000);
+					}
+				);
 			}, 1000);
 		});
 		
-		function setFeaturedImg(imageID) {
-			$.get("?action=set_featured_img&itemID=<?= $item['itemID'] ?>&imageID="+imageID, function(data, status) {
-			});
+		function setFeaturedImg(imageId) {
+			$.getJSON(
+				"item.php",
+				{ action: "setItemProp", name: "imageId", value: imageId },
+				function(data, status) {
+					if (data.error) alert(data.error);
+				}
+			);
 		}
 		
-		function delItemImg(imageID) {
+		function deleteImage(id) {
 			if (confirm("Vill du ta bort denna bild?")) {
-				$.get("?action=delete_image&itemID=<?= $item['itemID'] ?>&imageID="+imageID, function(data, status) {
-					$('#item-images').html(data).enhanceWithin();
+				$.getJSON("?action=deleteImage&id="+id, function(data, status) {
+					if (data.html) {
+						$('#item-images').html(data.html).enhanceWithin();
+					} else {
+						alert(data.error);
+					}
 				});
 			}
 		}

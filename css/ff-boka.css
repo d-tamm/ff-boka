@@ -32,15 +32,16 @@ input:invalid {
 	border:1px solid red;
 }
 
-.confirm-change label, .confirm-change span, .item-img-caption.confirm-change {
-	background:#75B22A !important;
-}
-input.change-confirmed, textarea.change-confirmed {
+input.change-confirmed, textarea.change-confirmed, a.change-confirmed {
 	background:#75B22A !important;
 }
 
 .ajax-input, .check-ass, .prebook-text, .item-img-caption {
 	transition: all 700ms;
+}
+
+li.selected {
+	background: #407EC9 !important;
 }
 
 #cat-img-preview {

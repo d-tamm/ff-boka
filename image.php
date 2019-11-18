@@ -1,6 +1,7 @@
 <?php
 use FFBoka\Category;
 use FFBoka\item;
+use FFBoka\Image;
 
 session_start();
 require(__DIR__."/inc/common.php");
@@ -13,8 +14,8 @@ case "category":
     echo $cat->image;
 	break;
 
-case "item":
-    $item = new item($_GET['id']);
-    echo $item->image;
+case "itemImage":
+    $image= new Image($_GET['id']);
+    echo $image->image;
 	break;
 }

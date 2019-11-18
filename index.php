@@ -115,14 +115,13 @@ if (isset($_REQUEST['message'])) $message .= "<br>".$_REQUEST['message'];
 		<a href='#' data-rel='back' class='ui-btn ui-btn-icon-left ui-btn-inline ui-corner-all ui-icon-check'>OK</a>
 	</div>
 
-	<p class="ui-body ui-body-c">Resursbokningen genomgår just nu en större omstrukturering av koden för att få en bättre bas att stå på. Du är välkommen ändå, men räkna med att inte allt fungerar.</p>
-
 	<img src="resources/liggande-bla.png" width="100%">
 
 	<div data-role='collapsibleset' data-inset='false'>
 		<?php if ($_SESSION['authenticatedUser']) { ?>
 		<div data-role='collapsible' data-collapsed='false'>
 			<h3>Boka som medlem</h3>
+			<p class="ui-body ui-body-a"><a href="#" class="ui-btn ui-btn-inline ui-btn-b ui-corner-all ui-icon-info ui-btn-icon-notext"></a> Jobbar mest med detta just nu :)</p>
 			<?php
 			// Show a list of all sections with categories where user may book resources
 			$sectionList = "";
@@ -139,11 +138,11 @@ if (isset($_REQUEST['message'])) $message .= "<br>".$_REQUEST['message'];
 		// Show a list of all sections where user has admin role
 		$sectionList = "";
 		foreach ($FF->getAllSections() as $section) {
-			if ($section->getAccess($currentUser) >= FFBoka::ACCESS_CONFIRM) {
+			if ($section->showFor($currentUser, FFBoka::ACCESS_CATADMIN)) {
 				$sectionList .= "<a href='admin/?sectionId={$section->id}' class='ui-btn' data-ajax='false'>{$section->name}</a>";
 			}
 		}
-		if ($sectionList) echo "<div data-role='collapsible' data-collapsed='true'><h3>Administrera</h3>$sectionList</div>";
+		if ($sectionList) echo "<div data-role='collapsible' data-collapsed='true'><h3>Administrera</h3><p class='ui-body ui-body-a'>Här fungerar det mesta nu. Testa gärna och återkom med synpunkter!</p>$sectionList</div>";
 
 		// TODO: This is for testing only. Remove before switching to production!
 		$molndal = new Section(52);
@@ -159,6 +158,7 @@ if (isset($_REQUEST['message'])) $message .= "<br>".$_REQUEST['message'];
 
 		<div data-role='collapsible' data-collapsed='true'>
 			<h3>Boka som gäst</h3>
+			<p class="ui-body ui-body-a">Här finns inget fungerande än.</p>
 			<?php // List of sections with categories open for guests
 			foreach ($FF->getAllSections() as $section) {
 				if ($section->showFor(new User(0))) {
