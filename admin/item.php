@@ -27,22 +27,22 @@ if (!$cat->showFor($currentUser, FFBoka::ACCESS_CATADMIN)) {
 
 
 /**
- * Composes an HTML string showing the item's images 
+ * Composes an HTML string showing the item's images
  * @param Item $item
  * @return string Returns HTML code for the image block.
  */
 function imageHtml(Item $item) {
     $ret = "";
     foreach ($item->images() as $image) {
-		$ret .= "<div class='ui-body ui-body-a ui-corner-all'>\n";
-		$ret .= "<img class='item-img-preview' src='../image.php?type=itemImage&id={$image->id}'>";
-		$ret .= "<textarea class='item-img-caption ajax-input' placeholder='Bildtext' data-id='{$image->id}'>{$image->caption}</textarea>";
-		$ret .= "<div class='ui-grid-a'>";
-		$ret .= "<div class='ui-block-a'><label><input type='radio' name='imageId' onClick='setFeaturedImg({$image->id});' value='{$image->id}' " . ($image->id==$item->imageId ? "checked='true'" : "") . ">Huvudbild</label></div>";
-		$ret .= "<div class='ui-block-b'><input type='button' data-corners='false' class='ui-btn ui-corner-all' value='Ta bort' onClick='deleteImage({$image->id});'></div>";
-		$ret .= "</div></div><br>";
-	}
-	return $ret;
+        $ret .= "<div class='ui-body ui-body-a ui-corner-all'>\n";
+        $ret .= "<img class='item-img-preview' src='../image.php?type=itemImage&id={$image->id}'>";
+        $ret .= "<textarea class='item-img-caption ajax-input' placeholder='Bildtext' data-id='{$image->id}'>{$image->caption}</textarea>";
+        $ret .= "<div class='ui-grid-a'>";
+        $ret .= "<div class='ui-block-a'><label><input type='radio' name='imageId' onClick='setFeaturedImg({$image->id});' value='{$image->id}' " . ($image->id==$item->imageId ? "checked='true'" : "") . ">Huvudbild</label></div>";
+        $ret .= "<div class='ui-block-b'><input type='button' data-corners='false' class='ui-btn ui-corner-all' value='Ta bort' onClick='deleteImage({$image->id});'></div>";
+        $ret .= "</div></div><br>";
+    }
+    return $ret;
 }
 
 
@@ -51,7 +51,7 @@ switch ($_REQUEST['action']) {
         $item = $cat->addItem();
         $_SESSION['itemId'] = $item->id;
         break;
-
+        
     case "copyItem":
         $item = $item->copy();
         $_SESSION['itemId'] = $item->id;
@@ -70,40 +70,40 @@ switch ($_REQUEST['action']) {
                 die(json_encode(["status"=>"OK"]));
         }
         break;
-
+        
     case "deleteItem":
         $item->delete();
-    	header("Location: category.php?expand=items");
+        header("Location: category.php?expand=items");
         break;
-    	
+        
     case "addImage":
         // Reply to AJAX request
         header("Content-Type: application/json");
         if (is_uploaded_file($_FILES['image']['tmp_name'])) {
-    	    $image = $item->addImage();
-    	    if (!$image->setImage($_FILES['image'], $cfg['maxImgSize'], 80, $cfg['uploadMaxFileSize'])) {
-    	        die(json_encode(array("error"=>"Fel filtyp eller för stor fil. Prova med en jpg- eller png-bild som är mindre än {$cfg['uploadMaxFileSize']}.")));
-    	    }
-			// Set as featured image if it is the first one for this item
-			if (!$item->imageId) $item->imageId = $image->id;
-			die(json_encode(array("html"=>imageHtml($item))));
-    	}
-    	die(json_encode(array("error"=>"File is not an uploaded file")));
-    	
+            $image = $item->addImage();
+            if (!$image->setImage($_FILES['image'], $cfg['maxImgSize'], 80, $cfg['uploadMaxFileSize'])) {
+                die(json_encode(array("error"=>"Fel filtyp eller för stor fil. Prova med en jpg- eller png-bild som är mindre än {$cfg['uploadMaxFileSize']}.")));
+            }
+            // Set as featured image if it is the first one for this item
+            if (!$item->imageId) $item->imageId = $image->id;
+            die(json_encode(array("html"=>imageHtml($item))));
+        }
+        die(json_encode(array("error"=>"File is not an uploaded file")));
+        
     case "deleteImage":
         // Reply to AJAX request
         header("Content-Type: application/json");
         $image = new Image($_GET['id']);
         $image->delete();
         die(json_encode(array("html"=>imageHtml($item))));
-    	
+        
     case "saveImgCaption":
         // Reply to AJAX request
         header("Content-Type: application/json");
         $image = new Image($_GET['id']);
         $image->caption = htmlentities($_GET['caption']);
         die(json_encode(array("html"=>$image->caption)));
-    	
+        
 }
 
 

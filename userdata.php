@@ -4,6 +4,10 @@ use FFBoka\Section;
 
 session_start();
 require(__DIR__."/inc/common.php");
+<<<<<<< HEAD
+=======
+global $db;
+>>>>>>> b40479cdce884253c62fd0e7ada605ec7e708418
 
 // This page may only be accessed by registered users
 if (!$_SESSION['authenticatedUser']) {
@@ -84,6 +88,7 @@ if ($_GET['first_login']) $message = "Välkommen till resursbokningen! Innan du 
 				<input type="hidden" name="action" value="save user data">
 				<p>Medlemsnummer: <?= $currentUser->id ?></p>
 				<div class="ui-field-contain">
+<<<<<<< HEAD
 					<label for="userdata-name" class="required">Namn:</label>
 					<input type="text" name="name" id="userdata-name" required placeholder="Namn" value="<?= $_POST['name'] ? $_POST['name'] : $currentUser->name ?>">
 				</div>
@@ -94,10 +99,23 @@ if ($_GET['first_login']) $message = "Välkommen till resursbokningen! Innan du 
 				<div class="ui-field-contain">
 					<label for="userdata-phone" class="required">Telefon:</label>
 					<input type="tel" name="phone" id="userdata-phone" required placeholder="Mobilnummer" value="<?= $_POST['phone'] ? $_POST['phone'] : $currentUser->phone ?>">
+=======
+					<label for="userdata_name" class="required">Namn:</label>
+					<input type="text" name="name" id="userdata_name" required placeholder="Namn" value="<?= $_POST['name'] ? $_POST['name'] : $currentUser->name ?>">
+				</div>
+				<div class="ui-field-contain">
+					<label for="userdata_mail" class="required">Epost:</label>
+					<input type="email" name="mail" id="userdata_mail" required placeholder="Epost" value="<?= $_POST['mail'] ? $_POST['mail'] : $currentUser->mail ?>">
+				</div>
+				<div class="ui-field-contain">
+					<label for="userdata_phone" class="required">Telefon:</label>
+					<input type="tel" name="phone" id="userdata_phone" required placeholder="Mobilnummer" value="<?= $_POST['phone'] ? $_POST['phone'] : $currentUser->phone ?>">
+>>>>>>> b40479cdce884253c62fd0e7ada605ec7e708418
 				</div>
 				<input type="submit" value="Spara" data-icon="check">
 				<p>Ditt lösenord hanteras på <a href="https://www.friluftsframjandet.se" target="_blank">Friluftsfrämjandets hemsida</a>. Du kan inte ändra det här.</p>
 			</form>
+<<<<<<< HEAD
 		</div>
 	
 		<div data-role='collapsible'>
@@ -126,6 +144,39 @@ if ($_GET['first_login']) $message = "Välkommen till resursbokningen! Innan du 
 				</ul>
 			<?php } ?>
 		</div>
+=======
+		</div>
+
+
+		<?php if ($currentUser->assignments) { ?>
+		<div data-role='collapsible'>
+			<h3>Uppdrag</h3>
+			<p>Här listas de uppdrag som du har enligt aktivitetshanteraren. De används i resurshanteringen för att tilldela behörigheter.</p>
+			<ul><?php
+				foreach ($currentUser->assignments as $sectionId=>$assInSec) {
+				    $section = new Section($sectionId);
+				    foreach ($assInSec as $ass) {
+    					echo "<li>$ass ({$section->name})</li>";
+				    }
+				} ?>
+			</ul>
+		</div>
+		<?php } ?>
+	
+		<div data-role='collapsible'>
+			<h3>Radera kontot</h3>
+			<p>Om du inte längre vill använda resursbokningen kan du radera alla dina personuppgifter i systemet. Om du gör det loggas du ut, och ditt konto med alla relaterade uppgifter raderas. Om du åter vill använda tjänsten loggar du in igen med ditt medlemsnummer och måste då ange dina personuppgifter på nytt.</p>
+			<p>Att radera ditt konto här påverkar inte ditt konto i aktivitetshanteraren.</p>
+			<button class="ui-btn ui-btn-c" onClick="deleteAccount();" data-ajax='false'>Radera mina uppgifter</button>
+		</div>
+	
+	
+		<div data-role='collapsible'>
+			<h3>Sessionsdata</h3><!-- TODO ta bort efter testfasen -->
+			<p>Visas för teständamål. Tas bort i produktion.</p>
+			<pre><?php print_r($_SESSION); ?></pre>
+		</div>
+>>>>>>> b40479cdce884253c62fd0e7ada605ec7e708418
 
 	</div><!--/collapsibleset-->
 	
