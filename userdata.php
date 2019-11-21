@@ -99,22 +99,6 @@ if ($_GET['first_login']) $message = "Välkommen till resursbokningen! Innan du 
 				<p>Ditt lösenord hanteras på <a href="https://www.friluftsframjandet.se" target="_blank">Friluftsfrämjandets hemsida</a>. Du kan inte ändra det här.</p>
 			</form>
 		</div>
-
-
-		<?php if ($currentUser->assignments) { ?>
-		<div data-role='collapsible'>
-			<h3>Uppdrag</h3>
-			<p>Här listas de uppdrag som du har enligt aktivitetshanteraren. De används i resurshanteringen för att tilldela behörigheter.</p>
-			<ul><?php
-				foreach ($currentUser->assignments as $sectionId=>$assInSec) {
-				    $section = new Section($sectionId);
-				    foreach ($assInSec as $ass) {
-    					echo "<li>$ass ({$section->name})</li>";
-				    }
-				} ?>
-			</ul>
-		</div>
-		<?php } ?>
 	
 		<div data-role='collapsible'>
 			<h3>Radera kontot</h3>
@@ -125,9 +109,22 @@ if ($_GET['first_login']) $message = "Välkommen till resursbokningen! Innan du 
 	
 	
 		<div data-role='collapsible'>
-			<h3>Sessionsdata</h3><!-- TODO ta bort efter testfasen -->
+			<h3>Debug-info</h3><!-- TODO ta bort efter testfasen -->
 			<p>Visas för teständamål. Tas bort i produktion.</p>
+			<p>$_SESSION:</p>
 			<pre><?php print_r($_SESSION); ?></pre>
+
+			<?php if ($currentUser->assignments) { ?>
+				<p>Uppdrag enligt aktivitetshanteraren:</p>
+				<ul><?php
+					foreach ($currentUser->assignments as $sectionId=>$assInSec) {
+						$section = new Section($sectionId);
+						foreach ($assInSec as $ass) {
+							echo "<li>$ass ({$section->name})</li>";
+						}
+					} ?>
+				</ul>
+			<?php } ?>
 		</div>
 
 	</div><!--/collapsibleset-->

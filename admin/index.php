@@ -128,8 +128,11 @@ unset($_SESSION['catId']);
 		
 		<div data-role="collapsible" data-collapsed="<?= $_REQUEST['expand']=="admins" ? "false" : "true" ?>">
 			<h2>Administratörer</h2>
-			<div data-role="collapsible" data-inset="true" data-mini="true" data-collapsed-icon="info">
-				<h4>Vad är det här?</h4>
+
+			<p>Lägg till ny administratör på LA-nivå: (skriv medlemsnummer eller namn)
+				<a href="#popup-help-admin-access" data-rel="popup" class="tooltip ui-btn ui-alt-icon ui-nodisc-icon ui-btn-inline ui-icon-info ui-btn-icon-notext">Tipps</a>
+			</p>
+			<div data-role="popup" id="popup-help-admin-access" class="ui-content">
 				<p>Här ställer du in vilka medlemmar som ska ha behörighet att administrera resursbokningen i lokalavdelningen <?= $section->name ?>. Du kan alltid lägga till en ny admin genom att ange dess medlemsnummer. Om personen tidigare har loggat in i resursbokningen och lagt in sina kontaktuppgifter kan du även hitta hen genom att leta efter namnet istället.</p>
 				<p><?php
                 $allAss = $cfg['sectionAdmins'];
@@ -137,9 +140,8 @@ unset($_SESSION['catId']);
                 echo implode(", ", $allAss) . " och " . $oneAss; ?>
             	har automatiskt administratörsbehörighet.</p>
             	<p>Om du bara vill tilldela behörigheter för att någon ska hantera enskilda kategorier gör du det under respektive kategori.</p>
-            </div>
-            
-			<p>Lägg till ny administratör på LA-nivå: (skriv medlemsnummer eller namn)</p>
+			</div>
+
 			<form class="ui-filterable">
 				<input id="sec-adm-autocomplete-input" data-type="search" placeholder="Lägg till admin...">
 			</form>
@@ -149,11 +151,6 @@ unset($_SESSION['catId']);
 			<ul id="ul-sec-admins" data-role="listview" data-split-icon="delete" data-split-theme="c" data-inset="true">
 				<?= adminList($section) ?>
 			</ul>
-			<p>Dessutom har <?php
-				$allAss = $cfg['sectionAdmins'];
-				$oneAss = array_pop($allAss);
-				echo implode(", ", $allAss) . " och " . $oneAss;
-			?> administratörsbehörighet.</div>
 		<?php } ?>
 
 	</div><!--/collapsibleset-->

@@ -117,11 +117,13 @@ if (isset($_REQUEST['message'])) $message .= "<br>".$_REQUEST['message'];
 
 	<img src="resources/liggande-bla.png" width="100%">
 
+	<p class="ui-body ui-body-b">Välkommen till testplattformen för FFs framtida resursbokning!<br>Här kan du följa utvecklingen av projektet och testa. Var inte rädd för att förstöra något, utan försök gärna att utmana funktionerna och hitta svaga punkter!</p>
+
 	<div data-role='collapsibleset' data-inset='false'>
 		<?php if ($_SESSION['authenticatedUser']) { ?>
 		<div data-role='collapsible' data-collapsed='false'>
 			<h3>Boka som medlem</h3>
-			<p class="ui-body ui-body-a"><a href="#" class="ui-btn ui-btn-inline ui-btn-b ui-corner-all ui-icon-info ui-btn-icon-notext"></a> Jobbar mest med detta just nu :)</p>
+			<p class="ui-body ui-body-a"><i>Jobbar mest med detta just nu :)</i></p>
 			<?php
 			// Show a list of all sections with categories where user may book resources
 			$sectionList = "";
@@ -158,11 +160,11 @@ if (isset($_REQUEST['message'])) $message .= "<br>".$_REQUEST['message'];
 
 		<div data-role='collapsible' data-collapsed='true'>
 			<h3>Boka som gäst</h3>
-			<p class="ui-body ui-body-a">Här finns inget fungerande än.</p>
+			<p class="ui-body ui-body-a"><i>Jobbar mest med detta just nu :)</i></p>
 			<?php // List of sections with categories open for guests
 			foreach ($FF->getAllSections() as $section) {
 				if ($section->showFor(new User(0))) {
-					echo "<a href='book.php?sectionId={$section->id}&guest' class='ui-btn'>{$section->name}</a>";
+					echo "<a href='book.php?sectionId={$section->id}&guest' data-ajax='false' class='ui-btn'>{$section->name}</a>";
 				}
 			} ?>
 		</div>
@@ -170,9 +172,11 @@ if (isset($_REQUEST['message'])) $message .= "<br>".$_REQUEST['message'];
 
 	<?php if (!($_SESSION['authenticatedUser'])) { ?>
 		<form id="formLogin" style="padding:10px 20px;" data-ajax="false" method="POST" action="index.php">
-			<h3>Inloggning</h3>
-			<p>Du loggar in med samma lösenord som i aktivitetshanteraren.</p>
-			<p class="ui-body ui-body-b">Under testfasen räcker det med ditt medlemsnummer. Inget lösenord behövs.</p>
+			<h3>Inloggning <a href="#popup-help-login" data-rel="popup" class="tooltip ui-btn ui-alt-icon ui-nodisc-icon ui-btn-inline ui-icon-info ui-btn-icon-notext">Hjälp</a></h3>
+			<div data-role="popup" id="popup-help-login" class="ui-content">
+				<p>Du loggar in med samma lösenord som i aktivitetshanteraren.</p>
+				<p class="ui-body ui-body-b">Kopplingarna till FFs centrala användarhantering är inte helt klar. Därför verifieras inte ditt lösenord än, och du hamnar än så länge under LA Mölndal.</p>
+			</div>
 			<input type="hidden" name="redirect" id="loginRedirect" value="">
 			<input name="id" value="" placeholder="medlems- eller personnr" required>
 			<input name="password" value="" placeholder="Lösenord" type="password">

@@ -32,6 +32,12 @@ input:invalid {
 	border:1px solid red;
 }
 
+.ui-btn.tooltip {
+	background:none;
+	border:0;
+	margin:0;
+}
+
 input.change-confirmed, textarea.change-confirmed, a.change-confirmed {
 	background:#75B22A !important;
 }

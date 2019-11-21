@@ -96,6 +96,7 @@ switch ($_REQUEST['action']) {
                 case "caption":
                 case "parentId":
                 case "bookingMsg":
+                case "bufferAfterBooking":
                     header("Content-Type: application/json");
                     if ($_REQUEST['value']=="NULL") $cat->{$_REQUEST['name']} = null;
                     else $cat->{$_REQUEST['name']} = htmlentities($_REQUEST['value']);
@@ -199,6 +200,11 @@ unset ($_SESSION['itemId']);
 			<label for="cat-bookingMsg">Text som ska visas när användare vill boka resurser från denna kategori:</label>
 				<textarea name="bookingMsg" class="ajax-input" id="cat-bookingMsg" placeholder="Exempel: Kom ihåg att ta höjd för torkningstiden efter användningen!"><?= $cat->bookingMsg ?></textarea>
 			<hr>
+            
+            <div class="ui-field-contain">
+                <label for="cat-bufferAfterBooking">Buffertid mellan bokningar (timmar):</label>
+                <input name="bufferAfterBooking" type="number" class="ajax-input" id="cat-bufferAfterBooking" placeholder="Buffertid mellan bokingnar" value="<?= $cat->bufferAfterBooking ?>">
+            </div>
 			
 			<h3>Kontaktperson</h3>
 			<div id="cat-contact-data"><?= contactData($cat->contactUser()) ?></div>
@@ -357,6 +363,11 @@ unset ($_SESSION['itemId']);
 				clearTimeout(toutSetValue);
 				toutSetValue = setTimeout(setCatProp, 1000, "bookingMsg", this.value);
 			});
+            
+            $("#cat-bufferAfterBooking").on('input', function() {
+                clearTimeout(toutSetValue);
+                toutSetValue = setTimeout(setCatProp, 1000, "bufferAfterBooking", this.value);
+            });
 			
 			$("#file-cat-img").change(function() {
 				// Save image via ajax: https://makitweb.com/how-to-upload-image-file-using-ajax-and-jquery/

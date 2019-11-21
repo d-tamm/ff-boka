@@ -195,7 +195,7 @@ class User extends FFBoka {
     /**
      * On user instatiation, get some static properties.
      * If user does not yet exist in database, create a record.
-     * @param int $id User ID. An $id=(empty|0) will result in an invalid user with unset id property.
+     * @param int $id User ID. An $id=(empty|0) will result in an empty user with unset id property.
      */
     function __construct($id) {
         if (!$id) return;
@@ -463,6 +463,7 @@ class Category extends FFBoka {
             case "parentId":
             case "caption":
             case "bookingMsg":
+            case "bufferAfterBooking":
             case "contactUserId":
             case "accessExternal":
             case "accessMember":
@@ -510,6 +511,7 @@ class Category extends FFBoka {
             case "parentId":
             case "caption":
             case "bookingMsg":
+            case "bufferAfterBooking":
             case "contactUserId":
             case "image":
             case "thumb":
@@ -801,6 +803,14 @@ class Item extends FFBoka {
     }
 
     /**
+     * Get category to which the item belongs
+     * @return \FFBoka\Category
+     */
+    public function category() {
+        return new Category($this->catId);
+    }
+    
+    /**
      * Remove item from database
      * @throws \Exception
      * @return boolean True on success
@@ -865,19 +875,33 @@ class Item extends FFBoka {
     /**
      * Get a linear representation of free-busy information
      * @param int $start
-     * @param string $range
      * @return string
      */
-    function bookingBar($start, $range="week") {
-        $stmt = self::$db->query("SELECT UNIX_TIMESTAMP(start) start, UNIX_TIMESTAMP(end) end FROM `booked_items` INNER JOIN subbookings USING (subbookingId) WHERE itemId={$this->id}"); // TODO: limit query to only relevant rows.
-        $ret = "<div style='width:100%; height:20px; position:relative; background-color:#D0BA8A; font-weight:normal; font-size:small;'>";
+    function freebusyBar($start, bool $scale=TRUE) {
+		// Store start date as user defined variable because it is used multiple times
+		$stmt = self::$db->prepare("SET @start = :start");
+		$stmt->execute(array(":start"=>$start));
+
+		// Get freebusy information. 604800 seconds per week.
+        $stmt = self::$db->query("SELECT start, UNIX_TIMESTAMP(start) unixStart, DATE_ADD(end, INTERVAL bufferAfterBooking HOUR) end, (UNIX_TIMESTAMP(end) + bufferAfterBooking*3600) unixEnd FROM `booked_items` INNER JOIN subbookings USING (subbookingId) INNER JOIN items USING (itemId) INNER JOIN categories USING (catId) WHERE itemId={$this->id} AND ((UNIX_TIMESTAMP(start)<@start AND UNIX_TIMESTAMP(end)>@start+604800) OR (UNIX_TIMESTAMP(start)>@start AND UNIX_TIMESTAMP(start)<@start+604800) OR (UNIX_TIMESTAMP(end)>@start AND UNIX_TIMESTAMP(end)<@start+604800))");
+
+        $ret = "";
         while ($row = $stmt->fetch(PDO::FETCH_OBJ)) {
-            $ret .= "<div style='position:absolute; top:0px; height:100%; left:" . (($row->start - $start) / 6048) . "%; width:" . (($row->end - $row->start) / 6048) . "%; background-color:#E84F1C;'></div>\n";
+            $ret .= "<div style='position:absolute; top:0px; height:100%; left:" . (($row->unixStart - $start) / 6048) . "%; width:" . (($row->unixEnd - $row->unixStart) / 6048) . "%; background-color:#E84F1C;' title='Upptaget {$row->start} till {$row->end}'></div>\n";
         }
+        if ($scale) $ret .= self::freebusyScale();
+        return $ret;
+    }
+
+    /**
+     * Get vertical lines for freebusyBar
+     * @return string HTML code
+     */
+    public static function freebusyScale() {
+        $ret = "";
         for ($day=1; $day<7; $day++) {
             $ret .= "<div style='position:absolute; top:0px; height:100%; left:" . (100/7*$day) . "%; border-left:1px solid #54544A;'></div>\n";
         }
-        $ret .= "</div>";
         return $ret;
     }
 }
