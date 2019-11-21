@@ -32,7 +32,6 @@ input:invalid {
 	border:1px solid red;
 }
 
-<<<<<<< HEAD
 .ui-btn.tooltip {
 	background:none;
 	border:0;
@@ -40,12 +39,6 @@ input:invalid {
 }
 
 input.change-confirmed, textarea.change-confirmed, a.change-confirmed {
-=======
-.confirm-change label, .confirm-change span, .item-img-caption.confirm-change {
-	background:#75B22A !important;
-}
-input.change-confirmed, textarea.change-confirmed {
->>>>>>> b40479cdce884253c62fd0e7ada605ec7e708418
 	background:#75B22A !important;
 }
 
@@ -67,7 +60,6 @@ li.selected {
 	top: 0px;
 	right: 0px;
 	padding:0px;
-<<<<<<< HEAD
 }
 
 .item-checked a {
@@ -79,19 +71,6 @@ li.selected {
 	white-space:normal;
 }
 
-=======
-}
-
-.item-checked a {
-	background-color:#75B22A !important;
-}
-
-#assigned-cat-access a, #assigned-cat-access p {
-	/* Show whole assignment and access text even on small screens */
-	white-space:normal;
-}
-
->>>>>>> b40479cdce884253c62fd0e7ada605ec7e708418
 .item-img-preview {
 	width:100%;
 }

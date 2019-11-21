@@ -82,11 +82,7 @@ class FFBoka {
 	/**
 	 * Get a list of all users without creating User objects.
 	 * This avoids sending many queries to the API
-<<<<<<< HEAD
 	 * @return array[[int id, string name], ...]
-=======
-	 * @return array[[id, name], ...]
->>>>>>> b40479cdce884253c62fd0e7ada605ec7e708418
 	 */
 	public function getAllUsers() {
 		$stmt = self::$db->query("SELECT userId, name FROM users ORDER BY name");
@@ -96,11 +92,7 @@ class FFBoka {
     /**
      * Get all users complying to a search term. Name and member ID will be searched.
      * @param string|int $q Search term
-<<<<<<< HEAD
 	 * @return array[[int id, string name], ...] Returns an array with IDs and names rather than User objects, avoiding many API requests
-=======
-	 * @return array[[id, name], ...] Returns an array with IDs and names rather than User objects, avoiding many API requests
->>>>>>> b40479cdce884253c62fd0e7ada605ec7e708418
      */
     public function findUser($q) {
         $stmt = self::$db->prepare("SELECT userId, name FROM users WHERE userId LIKE ? OR name LIKE ?");
@@ -109,16 +101,11 @@ class FFBoka {
     }
     
     /**
-<<<<<<< HEAD
      * Takes an uploaded image file, resizes it, makes a thumbnail, and returns both versions as strings.
-=======
-     * Gets an uploaded image file, resizes it, makes a thumbnail, and returns both versions as strings.
->>>>>>> b40479cdce884253c62fd0e7ada605ec7e708418
      * @param $_FILES[x] $file Member of $_FILES array
      * @param int $maxSize Image will be scaled down if any dimension is bigger than this. 0=no limit
      * @param int $thumbSize Size of the thumbnail.
      * @param int $maxFileSize If file is bigger than this, it will be rejected. 0=no limit
-<<<<<<< HEAD
      * @throws \Exception If file is not an uploaded file.
      * @return ['image'=>string, 'thumb'=>string, 'error'=>string] String representations
      *  of a full-size and a thumbnail version of the image.
@@ -137,23 +124,6 @@ class FFBoka {
         $size = getimagesize($file['tmp_name']);
         $ratio = $size[0]/$size[1];
         if ($maxSize && ($size[0]>$maxSize || $size[1]>$maxSize)) { // Resize
-=======
-     * @return [string $image, string $thumb] String representations of a full-size and a thumbnail version of the image.
-     */
-    protected function imgFileToString($file, $maxSize=0, $thumbSize=80, $maxFileSize=0) {
-        if (!is_uploaded_file($file['tmp_name'])) {
-            return array(NULL,NULL);
-        }
-        // reject files that are too big
-        if ($maxFileSize) {
-            if (filesize($file['tmp_name'])>$maxFileSize) return array(NULL,NULL);
-        }
-        // Get the picture and its size
-        $src = imagecreatefromstring(file_get_contents($file['tmp_name']));
-        $size = getimagesize($file['tmp_name']);
-        $ratio = $size[0]/$size[1];
-        if ($maxSize && ($size[0]>$maxSize || $size[1]>$maxSize)) { // Rescale
->>>>>>> b40479cdce884253c62fd0e7ada605ec7e708418
             if ($ratio > 1) { // portrait
                 $tmp = imagecreatetruecolor($maxSize, $maxSize/$ratio);
                 imagecopyresampled($tmp, $src, 0, 0, 0, 0, $maxSize, $maxSize/$ratio, $size[0], $size[1]);
@@ -225,11 +195,7 @@ class User extends FFBoka {
     /**
      * On user instatiation, get some static properties.
      * If user does not yet exist in database, create a record.
-<<<<<<< HEAD
      * @param int $id User ID. An $id=(empty|0) will result in an empty user with unset id property.
-=======
-     * @param int $id User ID. An $id=(empty|0) will result in an invalid user with unset id property.
->>>>>>> b40479cdce884253c62fd0e7ada605ec7e708418
      */
     function __construct($id) {
         if (!$id) return;
@@ -312,11 +278,7 @@ class User extends FFBoka {
     }
 	
 	public function updateLastLogin() {
-<<<<<<< HEAD
 		return self::$db->exec("UPDATE users SET lastLogin=NULL WHERE userId='{$this->id}'");
-=======
-		return self::$db->exec("UPDATE users SET lastLogin=NULL WHERE userId={$this->id}");
->>>>>>> b40479cdce884253c62fd0e7ada605ec7e708418
 	}
 }
 
@@ -411,11 +373,7 @@ class Section extends FFBoka {
      * @return Category Created category
      */
     public function createCategory($parentId = NULL) {
-<<<<<<< HEAD
         $stmt = self::$db->prepare("INSERT INTO categories SET sectionId={$this->id}, parentId=:parentId, caption='Ny kategori'");
-=======
-        $stmt = self::$db->prepare("INSERT INTO categories SET sectionId={$this->id}, parentId=:parentId");
->>>>>>> b40479cdce884253c62fd0e7ada605ec7e708418
         $stmt->bindValue("parentId", $parentId); // Use bindValue so even NULL can be passed.
         if ($stmt->execute()) {
             return new Category(self::$db->lastInsertId());
@@ -454,10 +412,7 @@ class Section extends FFBoka {
         }
         // Check for admin assignments by member ID
         if (in_array($user->id, $this->getAdmins())) return FFBoka::ACCESS_SECTIONADMIN;
-<<<<<<< HEAD
         else return 0;
-=======
->>>>>>> b40479cdce884253c62fd0e7ada605ec7e708418
     }
 }
 
@@ -508,10 +463,7 @@ class Category extends FFBoka {
             case "parentId":
             case "caption":
             case "bookingMsg":
-<<<<<<< HEAD
             case "bufferAfterBooking":
-=======
->>>>>>> b40479cdce884253c62fd0e7ada605ec7e708418
             case "contactUserId":
             case "accessExternal":
             case "accessMember":
@@ -559,10 +511,7 @@ class Category extends FFBoka {
             case "parentId":
             case "caption":
             case "bookingMsg":
-<<<<<<< HEAD
             case "bufferAfterBooking":
-=======
->>>>>>> b40479cdce884253c62fd0e7ada605ec7e708418
             case "contactUserId":
             case "image":
             case "thumb":
@@ -610,10 +559,7 @@ class Category extends FFBoka {
     
     /**
      * Remove category
-<<<<<<< HEAD
      * @throws \Exception
-=======
->>>>>>> b40479cdce884253c62fd0e7ada605ec7e708418
      * @return boolean TRUE on success, throws an exception otherwise.
      */
     public function delete() {
@@ -654,7 +600,6 @@ class Category extends FFBoka {
     }
     
     /**
-<<<<<<< HEAD
      * Set personal access rights to category
      * @param int $userId
      * @param int $access Access constant, e.g. FFBoka::ACCESS_CATADMIN, FFBoka::ACCESS_CONFIRM. If set to FFBoka::ACCESS_NONE, access is revoked
@@ -675,8 +620,6 @@ class Category extends FFBoka {
     }
     
     /**
-=======
->>>>>>> b40479cdce884253c62fd0e7ada605ec7e708418
      * Retrieve all admins for category
      * @return array [userId, name, access]
      */
@@ -727,7 +670,6 @@ class Category extends FFBoka {
         }
         return false;
     }
-<<<<<<< HEAD
     
     /**
      * Get the path from section level
@@ -744,9 +686,6 @@ class Category extends FFBoka {
 	 * Get all items in the current category
 	 * @return array|\FFBoka\Item[]
 	 */
-=======
-
->>>>>>> b40479cdce884253c62fd0e7ada605ec7e708418
 	public function items() {
 		if (!$this->id) return array();
 		$stmt = self::$db->query("SELECT itemId FROM items WHERE catId={$this->id} ORDER BY caption");
@@ -756,7 +695,6 @@ class Category extends FFBoka {
 		}
 		return $items;
 	}
-<<<<<<< HEAD
 	
 	/**
 	 * Add new resource to category
@@ -770,8 +708,6 @@ class Category extends FFBoka {
 	        throw new \Exception("Failed to create item.");
 	    }
 	}
-=======
->>>>>>> b40479cdce884253c62fd0e7ada605ec7e708418
 }
 
 
@@ -782,20 +718,12 @@ class Category extends FFBoka {
  * Bookable items in the booking system.
  */
 class Item extends FFBoka {
-<<<<<<< HEAD
-=======
-    // TODO: constructor, getter, setter
->>>>>>> b40479cdce884253c62fd0e7ada605ec7e708418
     private $id;
     private $catId;
     
     /**
      * Initialize item with ID and get some static properties.
-<<<<<<< HEAD
      * @param int $id ID of requested item. If 0|FALSE|"" or invalid, returns a dummy item with id=0.
-=======
-     * @param int $id ID of requested item. If 0|FALSE|"" returns a dummy item with id=0.
->>>>>>> b40479cdce884253c62fd0e7ada605ec7e708418
      */
     public function __construct($id){
         if ($id) { // Try to return an existing item from database
@@ -805,18 +733,10 @@ class Item extends FFBoka {
                 $this->id = $row->itemId;
                 $this->catId = $row->catId;
             } else {
-<<<<<<< HEAD
                 $this->id = 0;
             }
         } else { // Return an empty object without link to database
             $this->id = 0;
-=======
-                throw new \Exception("Can't instatiate item with ID $id.");
-            }
-        } else { // Return an empty object without link to database
-            $this->id = 0;
-            return;
->>>>>>> b40479cdce884253c62fd0e7ada605ec7e708418
         }
     }	
 	
@@ -881,7 +801,6 @@ class Item extends FFBoka {
                 throw new \Exception("Use of undefined Item property $name");
         }
     }
-<<<<<<< HEAD
 
     /**
      * Get category to which the item belongs
@@ -944,8 +863,6 @@ class Item extends FFBoka {
         }
         return $images;
     }
-=======
->>>>>>> b40479cdce884253c62fd0e7ada605ec7e708418
     
     /**
      * Get the representative image of the item 
@@ -957,7 +874,6 @@ class Item extends FFBoka {
     
     /**
      * Get a linear representation of free-busy information
-<<<<<<< HEAD
      * @param int $start
      * @return string
      */
@@ -986,24 +902,6 @@ class Item extends FFBoka {
         for ($day=1; $day<7; $day++) {
             $ret .= "<div style='position:absolute; top:0px; height:100%; left:" . (100/7*$day) . "%; border-left:1px solid #54544A;'></div>\n";
         }
-=======
-     * TODO: adapt function to OOP
-     * @param int $itemId
-     * @param int $start
-     * @param string $range
-     * @return string
-     */
-    function bookingBar($itemId, $start, $range="week") {
-        $stmt = $db->query("SELECT UNIX_TIMESTAMP(start) start, UNIX_TIMESTAMP(end) end FROM `booked_items` INNER JOIN subbookings USING (subbookingId) WHERE itemId=$itemId"); // TODO: limit query to only relevant rows.
-        $ret = "<div style='width:100%; height:20px; position:relative; background-color:#D0BA8A; font-weight:normal; font-size:small;'>";
-        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-            $ret .= "<div style='position:absolute; top:0px; height:100%; left:" . (($row['start']-$start)/6048) . "%; width:" . (($row['end']-$row['start'])/6048) . "%; background-color:#E84F1C;'></div>\n";
-        }
-        for ($day=1; $day<7; $day++) {
-            $ret .= "<div style='position:absolute; top:0px; height:100%; left:" . (100/7*$day) . "%; border-left:1px solid #54544A;'></div>\n";
-        }
-        $ret .= "</div>";
->>>>>>> b40479cdce884253c62fd0e7ada605ec7e708418
         return $ret;
     }
 }
@@ -1046,7 +944,6 @@ class Image extends FFBoka {
      * @param int $maxSize Image will be scaled down if any dimension is bigger than this. 0=no limit
      * @param int $thumbSize Size of thumbnail
      * @param int $maxFileSize If file is bigger than this, it will be rejected. 0=no limit
-<<<<<<< HEAD
      * @return boolean Success
      */
     public function setImage($imgFile, $maxSize=0, $thumbSize=80, $maxFileSize=0) {
@@ -1056,23 +953,10 @@ class Image extends FFBoka {
         return $stmt->execute(array(
             ":image"=>$images['image'],
             ":thumb"=>$images['thumb'],
-=======
-     * @throws \Exception
-     * @return boolean Success
-     */
-    public function setImage($imgFile, $maxSize=0, $thumbSize=80, $maxFileSize=0) {
-        if (!$this->id) throw new \Exception("Cannot set image on dummy category.");
-        list($image, $thumb) = $this->imgFileToString($imgFile, $maxSize, $thumbSize, $maxFileSize);
-        $stmt = self::$db->prepare("UPDATE item_images SET image=:image, thumb=:thumb WHERE imageID={$this->id}");
-        return $stmt->execute(array(
-            ":image"=>$image,
-            ":thumb"=>$thumb,
->>>>>>> b40479cdce884253c62fd0e7ada605ec7e708418
         ));       
     }
     
     /**
-<<<<<<< HEAD
      * Setter function for image properties
      * @param string $name
      * @param mixed $value
@@ -1091,8 +975,6 @@ class Image extends FFBoka {
     }
     
     /**
-=======
->>>>>>> b40479cdce884253c62fd0e7ada605ec7e708418
      * Getter function for image properties
      * @param string $name Name of the property
      * @return string Value of the property.
@@ -1114,7 +996,6 @@ class Image extends FFBoka {
         }
     }
     
-<<<<<<< HEAD
     public function delete() {
         if (self::$db->exec("DELETE FROM item_images WHERE imageId={$this->id}")) {
             return TRUE;
@@ -1123,6 +1004,4 @@ class Image extends FFBoka {
         }
     }
     
-=======
->>>>>>> b40479cdce884253c62fd0e7ada605ec7e708418
 }

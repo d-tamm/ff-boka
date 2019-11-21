@@ -35,11 +35,7 @@ $section = new Section($_SESSION['sectionId']);
 $currentUser = new User($_SESSION['authenticatedUser']);
 
 // Only allow users which have at least some admin role in this section
-<<<<<<< HEAD
 if (!$section->showFor($currentUser, FFBoka::ACCESS_CATADMIN)) {
-=======
-if (!$section->showFor($currentUser, FFBoka::ACCESS_CONFIRM)) {
->>>>>>> b40479cdce884253c62fd0e7ada605ec7e708418
 	header("Location: ..");
 	die();
 }
@@ -113,11 +109,7 @@ unset($_SESSION['catId']);
 			<ul data-role="listview">
 			<?php
 			foreach ($section->getMainCategories() as $cat) {
-<<<<<<< HEAD
 			    if ($cat->showFor($currentUser, FFBoka::ACCESS_CATADMIN)) {
-=======
-			    if ($cat->showFor($currentUser, FFBoka::ACCESS_CONFIRM)) {
->>>>>>> b40479cdce884253c62fd0e7ada605ec7e708418
     				echo "<li><a href='category.php?catId={$cat->id}' data-ajax='false'>
     					{$cat->caption}
     					" . embedImage($cat->thumb);
@@ -127,11 +119,7 @@ unset($_SESSION['catId']);
     				echo "<span class='ui-li-count'>{$cat->itemCount}</span></a></li>";
 			    }
 			}
-<<<<<<< HEAD
 			if ($section->getAccess($currentUser) & FFBoka::ACCESS_SECTIONADMIN) echo "<li><a href='category.php?action=new' data-ajax='false'>Skapa ny kategori</a></li>"; ?>
-=======
-			if ($section->getAccess($currentUser) & FFBoka::ACCESS_SECTIONADMIN) echo "<li><a href='#' onClick='newCat();'>Skapa ny kategori</a></li>"; ?>
->>>>>>> b40479cdce884253c62fd0e7ada605ec7e708418
 			</ul>
 			<br>
 		</div>
@@ -140,16 +128,11 @@ unset($_SESSION['catId']);
 		
 		<div data-role="collapsible" data-collapsed="<?= $_REQUEST['expand']=="admins" ? "false" : "true" ?>">
 			<h2>Administratörer</h2>
-<<<<<<< HEAD
 
 			<p>Lägg till ny administratör på LA-nivå: (skriv medlemsnummer eller namn)
 				<a href="#popup-help-admin-access" data-rel="popup" class="tooltip ui-btn ui-alt-icon ui-nodisc-icon ui-btn-inline ui-icon-info ui-btn-icon-notext">Tipps</a>
 			</p>
 			<div data-role="popup" id="popup-help-admin-access" class="ui-content">
-=======
-			<div data-role="collapsible" data-inset="true" data-mini="true" data-collapsed-icon="info">
-				<h4>Vad är det här?</h4>
->>>>>>> b40479cdce884253c62fd0e7ada605ec7e708418
 				<p>Här ställer du in vilka medlemmar som ska ha behörighet att administrera resursbokningen i lokalavdelningen <?= $section->name ?>. Du kan alltid lägga till en ny admin genom att ange dess medlemsnummer. Om personen tidigare har loggat in i resursbokningen och lagt in sina kontaktuppgifter kan du även hitta hen genom att leta efter namnet istället.</p>
 				<p><?php
                 $allAss = $cfg['sectionAdmins'];
@@ -157,14 +140,8 @@ unset($_SESSION['catId']);
                 echo implode(", ", $allAss) . " och " . $oneAss; ?>
             	har automatiskt administratörsbehörighet.</p>
             	<p>Om du bara vill tilldela behörigheter för att någon ska hantera enskilda kategorier gör du det under respektive kategori.</p>
-<<<<<<< HEAD
 			</div>
 
-=======
-            </div>
-            
-			<p>Lägg till ny administratör på LA-nivå: (skriv medlemsnummer eller namn)</p>
->>>>>>> b40479cdce884253c62fd0e7ada605ec7e708418
 			<form class="ui-filterable">
 				<input id="sec-adm-autocomplete-input" data-type="search" placeholder="Lägg till admin...">
 			</form>
@@ -174,14 +151,6 @@ unset($_SESSION['catId']);
 			<ul id="ul-sec-admins" data-role="listview" data-split-icon="delete" data-split-theme="c" data-inset="true">
 				<?= adminList($section) ?>
 			</ul>
-<<<<<<< HEAD
-=======
-			<p>Dessutom har <?php
-				$allAss = $cfg['sectionAdmins'];
-				$oneAss = array_pop($allAss);
-				echo implode(", ", $allAss) . " och " . $oneAss;
-			?> administratörsbehörighet.</div>
->>>>>>> b40479cdce884253c62fd0e7ada605ec7e708418
 		<?php } ?>
 
 	</div><!--/collapsibleset-->
@@ -238,17 +207,6 @@ unset($_SESSION['catId']);
     			});
 			}
 		}
-<<<<<<< HEAD
-=======
-
-		function newCat() {
-			caption = prompt("Rubrik på nya kategorin:");
-			if (caption != null & caption.length>0) {
-				location.href="category.php?action=newCat&caption=" + encodeURIComponent(caption);
-			}
-			return false;
-		}
->>>>>>> b40479cdce884253c62fd0e7ada605ec7e708418
 	</script>
 
 </div><!--/page-->
