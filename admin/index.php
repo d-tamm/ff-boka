@@ -25,7 +25,7 @@ global $cfg, $FF;
 
 // This page may only be accessed by registered users
 if (!$_SESSION['authenticatedUser']) {
-    header("Location: /");
+    header("Location: /?action=sessionExpired");
     die();
 }
 
@@ -36,8 +36,8 @@ $currentUser = new User($_SESSION['authenticatedUser']);
 
 // Only allow users which have at least some admin role in this section
 if (!$section->showFor($currentUser, FFBoka::ACCESS_CATADMIN)) {
-	header("Location: ..");
-	die();
+    header("Location: /?action=accessDenied&to=" . urlencode("administrationssidan för {$section->name}"));
+    die();
 }
 $userAccess = $section->getAccess($currentUser);
 
@@ -132,7 +132,7 @@ unset($_SESSION['catId']);
 			<p>Lägg till ny administratör på LA-nivå: (skriv medlemsnummer eller namn)
 				<a href="#popup-help-admin-access" data-rel="popup" class="tooltip ui-btn ui-alt-icon ui-nodisc-icon ui-btn-inline ui-icon-info ui-btn-icon-notext">Tipps</a>
 			</p>
-			<div data-role="popup" id="popup-help-admin-access" class="ui-content">
+			<div data-role="popup" id="popup-help-admin-access" class="ui-content" data-overlay-theme="b">
 				<p>Här ställer du in vilka medlemmar som ska ha behörighet att administrera resursbokningen i lokalavdelningen <?= $section->name ?>. Du kan alltid lägga till en ny admin genom att ange dess medlemsnummer. Om personen tidigare har loggat in i resursbokningen och lagt in sina kontaktuppgifter kan du även hitta hen genom att leta efter namnet istället.</p>
 				<p><?php
                 $allAss = $cfg['sectionAdmins'];
@@ -196,11 +196,12 @@ unset($_SESSION['catId']);
     	}
 
 		function removeAdmin(id, name) {
-			if (confirm('Du håller på att återkalla admin-behörighet för ' + (name ? name : "(okänd)") + '. Vill du fortsätta?')) {
+			if (confirm('Du håller på att återkalla admin-behörighet för ' + (id==<?= $currentUser->id ?> ? "dig själv" : (name ? name : "(okänd)")) + '. Vill du fortsätta?')) {
     			//location.href = "?action=removeSectionAdmin&id=" + id;
     			$.getJSON("index.php", {action: "removeSectionAdmin", id: id}, function(data, status) {
         			if (data['html']) {
 						$("#ul-sec-admins").html(data['html']).listview("refresh");
+						if (id==<?= $currentUser->id ?>) location.reload();
         			} else {
             			alert(data['error']);
         			}

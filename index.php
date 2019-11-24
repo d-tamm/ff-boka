@@ -20,6 +20,11 @@ if (isset($_REQUEST['action'])) {
 		case "accountDeleted":
 			$message = "Ditt konto har nu raderats. Välkommen åter!";
 			break;
+		case "sessionExpired":
+		    $message = "Du har blivit utloggad på grund av inaktivitet.";
+		    break;
+		case "accessDenied":
+		    $message = "Du har inte tillgång till {$_REQUEST['to']}.";
     }
 }
 
@@ -129,7 +134,7 @@ if (isset($_REQUEST['message'])) $message .= "<br>".$_REQUEST['message'];
 			$sectionList = "";
 			foreach ($FF->getAllSections($currentUser->sectionId) as $section) {
 			    if ($section->showFor($currentUser)) {
-					$sectionList .= "<a href='book.php?sectionId={$section->id}' class='ui-btn'>{$section->name}</a>";
+					$sectionList .= "<a href='book.php?sectionId={$section->id}' class='ui-btn' data-ajax='false'>{$section->name}</a>";
 				}
 			}
 			if ($sectionList) echo $sectionList;
@@ -157,7 +162,9 @@ if (isset($_REQUEST['message'])) $message .= "<br>".$_REQUEST['message'];
 		}
         } ?>
 		
+	</div><!-- /collapsibleset -->
 
+	<?php if (!($_SESSION['authenticatedUser'])) { ?>
 		<div data-role='collapsible' data-collapsed='true'>
 			<h3>Boka som gäst</h3>
 			<p class="ui-body ui-body-a"><i>Jobbar mest med detta just nu :)</i></p>
@@ -168,12 +175,10 @@ if (isset($_REQUEST['message'])) $message .= "<br>".$_REQUEST['message'];
 				}
 			} ?>
 		</div>
-	</div><!-- /collapsibleset -->
 
-	<?php if (!($_SESSION['authenticatedUser'])) { ?>
 		<form id="formLogin" style="padding:10px 20px;" data-ajax="false" method="POST" action="index.php">
 			<h3>Inloggning <a href="#popup-help-login" data-rel="popup" class="tooltip ui-btn ui-alt-icon ui-nodisc-icon ui-btn-inline ui-icon-info ui-btn-icon-notext">Hjälp</a></h3>
-			<div data-role="popup" id="popup-help-login" class="ui-content">
+			<div data-role="popup" id="popup-help-login" class="ui-content" data-overlay-theme="b">
 				<p>Du loggar in med samma lösenord som i aktivitetshanteraren.</p>
 				<p class="ui-body ui-body-b">Kopplingarna till FFs centrala användarhantering är inte helt klar. Därför verifieras inte ditt lösenord än, och du hamnar än så länge under LA Mölndal.</p>
 			</div>

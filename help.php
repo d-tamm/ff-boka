@@ -1,8 +1,13 @@
 <?php
+use FFBoka\User;
+
 session_start();
 require("inc/common.php");
 global $cfg;
 
+if ($_SESSION['authenticatedUser']) {
+    $currentUser = new User($_SESSION['authenticatedUser']);
+}
 
 ?><!DOCTYPE html>
 <html>
@@ -12,7 +17,7 @@ global $cfg;
 </head>
 <body>
 <div data-role="page" id="page_help">
-	<?= head("Hjälp till resursbokning") ?>
+	<?= head("Hjälp till resursbokning", $currentUser) ?>
 	<div role="main" class="ui-content">
 
 	<h3>Inloggning</h3>
