@@ -8,8 +8,8 @@ session_start();
 require(__DIR__ . "/../inc/common.php");
 global $cfg;
 
-if (!isset($_SESSION['sectionId'])) {
-    header("Location: ..");
+if (!isset($_SESSION['sectionId']) || !isset($_SESSION['authenticatedUser'])) {
+    header("Location: /?action=sessionExpired");
     die();
 }
 
@@ -20,8 +20,8 @@ $section = new Section($_SESSION['sectionId']);
 
 // Check access permissions.
 if (!$cat->showFor($currentUser, FFBoka::ACCESS_CATADMIN)) {
-	header("Location: ..");
-	die();
+    header("Location: /?action=accessDenied&to=" . urlencode("administrationssidan för {$cat->caption}"));
+    die();
 }
 
 /**
@@ -202,8 +202,8 @@ unset ($_SESSION['itemId']);
 			<hr>
             
             <div class="ui-field-contain">
-                <label for="cat-bufferAfterBooking">Buffertid mellan bokningar (timmar):</label>
-                <input name="bufferAfterBooking" type="number" class="ajax-input" id="cat-bufferAfterBooking" placeholder="Buffertid mellan bokingnar" value="<?= $cat->bufferAfterBooking ?>">
+                <label for="cat-bufferAfterBooking">Buffertid i timmar mellan bokningar (ärvs inte av överordnad kategori!):</label>
+                <input name="bufferAfterBooking" type="number" min="0" class="ajax-input" id="cat-bufferAfterBooking" placeholder="Buffertid mellan bokingnar" value="<?= $cat->bufferAfterBooking ?>">
             </div>
 			
 			<h3>Kontaktperson</h3>

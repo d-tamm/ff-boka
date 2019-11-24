@@ -226,14 +226,14 @@ class User extends FFBoka {
     /**
      * Getter function for User properties
      * @param string $name Name of the property to retrieve
-     * @return number|string
+     * @throws \Exception
+     * @return number|string|\FFBoka\Section|array
      */
     public function __get($name) {
         switch ($name) {
             case "id":
-                return $this->id;
             case "sectionId":
-                return $this->sectionId;
+                return $this->$name;
             case "section":
                 return new Section($this->sectionId);
             case "name":
@@ -279,6 +279,16 @@ class User extends FFBoka {
 	
 	public function updateLastLogin() {
 		return self::$db->exec("UPDATE users SET lastLogin=NULL WHERE userId='{$this->id}'");
+	}
+	
+	/**
+	 * Create a new booking for this user
+	 * @return \FFBoka\Booking
+	 */
+	public function addBooking() {
+	    if ($this->id) self::$db->exec("INSERT INTO bookings SET userId={$this->id}");
+	    else self::$db->exec("INSERT INTO bookings () VALUES ()");
+	    return new Booking(self::$db->lastInsertId());
 	}
 }
 
@@ -500,7 +510,7 @@ class Category extends FFBoka {
     /**
      * Getter function for category properties
      * @param string $name Name of the property
-     * @return string Value of the property.
+     * @return string|array Value of the property.
      */
     public function __get($name) {
         switch ($name) {
@@ -529,6 +539,21 @@ class Category extends FFBoka {
                 return $stmt->rowCount();
             default:
                 throw new \Exception("Use of undefined Category property $name");
+        }
+    }
+
+    /**
+     * Get all booking messages of this and any parent categories.
+     * @return [ string ] Array of strings containing any booking messages of this and parent categories
+     */
+    public function bookingMsgs() {
+        if (is_null($this->parentId)) {
+            if ($this->bookingMsg) return array($this->bookingMsg);
+            else return array();
+        } else {
+            $ret = $this->parent()->bookingMsgs();
+            if ($this->bookingMsg) $ret[] = $this->bookingMsg;
+            return $ret;
         }
     }
     
@@ -873,21 +898,24 @@ class Item extends FFBoka {
     }
     
     /**
-     * Get a linear representation of free-busy information
-     * @param int $start
-     * @return string
+     * Get a linear representation of free-busy information for one week
+     * @param int $start First day of week to show, unix timestamp
+     * @param bool $scale Whether to include the weekday scale
+     * @return string HTML code showing blocks of free and busy times
      */
-    function freebusyBar($start, bool $scale=TRUE) {
+    function freebusyBar($start, bool $scale=FALSE) {
 		// Store start date as user defined variable because it is used multiple times
 		$stmt = self::$db->prepare("SET @start = :start");
 		$stmt->execute(array(":start"=>$start));
-
 		// Get freebusy information. 604800 seconds per week.
-        $stmt = self::$db->query("SELECT start, UNIX_TIMESTAMP(start) unixStart, DATE_ADD(end, INTERVAL bufferAfterBooking HOUR) end, (UNIX_TIMESTAMP(end) + bufferAfterBooking*3600) unixEnd FROM `booked_items` INNER JOIN subbookings USING (subbookingId) INNER JOIN items USING (itemId) INNER JOIN categories USING (catId) WHERE itemId={$this->id} AND ((UNIX_TIMESTAMP(start)<@start AND UNIX_TIMESTAMP(end)>@start+604800) OR (UNIX_TIMESTAMP(start)>@start AND UNIX_TIMESTAMP(start)<@start+604800) OR (UNIX_TIMESTAMP(end)>@start AND UNIX_TIMESTAMP(end)<@start+604800))");
+        $stmt = self::$db->query("SELECT bufferAfterBooking, DATE_SUB(start, INTERVAL bufferAfterBooking HOUR) start, UNIX_TIMESTAMP(start) unixStart, DATE_ADD(end, INTERVAL bufferAfterBooking HOUR) end, UNIX_TIMESTAMP(end) unixEnd FROM booked_items INNER JOIN subbookings USING (subbookingId) INNER JOIN bookings USING (bookingId) INNER JOIN items USING (itemId) INNER JOIN categories USING (catId) WHERE itemId={$this->id} AND bookings.status>" . Booking::STATUS_PENDING . " AND ((UNIX_TIMESTAMP(start)-bufferAfterBooking*3600<@start AND UNIX_TIMESTAMP(end)+bufferAfterBooking*3600>@start+604800) OR (UNIX_TIMESTAMP(start)-bufferAfterBooking*3600>@start AND UNIX_TIMESTAMP(start)-bufferAfterBooking*3600<@start+604800) OR (UNIX_TIMESTAMP(end)+bufferAfterBooking*3600>@start AND UNIX_TIMESTAMP(end)+bufferAfterBooking*3600<@start+604800))");
 
         $ret = "";
         while ($row = $stmt->fetch(PDO::FETCH_OBJ)) {
-            $ret .= "<div style='position:absolute; top:0px; height:100%; left:" . (($row->unixStart - $start) / 6048) . "%; width:" . (($row->unixEnd - $row->unixStart) / 6048) . "%; background-color:#E84F1C;' title='Upptaget {$row->start} till {$row->end}'></div>\n";
+            if ($row->bufferAfterBooking) {
+                $ret .= "<div class='freebusy-blocked' style='left:" . (($row->unixStart-$start-$row->bufferAfterBooking*3600) / 6048) . "%; width:" . (($row->unixEnd - $row->unixStart + 2*$row->bufferAfterBooking*3600)/6048) . "%' title='ej bokbar'></div>";
+            }
+            $ret .= "<div class='freebusy-busy' style='left:" . (($row->unixStart - $start) / 6048) . "%; width:" . (($row->unixEnd - $row->unixStart) / 6048) . "%;' title='Upptaget {$row->start} till {$row->end}'></div>";
         }
         if ($scale) $ret .= self::freebusyScale();
         return $ret;
@@ -895,23 +923,43 @@ class Item extends FFBoka {
 
     /**
      * Get vertical lines for freebusyBar
+     * @param bool $weekdays Also display weekday abbreviations
      * @return string HTML code
      */
-    public static function freebusyScale() {
-        $ret = "";
+    public static function freebusyScale(bool $weekdays = FALSE) {
+        $dayNames = $weekdays ? array("<span>mån</span>","<span>tis</span>","<span>ons</span>","<span>tor</span>","<span>fre</span>","<span>lör</span>","<span>sön</span>") : array_fill(0,7,"");
+        $ret = "<div class='freebusy-tic' style='border-left:none; left:0;'>{$dayNames[0]}</div>";
         for ($day=1; $day<7; $day++) {
-            $ret .= "<div style='position:absolute; top:0px; height:100%; left:" . (100/7*$day) . "%; border-left:1px solid #54544A;'></div>\n";
+            $ret .= "<div class='freebusy-tic' style='left:" . (100/7*$day) . "%;'>{$dayNames[$day]}</div>";
         }
         return $ret;
     }
+    
+    /**
+     * Get graphical representation showing that freebusy information is not available to user.
+     * @return string HTML block showing unavailable information.
+     */
+    public static function freebusyUnknown() {
+        return "<div class='freebusy-unknown'></div>";
+    }
+    
+    /**
+     * Check whether the item is available in the given range.
+     * @param int $start Unix timestamp
+     * @param int $end Unix timestamp
+     * @return boolean False if there is any subbooking partly or completely inside the given range
+     */
+    public function isAvailable(int $start, int $end) {
+        $stmt = self::$db->prepare("SET @start = :start, @end = :end");
+        $stmt->execute(array(":start"=>$start, ":end"=>$end));
+        $stmt = self::$db->query("SELECT subbookingId FROM booked_items INNER JOIN subbookings USING (subbookingId) INNER JOIN bookings USING (bookingId) INNER JOIN items USING (itemId) INNER JOIN categories USING (catId) WHERE itemId={$this->id} AND bookings.status>" . Booking::STATUS_PENDING . " AND ((UNIX_TIMESTAMP(start)-bufferAfterBooking*3600<@start AND UNIX_TIMESTAMP(end)+bufferAfterBooking*3600>@end) OR (UNIX_TIMESTAMP(start)-bufferAfterBooking*3600>@start AND UNIX_TIMESTAMP(start)-bufferAfterBooking*3600<@end) OR (UNIX_TIMESTAMP(end)+bufferAfterBooking*3600>@start AND UNIX_TIMESTAMP(end)+bufferAfterBooking*3600<@end))");
+        return ($stmt->rowCount()===0);
+    }
 }
-
-
-
+        
 /**
  * Class for handling item pictures
  * @author Daniel Tamm
- *
  */
 class Image extends FFBoka {
     private $id;
@@ -992,7 +1040,7 @@ class Image extends FFBoka {
                 $row = $stmt->fetch(PDO::FETCH_OBJ);
                 return $row->$name;
             default:
-                throw new \Exception("Use of undefined Category property $name");
+                throw new \Exception("Use of undefined Image property $name");
         }
     }
     
@@ -1004,4 +1052,216 @@ class Image extends FFBoka {
         }
     }
     
+}
+
+
+/**
+ * Class containing complete booking, with one or more subbookings.
+ * @author Daniel Tamm
+ */
+class Booking extends FFBoka {
+    /** Booking is being added by user, but has not yet been sent */
+    const STATUS_PENDING=0;
+    /** Booking has been placed, but needs to be confirmed */
+    const STATUS_PREBOOKED=1;
+    /** Booking has been placed and is confirmed */
+    const STATUS_CONFIRMED=2;
+    
+    private $id;
+    private $userId;
+    
+    /**
+     * Booking instantiation. 
+     * @param int $id ID of the booking
+     * @throws \Exception if no or an invalid $id is passed.
+     */
+    public function __construct($id) {
+        if ($id) { // Try to return an existing booking from database
+            $stmt = self::$db->prepare("SELECT bookingId, userId FROM bookings WHERE bookingId=?");
+            $stmt->execute(array($id));
+            if ($row = $stmt->fetch(PDO::FETCH_OBJ)) {
+                $this->id = $row->bookingId;
+                $this->userId = $row->userId;
+            } else {
+                throw new \Exception("Can't instatiate Booking with ID $id.");
+            }
+        } else {
+            throw new \Exception("Can't instatiate Booking without ID.");
+        }
+    }
+    
+    /**
+     * Getter function for Booking properties
+     * @param string $name Name of the property to retrieve
+     * @throws \Exception
+     * @return number|string
+     */
+    public function __get($name) {
+        switch ($name) {
+            case "id":
+            case "userId":
+                return $this->$name;
+            case "commentCust":
+            case "commentIntern":
+            case "status":
+            case "payed": //Datetime field
+            case "extName":
+            case "extPhone":
+            case "extMail":
+                $stmt = self::$db->query("SELECT $name FROM bookings WHERE bookingId={$this->id}");
+                $row = $stmt->fetch(PDO::FETCH_OBJ);
+                return $row->$name;
+            default:
+                throw new \Exception("Use of undefined Booking property $name");
+        }
+    }
+    
+    /**
+     * Setter function for Booking properties
+     * @param string $name Property name
+     * @param string $value Property value
+     * @return string Set value on success, false on failure.
+     */
+    public function __set($name, $value) {
+        switch ($name) {
+            case "commentCust":
+            case "commentIntern":
+            case "status":
+            case "payed": //Datetime field
+            case "extName":
+            case "extPhone":
+            case "extMail":
+                $stmt = self::$db->prepare("UPDATE bookings SET $name=? WHERE userId={$this->id}");
+                if ($stmt->execute(array($value))) return $value;
+                break;
+            default:
+                throw new \Exception("Use of undefined Booking property $name");
+        }
+        return false;
+    }
+    
+    /**
+     * Create a new subbooking
+     * @return \FFBoka\Subbooking
+     */
+    public function addSubbooking() {
+        self::$db->exec("INSERT INTO subbookings SET bookingId={$this->id}");
+        return new Subbooking(self::$db->lastInsertId());
+    }
+
+    /**
+     * Get all subbookings belonging to this booking.
+     * @return \FFBoka\Subbooking[]
+     */
+    public function subbookings() {
+        $stmt = self::$db->query("SELECT subbookingId FROM subbookings WHERE bookingId={$this->id}");
+        $subs = array();
+        while ($row = $stmt->fetch(\PDO::FETCH_OBJ)) {
+            $subs[] = new Subbooking($row->subbookingId);
+        }
+        return $subs;
+    }
+}
+
+
+/**
+ * Subbooking class, containing a portion of a booking whith items having the same start and end time. 
+ * @author Daniel Tamm
+ */
+class Subbooking extends FFBoka {
+    private $id;
+    private $bookingId;
+    
+    /**
+     * Subbooking instantiation.
+     * @param int $id ID of the subbooking
+     * @throws \Exception if no or an invalid $id is passed.
+     */
+    public function __construct($id) {
+        if ($id) { // Try to return an existing booking from database
+            $stmt = self::$db->prepare("SELECT subbookingId, bookingId FROM subbookings WHERE subbookingId=?");
+            $stmt->execute(array($id));
+            if ($row = $stmt->fetch(PDO::FETCH_OBJ)) {
+                $this->id = $row->subbookingId;
+                $this->bookingId = $row->bookingId;
+            } else {
+                throw new \Exception("Can't instatiate Subbooking with ID $id.");
+            }
+        } else {
+            throw new \Exception("Can't instatiate Subbooking without ID.");
+        }
+    }
+    
+    /**
+     * Getter function for Subbooking properties
+     * @param string $name Name of the property to retrieve
+     * @throws \Exception
+     * @return number|string
+     */
+    public function __get($name) {
+        switch ($name) {
+            case "id":
+            case "bookingId":
+                return $this->$name;
+            case "start":
+            case "end":
+                $stmt = self::$db->query("SELECT UNIX_TIMESTAMP($name) $name FROM subbookings WHERE subbookingId={$this->id}");
+                $row = $stmt->fetch(PDO::FETCH_OBJ);
+                return $row->$name;
+            case "price":
+                $stmt = self::$db->query("SELECT $name FROM subbookings WHERE subbookingId={$this->id}");
+                $row = $stmt->fetch(PDO::FETCH_OBJ);
+                return $row->$name;
+            default:
+                throw new \Exception("Use of undefined Subbooking property $name");
+        }
+    }
+    
+    /**
+     * Setter function for Subbooking properties
+     * @param string $name Property name
+     * @param int|string $value Property value. For datetime properties,
+     * Unix timestamp and string representations are supported.
+     * @return string Set value on success, false on failure.
+     */
+    public function __set($name, $value) {
+        switch ($name) {
+            case "start":
+            case "end":
+                if (is_numeric($value)) $stmt = self::$db->prepare("UPDATE subbookings SET $name=FROM_UNIXTIME(?) WHERE subbookingId={$this->id}");
+                else $stmt = self::$db->prepare("UPDATE subbookings SET $name=? WHERE subbookingId={$this->id}");
+                if ($stmt->execute(array($value))) return $value;
+                break;
+            case "price":
+                $stmt = self::$db->prepare("UPDATE subbookings SET $name=? WHERE subbookingId={$this->id}");
+                if ($stmt->execute(array($value))) return $value;
+                break;
+            default:
+                throw new \Exception("Use of undefined Subbooking property $name");
+        }
+        return false;
+    }
+    
+    /**
+     * Add an item to the subbooking.
+     * @param int $itemId
+     * @return bool True on success
+     */
+    public function addItem(int $itemId) {
+        $stmt = self::$db->prepare("INSERT INTO booked_items SET subbookingId={$this->id}, itemId=?");
+        return $stmt->execute(array( $itemId ));
+    }
+    
+    /**
+     * Get all items contained in this subbooking
+     * @return \FFBoka\Item[]
+     */
+    public function items() {
+        $stmt = self::$db->query("SELECT itemId FROM booked_items WHERE subbookingId={$this->id}");
+        $items = array();
+        while ($row = $stmt->fetch(\PDO::FETCH_OBJ)) {
+            $items[] = new Item($row->itemId);
+        }
+        return $items;
+    }
 }

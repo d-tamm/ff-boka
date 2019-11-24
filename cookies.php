@@ -1,7 +1,12 @@
 <?php
+use FFBoka\User;
+
 session_start();
 require("inc/common.php");
 
+if ($_SESSION['authenticatedUser']) {
+    $currentUser = new User($_SESSION['authenticatedUser']);
+}
 
 ?><!DOCTYPE html>
 <html>
@@ -12,7 +17,7 @@ require("inc/common.php");
 
 <body>
 <div data-role="page" id="page_cookies">
-	<?= head("Om kakor") ?>
+	<?= head("Om kakor", $currentUser) ?>
 	<div role="main" class="ui-content">
 
 	<p>För att få den här webbplatsen att fungera ordentligt skickar vi ibland små filer till din dator. Dessa filer kallas kakor eller ”cookies”. De flesta större webbplatser gör på samma sätt.</p>

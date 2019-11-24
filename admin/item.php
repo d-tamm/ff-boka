@@ -9,8 +9,8 @@ global $cfg;
 session_start();
 require(__DIR__ . "/../inc/common.php");
 
-if (!isset($_SESSION['catId'])) {
-    header("Location: index.php");
+if (!isset($_SESSION['sectionId']) || !isset($_SESSION['authenticatedUser']) || !isset($_SESSION['catId'])) {
+    header("Location: /?action=sessionExpired");
     die();
 }
 
@@ -21,7 +21,7 @@ $cat = new Category($_SESSION['catId']);
 
 // Check access permissions.
 if (!$cat->showFor($currentUser, FFBoka::ACCESS_CATADMIN)) {
-    header("Location: ..");
+    header("Location: /?action=accessDenied&to=" . urlencode("administrationssidan för {$item->caption}"));
     die();
 }
 

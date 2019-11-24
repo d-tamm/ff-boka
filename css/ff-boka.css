@@ -1,5 +1,21 @@
 /* Styles not belonging to the jQuery mobile framework and/or theme roller */
 
+/* Define Friluftsframjandet custom colors */
+:root {
+    --FF-blue: #407EC9;
+    --FF-cyan: #00A49D;
+    --FF-green: #75B22A;
+    --FF-yellow: #FBD600;
+    --FF-pink: #DC0063;
+    --FF-beige: #D0BA8A;
+    --FF-orange: #E84F1C;
+    --FF-gray: #54544A;
+    --FF-busy: var(--FF-orange);
+    --FF-free: #DDDDDD;
+    --FF-blocked: repeating-linear-gradient(-45deg, var(--FF-busy), var(--FF-free) 3px, var(--FF-busy) 6px);
+    --FF-unknown: url(/resources/unknown_bg.png);
+}
+
 /* Make more space for text in the header. */
 .ui-header .ui-title {
 	margin: 0 30px;
@@ -22,6 +38,11 @@
 	right: 0.4em;
 }
 
+.controlgroup-textinput {
+	padding-top:0.22em;
+	padding-bottom:0.22em;
+}
+
 /* required fields in forms */
 label.required:after {
 	content: " *";
@@ -39,7 +60,7 @@ input:invalid {
 }
 
 input.change-confirmed, textarea.change-confirmed, a.change-confirmed {
-	background:#75B22A !important;
+	background:var(--FF-green) !important;
 }
 
 .ajax-input, .check-ass, .prebook-text, .item-img-caption {
@@ -47,7 +68,7 @@ input.change-confirmed, textarea.change-confirmed, a.change-confirmed {
 }
 
 li.selected {
-	background: #407EC9 !important;
+	background: var(--FF-blue) !important;
 }
 
 #cat-img-preview {
@@ -63,7 +84,7 @@ li.selected {
 }
 
 .item-checked a {
-	background-color:#75B22A !important;
+	background-color:var(--FF-green) !important;
 }
 
 #assigned-cat-access a, #assigned-cat-access p {
@@ -73,6 +94,17 @@ li.selected {
 
 .item-img-preview {
 	width:100%;
+}
+
+.item-image {
+    margin: 20px 0;
+}
+.item-image img {
+    width: 100%;
+    box-shadow: 1px 1px 5px gray;
+}
+.item-image label {
+    font-size: small;
 }
 
 .inactive a {
@@ -89,3 +121,51 @@ li.selected {
 	background-size: 18px 18px;
 }
 
+.freebusy-bar {
+	overflow: hidden;
+	position: relative;
+	width: 100%;
+	height: 20px;
+	margin-bottom:10px;
+	background-color: var(--FF-free);
+	box-shadow: 1px 1px 5px gray;
+}
+.freebusy-bar.composed {
+	height: 50px;
+}
+
+.freebusy-bar .freebusy-free,
+.freebusy-bar .freebusy-busy,
+.freebusy-bar .freebusy-blocked,
+.freebusy-bar .freebusy-unknown,
+.freebusy-bar .freebusy-tic {
+    position: absolute;
+    top: 0px;
+    height: 100%;
+}
+.freebusy-free {
+    background-color: var(--FF-free);
+    z-index: 1;
+}
+.freebusy-busy {
+    background-color:var(--FF-busy);
+    z-index: 4;
+}
+.freebusy-blocked {
+    background: var(--FF-blocked);
+    z-index: 3;
+}
+.freebusy-unknown {
+	left: 0px;
+	width: 100%;
+    background: var(--FF-unknown);
+    z-index: 2;
+}
+.freebusy-tic {
+    border-left:1px solid var(--FF-gray);
+    z-index: 5;
+}
+.freebusy-tic span {
+	background-color: #ffffffa0;
+	box-shadow: 0px 0px 4px #ffffff;
+}
