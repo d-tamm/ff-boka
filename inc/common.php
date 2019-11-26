@@ -141,7 +141,7 @@ function head(string $caption, $currentUser=NULL) {
 		switch ($_SERVER['PHP_SELF']) {
 		case "/admin/category.php": $href="/admin"; $transition="slidedown"; $icon="back"; break;
 		case "/admin/item.php": $href="/admin/category.php?expand=items"; $transition="slidedown"; $icon="back"; break;
-		case "/book.php": $href="javascript:history.back();"; $transition="slidedown"; $icon="back"; break;
+		case "/subbooking.php": $href="javascript:history.back();"; $transition="slidedown"; $icon="back"; break;
 		default: $href="/index.php"; $icon="home"; $transition="slidedown";
 		}
 		echo "<a href='$href' data-transition='$transition' data-ajax='false' data-role='button' data-icon='$icon' data-iconpos='notext' class='ui-btn-right ui-nodisc-icon ui-alt-icon'></a>";

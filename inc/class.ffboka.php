@@ -27,6 +27,14 @@ class FFBoka {
     const ACCESS_CATADMIN = 16;
     /** Full access to section */
     const ACCESS_SECTIONADMIN = 32;
+
+    /** Booking status constants */
+    /** Booking is being added by user, but has not yet been sent */
+    const STATUS_PENDING=0;
+    /** Booking has been placed, but needs to be confirmed */
+    const STATUS_PREBOOKED=1;
+    /** Booking has been placed and is confirmed */
+    const STATUS_CONFIRMED=2;
     
     /** URL to Friluftsfrämjandet's API */
     protected static $apiUrl;
@@ -186,7 +194,10 @@ class FFBoka {
 
 
 
-
+/**
+ * Class User
+ * Represents a user of the system (both admins and normal users)
+ */
 class User extends FFBoka {
     private $id;
     private $sectionId;
@@ -289,6 +300,15 @@ class User extends FFBoka {
 	    if ($this->id) self::$db->exec("INSERT INTO bookings SET userId={$this->id}");
 	    else self::$db->exec("INSERT INTO bookings () VALUES ()");
 	    return new Booking(self::$db->lastInsertId());
+	}
+	
+	/**
+	 * Get booking IDs of bookings which the user has initiated but not completed
+	 * @return int[] booking IDs
+	 */
+	public function unfinishedBookings() {
+	    $stmt = self::$db->query("SELECT bookingId FROM booked_items INNER JOIN subbookings USING (subbookingId) INNER JOIN bookings USING (bookingId) WHERE userId={$this->id} AND status=" . FFBoka::STATUS_PENDING);
+	    return $stmt->fetchAll(\PDO::FETCH_COLUMN, 0);
 	}
 }
 
@@ -423,6 +443,28 @@ class Section extends FFBoka {
         // Check for admin assignments by member ID
         if (in_array($user->id, $this->getAdmins())) return FFBoka::ACCESS_SECTIONADMIN;
         else return 0;
+    }
+    
+    /**
+     * Add a booking question template to this section
+     * @return boolean|\FFBoka\Question
+     */
+    public function addQuestion() {
+        if (!self::$db->exec("INSERT INTO questions SET sectionId={$this->id}")) return FALSE;
+        return new Question(self::$db->lastInsertId());
+    }
+    
+    /**
+     * Get all question templates in section
+     * @return \FFBoka\Question[]
+     */
+    public function questions() {
+        $questions = array();
+        $stmt = self::$db->query("SELECT questionId FROM questions WHERE sectionId={$this->id}");
+        while ($row = $stmt->fetch(\PDO::FETCH_OBJ)) {
+            $questions[] = new Question($row->questionId);
+        }
+        return $questions;
     }
 }
 
@@ -908,7 +950,7 @@ class Item extends FFBoka {
 		$stmt = self::$db->prepare("SET @start = :start");
 		$stmt->execute(array(":start"=>$start));
 		// Get freebusy information. 604800 seconds per week.
-        $stmt = self::$db->query("SELECT bufferAfterBooking, DATE_SUB(start, INTERVAL bufferAfterBooking HOUR) start, UNIX_TIMESTAMP(start) unixStart, DATE_ADD(end, INTERVAL bufferAfterBooking HOUR) end, UNIX_TIMESTAMP(end) unixEnd FROM booked_items INNER JOIN subbookings USING (subbookingId) INNER JOIN bookings USING (bookingId) INNER JOIN items USING (itemId) INNER JOIN categories USING (catId) WHERE itemId={$this->id} AND bookings.status>" . Booking::STATUS_PENDING . " AND ((UNIX_TIMESTAMP(start)-bufferAfterBooking*3600<@start AND UNIX_TIMESTAMP(end)+bufferAfterBooking*3600>@start+604800) OR (UNIX_TIMESTAMP(start)-bufferAfterBooking*3600>@start AND UNIX_TIMESTAMP(start)-bufferAfterBooking*3600<@start+604800) OR (UNIX_TIMESTAMP(end)+bufferAfterBooking*3600>@start AND UNIX_TIMESTAMP(end)+bufferAfterBooking*3600<@start+604800))");
+        $stmt = self::$db->query("SELECT bufferAfterBooking, DATE_SUB(start, INTERVAL bufferAfterBooking HOUR) start, UNIX_TIMESTAMP(start) unixStart, DATE_ADD(end, INTERVAL bufferAfterBooking HOUR) end, UNIX_TIMESTAMP(end) unixEnd FROM booked_items INNER JOIN subbookings USING (subbookingId) INNER JOIN bookings USING (bookingId) INNER JOIN items USING (itemId) INNER JOIN categories USING (catId) WHERE itemId={$this->id} AND booked_items.status>" . FFBoka::STATUS_PENDING . " AND ((UNIX_TIMESTAMP(start)-bufferAfterBooking*3600<@start AND UNIX_TIMESTAMP(end)+bufferAfterBooking*3600>@start+604800) OR (UNIX_TIMESTAMP(start)-bufferAfterBooking*3600>@start AND UNIX_TIMESTAMP(start)-bufferAfterBooking*3600<@start+604800) OR (UNIX_TIMESTAMP(end)+bufferAfterBooking*3600>@start AND UNIX_TIMESTAMP(end)+bufferAfterBooking*3600<@start+604800))");
 
         $ret = "";
         while ($row = $stmt->fetch(PDO::FETCH_OBJ)) {
@@ -952,11 +994,44 @@ class Item extends FFBoka {
     public function isAvailable(int $start, int $end) {
         $stmt = self::$db->prepare("SET @start = :start, @end = :end");
         $stmt->execute(array(":start"=>$start, ":end"=>$end));
-        $stmt = self::$db->query("SELECT subbookingId FROM booked_items INNER JOIN subbookings USING (subbookingId) INNER JOIN bookings USING (bookingId) INNER JOIN items USING (itemId) INNER JOIN categories USING (catId) WHERE itemId={$this->id} AND bookings.status>" . Booking::STATUS_PENDING . " AND ((UNIX_TIMESTAMP(start)-bufferAfterBooking*3600<@start AND UNIX_TIMESTAMP(end)+bufferAfterBooking*3600>@end) OR (UNIX_TIMESTAMP(start)-bufferAfterBooking*3600>@start AND UNIX_TIMESTAMP(start)-bufferAfterBooking*3600<@end) OR (UNIX_TIMESTAMP(end)+bufferAfterBooking*3600>@start AND UNIX_TIMESTAMP(end)+bufferAfterBooking*3600<@end))");
+        $stmt = self::$db->query("SELECT subbookingId FROM booked_items INNER JOIN subbookings USING (subbookingId) INNER JOIN bookings USING (bookingId) INNER JOIN items USING (itemId) INNER JOIN categories USING (catId) WHERE itemId={$this->id} AND booked_items.status>" . FFBoka::STATUS_PENDING . " AND ((UNIX_TIMESTAMP(start)-bufferAfterBooking*3600<@start AND UNIX_TIMESTAMP(end)+bufferAfterBooking*3600>@end) OR (UNIX_TIMESTAMP(start)-bufferAfterBooking*3600>@start AND UNIX_TIMESTAMP(start)-bufferAfterBooking*3600<@end) OR (UNIX_TIMESTAMP(end)+bufferAfterBooking*3600>@start AND UNIX_TIMESTAMP(end)+bufferAfterBooking*3600<@end))");
         return ($stmt->rowCount()===0);
     }
 }
-        
+
+
+/**
+ * Class ItemBooked: Item in a subbooking
+ * @author eltern
+ */
+class ItemBooked extends Item {
+    /** The ID of the subbooking the item belongs to */
+    public $subbookingId;
+    
+    /**
+     * Set the booking status of the item
+     * @param int $status One of the FFBoka::STATUS_xx constants
+     * @return int|boolean Returns the set value, or false on failure
+     */
+    public function setStatus(int $status) {
+        $stmt = self::$db->prepare("UPDATE booked_items SET status=? WHERE subbookingId={$this->subbookingId} AND itemId={$this->id}");
+        if ($stmt->execute(array($status))) return $status;
+        else return FALSE;
+    }
+    
+    /**
+     * Get the booking status of the item
+     * @return int $status
+     */
+    public function getStatus() {
+        $stmt = self::$db->query("SELECT status FROM booked_items WHERE subbookingId={$this->subbookingId} AND itemId={$this->id}");
+        $row = $stmt->fetch(\PDO::FETCH_OBJ);
+        return $row->status;
+    }
+}
+
+
+
 /**
  * Class for handling item pictures
  * @author Daniel Tamm
@@ -1055,17 +1130,13 @@ class Image extends FFBoka {
 }
 
 
+
+
 /**
  * Class containing complete booking, with one or more subbookings.
  * @author Daniel Tamm
  */
 class Booking extends FFBoka {
-    /** Booking is being added by user, but has not yet been sent */
-    const STATUS_PENDING=0;
-    /** Booking has been placed, but needs to be confirmed */
-    const STATUS_PREBOOKED=1;
-    /** Booking has been placed and is confirmed */
-    const STATUS_CONFIRMED=2;
     
     private $id;
     private $userId;
@@ -1103,7 +1174,6 @@ class Booking extends FFBoka {
                 return $this->$name;
             case "commentCust":
             case "commentIntern":
-            case "status":
             case "payed": //Datetime field
             case "extName":
             case "extPhone":
@@ -1111,6 +1181,10 @@ class Booking extends FFBoka {
                 $stmt = self::$db->query("SELECT $name FROM bookings WHERE bookingId={$this->id}");
                 $row = $stmt->fetch(PDO::FETCH_OBJ);
                 return $row->$name;
+            case "sectionId":
+                // We just follow the path of one item in the booking to get to the section (all belong to same section)
+                $stmt = self::$db->query("SELECT sectionId FROM subbookings INNER JOIN booked_items USING (subbookingId) INNER JOIN items USING (itemId) INNER JOIN categories USING (catId) WHERE bookingId={$this->id}");
+                return $stmt->fetch(\PDO::FETCH_OBJ)->sectionId;
             default:
                 throw new \Exception("Use of undefined Booking property $name");
         }
@@ -1141,6 +1215,28 @@ class Booking extends FFBoka {
     }
     
     /**
+     * Remove the whole booking
+     * @return bool Success
+     */
+    public function delete() {
+        return self::$db->exec("DELETE FROM bookings WHERE bookingId={$this->id}");
+    }
+    
+    /**
+     * Get the status of the booking. 
+     * @return int The least status of all items in the booking
+     */
+    public function status() {
+        $leastStatus = FFBoka::STATUS_CONFIRMED;
+        foreach ($this->subbookings() as $sub) {
+            foreach ($sub->items() as $item) {
+                $leastStatus = $leastStatus & $item->getStatus();
+            }
+        }
+        return $leastStatus;
+    }
+    
+    /**
      * Create a new subbooking
      * @return \FFBoka\Subbooking
      */
@@ -1161,7 +1257,32 @@ class Booking extends FFBoka {
         }
         return $subs;
     }
+    
+    /**
+     * Add the answer to a booking question to the booking
+     * @param string $question The asked question
+     * @param string $answer The answer given by the booker
+     * @return bool True on success
+     */
+    public function addAnswer(string $question, string $answer) {
+        $stmt = self::$db->prepare("INSERT INTO booking_answers SET bookingId={$this->id}, question=:question, answer=:answer");
+        return $stmt->execute(array(
+            ":question"=>$question,
+            ":answer"=>$answer,
+        ));
+    }
+    
+    /**
+     * Get all booking questions and answers
+     * @return [ { string question, string answer }, ... ]
+     */
+    public function answers() {
+        $stmt = self::$db->query("SELECT question, answer FROM booking_answers WHERE bookingId={$this->id}");
+        return $stmt->fetchAll(\PDO::FETCH_OBJ);
+    }
 }
+
+
 
 
 /**
@@ -1244,7 +1365,7 @@ class Subbooking extends FFBoka {
     
     /**
      * Add an item to the subbooking.
-     * @param int $itemId
+     * @param int $itemId ID of the item to add
      * @return bool True on success
      */
     public function addItem(int $itemId) {
@@ -1254,14 +1375,121 @@ class Subbooking extends FFBoka {
     
     /**
      * Get all items contained in this subbooking
-     * @return \FFBoka\Item[]
+     * @return \FFBoka\ItemBooked[]
      */
     public function items() {
-        $stmt = self::$db->query("SELECT itemId FROM booked_items WHERE subbookingId={$this->id}");
+        $stmt = self::$db->query("SELECT itemId, status FROM booked_items WHERE subbookingId={$this->id}");
         $items = array();
         while ($row = $stmt->fetch(\PDO::FETCH_OBJ)) {
-            $items[] = new Item($row->itemId);
+            $item = new ItemBooked($row->itemId);
+            $item->subbookingId = $this->id;
+            $item->setStatus($row->status);
+            $items[] = $item;
         }
         return $items;
+    }
+	
+	/**
+	 * Set the booking status of an item in subbooking
+	 * @param int $itemId ID of the item
+	 * @param int $status
+	 * @return bool True on success
+	 */
+	public function setStatus(int $itemId, int $status) {
+		$stmt = self::$db->prepare("UPDATE booked_items SET status=:status WHERE subbookingId={$this->id} AND itemId=:itemId");
+		return $stmt->execute(array(":status"=>$status, ":itemId"=>$itemId));
+	}
+	
+	/**
+	 * Get the booking status of an item in subbooking
+	 * @param int $itemId ID of the item
+	 * @return int The booking status of the item
+	 */
+	public function getStatus(int $itemId) {
+		$stmt = self::$db->prepare("SELECT status FROM booked_items WHERE subbookingId={$this->id} AND itemId=?");
+		$stmt->execute(array($itemId));
+		$row = $stmt->fetch(PDO::FETCH_OBJ);
+		return $row['status'];
+	}
+}
+
+
+
+/**
+ * Class for storing question templates
+ * @author Daniel Tamm
+ */
+class Question extends FFBoka {
+    private $id;
+    private $sectionId;
+    
+    /**
+     * Question instantiation.
+     * @param int $id ID of the question
+     * @throws \Exception if no or an invalid $id is passed.
+     */
+    public function __construct($id) {
+        if ($id) { // Try to return an existing booking from database
+            $stmt = self::$db->prepare("SELECT questionId, sectionId FROM questions WHERE questionId=?");
+            $stmt->execute(array($id));
+            if ($row = $stmt->fetch(PDO::FETCH_OBJ)) {
+                $this->id = $row->questionId;
+                $this->sectionId = $row->sectionId;
+            } else {
+                throw new \Exception("Can't instatiate Question with ID $id.");
+            }
+        } else {
+            throw new \Exception("Can't instatiate Question without ID.");
+        }
+    }
+    
+    /**
+     * Getter function for Question properties
+     * @param string $name Name of the property to retrieve
+     * @throws \Exception
+     * @return number|string
+     */
+    public function __get($name) {
+        switch ($name) {
+            case "id":
+            case "sectionId":
+                return $this->$name;
+            case "type":
+            case "caption":
+            case "options":
+                $stmt = self::$db->query("SELECT $name FROM questions WHERE questionId={$this->id}");
+                $row = $stmt->fetch(PDO::FETCH_OBJ);
+                return $row->$name;
+            default:
+                throw new \Exception("Use of undefined Question property $name");
+        }
+    }
+    
+    /**
+     * Setter function for Question properties
+     * @param string $name Property name
+     * @param int|string $value Property value.
+     * @return string Set value on success, false on failure.
+     */
+    public function __set($name, $value) {
+        switch ($name) {
+            case "type":
+            case "caption":
+            case "options":
+                $stmt = self::$db->prepare("UPDATE questions SET $name=? WHERE questionId={$this->id}");
+                if ($stmt->execute(array($value))) return $value;
+                break;
+            default:
+                throw new \Exception("Use of undefined Question property $name");
+        }
+        return false;
+    }
+    
+    /**
+     * Delete the question
+     * @return bool Success
+     */
+    public function delete() {
+        return self::$db->exec("DELETE FROM questions WHERE questionId={$this->id}");
     }
 }

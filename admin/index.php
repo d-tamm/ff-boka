@@ -127,6 +127,11 @@ unset($_SESSION['catId']);
 		<?php if ($section->getAccess($currentUser) & FFBoka::ACCESS_SECTIONADMIN) { ?>
 		
 		<div data-role="collapsible" data-collapsed="<?= $_REQUEST['expand']=="admins" ? "false" : "true" ?>">
+			<h2>Bokningsfrågor</h2>
+			<p>Här definieras frågor som ska visas vid bokning. Definierade frågor kan sedan läggas till på kategorinivå.</p>
+		</div>
+		
+		<div data-role="collapsible" data-collapsed="<?= $_REQUEST['expand']=="admins" ? "false" : "true" ?>">
 			<h2>Administratörer</h2>
 
 			<p>Lägg till ny administratör på LA-nivå: (skriv medlemsnummer eller namn)

@@ -22,9 +22,21 @@ if (isset($_REQUEST['action'])) {
 			break;
 		case "sessionExpired":
 		    $message = "Du har blivit utloggad på grund av inaktivitet.";
+		    // Remove session
+		    session_unset();
+		    session_destroy();
+		    session_write_close();
+		    setcookie(session_name(), "", 0, "/");
 		    break;
 		case "accessDenied":
 		    $message = "Du har inte tillgång till {$_REQUEST['to']}.";
+		    break;
+		case "bookingDeleted":
+		    $message = "Din bokning har nu tagits bort.";
+		    break;
+		case "bookingConfirmed":
+		    $message = "Din bokning är nu klar. En bekräftelse har skickats till din epostadress {$_REQUEST['mail']}.";
+		    break;
     }
 }
 
@@ -124,17 +136,25 @@ if (isset($_REQUEST['message'])) $message .= "<br>".$_REQUEST['message'];
 
 	<p class="ui-body ui-body-b">Välkommen till testplattformen för FFs framtida resursbokning!<br>Här kan du följa utvecklingen av projektet och testa. Var inte rädd för att förstöra något, utan försök gärna att utmana funktionerna och hitta svaga punkter!</p>
 
+	<?php
+	if ($_SESSION['authenticatedUser']) {
+    	if ($ub = $currentUser->unfinishedBookings()) {
+    	    echo "<p class='ui-body ui-body-c'>Du har minst en påbörjad bokning som du bör avsluta eller ta bort.";
+    	    echo "<a href='booking.php?bookingId={$ub[0]}' class='ui-btn ui-btn-a'>Gå till bokningen</a></p>";
+    	}
+	}
+	?>
+
 	<div data-role='collapsibleset' data-inset='false'>
 		<?php if ($_SESSION['authenticatedUser']) { ?>
 		<div data-role='collapsible' data-collapsed='false'>
 			<h3>Boka som medlem</h3>
-			<p class="ui-body ui-body-a"><i>Jobbar mest med detta just nu :)</i></p>
 			<?php
 			// Show a list of all sections with categories where user may book resources
 			$sectionList = "";
 			foreach ($FF->getAllSections($currentUser->sectionId) as $section) {
 			    if ($section->showFor($currentUser)) {
-					$sectionList .= "<a href='book.php?sectionId={$section->id}' class='ui-btn' data-ajax='false'>{$section->name}</a>";
+					$sectionList .= "<a href='subbooking.php?sectionId={$section->id}' class='ui-btn' data-ajax='false'>{$section->name}</a>";
 				}
 			}
 			if ($sectionList) echo $sectionList;
@@ -167,11 +187,10 @@ if (isset($_REQUEST['message'])) $message .= "<br>".$_REQUEST['message'];
 	<?php if (!($_SESSION['authenticatedUser'])) { ?>
 		<div data-role='collapsible' data-collapsed='true'>
 			<h3>Boka som gäst</h3>
-			<p class="ui-body ui-body-a"><i>Jobbar mest med detta just nu :)</i></p>
 			<?php // List of sections with categories open for guests
 			foreach ($FF->getAllSections() as $section) {
 				if ($section->showFor(new User(0))) {
-					echo "<a href='book.php?sectionId={$section->id}&guest' data-ajax='false' class='ui-btn'>{$section->name}</a>";
+					echo "<a href='subbooking.php?sectionId={$section->id}&guest' data-ajax='false' class='ui-btn'>{$section->name}</a>";
 				}
 			} ?>
 		</div>

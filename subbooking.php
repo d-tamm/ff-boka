@@ -159,7 +159,7 @@ switch ($_REQUEST['action']) {
 	        }
 	    }
 	    if (count($unavail)===0) {
-	        // Everything is OK. Create (sub)booking
+	        // Times are OK. Create (sub)booking
 	        if (isset($_SESSION['bookingId'])) {
 	            $booking = new Booking($_SESSION['bookingId']);
 	        } else {
@@ -169,6 +169,7 @@ switch ($_REQUEST['action']) {
 	        $subbooking = $booking->addSubbooking();
 	        $subbooking->start = htmlentities($_REQUEST['start']);
 	        $subbooking->end = htmlentities($_REQUEST['end']);
+			// Add items to subbooking
 	        foreach (array_keys($_REQUEST['ids']) as $id) {
 	            $subbooking->addItem(htmlentities($id));
 	        }
@@ -200,8 +201,8 @@ switch ($_REQUEST['action']) {
 
 
 <body>
-<div data-role="page" id="page-book1">
-    <?= head("Boka resurser", $currentUser) ?>
+<div data-role="page" id="page-subbooking">
+    <?= head("Lägg till resurser", $currentUser) ?>
     <div role="main" class="ui-content">
 
     <div data-role="popup" data-overlay-theme="b" id="popupMessage" class="ui-content">
@@ -297,14 +298,6 @@ switch ($_REQUEST['action']) {
 		<ul id='ul-items-unavail'></ul>
 		<a href="#" data-rel="back" class="ui-btn">OK</a>
 	</div>
-	
-	<div data-role="popup" id="popup-times-ok" class="ui-content" data-overlay-theme="b">
-		<h3>Bra jobbat!</h3>
-		<p>Resurserna har nu lagts till din bokning.</p>
-		<p>Du kan nu fortsätta med att lägga till fler resurser, t.ex. med andra tider, eller gå vidare och slutföra bokningen.</p>
-		<a href="#" class="ui-btn" data-rel="back">Lägg till fler</a>
-		<a href="book2.php" class="ui-btn">Slutför bokningen</a>
-	</div>
 
     <script>
         var checkedItems = {};
@@ -322,7 +315,7 @@ switch ($_REQUEST['action']) {
 			if (fbStart.getFullYear() != fbEnd.getFullYear()) readableRange += " '"+fbStart.getFullYear().toString().substr(-2);
 			readableRange += " &ndash; sö " + fbEnd.getDate() + "/" + (fbEnd.getMonth()+1) + " '"+fbEnd.getFullYear().toString().substr(-2);
             // Get freebusy bars
-            $.getJSON("book.php", { action: "ajaxFreebusy", start: fbStart.valueOf()/1000, ids: checkedItems }, function(data, status) {
+            $.getJSON("subbooking.php", { action: "ajaxFreebusy", start: fbStart.valueOf()/1000, ids: checkedItems }, function(data, status) {
                 $("#book-current-range-readable").html( readableRange );
 				$.each(data.freebusyBars, function(key, value) {
 					$("#freebusy-"+key).html(value).append("<?= Item::freebusyScale() ?>");
@@ -342,7 +335,7 @@ switch ($_REQUEST['action']) {
             
             if (Object.keys(checkedItems).length>0) {
                 // Get access information for all selected items
-                $.getJSON("book.php", { action: "ajaxCombinedAccess", start: fbStart.valueOf()/1000, ids: checkedItems }, function(data, status) {
+                $.getJSON("subbooking.php", { action: "ajaxCombinedAccess", start: fbStart.valueOf()/1000, ids: checkedItems }, function(data, status) {
                     if (data.access <= <?= FFBoka::ACCESS_READASK ?>) {
                          $("#book-access-msg").html("<p>Komplett information om tillgänglighet kan inte visas för ditt urval av resurser. Ange önskad start- och sluttid nedan för att skicka en intresseförfrågan.</p><p>Ansvarig kommer att höra av sig till dig med besked om tillgänglighet och eventuell bekräftelse av din förfrågan.</p>");
                     } else {
@@ -361,7 +354,7 @@ switch ($_REQUEST['action']) {
         }
 		
 		function popupItemDetails(id) {
-            $.getJSON("book.php", { action: "ajaxItemDetails", id: id }, function(data, status) {
+            $.getJSON("subbooking.php", { action: "ajaxItemDetails", id: id }, function(data, status) {
                 $("#popup-item-details").html(data).popup('open', { transition: "pop", y: 0 });
             });
 		}
@@ -382,7 +375,7 @@ switch ($_REQUEST['action']) {
 				return false;
 			}
 			// Send times to server to check availability:
-			$.getJSON("book.php", {
+			$.getJSON("subbooking.php", {
 				action: "ajaxCheckTimes",
 				ids: checkedItems,
 				start: startDate.valueOf()/1000,
@@ -399,8 +392,7 @@ switch ($_REQUEST['action']) {
 					$("#book-time-end").val("");
 					// update freebusy
 					scrollDate(0);
-					// Show OK dialog
-					$("#popup-times-ok").popup('open', { transition: "pop" });
+					location.href="booking.php";
 				} else {
 					$("#ul-items-unavail").html("");
 					$.each(data.unavail, function( key, item ) {
