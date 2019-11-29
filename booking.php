@@ -70,7 +70,7 @@ switch ($_REQUEST['action']) {
     <?= head("Din bokning", $currentUser) ?>
     <div role="main" class="ui-content">
 
-    <h4>Lokalavdelning: <?= $section->name ?></h4>
+    <h4>Lokalavdelning: <?= htmlspecialchars($section->name) ?></h4>
 
 	<ul data-role='listview' data-inset='true' data-divider-theme='a' data-split-icon='delete'>
 	<?php
@@ -79,8 +79,8 @@ switch ($_REQUEST['action']) {
 		foreach ($sub->items() as $item) {
 			echo "<li><a href='javascript:popup({$item->id})'>" .
 			embedImage($item->getFeaturedImage()->thumb) .
-			"<h3>{$item->caption}</h3>" .
-			"<p>{$item->description}</p>" .
+			"<h3>" . htmlspecialchars($item->caption) . "</h3>" .
+			"<p>" . htmlspecialchars($item->description) . "</p>" .
 			"</a><a href='javascript:deleteItemFromBooking({$item->id})'>Ta bort</a></li>\n";
 		}
 	}
@@ -95,11 +95,11 @@ switch ($_REQUEST['action']) {
 		
 		<?php if ($currentUser->id) { ?>
 			<p class='ui-body ui-body-a'>
-				Du är inloggad som <?= $currentUser->name ?>, med följande kontaktuppgifter:<br>
-				&phone;: <?= $currentUser->phone ?><br>
-				<b>@</b>: <?= $currentUser->mail ?>
+				Du är inloggad som <?= htmlspecialchars($currentUser->name) ?>, med följande kontaktuppgifter:<br>
+				&phone;: <?= htmlspecialchars($currentUser->phone) ?><br>
+				<b>@</b>: <?= htmlspecialchars($currentUser->mail) ?>
 			</p>
-			<input type="hidden" name="mail" value="<?= $currentUser->mail ?>">
+			<input type="hidden" name="mail" value="<?= htmlspecialchars($currentUser->mail) ?>">
 		<?php } else { ?>
     	    <div class='ui-body ui-body-a'>Ange dina kontaktuppgifter så vi kan nå dig vid frågor:<br>
     			<div class="ui-field-contain">

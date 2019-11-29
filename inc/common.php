@@ -126,7 +126,7 @@ function head(string $caption, $currentUser=NULL) {
 		<ul data-role="listview">
 			<li data-icon="home"><a href="/index.php" data-ajax="false" data-rel="close">Startsida</a></li><?php
 			if ($_SESSION['authenticatedUser']) { ?>
-				<li data-icon="user"><a href="/userdata.php" data-rel="close" data-ajax="false"><?= $currentUser->name ?></a></li>
+				<li data-icon="user"><a href="/userdata.php" data-rel="close" data-ajax="false"><?= htmlspecialchars($currentUser->name) ?></a></li>
 				<li data-icon="power"><a href="/index.php?logout" data-rel="close" data-ajax="false">Logga ut</a></li><?php
 			} ?>
 			<li data-icon="info"><a href="help.php" data-rel="close">Hjälp</a></li>

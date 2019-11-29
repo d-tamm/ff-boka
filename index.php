@@ -35,7 +35,7 @@ if (isset($_REQUEST['action'])) {
 		    $message = "Din bokning har nu tagits bort.";
 		    break;
 		case "bookingConfirmed":
-		    $message = "Din bokning är nu klar. En bekräftelse har skickats till din epostadress {$_REQUEST['mail']}.";
+		    $message = "Din bokning är nu klar. En bekräftelse har skickats till din epostadress " . htmlspecialchars($_REQUEST['mail']) . ".";
 		    break;
     }
 }
@@ -109,7 +109,7 @@ if (isset($_REQUEST['message'])) $message .= "<br>".$_REQUEST['message'];
 
 	<script>
 	$( document ).on( "mobileinit", function() {
-		<?php if (isset($message)) { ?>
+		<?php if (isset($message)) { // TODO: seems that no messages are being displayed. ?>
 		$( document ).on( "pagecontainershow", function( event, ui ) {
 			setTimeout(function() {
 				$("#popupMessage").popup('open');
@@ -154,7 +154,7 @@ if (isset($_REQUEST['message'])) $message .= "<br>".$_REQUEST['message'];
 			$sectionList = "";
 			foreach ($FF->getAllSections($currentUser->sectionId) as $section) {
 			    if ($section->showFor($currentUser)) {
-					$sectionList .= "<a href='subbooking.php?sectionId={$section->id}' class='ui-btn' data-ajax='false'>{$section->name}</a>";
+					$sectionList .= "<a href='subbooking.php?sectionId={$section->id}' class='ui-btn' data-ajax='false'>" . htmlspecialchars($section->name) . "</a>";
 				}
 			}
 			if ($sectionList) echo $sectionList;
@@ -166,10 +166,10 @@ if (isset($_REQUEST['message'])) $message .= "<br>".$_REQUEST['message'];
 		$sectionList = "";
 		foreach ($FF->getAllSections() as $section) {
 			if ($section->showFor($currentUser, FFBoka::ACCESS_CATADMIN)) {
-				$sectionList .= "<a href='admin/?sectionId={$section->id}' class='ui-btn' data-ajax='false'>{$section->name}</a>";
+				$sectionList .= "<a href='admin/?sectionId={$section->id}' class='ui-btn' data-ajax='false'>" . htmlspecialchars($section->name) . "</a>";
 			}
 		}
-		if ($sectionList) echo "<div data-role='collapsible' data-collapsed='true'><h3>Administrera</h3><p class='ui-body ui-body-a'>Här fungerar det mesta nu. Testa gärna och återkom med synpunkter!</p>$sectionList</div>";
+		if ($sectionList) echo "<div data-role='collapsible' data-collapsed='true'><h3>Administrera</h3>$sectionList</div>";
 
 		// TODO: This is for testing only. Remove before switching to production!
 		$molndal = new Section(52);
@@ -190,7 +190,7 @@ if (isset($_REQUEST['message'])) $message .= "<br>".$_REQUEST['message'];
 			<?php // List of sections with categories open for guests
 			foreach ($FF->getAllSections() as $section) {
 				if ($section->showFor(new User(0))) {
-					echo "<a href='subbooking.php?sectionId={$section->id}&guest' data-ajax='false' class='ui-btn'>{$section->name}</a>";
+					echo "<a href='subbooking.php?sectionId={$section->id}&guest' data-ajax='false' class='ui-btn'>" . htmlspecialchars($section->name) . "</a>";
 				}
 			} ?>
 		</div>

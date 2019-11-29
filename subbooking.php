@@ -19,15 +19,15 @@ function displayCat(Category $cat, $user, $fbStart) {
 	if ($cat->showFor($user)) {
 		$access = $cat->getAccess($user);
 		echo "<div data-role='collapsible' data-inset='false'>";
-		echo "<h3><div class='cat-list-img'>" . embedImage($cat->thumb) . "</div>{$cat->caption}</h3>";
-		echo $cat->bookingMsg ? "<p>{$cat->bookingMsg}</p>" : "";
+		echo "<h3><div class='cat-list-img'>" . embedImage($cat->thumb) . "</div>" . htmlspecialchars($cat->caption) . "</h3>";
+		echo $cat->bookingMsg ? "<p>" . str_replace("\n", "<br>", htmlspecialchars($cat->bookingMsg)) . "</p>" : "";
 		if ($access) {
 			echo "<ul data-role='listview' data-split-icon='info' data-split-theme='a'>";
 			foreach ($cat->items() as $item) {
 				if ($item->active) {
 					echo "<li class='book-item' id='book-item-{$item->id}'><a href=\"javascript:toggleItem({$item->id});\">";
 					echo embedImage($item->getFeaturedImage()->thumb);
-					echo "<h4>{$item->caption}</h4>";
+					echo "<h4>" . htmlspecialchars($item->caption) . "</h4>";
 					echo "<div id='freebusy-item-{$item->id}' class='freebusy-bar'></div>";
 					echo "</a><a href='javascript:popupItemDetails({$item->id})'></a>";
 					echo "</li>";
@@ -105,11 +105,11 @@ switch ($_REQUEST['action']) {
         // Reply to ajax request
         header("Content-Type: application/json");
         $item = new Item($_REQUEST['id']);
-        $ret = "<h3>{$item->caption}</h3>";
-        $ret .= $item->description;
+        $ret = "<h3>" . htmlspecialchars($item->caption) . "</h3>";
+        $ret .= str_replace("\n", "<br>", htmlspecialchars($item->description));
         $cat = $item->category();
         foreach ($item->images() as $img) {
-            $ret .= "<div class='item-image'><img src='image.php?type=itemImage&id={$img->id}'><label>{$img->caption}</label></div>";
+            $ret .= "<div class='item-image'><img src='image.php?type=itemImage&id={$img->id}'><label>" . htmlspecialchars($img->caption) . "</label></div>";
         }
         $ret .= "<a href='#' data-rel='back' class='ui-btn ui-icon-delete ui-btn-icon-left'>Stäng inforutan</a>";
         die(json_encode($ret));
@@ -155,7 +155,7 @@ switch ($_REQUEST['action']) {
 	        $acc = $item->category()->getAccess($currentUser);
 	        $minAccess = ($minAccess & $acc);
 	        if ($acc >= FFBoka::ACCESS_PREBOOK) {
-	            if (!$item->isAvailable($_REQUEST['start'], $_REQUEST['end'])) $unavail[] = $item->caption;
+	            if (!$item->isAvailable($_REQUEST['start'], $_REQUEST['end'])) $unavail[] = htmlspecialchars($item->caption);
 	        }
 	    }
 	    if (count($unavail)===0) {
@@ -167,11 +167,11 @@ switch ($_REQUEST['action']) {
 	            $_SESSION['bookingId'] = $booking->id;
 	        }
 	        $subbooking = $booking->addSubbooking();
-	        $subbooking->start = htmlentities($_REQUEST['start']);
-	        $subbooking->end = htmlentities($_REQUEST['end']);
+	        $subbooking->start = $_REQUEST['start'];
+	        $subbooking->end = $_REQUEST['end'];
 			// Add items to subbooking
 	        foreach (array_keys($_REQUEST['ids']) as $id) {
-	            $subbooking->addItem(htmlentities($id));
+	            $subbooking->addItem($id);
 	        }
 	    }
 	    die(json_encode([
@@ -210,7 +210,7 @@ switch ($_REQUEST['action']) {
         <a href='#' data-rel='back' class='ui-btn ui-btn-icon-left ui-btn-inline ui-corner-all ui-icon-check'>OK</a>
     </div>
 
-    <h4>Lokalavdelning: <?= $section->name ?>
+    <h4>Lokalavdelning: <?= htmlspecialchars($section->name) ?>
         <a href="#popup-help-book1" data-rel="popup" class="tooltip ui-btn ui-alt-icon ui-nodisc-icon ui-btn-inline ui-icon-info ui-btn-icon-notext">Tipps</a>
     </h4>
     <div data-role="popup" id="popup-help-book1" class="ui-content" data-overlay-theme="b">

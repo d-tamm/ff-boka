@@ -105,7 +105,11 @@ class FFBoka {
     public function findUser($q) {
         $stmt = self::$db->prepare("SELECT userId, name FROM users WHERE userId LIKE ? OR name LIKE ?");
         $stmt->execute(array("%$q%", "%$q%"));
-		return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $ret = array();
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $ret[] = array("userId"=>$row['userId'], "name"=>htmlspecialchars($row['name']));
+        }
+        return $ret;
     }
     
     /**
@@ -127,7 +131,7 @@ class FFBoka {
             if (filesize($file['tmp_name'])>$maxFileSize) return array("error"=>"Filen är för stor. Maximal accepterad storlek är " . round($maxFileSize/1024/1024, 0) . " kB.");
         }
         // Get the picture and its size
-        $src = imagecreatefromstring(file_get_contents($file['tmp_name']));
+        $src = @imagecreatefromstring(file_get_contents($file['tmp_name']));
         if (!$src) return array("error"=>"Filformatet stöds inte. Försök med en jpg- eller png-bild.");
         $size = getimagesize($file['tmp_name']);
         $ratio = $size[0]/$size[1];
@@ -1067,11 +1071,11 @@ class Image extends FFBoka {
      * @param int $maxSize Image will be scaled down if any dimension is bigger than this. 0=no limit
      * @param int $thumbSize Size of thumbnail
      * @param int $maxFileSize If file is bigger than this, it will be rejected. 0=no limit
-     * @return boolean Success
+     * @return boolean|array True on success, ["error"=>"errMsg"] on failure
      */
     public function setImage($imgFile, $maxSize=0, $thumbSize=80, $maxFileSize=0) {
         $images = $this->imgFileToString($imgFile, $maxSize, $thumbSize, $maxFileSize);
-        if ($images['error']) return FALSE;
+        if ($images['error']) return $images;
         $stmt = self::$db->prepare("UPDATE item_images SET image=:image, thumb=:thumb WHERE imageID={$this->id}");
         return $stmt->execute(array(
             ":image"=>$images['image'],
@@ -1456,10 +1460,13 @@ class Question extends FFBoka {
                 return $this->$name;
             case "type":
             case "caption":
-            case "options":
                 $stmt = self::$db->query("SELECT $name FROM questions WHERE questionId={$this->id}");
                 $row = $stmt->fetch(PDO::FETCH_OBJ);
                 return $row->$name;
+            case "options":
+                $stmt = self::$db->query("SELECT $name FROM questions WHERE questionId={$this->id}");
+                $row = $stmt->fetch(PDO::FETCH_OBJ);
+                return json_decode($row->$name);
             default:
                 throw new \Exception("Use of undefined Question property $name");
         }

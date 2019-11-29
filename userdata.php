@@ -85,15 +85,15 @@ if ($_GET['first_login']) $message = "Välkommen till resursbokningen! Innan du 
 				<p>Medlemsnummer: <?= $currentUser->id ?></p>
 				<div class="ui-field-contain">
 					<label for="userdata-name" class="required">Namn:</label>
-					<input type="text" name="name" id="userdata-name" required placeholder="Namn" value="<?= $_POST['name'] ? $_POST['name'] : $currentUser->name ?>">
+					<input type="text" name="name" id="userdata-name" required placeholder="Namn" value="<?= htmlspecialchars($_POST['name'] ? $_POST['name'] : $currentUser->name) ?>">
 				</div>
 				<div class="ui-field-contain">
 					<label for="userdata-mail" class="required">Epost:</label>
-					<input type="email" name="mail" id="userdata-mail" required placeholder="Epost" value="<?= $_POST['mail'] ? $_POST['mail'] : $currentUser->mail ?>">
+					<input type="email" name="mail" id="userdata-mail" required placeholder="Epost" value="<?= htmlspecialchars($_POST['mail'] ? $_POST['mail'] : $currentUser->mail) ?>">
 				</div>
 				<div class="ui-field-contain">
 					<label for="userdata-phone" class="required">Telefon:</label>
-					<input type="tel" name="phone" id="userdata-phone" required placeholder="Mobilnummer" value="<?= $_POST['phone'] ? $_POST['phone'] : $currentUser->phone ?>">
+					<input type="tel" name="phone" id="userdata-phone" required placeholder="Mobilnummer" value="<?= htmlspecialchars($_POST['phone'] ? $_POST['phone'] : $currentUser->phone) ?>">
 				</div>
 				<input type="submit" value="Spara" data-icon="check">
 				<p>Ditt lösenord hanteras på <a href="https://www.friluftsframjandet.se" target="_blank">Friluftsfrämjandets hemsida</a>. Du kan inte ändra det här.</p>
