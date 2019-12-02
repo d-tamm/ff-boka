@@ -128,7 +128,8 @@ switch ($_REQUEST['action']) {
             switch ($_REQUEST['name']) {
                 case "caption":
                 case "parentId":
-                case "bookingMsg":
+                case "prebookMsg":
+                case "postbookMsg":
                 case "bufferAfterBooking":
                     header("Content-Type: application/json");
                     if ($_REQUEST['value']=="NULL") $cat->{$_REQUEST['name']} = null;
@@ -249,8 +250,12 @@ unset ($_SESSION['itemId']);
 			</div>
 			<hr>
 			
-			<label for="cat-bookingMsg">Text som ska visas när användare vill boka resurser från denna kategori:</label>
-				<textarea name="bookingMsg" class="ajax-input" id="cat-bookingMsg" placeholder="Exempel: Kom ihåg att ta höjd för torkningstiden efter användningen!"><?= htmlspecialchars($cat->bookingMsg) ?></textarea>
+			<label for="cat-prebookMsg">Text som ska visas när användare vill boka resurser från denna kategori:</label>
+				<textarea name="prebookMsg" class="ajax-input" id="cat-prebookMsg" placeholder="Exempel: Kom ihåg att ta höjd för torkningstiden efter användningen!"><?= htmlspecialchars($cat->prebookMsg) ?></textarea>
+			<hr>
+
+			<label for="cat-postbookMsg">Text som ska skickas med bokningsbekräftelsen:</label>
+				<textarea name="postbookMsg" class="ajax-input" id="cat-postbookMsg" placeholder="Exempel: Uthämtning lör-sön mellan 11 och 16."><?= htmlspecialchars($cat->postbookMsg) ?></textarea>
 			<hr>
             
             <div class="ui-field-contain">
@@ -425,12 +430,17 @@ unset ($_SESSION['itemId']);
 			$("#cat-parentId").on('change', function() {
 				setCatProp("parentId", this.value);
 			});
-
-			$("#cat-bookingMsg").on('input', function() {
+			
+			$("#cat-prebookMsg").on('input', function() {
 				clearTimeout(toutSetValue);
-				toutSetValue = setTimeout(setCatProp, 1000, "bookingMsg", this.value);
+				toutSetValue = setTimeout(setCatProp, 1000, "prebookMsg", this.value);
 			});
-            
+
+			$("#cat-postbookMsg").on('input', function() {
+				clearTimeout(toutSetValue);
+				toutSetValue = setTimeout(setCatProp, 1000, "postbookMsg", this.value);
+			});
+			
             $("#cat-bufferAfterBooking").on('input', function() {
                 clearTimeout(toutSetValue);
                 toutSetValue = setTimeout(setCatProp, 1000, "bufferAfterBooking", this.value);

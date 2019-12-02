@@ -63,14 +63,14 @@ switch ($_REQUEST['action']) {
     	        $booking->addAnswer($question->caption, implode(", ", isset($_REQUEST["answer-$id"]) ? $_REQUEST["answer-$id"] : array()));
     	    }
 	    }
-		// Set booking status of each item, and build confirmation string
+		// Set booking status of each item, and build confirmation string incl post-booking messages
 		$leastStatus = FFBoka::STATUS_CONFIRMED;
 		$messages = array();
 		foreach ($booking->subbookings() as $subbooking) {
 		    $mailItems .= "<p><b>Bokat från " . strftime("%F kl %k", $subbooking->start) . " till " . strftime("%F kl %k", $subbooking->end) . ":</b></p><ul>";
 			foreach ($subbooking->items() as $item) {
 			    $msgRef = array();
-			    foreach ($item->category()->bookingMsgs() as $msg) {
+			    foreach ($item->category()->postbookMsgs() as $msg) {
     			    if (in_array($msg, $messages)) $msgRef[] = "(".(array_search($msg, $messages)+1).")";
     			    else { $messages[] = $msg; $msgRef[] = "(".count($messages).")"; }
 			    }
@@ -103,7 +103,7 @@ switch ($_REQUEST['action']) {
 		        "{{items}}"  => $mailItems,
 		        "{{status}}" => $leastStatus==FFBoka::STATUS_CONFIRMED ? "Bokningen är nu bekräftad." : "Bokningen är preliminär och behöver bekräftas av ansvarig handläggare.",
 		        "{{answers}}"=> $mailAnswers,
-		        "{{bookingLink}}" => $_SESSION['userId'] ? "<a href='{$cfg['url']}'>Logga in på resursbokningen</a> för att se och ändra din bokning." : "",
+		        "{{bookingLink}}" => $_SESSION['authenticatedUser'] ? "<a href='{$cfg['url']}'>Logga in på resursbokningen</a> för att se och ändra din bokning." : "",
 		    )
 	    );
 		unset($_SESSION['bookingId']);
@@ -193,7 +193,7 @@ switch ($_REQUEST['action']) {
 		        case "checkbox":
 		            if ($required) $requiredCheckboxradios[$id] = $question->caption;
 		            foreach ($question->options->choices as $choice) {
-		                echo "\t<label><input type='{$question->type}' name='answer-{$id}[]' value='" . htmlspecialchars($choice ? $choice : $question->caption) . "'> " . htmlspecialchars($choice ? $choice : $question->caption) . ($choice ? "" : " <span class='required'></span>") . "</label>\n";
+		                echo "\t<label><input type='{$question->type}' name='answer-{$id}[]' value='" . htmlspecialchars($choice ? $choice : "Ja") . "'> " . htmlspecialchars($choice ? $choice : $question->caption) . ($choice ? "" : " <span class='required'></span>") . "</label>\n";
 		            }
 		            break;
 		        case "text":

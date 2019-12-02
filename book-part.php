@@ -20,7 +20,7 @@ function displayCat(Category $cat, $user, $fbStart) {
 		$access = $cat->getAccess($user);
 		echo "<div data-role='collapsible' data-inset='false'>";
 		echo "<h3><div class='cat-list-img'>" . embedImage($cat->thumb) . "</div>" . htmlspecialchars($cat->caption) . "</h3>";
-		echo $cat->bookingMsg ? "<p>" . str_replace("\n", "<br>", htmlspecialchars($cat->bookingMsg)) . "</p>" : "";
+		echo $cat->prebookMsg ? "<p>" . str_replace("\n", "<br>", htmlspecialchars($cat->prebookMsg)) . "</p>" : "";
 		if ($access) {
 			echo "<ul data-role='listview' data-split-icon='info' data-split-theme='a'>";
 			foreach ($cat->items() as $item) {

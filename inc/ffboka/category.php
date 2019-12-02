@@ -50,7 +50,8 @@ class Category extends FFBoka {
                 return $value;
             case "parentId":
             case "caption":
-            case "bookingMsg":
+            case "prebookMsg":
+            case "postbookMsg":
             case "bufferAfterBooking":
             case "contactUserId":
             case "accessExternal":
@@ -98,7 +99,8 @@ class Category extends FFBoka {
                 return $this->sectionId;
             case "parentId":
             case "caption":
-            case "bookingMsg":
+            case "prebookMsg":
+            case "postbookMsg":
             case "bufferAfterBooking":
             case "contactUserId":
             case "image":
@@ -121,16 +123,31 @@ class Category extends FFBoka {
     }
 
     /**
-     * Get all booking messages of this and any parent categories.
-     * @return [ string ] Array of strings containing any booking messages of this and parent categories
+     * Get all pre-booking messages of this and any parent categories.
+     * @return [ string ] Array of strings containing any pre-booking messages of this and parent categories
      */
-    public function bookingMsgs() {
+    public function prebookMsgs() {
         if (is_null($this->parentId)) {
-            if ($this->bookingMsg) return array($this->bookingMsg);
+            if ($this->prebookMsg) return array($this->prebookMsg);
             else return array();
         } else {
-            $ret = $this->parent()->bookingMsgs();
-            if ($this->bookingMsg) $ret[] = $this->bookingMsg;
+            $ret = $this->parent()->prebookMsgs();
+            if ($this->prebookMsg) $ret[] = $this->prebookMsg;
+            return $ret;
+        }
+    }
+
+    /**
+     * Get all post-booking messages of this and any parent categories.
+     * @return [ string ] Array of strings containing any post-booking messages of this and parent categories
+     */
+    public function postbookMsgs() {
+        if (is_null($this->parentId)) {
+            if ($this->postbookMsg) return array($this->postbookMsg);
+            else return array();
+        } else {
+            $ret = $this->parent()->postbookMsgs();
+            if ($this->postbookMsg) $ret[] = $this->postbookMsg;
             return $ret;
         }
     }
