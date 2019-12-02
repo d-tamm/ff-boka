@@ -1,12 +1,9 @@
 <?php
 require_once __DIR__ . "/../vendor/autoload.php";
-require_once __DIR__ . "/class.ffboka.php";
-require_once __DIR__ . "/class.item.php";
-require_once __DIR__ . "/class.user.php";
-require_once __DIR__ . "/class.section.php";
-require_once __DIR__ . "/class.image.php";
-require_once __DIR__ . "/class.booking.php";
-require_once __DIR__ . "/class.question.php";
+spl_autoload_register(function($class) {
+    include __DIR__ . "/" . strtolower(str_replace("\\", "/", $class)) . ".php";
+});
+
 require_once __DIR__ . "/config.php";
 global $cfg;
 

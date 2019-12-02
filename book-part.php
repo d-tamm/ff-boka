@@ -228,13 +228,13 @@ switch ($_REQUEST['action']) {
     </div>
 
 	<?php
-	if (isset($_SESSION['bookingId'])) echo "<p class='ui-body ui-body-a'>Du har en påbörjad bokning. Resurserna du väljer nedan kommer att läggas till bokningen.<a class='ui-btn' href='booking.php'>Visa bokningen</a></p>";
+	if (isset($_SESSION['bookingId'])) echo "<p class='ui-body ui-body-a'>Du har en påbörjad bokning. Resurserna du väljer nedan kommer att läggas till bokningen.<a class='ui-btn' href='book-sum.php'>Visa bokningen</a></p>";
 	?>
 
     <h3 class="ui-bar ui-bar-a">Steg 1. Välj resurser</h3>
     <?php
     foreach ($section->getMainCategories() as $cat) {
-		displayCat($cat, $currentUser, strtotime("last monday"));
+		displayCat($cat, $currentUser, strtotime("last sunday +1 day"));
     } ?>
 
 
@@ -301,7 +301,7 @@ switch ($_REQUEST['action']) {
 
     <script>
         var checkedItems = {};
-		var fbStart = new Date(<?= strtotime("last monday") ?> * 1000);
+		var fbStart = new Date(<?= strtotime("last sunday +1 day") ?> * 1000);
 		
 		scrollDate(0);
 		
@@ -315,7 +315,7 @@ switch ($_REQUEST['action']) {
 			if (fbStart.getFullYear() != fbEnd.getFullYear()) readableRange += " '"+fbStart.getFullYear().toString().substr(-2);
 			readableRange += " &ndash; sö " + fbEnd.getDate() + "/" + (fbEnd.getMonth()+1) + " '"+fbEnd.getFullYear().toString().substr(-2);
             // Get freebusy bars
-            $.getJSON("subbooking.php", { action: "ajaxFreebusy", start: fbStart.valueOf()/1000, ids: checkedItems }, function(data, status) {
+            $.getJSON("book-part.php", { action: "ajaxFreebusy", start: fbStart.valueOf()/1000, ids: checkedItems }, function(data, status) {
                 $("#book-current-range-readable").html( readableRange );
 				$.each(data.freebusyBars, function(key, value) {
 					$("#freebusy-"+key).html(value).append("<?= Item::freebusyScale() ?>");
@@ -336,7 +336,7 @@ switch ($_REQUEST['action']) {
             if (Object.keys(checkedItems).length>0) {
                 // Get access information for all selected items
                 $.mobile.loading("show", {});
-                $.getJSON("subbooking.php", { action: "ajaxCombinedAccess", start: fbStart.valueOf()/1000, ids: checkedItems }, function(data, status) {
+                $.getJSON("book-part.php", { action: "ajaxCombinedAccess", start: fbStart.valueOf()/1000, ids: checkedItems }, function(data, status) {
                     if (data.access <= <?= FFBoka::ACCESS_READASK ?>) {
                          $("#book-access-msg").html("<p>Komplett information om tillgänglighet kan inte visas för ditt urval av resurser. Ange önskad start- och sluttid nedan för att skicka en intresseförfrågan.</p><p>Ansvarig kommer att höra av sig till dig med besked om tillgänglighet och eventuell bekräftelse av din förfrågan.</p>");
                     } else {
@@ -356,7 +356,7 @@ switch ($_REQUEST['action']) {
 		
 		function popupItemDetails(id) {
             $.mobile.loading("show", {});
-            $.getJSON("subbooking.php", { action: "ajaxItemDetails", id: id }, function(data, status) {
+            $.getJSON("book-part.php", { action: "ajaxItemDetails", id: id }, function(data, status) {
                 $.mobile.loading("hide", {});
                 $("#popup-item-details").html(data).popup('open', { transition: "pop", y: 0 });
             });
@@ -379,7 +379,7 @@ switch ($_REQUEST['action']) {
 			}
 			// Send times to server to check availability:
             $.mobile.loading("show", {});
-			$.getJSON("subbooking.php", {
+			$.getJSON("book-part.php", {
 				action: "ajaxCheckTimes",
 				ids: checkedItems,
 				start: startDate.valueOf()/1000,
@@ -397,7 +397,7 @@ switch ($_REQUEST['action']) {
 					$("#book-time-end").val("");
 					// update freebusy
 					scrollDate(0);
-					location.href="booking.php";
+					location.href="book-sum.php";
 				} else {
 					$("#ul-items-unavail").html("");
 					$.each(data.unavail, function( key, item ) {

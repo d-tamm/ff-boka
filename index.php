@@ -142,7 +142,7 @@ if (isset($_REQUEST['message'])) $message .= "<br>".$_REQUEST['message'];
 	if ($_SESSION['authenticatedUser']) {
     	if ($ub = $currentUser->unfinishedBookings()) {
     	    echo "<p class='ui-body ui-body-c'>Du har minst en påbörjad bokning som du bör avsluta eller ta bort.";
-    	    echo "<a href='booking.php?bookingId={$ub[0]}' class='ui-btn ui-btn-a' data-ajax='false'>Gå till bokningen</a></p>";
+    	    echo "<a href='book-sum.php?bookingId={$ub[0]}' class='ui-btn ui-btn-a' data-ajax='false'>Gå till bokningen</a></p>";
     	}
 	}
 	?>
@@ -156,7 +156,7 @@ if (isset($_REQUEST['message'])) $message .= "<br>".$_REQUEST['message'];
 			$sectionList = "";
 			foreach ($FF->getAllSections($currentUser->sectionId) as $section) {
 			    if ($section->showFor($currentUser) && count($section->getMainCategories())) {
-					$sectionList .= "<a href='subbooking.php?sectionId={$section->id}' class='ui-btn' data-ajax='false'>" . htmlspecialchars($section->name) . "</a>";
+					$sectionList .= "<a href='book-part.php?sectionId={$section->id}' class='ui-btn' data-ajax='false'>" . htmlspecialchars($section->name) . "</a>";
 				}
 			}
 			if ($sectionList) echo $sectionList;
@@ -198,7 +198,7 @@ if (isset($_REQUEST['message'])) $message .= "<br>".$_REQUEST['message'];
 			<?php // List of sections with categories open for guests
 			foreach ($FF->getAllSections() as $section) {
 				if ($section->showFor(new User(0)) && count($section->getMainCategories())) {
-					echo "<a href='subbooking.php?sectionId={$section->id}&guest' data-ajax='false' class='ui-btn'>" . htmlspecialchars($section->name) . "</a>";
+					echo "<a href='book-part.php?sectionId={$section->id}&guest' data-ajax='false' class='ui-btn'>" . htmlspecialchars($section->name) . "</a>";
 				}
 			} ?>
 		</div>
