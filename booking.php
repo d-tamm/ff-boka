@@ -2,8 +2,11 @@
 use FFBoka\Section;
 use FFBoka\User;
 use FFBoka\FFBoka;
-use FFBoka\Item;
 use FFBoka\Booking;
+use FFBoka\Question;
+use FFBoka\Subbooking;
+global $cfg;
+
 session_start();
 require(__DIR__."/inc/common.php");
 
@@ -31,23 +34,81 @@ if (($_SESSION['authenticatedUser'] && $booking->userId != $currentUser->id) || 
 $_SESSION['sectionId'] = $booking->sectionId;
 $section = new Section($_SESSION['sectionId']);
 
+// Check if booking collides with existing ones
+$unavail = array();
+$conflicts = array();
+foreach ($booking->subbookings() as $subbooking) {
+    foreach ($subbooking->items() as $item) {
+        if (!$item->isAvailable($subbooking->start, $subbooking->end)) {
+            if ($item->category()->getAccess($currentUser) >= FFBoka::ACCESS_PREBOOK) {
+                // User can see freebusy information. Let him change booking.
+                $unavail[] = $item->bookedItemId;
+            } else {
+                // User can't see freebusy information. Flag as conflict.
+                $conflicts[] = $item->bookedItemId;
+            }
+        }
+        
+    }
+}
 
 switch ($_REQUEST['action']) {
 	case "confirmBooking":
-	    // TODO: Check again if booking collides with existing ones
-		// Set booking status of each item
+	    if (count($unavail)) break;
+	    $mailItems = "";
+	    // save answers to questions
+	    if (isset($_REQUEST['questionId'])) {
+    	    foreach ($_REQUEST["questionId"] as $id) {
+    	        $question = new Question($id);
+    	        $booking->addAnswer($question->caption, implode(", ", isset($_REQUEST["answer-$id"]) ? $_REQUEST["answer-$id"] : array()));
+    	    }
+	    }
+		// Set booking status of each item, and build confirmation string
 		$leastStatus = FFBoka::STATUS_CONFIRMED;
+		$messages = array();
 		foreach ($booking->subbookings() as $subbooking) {
+		    $mailItems .= "<p><b>Bokat från " . strftime("%F kl %k", $subbooking->start) . " till " . strftime("%F kl %k", $subbooking->end) . ":</b></p><ul>";
 			foreach ($subbooking->items() as $item) {
+			    $msgRef = array();
+			    foreach ($item->category()->bookingMsgs() as $msg) {
+    			    if (in_array($msg, $messages)) $msgRef[] = "(".array_search($msg, $messages).")";
+    			    else { $messages[] = $msg; $msgRef[] = "(".count($messages).")"; }
+			    }
+			    $mailItems .= "<li>{$item->caption} " . implode(" ", $msgRef) . "</li>";
 			    if ($item->category()->getAccess($currentUser) >= FFBoka::ACCESS_BOOK) $status=FFBoka::STATUS_CONFIRMED;
-			    else $status = FFBoka::STATUS_PREBOOKED; 
+			    else {
+			        if (in_array($item->bookedItemId, $conflicts)) $status = FFBoka::STATUS_CONFLICT;
+			        else $status = FFBoka::STATUS_PREBOOKED; 
+			    }
 		        $item->setStatus($status);
 		        $leastStatus = $leastStatus & $status;
 	        }
+	        $mailItems .= "</ul>";
 		}
-		// TODO: send mail to admin and user
+		foreach ($messages as $key=>$msg) $mailItems .= "<p>($key) $msg</p>";
+		$answers = $booking->answers();
+		if (count($answers)) {
+		    $mailAnswers = "<p>Bokningsfrågor och dina svar:</p><ul>"; 
+		    foreach ($answers as $ans) $mailAnswers .= "<li>{$ans->question}: {$ans->answer}</li>";
+		    $mailAnswers .= "</ul>";
+		}
+		sendmail(
+		    $cfg['mailFrom'],
+		    $_REQUEST['booker-mail'],
+		    "",
+		    "Bokningsbekräftelse #{$booking->id}",
+		    $cfg['SMTP'], // SMPT options
+		    "confirm_booking", // template name
+		    array( // replace. TODO: add booking messages from categories
+		        "{{name}}"   => $_REQUEST['booker-name'],
+		        "{{items}}"  => $mailItems,
+		        "{{status}}" => $leastStatus==FFBoka::STATUS_CONFIRMED ? "Bokningen är nu bekräftad." : "Bokningen är preliminär och behöver bekräftas av ansvarig handläggare.",
+		        "{{answers}}"=> $mailAnswers,
+		        "{{bookingLink}}" => $_SESSION['userId'] ? "<a href='{$cfg['url']}'>Logga in på resursbokningen</a> för att se och ändra din bokning." : "",
+		    )
+	    );
 		unset($_SESSION['bookingId']);
-		header("Location: index.php?action=bookingConfirmed&mail=" . urlencode($_REQUEST['mail']));
+		header("Location: index.php?action=bookingConfirmed&mail=" . urlencode($_REQUEST['booker-mail']));
 		break;
 		
 	case "deleteBooking":
@@ -55,6 +116,23 @@ switch ($_REQUEST['action']) {
 	    unset($_SESSION['bookingId']);
 	    header("Location: index.php?action=bookingDeleted");
 	    break;
+	    
+	case "ajaxRemoveItem":
+	    $subbooking = new Subbooking($_REQUEST['subId']);
+	    if ($subbooking->removeItem($_REQUEST['bookedItemId'])) {
+	        if (count($subbooking->items()) == 0) {
+	            if ($subbooking->delete()) {
+	                if (count($booking->subbookings()) == 0) {
+	                    $booking->delete();
+	                    unset($_SESSION['bookingId']);
+	                    die(json_encode([ "status"=>"booking empty" ]));
+	                }
+	            }
+	            else die(json_encode([ "error"=>"Oväntat fel: Kan inte ta bort delbokningen. Kontakta systemadministratören."]));
+	        }
+	        die(json_encode([ "status"=>"OK" ]));
+	    }
+	    die(json_encode([ "error"=>"Oväntat fel: Kan inte ta bort resursen. Kontakta systemadministratören."]));
 }
 
 ?><!DOCTYPE html>
@@ -72,16 +150,26 @@ switch ($_REQUEST['action']) {
 
     <h4>Lokalavdelning: <?= htmlspecialchars($section->name) ?></h4>
 
+	<?php
+	if (count($unavail)) echo "<p class='ui-body ui-body-c'>Några av de resurser du har valt är inte längre tillgängliga vid den valda tiden. De är markerade nedan. För att kunna slutföra bokningen behöver du ta bort dessa resurser eller ändra tiden genom att ta bort dem och sedan lägga till dem igen med en annan, ledig tid.</p>";
+	?>
+
 	<ul data-role='listview' data-inset='true' data-divider-theme='a' data-split-icon='delete'>
 	<?php
+	$questions = array();
 	foreach ($booking->subbookings() as $sub) {
 		echo "<li data-role='list-divider'>" . strftime("%F kl %H", $sub->start) . " &mdash; " . strftime("%F kl %H", $sub->end) . "</li>";
 		foreach ($sub->items() as $item) {
-			echo "<li><a href='javascript:popup({$item->id})'>" .
+		    foreach ($item->category()->getQuestions() as $id=>$q) {
+		        if (isset($questions[$id])) $questions[$id]=($questions[$id] || $q->required);
+		        else $questions[$id]=$q->required;
+		    }
+		    
+			echo "<li" . (in_array($item->bookedItemId, $unavail) ? " data-theme='c'" : "") . "><a href='javascript:popupItemDetails({$item->id})'>" .
 			embedImage($item->getFeaturedImage()->thumb) .
-			"<h3>" . htmlspecialchars($item->caption) . "</h3>" .
-			"<p>" . htmlspecialchars($item->description) . "</p>" .
-			"</a><a href='javascript:deleteItemFromBooking({$item->id})'>Ta bort</a></li>\n";
+			"<h3 style='white-space:normal;'>" . htmlspecialchars($item->caption) . "</h3>" .
+			"<p>" . (in_array($item->bookedItemId, $unavail) ? "Inte tillgänglig" : htmlspecialchars($item->description)) . "</p>" .
+			"</a><a href='#' onClick='removeItem({$sub->id},{$item->bookedItemId});' data-ajax='false'>Ta bort</a></li>\n";
 		}
 	}
 	?>
@@ -89,17 +177,47 @@ switch ($_REQUEST['action']) {
 	<button onClick="location.href='subbooking.php'" data-ajax="false" class='ui-btn ui-icon-plus ui-btn-icon-right'>Lägg till fler resurser</button>
 	
 
-	<form action="" data-ajax="false">
+	<form id='form-booking' action="booking.php" data-ajax="false" method='post'>
 		<input type="hidden" name="action" value="confirmBooking">
-		<p class='ui-body ui-body-a'><i>[Visa bokningsfrågor här]</i></p>
+		
+		<?php
+		$requiredCheckboxradios = array();
+		if (count($questions)) echo "<div class='ui-body ui-body-a'>";
+		foreach ($questions as $id=>$required) {
+		    $question = new Question($id);
+		    echo "<input type='hidden' name='questionId[]' value='$id'>\n";
+		    echo "<fieldset data-role='controlgroup' data-mini='true'>\n";
+		    // For checkbox questions with only one empty choice, move the caption to the checkbox instead
+		    if ( !( ($question->type=="checkbox" || $question->type=="radio") && $question->options->choices[0]=="") ) echo "\t<legend" . ($required ? " class='required'" : "") . ">" . htmlspecialchars($question->caption) . "</legend>\n";
+		    switch ($question->type) {
+		        case "radio":
+		        case "checkbox":
+		            if ($required) $requiredCheckboxradios[$id] = $question->caption;
+		            foreach ($question->options->choices as $choice) {
+		                echo "\t<label><input type='{$question->type}' name='answer-{$id}[]' value='" . htmlspecialchars($choice ? $choice : $question->caption) . "'> " . htmlspecialchars($choice ? $choice : $question->caption) . ($choice ? "" : " <span class='required'></span>") . "</label>\n";
+		            }
+		            break;
+		        case "text":
+		            echo "<input" . ($question->options->length ? " maxlength='{$question->options->length}'" : "") . " name='answer-{$id}[]'" . ($required ? " required='true'" : "") . ">\n";
+		            break;
+		        case "number":
+		            echo "<input type='number'" . (strlen($question->options->min) ? " min='{$question->options->min}'" : "") . ($question->options->max ? " max='{$question->options->max}'" : "") . " name='answer-{$id}[]'" . ($required ? " required='true'" : "") . ">\n";
+		            break;
+		    }
+		    echo "</fieldset>";
+		}
+		if (count($questions)) echo "</div>\n\n";
+		?>
+		
 		
 		<?php if ($currentUser->id) { ?>
 			<p class='ui-body ui-body-a'>
 				Du är inloggad som <?= htmlspecialchars($currentUser->name) ?>, med följande kontaktuppgifter:<br>
-				&phone;: <?= htmlspecialchars($currentUser->phone) ?><br>
+				&#9742;: <?= htmlspecialchars($currentUser->phone) ?><br>
 				<b>@</b>: <?= htmlspecialchars($currentUser->mail) ?>
 			</p>
-			<input type="hidden" name="mail" value="<?= htmlspecialchars($currentUser->mail) ?>">
+			<input type="hidden" name="booker-mail" value="<?= htmlspecialchars($currentUser->mail) ?>">
+			<input type="hidden" name="booker-name" value="<?= htmlspecialchars($currentUser->name) ?>">
 		<?php } else { ?>
     	    <div class='ui-body ui-body-a'>Ange dina kontaktuppgifter så vi kan nå dig vid frågor:<br>
     			<div class="ui-field-contain">
@@ -122,14 +240,52 @@ switch ($_REQUEST['action']) {
     
     </div><!--/main-->
 
+	<div data-role="popup" id="popup-item-details" class="ui-content" data-overlay-theme="b"></div>
+
 
     <script>
+    function popupItemDetails(id) {
+        $.mobile.loading("show", {});
+        $.getJSON("subbooking.php", { action: "ajaxItemDetails", id: id }, function(data, status) {
+            $.mobile.loading("hide", {});
+            $("#popup-item-details").html(data).popup('open', { transition: "pop", y: 0 });
+        });
+    }
+
+    function removeItem(subId, bookedItemId) {
+        $.mobile.loading("show", {});
+        $.getJSON("booking.php", {
+            action: "ajaxRemoveItem",
+            subId: subId,
+            bookedItemId: bookedItemId
+        }, function(data, status) {
+            $.mobile.loading("hide", {});
+            if (data.error) alert(data.error);
+            else if (data.status=="booking empty") location.href="subbooking.php";
+            else location.reload();
+        });
+    }
+    
 	function deleteBooking() {
 		if (confirm("Är du säker på att du vill ta bort din bokning?")) {
 			location.href="?action=deleteBooking";
 		}
 		return false;
 	}
+
+	$("#form-booking").submit(function(event) {
+		// Validate required checkboxes and radios
+		var reqCheckRadios = <?= json_encode($requiredCheckboxradios) ?>;
+		$.each(reqCheckRadios, function( id, q ) {
+			if ($("[name^=answer-"+id+"]:checked").length == 0) {
+				alert("Du måste först svara på frågan: "+q);
+				event.preventDefault();
+				return false;
+			}
+		});
+		return true;
+	});
+	
 	</script>
 
 </div><!-- /page -->

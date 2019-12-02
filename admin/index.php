@@ -82,25 +82,8 @@ switch ($_REQUEST['action']) {
     case "ajaxGetQuestions":
         header("Content-Type: text/plain");
         foreach ($section->questions() as $question) {
-            echo "<li><a href='#' onClick='showQuestion({$question->id})'>" . htmlspecialchars($question->caption) . "<p style='white-space:normal;'>";
-			switch ($question->type) {
-				case "radio":
-					echo htmlspecialchars(implode(" | ", $question->options->choices)); break;
-				case "checkbox":
-					echo htmlspecialchars(implode(" | ", $question->options->choices)) . " (flera val möjliga)"; break;
-				case "text":
-					echo "Text";
-					if ($question->options->length) echo ", max {$question->options->length} tecken";
-					else echo ", valfri längd";
-					break;
-				case "number":
-					echo "Siffra";
-					if (is_numeric($question->options->min) && is_numeric($question->options->max)) echo " mellan {$question->options->min} och {$question->options->max}";
-					elseif (is_numeric($question->options->min)) echo ", minst {$question->options->min}";
-					elseif (is_numeric($question->options->max)) echo ", max {$question->options->max}";
-					else echo " utan begränsning";
-					break;
-			}
+            echo "<li><a href='#' onClick='showQuestion({$question->id})'><span style='white-space:normal;'>" . htmlspecialchars($question->caption) . "</span><p style='white-space:normal;'>";
+            echo $question->optionsReadable();
 			echo "</p></a><a href='#' onClick='deleteQuestion({$question->id});'>Ta bort frågan</a></li>";
         }
         die();
@@ -189,9 +172,7 @@ unset($_SESSION['catId']);
 		<?php if ($section->getAccess($currentUser) & FFBoka::ACCESS_SECTIONADMIN) { ?>
 		
 		<div data-role="collapsible" data-collapsed="<?= $_REQUEST['expand']=="admins" ? "false" : "true" ?>">
-			<h2>Bokningsfrågor
-				<img src="../resources/construction.jpg" style="float:right; width:50px;">
-			</h2>
+			<h2>Bokningsfrågor</h2>
 			<p>Här kan du skapa frågor som sedan kan visas när folk bokar resurser.</p>
 			
 			<a href="#" onClick="showQuestion(0);" class="ui-btn">Lägg till bokningsfråga</a>

@@ -1,6 +1,12 @@
 <?php
 require_once __DIR__ . "/../vendor/autoload.php";
 require_once __DIR__ . "/class.ffboka.php";
+require_once __DIR__ . "/class.item.php";
+require_once __DIR__ . "/class.user.php";
+require_once __DIR__ . "/class.section.php";
+require_once __DIR__ . "/class.image.php";
+require_once __DIR__ . "/class.booking.php";
+require_once __DIR__ . "/class.question.php";
 require_once __DIR__ . "/config.php";
 global $cfg;
 
@@ -162,24 +168,29 @@ function head(string $caption, $currentUser=NULL) {
  * Send an email basen on a template file
  * @param string $from
  * @param string $to
- * @param string $replyTo
+ * @param string $replyTo If empty, the $from address will be used.
  * @param string $subject
  * @param string[] $options Options for SMTP connection: array(host, port, user, pass)
- * @param string $template Name of template file to use
- * @param string[] $search Array of items in template file to replace
- * @param string[] $replace Array of items replacing $search items
+ * @param string $template Name of template file to use. The file must be in the templates folder.
+ * There must be at least a file named $template.html. Optionally, $template.txt (if exists) will
+ * be used as non-HTML body. Otherwise, the function will try to strip off the tags from the html file.
+ * @param array $replace [ search=>replace ] Array of strings to be replaced
  * @return boolean|string TRUE on success, error message on failure
  */
-function sendmail(string $from, string $to, string $replyTo, string $subject, $options, $template, $search=NULL, $replace=NULL) {
+function sendmail(string $from, string $to, string $replyTo, string $subject, $options, $template, $replace=NULL) {
 	if (is_readable("templates/$template.html")) {
 		// Get template content
 		$body = file_get_contents("templates/$template.html");
 		$altBody = is_readable("templates/$template.txt")
 			? file_get_contents("templates/$template.txt")
-			: str_replace(array("</p>", "<br>"), array("</p>\r\n\r\n", "\r\n"), strip_tags($body));
+			: str_replace(array("</p>", "<br>"), array("</p>\r\n\r\n", "\r\n"), strip_tags($body)); // TODO: this is probably buggy
 		// Replace placeholders
-		$body = str_replace($search, $replace, $body);
-		$altBody = str_replace($search, $replace, $altBody);
+		if (!is_null($replace)) {
+		    foreach ($replace as $s=>$r) {
+        		$body = str_replace($s, $r, $body);
+                $altBody = str_replace($s, $r, $altBody); // TODO: what about html code in $replace?
+		    }
+	    }
 	}
 	else $body = $template;
 	// Send mail
@@ -198,7 +209,7 @@ function sendmail(string $from, string $to, string $replyTo, string $subject, $o
 		$mail->CharSet ="UTF-8";
 		$mail->setFrom($from);
 		$mail->addAddress($to);
-		$mail->addReplyTo($replyTo);
+		if ($replyTo) $mail->addReplyTo($replyTo);
 		if (isset($altBody)) $mail->isHTML(true);
 		$mail->Subject = $subject;
 		$mail->Body = $body;
@@ -206,7 +217,7 @@ function sendmail(string $from, string $to, string $replyTo, string $subject, $o
 		$mail->send();
 		return true;
 	} catch (Exception $e) {
-		return "Mailer Error: ".$mail->ErrorInfo;
+		throw \Exception("Mailer Error: ".$mail->ErrorInfo);
 	}
 }
 

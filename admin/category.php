@@ -43,6 +43,40 @@ function showCatTree(Category $parent, Category $currentCat, User $user, $indent
 }
 
 /**
+ * Echo HTML code showing the booking questions for this category
+ * @param Category $cat
+ * @param Section $section
+ */
+function showQuestions(Category $cat, Section $section) {
+    $catQuestions = $cat->getQuestions();
+    $ret = "";
+    foreach ($section->questions() as $question) {
+        $color=""; $icon=""; $mandatory=FALSE;
+        if (isset($catQuestions[$question->id])) {
+            $icon = "check";
+            if ($catQuestions[$question->id]->inherited) {
+                $color = "style='background:var(--FF-lightblue);'";
+            } else {
+                $color = "style='color:white; background:var(--FF-blue);'";
+            }
+            if ($catQuestions[$question->id]->required) {
+                $mandatory = TRUE;
+            }
+        } else {
+            $icon = "false";
+        }
+        $ret .= "<li data-icon='$icon'>" .
+            "<a href='#' $color onClick='toggleQuestion({$question->id});'>" .
+            ($mandatory ? "<span style='font-weight:bold; color:red;'>*</span> " : "") .
+            "<span style='white-space:normal;'>" . htmlspecialchars($question->caption) . "</span>" . 
+            "<p style='white-space:normal;' >{$question->optionsReadable()}</p>" .
+            "<p class='ui-li-aside' $color>$extra</p>" .
+            "</a></li>\n";
+    }
+    return $ret;
+}
+
+/**
  * Returns html code for displaying the category access as a list
  * @param Category $cat
  * @param string[] $accLevels Access levels from $cfg['catAccessLevels']
@@ -114,6 +148,7 @@ switch ($_REQUEST['action']) {
         
     case "ajaxSetContactUser":
         if ($cat->getAccess($currentUser) >= FFBoka::ACCESS_CATADMIN) {
+            header("Content-Type: application/json");
             $cuser = new User($_REQUEST['id']);
             $cat->contactUserId = $cuser->id;
             die(json_encode([ "status"=>"OK", "html"=>contactData($cuser) ]));
@@ -134,6 +169,27 @@ switch ($_REQUEST['action']) {
         }
     	break;
     	
+    case "ajaxToggleQuestion":
+        // empty -> show -> show+required -> empty
+        // inherited -> show+required -> inherited
+        // inherited+required -> show -> inherited+required
+        if ($cat->getAccess($currentUser) >= FFBoka::ACCESS_CATADMIN) {
+            $questions = $cat->getQuestions();
+            if (isset($questions[$_REQUEST['id']])) {
+                if ($questions[$_REQUEST['id']]->inherited) {
+                    $cat->addQuestion($_REQUEST['id']);
+                } elseif ($questions[$_REQUEST['id']]->required) {
+                    $cat->removeQuestion($_REQUEST['id']);
+                } else {
+                    $cat->addQuestion($_REQUEST['id'], TRUE);
+                }
+            } else {
+                $cat->addQuestion($_REQUEST['id']);
+            }
+            header("Content-Type: application/json");
+            die(json_encode(['html'=>showQuestions($cat, $section)]));
+        }
+        
     case "deleteCat":
         if ($cat->getAccess($currentUser) >= FFBoka::ACCESS_CATADMIN) {
             $cat->delete();
@@ -159,7 +215,7 @@ unset ($_SESSION['itemId']);
 
 	<div data-role="collapsibleset" data-inset="false">
 		<?php if ($cat->getAccess($currentUser) >= FFBoka::ACCESS_CATADMIN) { ?>
-		<div data-role="collapsible" data-collapsed="<?= $_REQUEST['expand'] ? "true" : "false" ?>">
+		<div data-role="collapsible">
 			<h2>Allmänt</h2>
 
     		<p><?php
@@ -260,6 +316,13 @@ unset ($_SESSION['itemId']);
 
 			<br>
 		</div>
+		
+
+		<div data-role="collapsible" class="ui-filterable" data-collapsed="<?= $_REQUEST['expand']=="access" ? "false" : "true" ?>">
+			<h2>Bokningsfrågor</h2>
+			<p><small>Här ställer du in särskilda frågor som ska visas vid bokning av resurser i denna kategorin. Aktivera/avaktivera och byt mellan valfritt och obligatoriskt genom att klicka på frågorna. Valda frågor visas även vid bokning i underordnade kategorier.</small></p>
+			<ul data-role="listview" data-inset="true" id="cat-questions"><?php echo showQuestions($cat, $section); ?></ul>
+		</div>
 		<?php } ?>
 		
 
@@ -343,7 +406,15 @@ unset ($_SESSION['itemId']);
 			});
 		}
 
-
+		function toggleQuestion(id) {
+			$.getJSON("category.php", {
+				action: "ajaxToggleQuestion",
+				id: id,
+			}, function(data, status) {
+				$("#cat-questions").html(data.html).listview("refresh");
+			});
+		}
+		
 		$(document).on( "pagecreate", "#page-category", function() {
 
 			$("#cat-caption").on('input', function() {

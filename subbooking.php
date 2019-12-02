@@ -102,7 +102,6 @@ else $currentUser = new User(0);
 
 switch ($_REQUEST['action']) {
     case "ajaxItemDetails":
-        // Reply to ajax request
         header("Content-Type: application/json");
         $item = new Item($_REQUEST['id']);
         $ret = "<h3>" . htmlspecialchars($item->caption) . "</h3>";
@@ -115,7 +114,7 @@ switch ($_REQUEST['action']) {
         die(json_encode($ret));
 
 	case "ajaxFreebusy":
-        // Reply to ajax request: Get freebusy bars for all items in section
+        // Get freebusy bars for all items in section
 	    // Also include freebusy bar for current selection.
 	    $freebusyBars = array();
 		foreach ($section->getMainCategories() as $cat) {
@@ -129,7 +128,7 @@ switch ($_REQUEST['action']) {
 		]));
 
 	case "ajaxCombinedAccess":
-	    // Reply to ajax request: Return least common access rights for item selection.
+	    // Return least common access rights for item selection.
 	    // Also include freebusy bar for same selection.
 	    $access = FFBoka::ACCESS_SECTIONADMIN-1; // bit field of ones
 	    foreach (array_keys($_REQUEST['ids']) as $id) {
@@ -143,9 +142,8 @@ switch ($_REQUEST['action']) {
 	    ]));
 
 	case "ajaxCheckTimes":
-	    // Reply to ajax request: Check that chosen start and end time are OK
+	    // Check that chosen start and end time are OK
 	    // If everything is OK, create a subbooking.
-	    // TODO: add options for shortest/longest booking duration, latest/earliest booking in advance?
 	    header("Content-Type: application/json");
 	    $unavail = array();
 	    $minAccess = FFBoka::ACCESS_CATADMIN;
@@ -229,7 +227,9 @@ switch ($_REQUEST['action']) {
 		<p>Om du vill göra en bokning där olika resurser behövs olika länge delar du upp bokningen. Börja med att boka alla resurser som ska ha samma tid. Sedan får du möjlighet att lägga till fler delbokningar med andra tider och/eller resurser.</p>
     </div>
 
-	<?php // TODO: Visa ev. oavslutad bokning ?>
+	<?php
+	if (isset($_SESSION['bookingId'])) echo "<p class='ui-body ui-body-a'>Du har en påbörjad bokning. Resurserna du väljer nedan kommer att läggas till bokningen.<a class='ui-btn' href='booking.php'>Visa bokningen</a></p>";
+	?>
 
     <h3 class="ui-bar ui-bar-a">Steg 1. Välj resurser</h3>
     <?php
@@ -335,6 +335,7 @@ switch ($_REQUEST['action']) {
             
             if (Object.keys(checkedItems).length>0) {
                 // Get access information for all selected items
+                $.mobile.loading("show", {});
                 $.getJSON("subbooking.php", { action: "ajaxCombinedAccess", start: fbStart.valueOf()/1000, ids: checkedItems }, function(data, status) {
                     if (data.access <= <?= FFBoka::ACCESS_READASK ?>) {
                          $("#book-access-msg").html("<p>Komplett information om tillgänglighet kan inte visas för ditt urval av resurser. Ange önskad start- och sluttid nedan för att skicka en intresseförfrågan.</p><p>Ansvarig kommer att höra av sig till dig med besked om tillgänglighet och eventuell bekräftelse av din förfrågan.</p>");
@@ -354,7 +355,9 @@ switch ($_REQUEST['action']) {
         }
 		
 		function popupItemDetails(id) {
+            $.mobile.loading("show", {});
             $.getJSON("subbooking.php", { action: "ajaxItemDetails", id: id }, function(data, status) {
+                $.mobile.loading("hide", {});
                 $("#popup-item-details").html(data).popup('open', { transition: "pop", y: 0 });
             });
 		}
@@ -375,12 +378,14 @@ switch ($_REQUEST['action']) {
 				return false;
 			}
 			// Send times to server to check availability:
+            $.mobile.loading("show", {});
 			$.getJSON("subbooking.php", {
 				action: "ajaxCheckTimes",
 				ids: checkedItems,
 				start: startDate.valueOf()/1000,
 				end: endDate.valueOf()/1000
 			}, function(data, status) {
+                $.mobile.loading("hide", {});
 				if (data.timesOK) {
 					// Reset subbooking section to prepare for next subbooking
 					checkedItems = {};

@@ -19,11 +19,12 @@ $cfg = array(
 	// Sender address of auto-generated emails
 	"mailFrom" => "daniel.tamm@friluftsframjandet.se",
 	// SMTP settings for sending emails
-	"SMTPHost" => 'manu20.manufrog.com',
-	"SMTPPort" => 587,
-	"SMTPUsername" => 'nextcloud@tamm-tamm.de',
-	"SMTPPassword" => '', // see credentials.php
-	
+	"SMTP" => array(
+	    "host" => 'manu20.manufrog.com',
+        "port" => 587,
+        "user" => 'nextcloud@tamm-tamm.de',
+    	"pass" => '', // see credentials.php
+    ),
 	// ReplyTo address of auto-generated emails
 	"mailReplyTo" => "daniel.tamm@friluftsframjandet.se",
 

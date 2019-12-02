@@ -10,12 +10,14 @@ global $db, $cfg, $FF;
 if (isset($_REQUEST['action'])) {
     switch ($_REQUEST['action']) {
         case "make me admin":
-            $section = new Section(52);
-            if ($section->addAdmin($_SESSION['authenticatedUser'])) {
-                $message = "Bra jobbat! Du har nu administratörsrollen i Mölndal. Titta gärna runt och återkoppla till Daniel med dina erfarenheter!";
-            } else {
-                $message = "Något har gått fel.";
-            }
+			if (is_numeric($_REQUEST['sectionId'])) {
+				$section = new Section($_REQUEST['sectionId']);
+				if ($section->addAdmin($_SESSION['authenticatedUser'])) {
+					$message = "Bra jobbat! Du har nu administratörsrollen i {$section->name}. Titta gärna runt och återkoppla till Daniel med dina erfarenheter!";
+				} else {
+					$message = "Något har gått fel.";
+				}
+			}
             break;
 		case "accountDeleted":
 			$message = "Ditt konto har nu raderats. Välkommen åter!";
@@ -134,13 +136,13 @@ if (isset($_REQUEST['message'])) $message .= "<br>".$_REQUEST['message'];
 
 	<img src="resources/liggande-bla.png" width="100%">
 
-	<p class="ui-body ui-body-b">Välkommen till testplattformen för FFs framtida resursbokning!<br>Här kan du följa utvecklingen av projektet och testa. Var inte rädd för att förstöra något, utan försök gärna att utmana funktionerna och hitta svaga punkter!</p>
+	<p class="ui-body ui-body-b">Välkommen till testplattformen för FFs framtida resursbokningssystem! Här kan du följa utvecklingen av projektet och testa. Var inte rädd för att förstöra något, utan försök gärna att utmana funktionerna och hitta svaga punkter!<br>Mer information hittar du på <a style="color:white;" target="_blank" href="https://github.com/d-tamm/ff-boka">GitHub</a></p>
 
 	<?php
 	if ($_SESSION['authenticatedUser']) {
     	if ($ub = $currentUser->unfinishedBookings()) {
     	    echo "<p class='ui-body ui-body-c'>Du har minst en påbörjad bokning som du bör avsluta eller ta bort.";
-    	    echo "<a href='booking.php?bookingId={$ub[0]}' class='ui-btn ui-btn-a'>Gå till bokningen</a></p>";
+    	    echo "<a href='booking.php?bookingId={$ub[0]}' class='ui-btn ui-btn-a' data-ajax='false'>Gå till bokningen</a></p>";
     	}
 	}
 	?>
@@ -153,7 +155,7 @@ if (isset($_REQUEST['message'])) $message .= "<br>".$_REQUEST['message'];
 			// Show a list of all sections with categories where user may book resources
 			$sectionList = "";
 			foreach ($FF->getAllSections($currentUser->sectionId) as $section) {
-			    if ($section->showFor($currentUser)) {
+			    if ($section->showFor($currentUser) && count($section->getMainCategories())) {
 					$sectionList .= "<a href='subbooking.php?sectionId={$section->id}' class='ui-btn' data-ajax='false'>" . htmlspecialchars($section->name) . "</a>";
 				}
 			}
@@ -169,17 +171,23 @@ if (isset($_REQUEST['message'])) $message .= "<br>".$_REQUEST['message'];
 				$sectionList .= "<a href='admin/?sectionId={$section->id}' class='ui-btn' data-ajax='false'>" . htmlspecialchars($section->name) . "</a>";
 			}
 		}
-		if ($sectionList) echo "<div data-role='collapsible' data-collapsed='true'><h3>Administrera</h3>$sectionList</div>";
+		if ($sectionList) echo "<div data-role='collapsible' data-collapsed='true'><h3>Administrera</h3>$sectionList";
 
-		// TODO: This is for testing only. Remove before switching to production!
-		$molndal = new Section(52);
-		if (!($molndal->getAccess($currentUser) & FFBoka::ACCESS_SECTIONADMIN)) { ?>
-		    <form data-ajax="false">
-		    	<p>Under testfasen kan du ge dig själv administratörs-behörighet i LA Mölndal för att testa:</p>
-		    	<input type="hidden" name="action" value="make me admin">
-		    	<input data-theme="b" type="submit" value="Gör mig till admin i LA Mölndal">
-		    </form><?php
-		}
+		// TODO: This is for testing only. Remove before switching to production! ?><br>
+		<form data-ajax="false" class="ui-body ui-body-a">
+			<p>Under testfasen kan du ge dig själv administratörs-behörighet i din lokalavdelning för att testa alla funktioner.</p>
+			<input type="hidden" name="action" value="make me admin">
+			<select name="sectionId">
+				<option>Välj lokalavdelning</option><?php
+				$stmt = $db->query("SELECT * FROM sections ORDER BY name");
+				while ($row = $stmt->fetch(PDO::FETCH_OBJ)) {
+					echo "<option value='{$row->sectionId}'>{$row->name}</option>";
+				} ?>
+			</select>
+			<input data-theme="b" type="submit" data-corners="false" value="Gör mig till admin">
+		</form><?php
+
+		if ($sectionList) echo "</div>";
         } ?>
 		
 	</div><!-- /collapsibleset -->
@@ -189,7 +197,7 @@ if (isset($_REQUEST['message'])) $message .= "<br>".$_REQUEST['message'];
 			<h3>Boka som gäst</h3>
 			<?php // List of sections with categories open for guests
 			foreach ($FF->getAllSections() as $section) {
-				if ($section->showFor(new User(0))) {
+				if ($section->showFor(new User(0)) && count($section->getMainCategories())) {
 					echo "<a href='subbooking.php?sectionId={$section->id}&guest' data-ajax='false' class='ui-btn'>" . htmlspecialchars($section->name) . "</a>";
 				}
 			} ?>
