@@ -21,13 +21,13 @@ $cat = new Category($_SESSION['catId']);
 
 // Check access permissions.
 if (!$cat->showFor($currentUser, FFBoka::ACCESS_CATADMIN)) {
-    header("Location: /?action=accessDenied&to=" . urlencode("administrationssidan för {$item->caption}"));
+    header("Location: /?action=accessDenied&to=" . urlencode("administrationssidan för " . htmlspecialchars($item->caption)));
     die();
 }
 
 
 /**
- * Composes an HTML string showing the item's images
+ * Composes an HTML string showing the item's images and captions
  * @param Item $item
  * @return string Returns HTML code for the image block.
  */
@@ -36,7 +36,7 @@ function imageHtml(Item $item) {
     foreach ($item->images() as $image) {
         $ret .= "<div class='ui-body ui-body-a ui-corner-all'>\n";
         $ret .= "<img class='item-img-preview' src='../image.php?type=itemImage&id={$image->id}'>";
-        $ret .= "<textarea class='item-img-caption ajax-input' placeholder='Bildtext' data-id='{$image->id}'>{$image->caption}</textarea>";
+        $ret .= "<textarea class='item-img-caption ajax-input' placeholder='Bildtext' data-id='{$image->id}'>" . htmlspecialchars($image->caption) . "</textarea>";
         $ret .= "<div class='ui-grid-a'>";
         $ret .= "<div class='ui-block-a'><label><input type='radio' name='imageId' onClick='setFeaturedImg({$image->id});' value='{$image->id}' " . ($image->id==$item->imageId ? "checked='true'" : "") . ">Huvudbild</label></div>";
         $ret .= "<div class='ui-block-b'><input type='button' data-corners='false' class='ui-btn ui-corner-all' value='Ta bort' onClick='deleteImage({$image->id});'></div>";
@@ -66,7 +66,7 @@ switch ($_REQUEST['action']) {
             case "imageId":
                 header("Content-Type: application/json");
                 if ($_REQUEST['value']=="NULL") $item->{$_REQUEST['name']} = null;
-                else $item->{$_REQUEST['name']} = htmlentities($_REQUEST['value']);
+                else $item->{$_REQUEST['name']} = $_REQUEST['value'];
                 die(json_encode(["status"=>"OK"]));
         }
         break;
@@ -76,13 +76,13 @@ switch ($_REQUEST['action']) {
         header("Location: category.php?expand=items");
         break;
         
-    case "addImage":
-        // Reply to AJAX request
+    case "ajaxAddImage":
         header("Content-Type: application/json");
         if (is_uploaded_file($_FILES['image']['tmp_name'])) {
             $image = $item->addImage();
-            if (!$image->setImage($_FILES['image'], $cfg['maxImgSize'], 80, $cfg['uploadMaxFileSize'])) {
-                die(json_encode(array("error"=>"Fel filtyp eller för stor fil. Prova med en jpg- eller png-bild som är mindre än {$cfg['uploadMaxFileSize']}.")));
+            $res = $image->setImage($_FILES['image'], $cfg['maxImgSize'], 80, $cfg['uploadMaxFileSize']);
+			if ($res!==TRUE) {
+                die(json_encode($res));
             }
             // Set as featured image if it is the first one for this item
             if (!$item->imageId) $item->imageId = $image->id;
@@ -90,18 +90,16 @@ switch ($_REQUEST['action']) {
         }
         die(json_encode(array("error"=>"File is not an uploaded file")));
         
-    case "deleteImage":
-        // Reply to AJAX request
+    case "ajaxDeleteImage":
         header("Content-Type: application/json");
         $image = new Image($_GET['id']);
         $image->delete();
         die(json_encode(array("html"=>imageHtml($item))));
         
-    case "saveImgCaption":
-        // Reply to AJAX request
+    case "ajaxSaveImgCaption":
         header("Content-Type: application/json");
         $image = new Image($_GET['id']);
-        $image->caption = htmlentities($_GET['caption']);
+        $image->caption = $_GET['caption'];
         die(json_encode(array("html"=>$image->caption)));
         
 }
@@ -117,27 +115,23 @@ switch ($_REQUEST['action']) {
 
 <body>
 <div data-role="page" id="page_item">
-	<?= head($item->caption ? $item->caption : "Ny utrustning") ?>
+	<?= head($item->caption ? htmlspecialchars($item->caption) : "Ny utrustning", $currentUser) ?>
 	<div role="main" class="ui-content">
 	
-	<form action="" method="post" enctype="multipart/form-data" data-ajax="false">
-		<input type="hidden" name="action" value="save item">
-		<input type="hidden" name="itemID" value="<?= $item->id ?>">
-
-		<p><?php
+    	<p><?php
 		foreach ($cat->getPath() as $p) {
 		    if ($p['id']) echo " &rarr; ";
-		    echo "<a href='" . ($p['id'] ? "category.php?catId={$p['id']}" : "index.php") . "'>{$p['caption']}</a>";
+		    echo "<a href='" . ($p['id'] ? "category.php?catId={$p['id']}" : "index.php") . "'>" . htmlspecialchars($p['caption']) . "</a>";
 		}?></p>
 		
 		<div class="ui-field-contain">
 			<label for="item-caption">Rubrik:</label>
-			<input name="caption" class="ajax-input" id="item-caption" placeholder="Rubrik" value="<?= $item->caption ?>">
+			<input name="caption" class="ajax-input" id="item-caption" placeholder="Rubrik" value="<?= htmlspecialchars($item->caption) ?>">
 		</div>
 		
 		<div class="ui-field-contain">
 			<label for="item-description">Beskrivning:</label>
-			<textarea name="description" class="ajax-input" id="item-description" placeholder="Beskrivning"><?= $item->description ?></textarea>
+			<textarea name="description" class="ajax-input" id="item-description" placeholder="Beskrivning"><?= htmlspecialchars($item->description) ?></textarea>
 		</div>
 		
 		<label>		<input type="checkbox" name="active" value="1" id="item-active" <?= $item->active ? "checked='true'" : "" ?>>Aktiv (kan bokas)</label>
@@ -154,8 +148,6 @@ switch ($_REQUEST['action']) {
 		</div>
 		<div id='item-images'><?= imageHtml($item) ?></div>
 		
-	</form>
-
 	</div><!--/main-->
 
 	<script>
@@ -198,7 +190,7 @@ switch ($_REQUEST['action']) {
 			var fd = new FormData();
 			var file = $('#file-item-img')[0].files[0];
 			fd.append('image',file);
-			fd.append('action', "addImage");
+			fd.append('action', "ajaxAddImage");
 			$.mobile.loading("show", {});
 			$.ajax({
 				url: 'item.php',
@@ -225,7 +217,7 @@ switch ($_REQUEST['action']) {
 			toutSavedIndicator = setTimeout(function() {
 				$.getJSON(
 					"item.php",
-					{ action: 'saveImgCaption', id: $(_this).data('id'), caption: _this.value },
+					{ action: 'ajaxSaveImgCaption', id: $(_this).data('id'), caption: _this.value },
 					function(data, status) {
 						$(_this).addClass("change-confirmed");
 						setTimeout(function(){ $(_this).removeClass("change-confirmed"); },1000);
@@ -246,11 +238,11 @@ switch ($_REQUEST['action']) {
 		
 		function deleteImage(id) {
 			if (confirm("Vill du ta bort denna bild?")) {
-				$.getJSON("?action=deleteImage&id="+id, function(data, status) {
-					if (data.html) {
-						$('#item-images').html(data.html).enhanceWithin();
-					} else {
+				$.getJSON("?action=ajaxDeleteImage&id="+id, function(data, status) {
+					if (data.error) {
 						alert(data.error);
+					} else {
+						$('#item-images').html(data.html).enhanceWithin();
 					}
 				});
 			}

@@ -3,6 +3,7 @@
 /* Define Friluftsframjandet custom colors */
 :root {
     --FF-blue: #407EC9;
+    --FF-lightblue: #72b2ff;
     --FF-cyan: #00A49D;
     --FF-green: #75B22A;
     --FF-yellow: #FBD600;
@@ -44,7 +45,7 @@
 }
 
 /* required fields in forms */
-label.required:after {
+label.required:after, legend.required:after, span.required:after {
 	content: " *";
 	font-weight: bold;
 	color: red;

@@ -19,15 +19,15 @@ function displayCat(Category $cat, $user, $fbStart) {
 	if ($cat->showFor($user)) {
 		$access = $cat->getAccess($user);
 		echo "<div data-role='collapsible' data-inset='false'>";
-		echo "<h3><div class='cat-list-img'>" . embedImage($cat->thumb) . "</div>{$cat->caption}</h3>";
-		echo $cat->bookingMsg ? "<p>{$cat->bookingMsg}</p>" : "";
+		echo "<h3><div class='cat-list-img'>" . embedImage($cat->thumb) . "</div>" . htmlspecialchars($cat->caption) . "</h3>";
+		echo $cat->bookingMsg ? "<p>" . str_replace("\n", "<br>", htmlspecialchars($cat->bookingMsg)) . "</p>" : "";
 		if ($access) {
 			echo "<ul data-role='listview' data-split-icon='info' data-split-theme='a'>";
 			foreach ($cat->items() as $item) {
 				if ($item->active) {
 					echo "<li class='book-item' id='book-item-{$item->id}'><a href=\"javascript:toggleItem({$item->id});\">";
 					echo embedImage($item->getFeaturedImage()->thumb);
-					echo "<h4>{$item->caption}</h4>";
+					echo "<h4>" . htmlspecialchars($item->caption) . "</h4>";
 					echo "<div id='freebusy-item-{$item->id}' class='freebusy-bar'></div>";
 					echo "</a><a href='javascript:popupItemDetails({$item->id})'></a>";
 					echo "</li>";
@@ -102,20 +102,19 @@ else $currentUser = new User(0);
 
 switch ($_REQUEST['action']) {
     case "ajaxItemDetails":
-        // Reply to ajax request
         header("Content-Type: application/json");
         $item = new Item($_REQUEST['id']);
-        $ret = "<h3>{$item->caption}</h3>";
-        $ret .= $item->description;
+        $ret = "<h3>" . htmlspecialchars($item->caption) . "</h3>";
+        $ret .= str_replace("\n", "<br>", htmlspecialchars($item->description));
         $cat = $item->category();
         foreach ($item->images() as $img) {
-            $ret .= "<div class='item-image'><img src='image.php?type=itemImage&id={$img->id}'><label>{$img->caption}</label></div>";
+            $ret .= "<div class='item-image'><img src='image.php?type=itemImage&id={$img->id}'><label>" . htmlspecialchars($img->caption) . "</label></div>";
         }
         $ret .= "<a href='#' data-rel='back' class='ui-btn ui-icon-delete ui-btn-icon-left'>Stäng inforutan</a>";
         die(json_encode($ret));
 
 	case "ajaxFreebusy":
-        // Reply to ajax request: Get freebusy bars for all items in section
+        // Get freebusy bars for all items in section
 	    // Also include freebusy bar for current selection.
 	    $freebusyBars = array();
 		foreach ($section->getMainCategories() as $cat) {
@@ -129,7 +128,7 @@ switch ($_REQUEST['action']) {
 		]));
 
 	case "ajaxCombinedAccess":
-	    // Reply to ajax request: Return least common access rights for item selection.
+	    // Return least common access rights for item selection.
 	    // Also include freebusy bar for same selection.
 	    $access = FFBoka::ACCESS_SECTIONADMIN-1; // bit field of ones
 	    foreach (array_keys($_REQUEST['ids']) as $id) {
@@ -143,9 +142,8 @@ switch ($_REQUEST['action']) {
 	    ]));
 
 	case "ajaxCheckTimes":
-	    // Reply to ajax request: Check that chosen start and end time are OK
+	    // Check that chosen start and end time are OK
 	    // If everything is OK, create a subbooking.
-	    // TODO: add options for shortest/longest booking duration, latest/earliest booking in advance?
 	    header("Content-Type: application/json");
 	    $unavail = array();
 	    $minAccess = FFBoka::ACCESS_CATADMIN;
@@ -155,11 +153,11 @@ switch ($_REQUEST['action']) {
 	        $acc = $item->category()->getAccess($currentUser);
 	        $minAccess = ($minAccess & $acc);
 	        if ($acc >= FFBoka::ACCESS_PREBOOK) {
-	            if (!$item->isAvailable($_REQUEST['start'], $_REQUEST['end'])) $unavail[] = $item->caption;
+	            if (!$item->isAvailable($_REQUEST['start'], $_REQUEST['end'])) $unavail[] = htmlspecialchars($item->caption);
 	        }
 	    }
 	    if (count($unavail)===0) {
-	        // Everything is OK. Create (sub)booking
+	        // Times are OK. Create (sub)booking
 	        if (isset($_SESSION['bookingId'])) {
 	            $booking = new Booking($_SESSION['bookingId']);
 	        } else {
@@ -167,10 +165,11 @@ switch ($_REQUEST['action']) {
 	            $_SESSION['bookingId'] = $booking->id;
 	        }
 	        $subbooking = $booking->addSubbooking();
-	        $subbooking->start = htmlentities($_REQUEST['start']);
-	        $subbooking->end = htmlentities($_REQUEST['end']);
+	        $subbooking->start = $_REQUEST['start'];
+	        $subbooking->end = $_REQUEST['end'];
+			// Add items to subbooking
 	        foreach (array_keys($_REQUEST['ids']) as $id) {
-	            $subbooking->addItem(htmlentities($id));
+	            $subbooking->addItem($id);
 	        }
 	    }
 	    die(json_encode([
@@ -200,8 +199,8 @@ switch ($_REQUEST['action']) {
 
 
 <body>
-<div data-role="page" id="page-book1">
-    <?= head("Boka resurser", $currentUser) ?>
+<div data-role="page" id="page-subbooking">
+    <?= head("Lägg till resurser", $currentUser) ?>
     <div role="main" class="ui-content">
 
     <div data-role="popup" data-overlay-theme="b" id="popupMessage" class="ui-content">
@@ -209,7 +208,7 @@ switch ($_REQUEST['action']) {
         <a href='#' data-rel='back' class='ui-btn ui-btn-icon-left ui-btn-inline ui-corner-all ui-icon-check'>OK</a>
     </div>
 
-    <h4>Lokalavdelning: <?= $section->name ?>
+    <h4>Lokalavdelning: <?= htmlspecialchars($section->name) ?>
         <a href="#popup-help-book1" data-rel="popup" class="tooltip ui-btn ui-alt-icon ui-nodisc-icon ui-btn-inline ui-icon-info ui-btn-icon-notext">Tipps</a>
     </h4>
     <div data-role="popup" id="popup-help-book1" class="ui-content" data-overlay-theme="b">
@@ -228,7 +227,9 @@ switch ($_REQUEST['action']) {
 		<p>Om du vill göra en bokning där olika resurser behövs olika länge delar du upp bokningen. Börja med att boka alla resurser som ska ha samma tid. Sedan får du möjlighet att lägga till fler delbokningar med andra tider och/eller resurser.</p>
     </div>
 
-	<?php // TODO: Visa ev. oavslutad bokning ?>
+	<?php
+	if (isset($_SESSION['bookingId'])) echo "<p class='ui-body ui-body-a'>Du har en påbörjad bokning. Resurserna du väljer nedan kommer att läggas till bokningen.<a class='ui-btn' href='booking.php'>Visa bokningen</a></p>";
+	?>
 
     <h3 class="ui-bar ui-bar-a">Steg 1. Välj resurser</h3>
     <?php
@@ -297,14 +298,6 @@ switch ($_REQUEST['action']) {
 		<ul id='ul-items-unavail'></ul>
 		<a href="#" data-rel="back" class="ui-btn">OK</a>
 	</div>
-	
-	<div data-role="popup" id="popup-times-ok" class="ui-content" data-overlay-theme="b">
-		<h3>Bra jobbat!</h3>
-		<p>Resurserna har nu lagts till din bokning.</p>
-		<p>Du kan nu fortsätta med att lägga till fler resurser, t.ex. med andra tider, eller gå vidare och slutföra bokningen.</p>
-		<a href="#" class="ui-btn" data-rel="back">Lägg till fler</a>
-		<a href="book2.php" class="ui-btn">Slutför bokningen</a>
-	</div>
 
     <script>
         var checkedItems = {};
@@ -322,7 +315,7 @@ switch ($_REQUEST['action']) {
 			if (fbStart.getFullYear() != fbEnd.getFullYear()) readableRange += " '"+fbStart.getFullYear().toString().substr(-2);
 			readableRange += " &ndash; sö " + fbEnd.getDate() + "/" + (fbEnd.getMonth()+1) + " '"+fbEnd.getFullYear().toString().substr(-2);
             // Get freebusy bars
-            $.getJSON("book.php", { action: "ajaxFreebusy", start: fbStart.valueOf()/1000, ids: checkedItems }, function(data, status) {
+            $.getJSON("subbooking.php", { action: "ajaxFreebusy", start: fbStart.valueOf()/1000, ids: checkedItems }, function(data, status) {
                 $("#book-current-range-readable").html( readableRange );
 				$.each(data.freebusyBars, function(key, value) {
 					$("#freebusy-"+key).html(value).append("<?= Item::freebusyScale() ?>");
@@ -342,7 +335,8 @@ switch ($_REQUEST['action']) {
             
             if (Object.keys(checkedItems).length>0) {
                 // Get access information for all selected items
-                $.getJSON("book.php", { action: "ajaxCombinedAccess", start: fbStart.valueOf()/1000, ids: checkedItems }, function(data, status) {
+                $.mobile.loading("show", {});
+                $.getJSON("subbooking.php", { action: "ajaxCombinedAccess", start: fbStart.valueOf()/1000, ids: checkedItems }, function(data, status) {
                     if (data.access <= <?= FFBoka::ACCESS_READASK ?>) {
                          $("#book-access-msg").html("<p>Komplett information om tillgänglighet kan inte visas för ditt urval av resurser. Ange önskad start- och sluttid nedan för att skicka en intresseförfrågan.</p><p>Ansvarig kommer att höra av sig till dig med besked om tillgänglighet och eventuell bekräftelse av din förfrågan.</p>");
                     } else {
@@ -361,7 +355,9 @@ switch ($_REQUEST['action']) {
         }
 		
 		function popupItemDetails(id) {
-            $.getJSON("book.php", { action: "ajaxItemDetails", id: id }, function(data, status) {
+            $.mobile.loading("show", {});
+            $.getJSON("subbooking.php", { action: "ajaxItemDetails", id: id }, function(data, status) {
+                $.mobile.loading("hide", {});
                 $("#popup-item-details").html(data).popup('open', { transition: "pop", y: 0 });
             });
 		}
@@ -382,12 +378,14 @@ switch ($_REQUEST['action']) {
 				return false;
 			}
 			// Send times to server to check availability:
-			$.getJSON("book.php", {
+            $.mobile.loading("show", {});
+			$.getJSON("subbooking.php", {
 				action: "ajaxCheckTimes",
 				ids: checkedItems,
 				start: startDate.valueOf()/1000,
 				end: endDate.valueOf()/1000
 			}, function(data, status) {
+                $.mobile.loading("hide", {});
 				if (data.timesOK) {
 					// Reset subbooking section to prepare for next subbooking
 					checkedItems = {};
@@ -399,8 +397,7 @@ switch ($_REQUEST['action']) {
 					$("#book-time-end").val("");
 					// update freebusy
 					scrollDate(0);
-					// Show OK dialog
-					$("#popup-times-ok").popup('open', { transition: "pop" });
+					location.href="booking.php";
 				} else {
 					$("#ul-items-unavail").html("");
 					$.each(data.unavail, function( key, item ) {

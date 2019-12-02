@@ -33,13 +33,47 @@ if (!$cat->showFor($currentUser, FFBoka::ACCESS_CATADMIN)) {
  */
 function showCatTree(Category $parent, Category $currentCat, User $user, $indent=0) {
     if ($parent->getAccess($user) >= FFBoka::ACCESS_CATADMIN || $parent->id == $currentCat->parentId) {
-        echo "<option value='{$parent->id}'" . ($parent->id==$currentCat->parentId ? " selected='true'" : "") . ">" . str_repeat("&mdash;", $indent) . " {$parent->caption}</option>";
+        echo "<option value='{$parent->id}'" . ($parent->id==$currentCat->parentId ? " selected='true'" : "") . ">" . str_repeat("&mdash;", $indent) . " " . htmlspecialchars($parent->caption) . "</option>";
     } else {
-        echo "<option disabled>" . str_repeat("&mdash;", $indent) . " {$parent->caption}</option>";
+        echo "<option disabled>" . str_repeat("&mdash;", $indent) . " " . htmlspecialchars($parent->caption) . "</option>";
     }
     foreach ($parent->children() as $child) {
         if ($child->id != $currentCat->id) showCatTree($child, $currentCat, $user, $indent+1);
     }
+}
+
+/**
+ * Echo HTML code showing the booking questions for this category
+ * @param Category $cat
+ * @param Section $section
+ */
+function showQuestions(Category $cat, Section $section) {
+    $catQuestions = $cat->getQuestions();
+    $ret = "";
+    foreach ($section->questions() as $question) {
+        $color=""; $icon=""; $mandatory=FALSE;
+        if (isset($catQuestions[$question->id])) {
+            $icon = "check";
+            if ($catQuestions[$question->id]->inherited) {
+                $color = "style='background:var(--FF-lightblue);'";
+            } else {
+                $color = "style='color:white; background:var(--FF-blue);'";
+            }
+            if ($catQuestions[$question->id]->required) {
+                $mandatory = TRUE;
+            }
+        } else {
+            $icon = "false";
+        }
+        $ret .= "<li data-icon='$icon'>" .
+            "<a href='#' $color onClick='toggleQuestion({$question->id});'>" .
+            ($mandatory ? "<span style='font-weight:bold; color:red;'>*</span> " : "") .
+            "<span style='white-space:normal;'>" . htmlspecialchars($question->caption) . "</span>" . 
+            "<p style='white-space:normal;' >{$question->optionsReadable()}</p>" .
+            "<p class='ui-li-aside' $color>$extra</p>" .
+            "</a></li>\n";
+    }
+    return $ret;
 }
 
 /**
@@ -54,7 +88,7 @@ function displayCatAccess($cat, $accLevels) {
 	if ($cat->accessMember) $ret .= "<li><a href='#' class='ajax-input'>Medlem i valfri lokalavdelning<p>{$accLevels[$cat->accessMember]}</p></a><a href='#' onclick=\"unsetAccess('accessMember');\">Återkalla behörighet</a></li>";
 	if ($cat->accessLocal) $ret .= "<li><a href='#' class='ajax-input'>Lokal medlem<p>{$accLevels[$cat->accessLocal]}</p></a><a href='#' onclick=\"unsetAccess('accessLocal');\">Återkalla behörighet</a></li>";
 	foreach ($cat->admins() as $adm) {
-	    $ret .= "<li><a href='#' class='ajax-input'>{$adm['userId']} " . ($adm['name'] ? $adm['name'] : "(ingen persondata tillgänglig)") . "<p>{$accLevels[$adm['access']]}</p></a><a href='#' onclick=\"unsetAccess('{$adm['userId']}');\">Återkalla behörighet</a></li>";
+	    $ret .= "<li><a href='#' class='ajax-input'>{$adm['userId']} " . ($adm['name'] ? htmlspecialchars($adm['name']) : "(ingen persondata tillgänglig)") . "<p>{$accLevels[$adm['access']]}</p></a><a href='#' onclick=\"unsetAccess('{$adm['userId']}');\">Återkalla behörighet</a></li>";
 	}
 	if ($ret) return "<ul data-role='listview' data-inset='true' data-split-icon='delete' data-split-theme='c'>$ret</ul>";
 	else return "<p><i>Inga behörigheter har tilldelats än. Använd alternativen nedan för att tilldela behörigheter.</i></p>";
@@ -68,9 +102,9 @@ function displayCatAccess($cat, $accLevels) {
 function contactData(User $u) {
     if ($u->id) {
         if ($u->name) {
-            $ret = $u->name . "<br>";
-            $ret .= "&phone;: " . ($u->phone ? $u->phone : "<b>Inget telefonnummer har angetts.</b>") . "<br>";
-            $ret .= "<b>@</b>: " . ($u->mail ? $u->mail : "<b>Ingen epostadress har angetts.</b>");
+            $ret = htmlspecialchars($u->name) . "<br>";
+            $ret .= "&phone;: " . ($u->phone ? htmlspecialchars($u->phone) : "<b>Inget telefonnummer har angetts.</b>") . "<br>";
+            $ret .= "<b>@</b>: " . ($u->mail ? htmlspecialchars($u->mail) : "<b>Ingen epostadress har angetts.</b>");
             return $ret;
         } else {
             return "Medlem med nummer ".$u->id."<br><b>OBS: Kontaktpersonen måste logga in och ange sina kontaktuppgifter!</b>";
@@ -89,8 +123,7 @@ switch ($_REQUEST['action']) {
         }
         break;
         
-    case "setCatProp":
-        // Reply to AJAX request
+    case "ajaxSetCatProp":
         if ($cat->getAccess($currentUser) >= FFBoka::ACCESS_CATADMIN) {
             switch ($_REQUEST['name']) {
                 case "caption":
@@ -99,31 +132,29 @@ switch ($_REQUEST['action']) {
                 case "bufferAfterBooking":
                     header("Content-Type: application/json");
                     if ($_REQUEST['value']=="NULL") $cat->{$_REQUEST['name']} = null;
-                    else $cat->{$_REQUEST['name']} = htmlentities($_REQUEST['value']);
+                    else $cat->{$_REQUEST['name']} = $_REQUEST['value'];
                     die(json_encode(["status"=>"OK"]));
                     break;
             }
         }
         break;
         
-    case "setImage":
-        // Reply to AJAX request
+    case "ajaxSetImage":
         if ($cat->getAccess($currentUser) >= FFBoka::ACCESS_CATADMIN) {
             header("Content-Type: application/json");
             if(json_encode( $cat->setImage($_FILES['image'] ) )) die(json_encode(["status"=>"OK"]));
             else die(json_encode(["error"=>"Kan inte spara bilden. Bara jpg- och png-filer accepteras."]));
         }
         
-    case "setContactUser":
-        // Reply to AJAX request
+    case "ajaxSetContactUser":
         if ($cat->getAccess($currentUser) >= FFBoka::ACCESS_CATADMIN) {
+            header("Content-Type: application/json");
             $cuser = new User($_REQUEST['id']);
             $cat->contactUserId = $cuser->id;
             die(json_encode([ "status"=>"OK", "html"=>contactData($cuser) ]));
         }
         
-    case "setAccess":
-        // Reply to AJAX request
+    case "ajaxSetAccess":
         if ($cat->getAccess($currentUser) >= FFBoka::ACCESS_CATADMIN) {
         	switch ($_GET['id']) {
             	case "accessExternal":
@@ -138,6 +169,27 @@ switch ($_REQUEST['action']) {
         }
     	break;
     	
+    case "ajaxToggleQuestion":
+        // empty -> show -> show+required -> empty
+        // inherited -> show+required -> inherited
+        // inherited+required -> show -> inherited+required
+        if ($cat->getAccess($currentUser) >= FFBoka::ACCESS_CATADMIN) {
+            $questions = $cat->getQuestions();
+            if (isset($questions[$_REQUEST['id']])) {
+                if ($questions[$_REQUEST['id']]->inherited) {
+                    $cat->addQuestion($_REQUEST['id']);
+                } elseif ($questions[$_REQUEST['id']]->required) {
+                    $cat->removeQuestion($_REQUEST['id']);
+                } else {
+                    $cat->addQuestion($_REQUEST['id'], TRUE);
+                }
+            } else {
+                $cat->addQuestion($_REQUEST['id']);
+            }
+            header("Content-Type: application/json");
+            die(json_encode(['html'=>showQuestions($cat, $section)]));
+        }
+        
     case "deleteCat":
         if ($cat->getAccess($currentUser) >= FFBoka::ACCESS_CATADMIN) {
             $cat->delete();
@@ -151,30 +203,30 @@ unset ($_SESSION['itemId']);
 ?><!DOCTYPE html>
 <html>
 <head>
-	<?php htmlHeaders("Friluftsfrämjandets resursbokning - Kategori " . $cat->caption) ?>
+	<?php htmlHeaders("Friluftsfrämjandets resursbokning - Kategori " . htmlspecialchars($cat->caption)) ?>
 	<script src="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
 </head>
 
 
 <body>
 <div data-role="page" id="page-category">
-	<?= head($cat->caption, $currentUser) ?>
+	<?= head(htmlspecialchars($cat->caption), $currentUser) ?>
 	<div role="main" class="ui-content">
 
 	<div data-role="collapsibleset" data-inset="false">
 		<?php if ($cat->getAccess($currentUser) >= FFBoka::ACCESS_CATADMIN) { ?>
-		<div data-role="collapsible" data-collapsed="<?= $_REQUEST['expand'] ? "true" : "false" ?>">
+		<div data-role="collapsible">
 			<h2>Allmänt</h2>
 
     		<p><?php
     		foreach ($cat->getPath() as $p) {
     		    if ($p['id']) echo " &rarr; ";
-    		    echo "<a href='" . ($p['id'] ? "category.php?catId={$p['id']}" : "index.php") . "' data-ajax='false'>{$p['caption']}</a>";
+    		    echo "<a href='" . ($p['id'] ? "category.php?catId={$p['id']}" : "index.php") . "' data-ajax='false'>" . htmlspecialchars($p['caption']) . "</a>";
     		}?></p>
 
 			<div class="ui-field-contain">
 				<label for="cat-caption" class="required">Rubrik:</label>
-				<input name="caption" class="ajax-input" id="cat-caption" placeholder="Namn till kategorin" value="<?= $cat->caption ?>">
+				<input name="caption" class="ajax-input" id="cat-caption" placeholder="Namn till kategorin" value="<?= htmlspecialchars($cat->caption) ?>">
 			</div>
 
 			<div class="ui-field-contain">
@@ -198,7 +250,7 @@ unset ($_SESSION['itemId']);
 			<hr>
 			
 			<label for="cat-bookingMsg">Text som ska visas när användare vill boka resurser från denna kategori:</label>
-				<textarea name="bookingMsg" class="ajax-input" id="cat-bookingMsg" placeholder="Exempel: Kom ihåg att ta höjd för torkningstiden efter användningen!"><?= $cat->bookingMsg ?></textarea>
+				<textarea name="bookingMsg" class="ajax-input" id="cat-bookingMsg" placeholder="Exempel: Kom ihåg att ta höjd för torkningstiden efter användningen!"><?= htmlspecialchars($cat->bookingMsg) ?></textarea>
 			<hr>
             
             <div class="ui-field-contain">
@@ -222,7 +274,7 @@ unset ($_SESSION['itemId']);
 			<h2>Behörigheter</h2>
 			<div data-role="collapsible" data-inset="true" data-mini="true" data-collapsed-icon="info">
 				<h4>Hur gör jag?</h4>
-				<p>Här bestäms vem som får se och boka resurserna i kategorin <i><?= $cat->caption ?></i>. Först väljer du vem som ska få behörighet. Sedan väljer du önskad behörighetsnivå.</p>
+				<p>Här bestäms vem som får se och boka resurserna i kategorin <i><?= htmlspecialchars($cat->caption) ?></i>. Först väljer du vem som ska få behörighet. Sedan väljer du önskad behörighetsnivå.</p>
 				<p>Återkalla behörigheter genom att klicka på den röda knappen höger om den.</p>
 			</div>
 			
@@ -264,6 +316,13 @@ unset ($_SESSION['itemId']);
 
 			<br>
 		</div>
+		
+
+		<div data-role="collapsible" class="ui-filterable" data-collapsed="<?= $_REQUEST['expand']=="access" ? "false" : "true" ?>">
+			<h2>Bokningsfrågor</h2>
+			<p><small>Här ställer du in särskilda frågor som ska visas vid bokning av resurser i denna kategorin. Aktivera/avaktivera och byt mellan valfritt och obligatoriskt genom att klicka på frågorna. Valda frågor visas även vid bokning i underordnade kategorier.</small></p>
+			<ul data-role="listview" data-inset="true" id="cat-questions"><?php echo showQuestions($cat, $section); ?></ul>
+		</div>
 		<?php } ?>
 		
 
@@ -276,9 +335,9 @@ unset ($_SESSION['itemId']);
 				    if ($child->showFor($currentUser, FFBoka::ACCESS_CATADMIN)) {
     					echo "<li><a href='category.php?catId={$child->id}' data-ajax='false'>" .
     						embedImage($child->thumb) .
-    						"<h3>{$child->caption}</h3>";
+    						"<h3>" . htmlspecialchars($child->caption) . "</h3>";
     					$subcats = array();
-    					foreach ($child->children() as $grandchild) $subcats[] = $grandchild->caption;
+    					foreach ($child->children() as $grandchild) $subcats[] = htmlspecialchars($grandchild->caption);
     					if ($subcats) echo "<p>" . implode(", ", $subcats) . "</p>";
     					echo "<span class='ui-li-count'>{$child->itemCount}</span></a></li>\n";
 				    }
@@ -299,8 +358,8 @@ unset ($_SESSION['itemId']);
 				foreach ($items as $item) {
 					echo "<li" . ($item->active ? "" : " class='inactive'") . "><a href='item.php?itemId={$item->id}' data-ajax='false'>" .
 						embedImage($item->getFeaturedImage()->thumb) .
-						"<h3>{$item->caption}</h3>" .
-						"<p>" . ($item->active ? $item->description : "(inaktiv)") . "</p>" .
+						"<h3>" . htmlspecialchars($item->caption) . "</h3>" .
+						"<p>" . ($item->active ? htmlspecialchars($item->description) : "(inaktiv)") . "</p>" .
 						"</a></li>\n";
 				}
 				if ($cat->getAccess($currentUser) >= FFBoka::ACCESS_CATADMIN) echo "<li><a href='item.php?action=newItem' data-ajax='false'>Lägg till resurs</a></li>"; ?>
@@ -318,7 +377,7 @@ unset ($_SESSION['itemId']);
 		
 		function unsetAccess(id) {
 			$.mobile.loading("show", {});
-			$.get("?action=setAccess&id=" + encodeURIComponent(id) + "&access=<?= FFBoka::ACCESS_NONE ?>", function(data, status) {
+			$.get("?action=ajaxSetAccess&id=" + encodeURIComponent(id) + "&access=<?= FFBoka::ACCESS_NONE ?>", function(data, status) {
 				if (data!=0) {
 					$("#assigned-cat-access").html(data).enhanceWithin();
 				} else {
@@ -329,7 +388,7 @@ unset ($_SESSION['itemId']);
 		}
 		
 		function setCatProp(name, val) {
-			$.getJSON("category.php", {action: "setCatProp", name: name, value: val}, function(data, status) {
+			$.getJSON("category.php", {action: "ajaxSetCatProp", name: name, value: val}, function(data, status) {
 				if (data.status=="OK") {
 					$("#cat-"+name).addClass("change-confirmed");
 					setTimeout(function(){ $("#cat-"+name).removeClass("change-confirmed"); }, 1500);
@@ -340,14 +399,22 @@ unset ($_SESSION['itemId']);
 		}
 
 		function setContactUser(id) {
-			$.getJSON("category.php", { action: "setContactUser", id: id }, function(data, status) {
+			$.getJSON("category.php", { action: "ajaxSetContactUser", id: id }, function(data, status) {
 				$("#cat-contact-data").html(data.html);
 	        	$("#cat-contact-autocomplete-input").val("");
 	        	$("#cat-contact-autocomplete").html("");
 			});
 		}
 
-
+		function toggleQuestion(id) {
+			$.getJSON("category.php", {
+				action: "ajaxToggleQuestion",
+				id: id,
+			}, function(data, status) {
+				$("#cat-questions").html(data.html).listview("refresh");
+			});
+		}
+		
 		$(document).on( "pagecreate", "#page-category", function() {
 
 			$("#cat-caption").on('input', function() {
@@ -374,7 +441,7 @@ unset ($_SESSION['itemId']);
 				var fd = new FormData();
 				var file = $('#file-cat-img')[0].files[0];
 				fd.append('image', file);
-				fd.append('action', "setImage");
+				fd.append('action', "ajaxSetImage");
 				$.mobile.loading("show", {});
 
 				$.ajax({
@@ -405,7 +472,7 @@ unset ($_SESSION['itemId']);
     	        if ( value && value.length > 2 ) {
     	            $ul.html( "<li><div class='ui-loader'><span class='ui-icon ui-icon-loading'></span></div></li>" );
     	            $ul.listview( "refresh" );
-    				$.getJSON("index.php", {action: "findUser", q: value}, function(data, status) {
+    				$.getJSON("index.php", {action: "ajaxFindUser", q: value}, function(data, status) {
     	                $.each( data, function ( i, val ) {
     	                    html += "<li style='cursor:pointer;' title='Sätt " + val['name'] + " som kontaktperson' onClick='setContactUser(" + val['userId'] + ");'>" + val['userId'] + " " + (val['name'] ? val['name'] : "(ingen persondata tillgänglig)") + "</li>";
     	                });
@@ -429,7 +496,7 @@ unset ($_SESSION['itemId']);
     	        if ( value && value.length > 2 ) {
     	            $ul.html( "<li><div class='ui-loader'><span class='ui-icon ui-icon-loading'></span></div></li>" );
     	            $ul.listview( "refresh" );
-    				$.getJSON("index.php", {action: "findUser", q: value}, function(data, status) {
+    				$.getJSON("index.php", {action: "ajaxFindUser", q: value}, function(data, status) {
     	                $.each( data, function ( i, val ) {
         	                html += "<label><input type='radio' class='cat-access-id' name='id' value='" + val['userId'] + "'>" + val['userId'] + " " + (val['name'] ? val['name'] : "(ingen persondata tillgänglig)") + "</label>";
     	                });
@@ -454,10 +521,10 @@ unset ($_SESSION['itemId']);
         		// Triggered when user choses access level (step 2)
     			$.mobile.loading("show", {});
     			$("#cat-access-levels").hide();
-    			$(".cat-access-id").attr("checked", false).checkboxradio("refresh");
+    			$(".cat-access-id").prop("checked", false).checkboxradio("refresh");
 	        	$("#cat-adm-autocomplete-input").val("");
 	        	$("#cat-adm-autocomplete").html("");    			
-    			$.get("?action=setAccess&id="+encodeURIComponent(chosenAccessId)+"&access="+this.value, function(data, status) {
+    			$.get("?action=ajaxSetAccess&id="+encodeURIComponent(chosenAccessId)+"&access="+this.value, function(data, status) {
     				if (data!=0) {
     					$("#assigned-cat-access").html(data).enhanceWithin();
     					$("#assigned-cat-access a.ajax-input").addClass('change-confirmed');

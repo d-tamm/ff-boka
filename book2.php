@@ -1,1 +1,0 @@
-Här kommer vi visa en sammanfattning av bokningen. Även eventuella tilläggsfrågor ska besvaras här.
