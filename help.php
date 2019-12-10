@@ -13,10 +13,10 @@ if ($_SESSION['authenticatedUser']) {
 <html>
 <head>
 	<?php htmlHeaders("Friluftsfrämjandets resursbokning - Hjälp") ?>
-	<script src="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
 </head>
+
 <body>
-<div data-role="page" id="page_help">
+<div data-role="page" id="page-help">
 	<?= head("Hjälp till resursbokning", $currentUser) ?>
 	<div role="main" class="ui-content">
 

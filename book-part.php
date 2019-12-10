@@ -6,7 +6,7 @@ use FFBoka\FFBoka;
 use FFBoka\Item;
 use FFBoka\Booking;
 session_start();
-require(__DIR__."/inc/common.php");
+require("inc/common.php");
 
 /**
  * Displays a nested view of categories with their items
@@ -28,7 +28,7 @@ function displayCat(Category $cat, $user, $fbStart) {
 					echo "<li class='book-item' id='book-item-{$item->id}'><a href=\"javascript:toggleItem({$item->id});\">";
 					echo embedImage($item->getFeaturedImage()->thumb);
 					echo "<h4>" . htmlspecialchars($item->caption) . "</h4>";
-					echo "<div id='freebusy-item-{$item->id}' class='freebusy-bar'></div>";
+					echo "<div class='freebusy-bar'><div id='freebusy-item-{$item->id}'></div>" . Item::freebusyScale() . "</div>";
 					echo "</a><a href='javascript:popupItemDetails({$item->id})'></a>";
 					echo "</li>";
 				}
@@ -86,8 +86,6 @@ function getFreebusyCombined($ids, $user, $start) {
     return $freebusyCombined;
 }
     
-
-$message = "";
 
 if (isset($_REQUEST['sectionId'])) $_SESSION['sectionId'] = $_REQUEST['sectionId'];
 if (!$_SESSION['sectionId']) {
@@ -182,29 +180,16 @@ switch ($_REQUEST['action']) {
 <html>
 <head>
     <?php htmlHeaders("Friluftsfrämjandets resursbokning") ?>
-
-    <script>
-    $( document ).on( "mobileinit", function() {
-        <?php if ($message) { ?>
-        $( document ).on( "pagecontainershow", function( event, ui ) {
-            setTimeout(function() {
-                $("#popupMessage").popup('open');
-            }, 500); // We need some delay here to make this work on Chrome.
-        } );
-        <?php } ?>
-    });
-    </script>
-    <script src="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
 </head>
 
 
 <body>
-<div data-role="page" id="page-subbooking">
+<div data-role="page" id="page-book-part">
     <?= head("Lägg till resurser", $currentUser) ?>
     <div role="main" class="ui-content">
 
-    <div data-role="popup" data-overlay-theme="b" id="popupMessage" class="ui-content">
-        <p><?= $message ?></p>
+    <div data-role="popup" data-overlay-theme="b" id="popup-msg-page-book-part" class="ui-content">
+        <p id="msg-page-book-part"><?= $message ?></p>
         <a href='#' data-rel='back' class='ui-btn ui-btn-icon-left ui-btn-inline ui-corner-all ui-icon-check'>OK</a>
     </div>
 
@@ -228,7 +213,7 @@ switch ($_REQUEST['action']) {
     </div>
 
 	<?php
-	if (isset($_SESSION['bookingId'])) echo "<p class='ui-body ui-body-a'>Du har en påbörjad bokning. Resurserna du väljer nedan kommer att läggas till bokningen.<a class='ui-btn' href='book-sum.php'>Visa bokningen</a></p>";
+	if (isset($_SESSION['bookingId'])) echo "<p class='ui-body ui-body-a'>Du har en påbörjad bokning. Resurserna du väljer nedan kommer att läggas till bokningen.<a data-transition='slide' class='ui-btn' href='book-sum.php'>Visa bokningen</a></p>";
 	?>
 
     <h3 class="ui-bar ui-bar-a">Steg 1. Välj resurser</h3>
@@ -251,7 +236,7 @@ switch ($_REQUEST['action']) {
                 <span class='freebusy-blocked' style='display:inline-block; width:2em;'>&nbsp;</span> ej bokbar tid<br>
                 <span class='freebusy-unknown' style='display:inline-block; width:2em;'>&nbsp;</span> ingen information tillgänglig<br>
             </div>
-            <div id='book-combined-freebusy-bar' class='freebusy-bar' style='height:50px;'></div>
+            <div class='freebusy-bar' style='height:50px;'><div id='book-combined-freebusy-bar'></div><?= Item::freebusyScale(true) ?></div>
 	        <div id='book-access-msg'></div>
         </div>
         
@@ -298,117 +283,6 @@ switch ($_REQUEST['action']) {
 		<ul id='ul-items-unavail'></ul>
 		<a href="#" data-rel="back" class="ui-btn">OK</a>
 	</div>
-
-    <script>
-        var checkedItems = {};
-		var fbStart = new Date(<?= strtotime("last sunday +1 day") ?> * 1000);
-		
-		scrollDate(0);
-		
-		function scrollDate(offset) {
-            $.mobile.loading("show", {});
-            // Calculate start end end of week
-			fbStart.setDate(fbStart.getDate() + offset);
-			var fbEnd = new Date(fbStart.valueOf());
-			fbEnd.setDate(fbEnd.getDate() + 6);
-			var readableRange = "må " + fbStart.getDate() + "/" + (fbStart.getMonth()+1);
-			if (fbStart.getFullYear() != fbEnd.getFullYear()) readableRange += " '"+fbStart.getFullYear().toString().substr(-2);
-			readableRange += " &ndash; sö " + fbEnd.getDate() + "/" + (fbEnd.getMonth()+1) + " '"+fbEnd.getFullYear().toString().substr(-2);
-            // Get freebusy bars
-            $.getJSON("book-part.php", { action: "ajaxFreebusy", start: fbStart.valueOf()/1000, ids: checkedItems }, function(data, status) {
-                $("#book-current-range-readable").html( readableRange );
-				$.each(data.freebusyBars, function(key, value) {
-					$("#freebusy-"+key).html(value).append("<?= Item::freebusyScale() ?>");
-				});
-                $("#book-combined-freebusy-bar").html(data.freebusyCombined).append("<?= Item::freebusyScale(true) ?>");
-                $.mobile.loading("hide", {});
-            });
-		}
-
-        function toggleItem(itemId){
-            if (checkedItems[itemId]) {
-                delete checkedItems[itemId];
-            } else {
-                checkedItems[itemId] = true;
-            }
-            $("#book-item-"+itemId).toggleClass("item-checked");
-            
-            if (Object.keys(checkedItems).length>0) {
-                // Get access information for all selected items
-                $.mobile.loading("show", {});
-                $.getJSON("book-part.php", { action: "ajaxCombinedAccess", start: fbStart.valueOf()/1000, ids: checkedItems }, function(data, status) {
-                    if (data.access <= <?= FFBoka::ACCESS_READASK ?>) {
-                         $("#book-access-msg").html("<p>Komplett information om tillgänglighet kan inte visas för ditt urval av resurser. Ange önskad start- och sluttid nedan för att skicka en intresseförfrågan.</p><p>Ansvarig kommer att höra av sig till dig med besked om tillgänglighet och eventuell bekräftelse av din förfrågan.</p>");
-                    } else {
-                        $("#book-access-msg").html("");
-                        if (data.access <= <?= FFBoka::ACCESS_PREBOOK ?>) {
-                            $("#book-access-msg").append("<p><b>OBS: Bokninen är preliminär.</b> För ditt urval av resurser kommer bokningen behöva bekräftas av materialansvarig.</p>"); 
-                        }
-                    }
-                    $("#book-combined-freebusy-bar").html(data.freebusyCombined).append("<?= Item::freebusyScale(true) ?>");
-                    $.mobile.loading("hide", {});
-                });
-                $("#book-step2").show();
-            } else {
-                $("#book-step2").hide();
-            }
-        }
-		
-		function popupItemDetails(id) {
-            $.mobile.loading("show", {});
-            $.getJSON("book-part.php", { action: "ajaxItemDetails", id: id }, function(data, status) {
-                $.mobile.loading("hide", {});
-                $("#popup-item-details").html(data).popup('open', { transition: "pop", y: 0 });
-            });
-		}
-
-		function checkTimes() {
-			// User has chosen start and end time. Check that the chosen range  
-			// does not collide with existing bookings visible to the user.
-			// First, check that user has entered some times:
-			if ($("#book-date-start").val()=="" | $("#book-time-start").val()=="" | $("#book-date-end").val()=="" | $("#book-time-end").val()=="") {
-				alert("Du måste välja start- och sluttid först.");
-				return false;
-			}
-			// Ensure that end time is later than start time:
-			var startDate = new Date($("#book-date-start").val() + " " + $("#book-time-start").val());
-			var endDate = new Date($("#book-date-end").val() + " " + $("#book-time-end").val());
-			if (startDate.valueOf() >= endDate.valueOf()) {
-				alert("Du har valt en sluttid som ligger före starttiden.");
-				return false;
-			}
-			// Send times to server to check availability:
-            $.mobile.loading("show", {});
-			$.getJSON("book-part.php", {
-				action: "ajaxCheckTimes",
-				ids: checkedItems,
-				start: startDate.valueOf()/1000,
-				end: endDate.valueOf()/1000
-			}, function(data, status) {
-                $.mobile.loading("hide", {});
-				if (data.timesOK) {
-					// Reset subbooking section to prepare for next subbooking
-					checkedItems = {};
-					$(".book-item").removeClass("item-checked");
-	                $("#book-step2").hide();
-					$("#book-date-start").val("");
-					$("#book-time-start").val("");
-					$("#book-date-end").val("");
-					$("#book-time-end").val("");
-					// update freebusy
-					scrollDate(0);
-					location.href="book-sum.php";
-				} else {
-					$("#ul-items-unavail").html("");
-					$.each(data.unavail, function( key, item ) {
-						$("#ul-items-unavail").append("<li>"+item+"</li>");
-					});
-					$("#popup-items-unavail").popup('open', { transition: "pop" });
-				}
-			});
-		}
-
-	</script>
 
 </div><!-- /page -->
 

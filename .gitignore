@@ -4,3 +4,5 @@ credentials.php
 /.buildpath
 /.directory
 /.project
+/.settings
+/inc/jquery.mobile-1.4.5/

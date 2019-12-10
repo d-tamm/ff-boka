@@ -70,7 +70,6 @@ function showQuestions(Category $cat, Section $section) {
             ($mandatory ? "<span style='font-weight:bold; color:red;'>*</span> " : "") .
             "<span style='white-space:normal;'>" . htmlspecialchars($question->caption) . "</span>" . 
             "<p style='white-space:normal;' >{$question->optionsReadable()}</p>" .
-            "<p class='ui-li-aside' $color>$extra</p>" .
             "</a></li>\n";
     }
     return $ret;
@@ -205,14 +204,20 @@ unset ($_SESSION['itemId']);
 <html>
 <head>
 	<?php htmlHeaders("Friluftsfrämjandets resursbokning - Kategori " . htmlspecialchars($cat->caption)) ?>
-	<script src="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
 </head>
 
 
 <body>
-<div data-role="page" id="page-category">
+<div data-role="page" id="page-admin-category">
 	<?= head(htmlspecialchars($cat->caption), $currentUser) ?>
 	<div role="main" class="ui-content">
+
+	<div data-role="popup" data-overlay-theme="b" id="popup-msg-page-admin-category" class="ui-content">
+		<p id="msg-page-admin-category"><?= $message ?></p>
+		<a href='#' data-rel='back' class='ui-btn ui-btn-icon-left ui-btn-inline ui-corner-all ui-icon-check'>OK</a>
+	</div>
+	
+	<div class="saved-indicator" id="cat-saved-indicator">Sparad</div>
 
 	<div data-role="collapsibleset" data-inset="false">
 		<?php if ($cat->getAccess($currentUser) >= FFBoka::ACCESS_CATADMIN) { ?>
@@ -222,7 +227,7 @@ unset ($_SESSION['itemId']);
     		<p><?php
     		foreach ($cat->getPath() as $p) {
     		    if ($p['id']) echo " &rarr; ";
-    		    echo "<a href='" . ($p['id'] ? "category.php?catId={$p['id']}" : "index.php") . "' data-ajax='false'>" . htmlspecialchars($p['caption']) . "</a>";
+    		    echo "<a data-transition='slide' data-direction='reverse' href='" . ($p['id'] ? "category.php?catId={$p['id']}" : "index.php") . "'>" . htmlspecialchars($p['caption']) . "</a>";
     		}?></p>
 
 			<div class="ui-field-contain">
@@ -338,7 +343,7 @@ unset ($_SESSION['itemId']);
 			<ul data-role="listview"><?php
 				foreach ($children as $child) {
 				    if ($child->showFor($currentUser, FFBoka::ACCESS_CATADMIN)) {
-    					echo "<li><a href='category.php?catId={$child->id}' data-ajax='false'>" .
+    					echo "<li><a data-transition='slide' href='category.php?catId={$child->id}'>" .
     						embedImage($child->thumb) .
     						"<h3>" . htmlspecialchars($child->caption) . "</h3>";
     					$subcats = array();
@@ -347,7 +352,7 @@ unset ($_SESSION['itemId']);
     					echo "<span class='ui-li-count'>{$child->itemCount}</span></a></li>\n";
 				    }
 				}
-				if ($cat->getAccess($currentUser) >= FFBoka::ACCESS_CATADMIN) echo "<li><a href='category.php?action=new' data-ajax='false'>Lägg till underkategori</a></li>";
+				if ($cat->getAccess($currentUser) >= FFBoka::ACCESS_CATADMIN) echo "<li><a data-transition='slide' href='category.php?action=new'>Lägg till underkategori</a></li>";
 				?>
 			</ul>
 			<br>
@@ -361,13 +366,13 @@ unset ($_SESSION['itemId']);
 			<ul data-role="listview">
 				<?php
 				foreach ($items as $item) {
-					echo "<li" . ($item->active ? "" : " class='inactive'") . "><a href='item.php?itemId={$item->id}' data-ajax='false'>" .
+					echo "<li" . ($item->active ? "" : " class='inactive'") . "><a data-transition='slide' href='item.php?itemId={$item->id}'>" .
 						embedImage($item->getFeaturedImage()->thumb) .
 						"<h3>" . htmlspecialchars($item->caption) . "</h3>" .
 						"<p>" . ($item->active ? htmlspecialchars($item->description) : "(inaktiv)") . "</p>" .
 						"</a></li>\n";
 				}
-				if ($cat->getAccess($currentUser) >= FFBoka::ACCESS_CATADMIN) echo "<li><a href='item.php?action=newItem' data-ajax='false'>Lägg till resurs</a></li>"; ?>
+				if ($cat->getAccess($currentUser) >= FFBoka::ACCESS_CATADMIN) echo "<li><a data-transition='slide' href='item.php?action=newItem'>Lägg till resurs</a></li>"; ?>
 			</ul>
 			<br>
 		</div>
@@ -375,184 +380,6 @@ unset ($_SESSION['itemId']);
 		
 	</div><!--/collapsibleset-->
 	</div><!--/main-->
-
-	<script>
-    	var toutSetValue;
-    	var chosenAccessId=0;
-		
-		function unsetAccess(id) {
-			$.mobile.loading("show", {});
-			$.get("?action=ajaxSetAccess&id=" + encodeURIComponent(id) + "&access=<?= FFBoka::ACCESS_NONE ?>", function(data, status) {
-				if (data!=0) {
-					$("#assigned-cat-access").html(data).enhanceWithin();
-				} else {
-					alert("Kunde inte återkalla behörigheten.");
-				}
-				$.mobile.loading("hide", {});
-			});
-		}
-		
-		function setCatProp(name, val) {
-			$.getJSON("category.php", {action: "ajaxSetCatProp", name: name, value: val}, function(data, status) {
-				if (data.status=="OK") {
-					$("#cat-"+name).addClass("change-confirmed");
-					setTimeout(function(){ $("#cat-"+name).removeClass("change-confirmed"); }, 1500);
-				} else {
-					alert("Kan inte spara ändringen :(");
-				}
-			});
-		}
-
-		function setContactUser(id) {
-			$.getJSON("category.php", { action: "ajaxSetContactUser", id: id }, function(data, status) {
-				$("#cat-contact-data").html(data.html);
-	        	$("#cat-contact-autocomplete-input").val("");
-	        	$("#cat-contact-autocomplete").html("");
-			});
-		}
-
-		function toggleQuestion(id) {
-			$.getJSON("category.php", {
-				action: "ajaxToggleQuestion",
-				id: id,
-			}, function(data, status) {
-				$("#cat-questions").html(data.html).listview("refresh");
-			});
-		}
-		
-		$(document).on( "pagecreate", "#page-category", function() {
-
-			$("#cat-caption").on('input', function() {
-				clearTimeout(toutSetValue);
-				toutSetValue = setTimeout(setCatProp, 1000, "caption", this.value);
-			});
-
-			$("#cat-parentId").on('change', function() {
-				setCatProp("parentId", this.value);
-			});
-			
-			$("#cat-prebookMsg").on('input', function() {
-				clearTimeout(toutSetValue);
-				toutSetValue = setTimeout(setCatProp, 1000, "prebookMsg", this.value);
-			});
-
-			$("#cat-postbookMsg").on('input', function() {
-				clearTimeout(toutSetValue);
-				toutSetValue = setTimeout(setCatProp, 1000, "postbookMsg", this.value);
-			});
-			
-            $("#cat-bufferAfterBooking").on('input', function() {
-                clearTimeout(toutSetValue);
-                toutSetValue = setTimeout(setCatProp, 1000, "bufferAfterBooking", this.value);
-            });
-			
-			$("#file-cat-img").change(function() {
-				// Save image via ajax: https://makitweb.com/how-to-upload-image-file-using-ajax-and-jquery/
-				var fd = new FormData();
-				var file = $('#file-cat-img')[0].files[0];
-				fd.append('image', file);
-				fd.append('action', "ajaxSetImage");
-				$.mobile.loading("show", {});
-
-				$.ajax({
-					url: 'category.php',
-					type: 'post',
-					data: fd,
-					dataType: 'json',
-					contentType: false,
-					processData: false,
-					success: function(data) {
-						if (data.status=="OK") {
-							var d = new Date();
-							$('#cat-img-preview').attr("src", "../image.php?type=category&id=<?= $cat->id ?>&" + d.getTime()).show().trigger( "updatelayout" );
-						} else {
-							alert(data.error);
-						}
-						$.mobile.loading("hide", {});
-					},
-				});
-			});
-			
-    	    $( "#cat-contact-autocomplete" ).on( "filterablebeforefilter", function ( e, data ) {
-    	        var $ul = $( this ),
-    	            $input = $( data.input ),
-    	            value = $input.val(),
-    	            html = "";
-    	        $ul.html( "" );
-    	        if ( value && value.length > 2 ) {
-    	            $ul.html( "<li><div class='ui-loader'><span class='ui-icon ui-icon-loading'></span></div></li>" );
-    	            $ul.listview( "refresh" );
-    				$.getJSON("index.php", {action: "ajaxFindUser", q: value}, function(data, status) {
-    	                $.each( data, function ( i, val ) {
-    	                    html += "<li style='cursor:pointer;' title='Sätt " + val['name'] + " som kontaktperson' onClick='setContactUser(" + val['userId'] + ");'>" + val['userId'] + " " + (val['name'] ? val['name'] : "(ingen persondata tillgänglig)") + "</li>";
-    	                });
-						if (data.length==0) {
-							if (Number(value)) html += "<li style='cursor:pointer;' title='Lägg till medlem med medlemsnummer " + Number(value) + " som kontaktperson' onClick='setContactUser(" + Number(value) + ");'>" + Number(value) + " (ny användare)</li>";
-							else html += "<li>Sökningen på <i>" + value + "</i> gav ingen träff</li>";
-						}
-    	                $ul.html( html );
-    	                $ul.listview( "refresh" );
-    	                $ul.trigger( "updatelayout");
-    	            });
-    	        }
-    	    });
-    	    
-    	    $( "#cat-adm-autocomplete" ).on( "filterablebeforefilter", function ( e, data ) {
-    	        var $ul = $( this ),
-    	            $input = $( data.input ),
-    	            value = $input.val(),
-    	            html = "";
-    	        $ul.html( "" );
-    	        if ( value && value.length > 2 ) {
-    	            $ul.html( "<li><div class='ui-loader'><span class='ui-icon ui-icon-loading'></span></div></li>" );
-    	            $ul.listview( "refresh" );
-    				$.getJSON("index.php", {action: "ajaxFindUser", q: value}, function(data, status) {
-    	                $.each( data, function ( i, val ) {
-        	                html += "<label><input type='radio' class='cat-access-id' name='id' value='" + val['userId'] + "'>" + val['userId'] + " " + (val['name'] ? val['name'] : "(ingen persondata tillgänglig)") + "</label>";
-    	                });
-						if (data.length==0) {
-							if (Number(value)) html += "<label><input type='radio' class='cat-access-id' name='id' value='" + Number(value) + "'>" + Number(value) + " (ny användare)</label>";
-							else html += "<li>Sökningen på <i>" + value + "</i> gav ingen träff</li>";
-						}
-    	                $ul.html( html );
-    	                $ul.trigger( "create");
-    	            });
-    	        }
-    	    });
-
-    		$("#cat-access-ids").on("change", ".cat-access-id", function(e, data) {
-        		// Triggered when user choses group or specific user for new access rights (step 1)
-    			$(".cat-access-level").attr("checked", false).checkboxradio("refresh");
-    			chosenAccessId = this.value;
-    			$("#cat-access-levels").show();
-    		});
-
-    		$(".cat-access-level").click(function() {
-        		// Triggered when user choses access level (step 2)
-    			$.mobile.loading("show", {});
-    			$("#cat-access-levels").hide();
-    			$(".cat-access-id").prop("checked", false).checkboxradio("refresh");
-	        	$("#cat-adm-autocomplete-input").val("");
-	        	$("#cat-adm-autocomplete").html("");    			
-    			$.get("?action=ajaxSetAccess&id="+encodeURIComponent(chosenAccessId)+"&access="+this.value, function(data, status) {
-    				if (data!=0) {
-    					$("#assigned-cat-access").html(data).enhanceWithin();
-    					$("#assigned-cat-access a.ajax-input").addClass('change-confirmed');
-    					setTimeout(function(){ $("#assigned-cat-access a.ajax-input").removeClass("change-confirmed"); }, 1500);
-    				} else {
-    					alert("Kunde inte spara behörigheten.");
-    				}
-    				$.mobile.loading("hide", {});
-    			});
-    		});
-
-    		$("#delete-cat").click(function() {
-    			if (confirm("Du håller på att ta bort kategorin och alla poster i den. Fortsätta?")) {
-    				location.href="?action=deleteCat";
-    			}
-    		});
-		});
-	</script>
 
 </div><!--/page-->
 </body>

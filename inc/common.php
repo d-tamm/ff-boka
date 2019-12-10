@@ -11,6 +11,9 @@ global $cfg;
 setlocale(LC_ALL, $cfg['locale']);
 setlocale(LC_NUMERIC, "en_US.utf8");
 
+// $message is used on several pages. Good to initialise.
+$message = "";
+
 // Load mail functions
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
@@ -109,11 +112,27 @@ function htmlHeaders(string $title) {
 	<title><?= $title ?></title>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1"/>
-	<link rel="stylesheet" href="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css" />
+	<link rel="stylesheet" href="/inc/jquery.mobile-1.4.5.min.css" />
 	<link rel="stylesheet" href="/css/themes/ff-boka.css" />
 	<link rel="stylesheet" href="/css/ff-boka.css" />
 	<link rel="stylesheet" href="/css/themes/jquery.mobile.icons.min.css" />
-	<script src="https://code.jquery.com/jquery-1.11.1.min.js"></script>
+	<script src="/inc/jquery-1.11.1.min.js"></script>
+	<script src="/inc/jquery.mobile-1.4.5.min.js"></script>
+	<script>
+	    // Lift in some constants from PHP
+	    const ACCESS_NONE = <?= FFBoka::ACCESS_NONE ?>;
+    	const ACCESS_READASK = <?= FFBoka::ACCESS_READASK ?>;
+	    const ACCESS_PREBOOK = <?= FFBoka::ACCESS_PREBOOK ?>;
+	    const ACCESS_BOOK = <?= FFBoka::ACCESS_BOOK ?>;
+	    const ACCESS_CONFIRM = <?= FFBoka::ACCESS_CONFIRM ?>;
+	    const ACCESS_CATADMIN = <?= FFBoka::ACCESS_CATADMIN ?>;
+	    const ACCESS_SECTIONADMIN = <?= FFBoka::ACCESS_SECTIONADMIN ?>;
+	    const STATUS_PENDING = <?= FFBoka::STATUS_PENDING ?>;
+	    const STATUS_CONFLICT = <?= FFBoka::STATUS_CONFLICT ?>;
+	    const STATUS_PREBOOKED = <?= FFBoka::STATUS_PREBOOKED ?>;
+	    const STATUS_CONFIRMED = <?= FFBoka::STATUS_CONFIRMED ?>;
+	</script>
+	<script src="/inc/ff-boka.js"></script>
 	<?php
 }
 
@@ -127,13 +146,13 @@ function head(string $caption, $currentUser=NULL) {
 	?>
 	<div data-role="panel" data-theme="b" data-position-fixed="true" data-display="push" id="navpanel">
 		<ul data-role="listview">
-			<li data-icon="home"><a href="/index.php" data-ajax="false" data-rel="close">Startsida</a></li><?php
+			<li data-icon="home"><a href="/index.php" data-transition='slide' data-direction='reverse' data-rel="close">Startsida</a></li><?php
 			if ($_SESSION['authenticatedUser']) { ?>
-				<li data-icon="user"><a href="/userdata.php" data-rel="close" data-ajax="false"><?= htmlspecialchars($currentUser->name) ?></a></li>
-				<li data-icon="power"><a href="/index.php?logout" data-rel="close" data-ajax="false">Logga ut</a></li><?php
+				<li data-icon="user"><a href="/userdata.php" data-transition='slide' data-rel="close"><?= htmlspecialchars($currentUser->name) ?></a></li>
+				<li data-icon="power"><a href="/index.php?logout" data-rel="close">Logga ut</a></li><?php
 			} ?>
-			<li data-icon="info"><a href="help.php" data-rel="close">Hjälp</a></li>
-			<li data-icon="info"><a href="cookies.php" data-rel="close">Om kakor (cookies)</a></li>
+			<li data-icon="info"><a href="help.php" data-transition='slide' data-rel="close">Hjälp</a></li>
+			<li data-icon="info"><a href="cookies.php" data-transition='slide' data-rel="close">Om kakor (cookies)</a></li>
 		</ul>
 	</div><!-- /panel -->
 	
@@ -142,12 +161,12 @@ function head(string $caption, $currentUser=NULL) {
 		<a href="#navpanel" data-rel="popup" data-transition="pop" data-role="button" data-icon="bars" data-iconpos="notext" class="ui-btn-left ui-nodisc-icon ui-alt-icon">Menu</a>
 		<?php 
 		switch ($_SERVER['PHP_SELF']) {
-		case "/admin/category.php": $href="/admin"; $transition="slidedown"; $icon="back"; break;
-		case "/admin/item.php": $href="/admin/category.php?expand=items"; $transition="slidedown"; $icon="back"; break;
-		case "/subbooking.php": $href="javascript:history.back();"; $transition="slidedown"; $icon="back"; break;
-		default: $href="/index.php"; $icon="home"; $transition="slidedown";
+		case "/admin/category.php": $href="/admin/"; $icon="back"; break;
+		case "/admin/item.php": $href="/admin/category.php?expand=items"; $icon="back"; break;
+		case "/subbooking.php": $href="javascript:history.back();"; $icon="back"; break;
+		default: $href="/index.php"; $icon="home";
 		}
-		echo "<a href='$href' data-transition='$transition' data-ajax='false' data-role='button' data-icon='$icon' data-iconpos='notext' class='ui-btn-right ui-nodisc-icon ui-alt-icon'></a>";
+		echo "<a href='$href' data-transition='slide' data-direction='reverse' data-role='button' data-icon='$icon' data-iconpos='notext' class='ui-btn-right ui-nodisc-icon ui-alt-icon'></a>";
 		if (!isset($_COOKIE['cookiesOK'])) { // Display cookie chooser ?>
 			<div id="divCookieConsent" data-theme='b' class='ui-bar ui-bar-b' style='font-weight:normal;'>
 				För att vissa funktioner på denna webbplats ska fungera använder vi kakor. <a href='cookies.php' data-role='none'>Läs mer om kakor.</a><br>
@@ -191,8 +210,8 @@ function sendmail(string $from, string $to, string $replyTo, string $subject, $o
 	}
 	else $body = $template;
 	// Send mail
-	$mail = new PHPMailer(true);
 	try {
+    	$mail = new PHPMailer(true);
 		//Server settings
 		$mail->SMTPDebug = 0;
 		$mail->isSMTP();
@@ -214,7 +233,7 @@ function sendmail(string $from, string $to, string $replyTo, string $subject, $o
 		$mail->send();
 		return true;
 	} catch (Exception $e) {
-		throw \Exception("Mailer Error: ".$mail->ErrorInfo);
+		throw new \Exception("Mailer Error: ".$mail->ErrorInfo);
 	}
 }
 

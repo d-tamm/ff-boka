@@ -12,7 +12,7 @@ $cfg = array(
 	// API connection
 	"apiUser" => "",
 	"apiPass" => "",
-	"apiUrl" => "", // see credentials.php
+	"apiUrl" => "", // see credentials.php. If not set, API calls will be disabled.
 	
 	// Logging
 	"logMaxSize" => 1*1024*1024, // in bytes

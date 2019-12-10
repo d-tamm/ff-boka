@@ -44,7 +44,7 @@ foreach ($booking->subbookings() as $subbooking) {
                 // User can see freebusy information. Let him change booking.
                 $unavail[] = $item->bookedItemId;
             } else {
-                // User can't see freebusy information. Flag as conflict.
+                // User can't see freebusy information. Flag as conflict upon confirmation.
                 $conflicts[] = $item->bookedItemId;
             }
         }
@@ -72,7 +72,7 @@ switch ($_REQUEST['action']) {
 			    $msgRef = array();
 			    foreach ($item->category()->postbookMsgs() as $msg) {
     			    if (in_array($msg, $messages)) $msgRef[] = "(".(array_search($msg, $messages)+1).")";
-    			    else { $messages[] = $msg; $msgRef[] = "(".count($messages).")"; }
+    			    else { $messages[] = "<p>(" . (count($messages)+1) . ") $msg</p>"; $msgRef[] = "(".count($messages).")"; }
 			    }
 			    $mailItems .= "<li>{$item->caption} " . implode(" ", $msgRef) . "</li>";
 			    if ($item->category()->getAccess($currentUser) >= FFBoka::ACCESS_BOOK) $status=FFBoka::STATUS_CONFIRMED;
@@ -85,27 +85,32 @@ switch ($_REQUEST['action']) {
 	        }
 	        $mailItems .= "</ul>";
 		}
-		foreach ($messages as $key=>$msg) $mailItems .= "<p>(" . ($key+1) . ") $msg</p>";
 		$answers = $booking->answers();
 		if (count($answers)) {
 		    $mailAnswers = "<p>Bokningsfrågor och dina svar:</p>"; 
 		    foreach ($answers as $ans) $mailAnswers .= "<p>Fråga: {$ans->question}<br>Ditt svar: {$ans->answer}</p>";
 		}
-		sendmail(
-		    $cfg['mailFrom'],
-		    $_REQUEST['booker-mail'],
-		    "",
-		    "Bokningsbekräftelse #{$booking->id}",
-		    $cfg['SMTP'], // SMPT options
-		    "confirm_booking", // template name
-		    array( // replace. TODO: add booking messages from categories
-		        "{{name}}"   => $_REQUEST['booker-name'],
-		        "{{items}}"  => $mailItems,
-		        "{{status}}" => $leastStatus==FFBoka::STATUS_CONFIRMED ? "Bokningen är nu bekräftad." : "Bokningen är preliminär och behöver bekräftas av ansvarig handläggare.",
-		        "{{answers}}"=> $mailAnswers,
-		        "{{bookingLink}}" => $_SESSION['authenticatedUser'] ? "<a href='{$cfg['url']}'>Logga in på resursbokningen</a> för att se och ändra din bokning." : "",
-		    )
-	    );
+		try {
+		    sendmail(
+		        $cfg['mailFrom'],
+		        $_REQUEST['booker-mail'],
+		        "",
+		        "Bokningsbekräftelse #{$booking->id}",
+		        $cfg['SMTP'], // SMPT options
+		        "confirm_booking", // template name
+		        array( // replace.
+		            "{{name}}"   => $_REQUEST['booker-name'],
+		            "{{items}}"  => $mailItems,
+		            "{{messages}}" => implode("", $messages),
+		            "{{status}}" => $leastStatus==FFBoka::STATUS_CONFIRMED ? "Bokningen är nu bekräftad." : "Bokningen är preliminär och behöver bekräftas av ansvarig handläggare.",
+		            "{{answers}}"=> $mailAnswers,
+		            "{{bookingLink}}" => $_SESSION['authenticatedUser'] ? "<a href='{$cfg['url']}'>Logga in på resursbokningen</a> för att se och ändra din bokning." : "",
+		        )
+	        );
+	    } catch(Exception $e) {
+	        $message = "Kunde inte skicka bekräftelsen:" . $e;
+	        break;
+	    }
 		unset($_SESSION['bookingId']);
 		header("Location: index.php?action=bookingConfirmed&mail=" . urlencode($_REQUEST['booker-mail']));
 		break;
@@ -138,16 +143,20 @@ switch ($_REQUEST['action']) {
 <html>
 <head>
     <?php htmlHeaders("Friluftsfrämjandets resursbokning - Bekräfta bokningen") ?>
-    <script src="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
 </head>
 
 
 <body>
-<div data-role="page" id="page-booking">
+<div data-role="page" id="page-book-sum">
     <?= head("Din bokning", $currentUser) ?>
     <div role="main" class="ui-content">
 
-    <h4>Lokalavdelning: <?= htmlspecialchars($section->name) ?></h4>
+    <div data-role="popup" data-overlay-theme="b" id="popup-msg-page-book-sum" class="ui-content">
+        <p id="msg-page-book-sum"><?= $message ?></p>
+        <a href='#' data-rel='back' class='ui-btn ui-btn-icon-left ui-btn-inline ui-corner-all ui-icon-check'>OK</a>
+    </div>
+
+    <h4>Lokalavdelning: <?= htmlspecialchars($section->name).$message ?></h4>
 
 	<?php
 	if (count($unavail)) echo "<p class='ui-body ui-body-c'>Några av de resurser du har valt är inte längre tillgängliga vid den valda tiden. De är markerade nedan. För att kunna slutföra bokningen behöver du ta bort dessa resurser eller ändra tiden genom att ta bort dem och sedan lägga till dem igen med en annan, ledig tid.</p>";
@@ -166,17 +175,25 @@ switch ($_REQUEST['action']) {
 		    
 			echo "<li" . (in_array($item->bookedItemId, $unavail) ? " data-theme='c'" : "") . "><a href='javascript:popupItemDetails({$item->id})'>" .
 			embedImage($item->getFeaturedImage()->thumb) .
-			"<h3 style='white-space:normal;'>" . htmlspecialchars($item->caption) . "</h3>" .
-			"<p>" . (in_array($item->bookedItemId, $unavail) ? "Inte tillgänglig" : htmlspecialchars($item->description)) . "</p>" .
-			"</a><a href='#' onClick='removeItem({$sub->id},{$item->bookedItemId});' data-ajax='false'>Ta bort</a></li>\n";
+			"<h3 style='white-space:normal;'>" . htmlspecialchars($item->caption) . "</h3><p>";
+			if (in_array($item->bookedItemId, $unavail)) echo "Inte tillgänglig";
+			else {
+			    switch ($item->getStatus()) {
+			    case FFBoka::STATUS_PENDING: echo "Bokning ej slutförd än"; break;
+			    case FFBoka::STATUS_CONFLICT:
+			    case FFBoka::STATUS_PREBOOKED: echo "Väntar på bekräftelse"; break;
+			    case FFBoka::STATUS_CONFIRMED: echo "Bekräftat"; break;
+			    }
+		    };
+		    echo "</p></a><a href='#' onClick='removeItem({$sub->id},{$item->bookedItemId});'>Ta bort</a></li>\n";
 		}
 	}
 	?>
 	</ul>
-	<button onClick="location.href='book-part.php'" data-ajax="false" class='ui-btn ui-icon-plus ui-btn-icon-right'>Lägg till fler resurser</button>
+	<button onClick="location.href='book-part.php'" data-transition='slide' data-direction='reverse' class='ui-btn ui-icon-plus ui-btn-icon-right'>Lägg till fler resurser</button>
 	
 
-	<form id='form-booking' action="book-sum.php" data-ajax="false" method='post'>
+	<form id='form-booking' action="book-sum.php" method='post'>
 		<input type="hidden" name="action" value="confirmBooking">
 		
 		<?php
@@ -205,6 +222,8 @@ switch ($_REQUEST['action']) {
 		    }
 		    echo "</fieldset>";
 		}
+		echo "<script>reqCheckRadios = " . json_encode($requiredCheckboxradios) . ";</script>";
+
 		if (count($questions)) echo "</div>\n\n";
 		?>
 		
@@ -240,52 +259,6 @@ switch ($_REQUEST['action']) {
     </div><!--/main-->
 
 	<div data-role="popup" id="popup-item-details" class="ui-content" data-overlay-theme="b"></div>
-
-
-    <script>
-    function popupItemDetails(id) {
-        $.mobile.loading("show", {});
-        $.getJSON("book-part.php", { action: "ajaxItemDetails", id: id }, function(data, status) {
-            $.mobile.loading("hide", {});
-            $("#popup-item-details").html(data).popup('open', { transition: "pop", y: 0 });
-        });
-    }
-
-    function removeItem(subId, bookedItemId) {
-        $.mobile.loading("show", {});
-        $.getJSON("book-sum.php", {
-            action: "ajaxRemoveItem",
-            subId: subId,
-            bookedItemId: bookedItemId
-        }, function(data, status) {
-            $.mobile.loading("hide", {});
-            if (data.error) alert(data.error);
-            else if (data.status=="booking empty") location.href="book-part.php";
-            else location.reload();
-        });
-    }
-    
-	function deleteBooking() {
-		if (confirm("Är du säker på att du vill ta bort din bokning?")) {
-			location.href="?action=deleteBooking";
-		}
-		return false;
-	}
-
-	$("#form-booking").submit(function(event) {
-		// Validate required checkboxes and radios
-		var reqCheckRadios = <?= json_encode($requiredCheckboxradios) ?>;
-		$.each(reqCheckRadios, function( id, q ) {
-			if ($("[name^=answer-"+id+"]:checked").length == 0) {
-				alert("Du måste först svara på frågan: "+q);
-				event.preventDefault();
-				return false;
-			}
-		});
-		return true;
-	});
-	
-	</script>
 
 </div><!-- /page -->
 

@@ -10,11 +10,11 @@ $message = "";
  * @param \FFBoka\Section $section
  * @return string HTML string with <li> elements.
  */
-function adminList($section) {
+function adminList($section, $currentUserId) {
     if (!$admins = $section->getAdmins()) $ret = "<li>Inga administratörer har lagts upp än.</li>";
     foreach ($admins as $admId) {
         $adm = new User($admId);
-        $ret .= "<li><a href='#'><h2>" . ($adm->name ? htmlspecialchars($adm->name) : "(ingen persondata tillgänglig)") . "</h2><p>{$adm->id}</p></a><a href=\"javascript:removeAdmin({$adm->id}, '" . htmlspecialchars($adm->name) . "');\">Ta bort</a></li>";
+        $ret .= "<li><a href='#'><h2>" . ($adm->name ? htmlspecialchars($adm->name) : "(ingen persondata tillgänglig)") . "</h2><p>{$adm->id}</p></a><a href=\"javascript:removeAdmin({$adm->id}, $currentUserId, '" . htmlspecialchars($adm->name) . "');\">Ta bort</a></li>";
     }
     return $ret;
 }
@@ -58,7 +58,7 @@ switch ($_REQUEST['action']) {
 	    if (!is_numeric($_REQUEST['id'])) {
 	        die(json_encode(["error"=>"Ogiltigt medlemsnummer {$_REQUEST['id']}."]));
 	    } elseif ($section->addAdmin($_REQUEST['id'])) {
-	        die(json_encode(["html"=>adminList($section)]));
+	        die(json_encode(["html"=>adminList($section, $currentUser->id)]));
 		} else {
 		    die(json_encode(["error"=>"Kunde inte lägga till administratören. Är den kanske redan med i listan?"]));
 		}
@@ -66,7 +66,7 @@ switch ($_REQUEST['action']) {
     case "ajaxRemoveSectionAdmin":
         if ($userAccess < FFBoka::ACCESS_SECTIONADMIN) die("Ajja bajja!");
 	    header("Content-Type: application/json");
-	    if ($section->removeAdmin($_REQUEST['id'])) die(json_encode(["html"=>adminList($section)]));
+	    if ($section->removeAdmin($_REQUEST['id'])) die(json_encode(["html"=>adminList($section, $currentUser->id)]));
 	    else die(json_encode(["error"=>"Kan inte ta bort LA-administratören."]));
 		
 	case "ajaxGetQuestion":
@@ -122,30 +122,18 @@ unset($_SESSION['catId']);
 <html>
 <head>
 	<?php htmlHeaders("Friluftsfrämjandets resursbokning - Admin ".$section->name) ?>
-	<script>
-	$( document ).on( "mobileinit", function() {
-		<?php if ($message) { ?>
-		$( document ).on( "pagecontainershow", function( event, ui ) {
-			setTimeout(function() {
-				$("#popupMessage").popup('open');
-			}, 500); // We need some delay here to make this work on Chrome.
-		} );
-		<?php } ?>
-	});
-	</script>
-	<script src="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
 </head>
 
 
 <body>
-<div data-role="page" id="page-section-admin">
+<div data-role="page" id="page-admin-section">
 	<?= head("LA " . htmlspecialchars($section->name), $currentUser) ?>
 	<div role="main" class="ui-content">
 
-    <div data-role="popup" data-overlay-theme="b" id="popupMessage" class="ui-content">
-    	<p><?= $message ?></p>
-    	<a href='#' data-rel='back' class='ui-btn ui-btn-icon-left ui-btn-inline ui-corner-all ui-icon-check'>OK</a>
-    </div>
+	<div data-role="popup" data-overlay-theme="b" id="popup-msg-page-admin-section" class="ui-content">
+		<p id="msg-page-admin-section"><?= $message ?></p>
+		<a href='#' data-rel='back' class='ui-btn ui-btn-icon-left ui-btn-inline ui-corner-all ui-icon-check'>OK</a>
+	</div>
 
 	<div data-role="collapsibleset" data-inset="false">
 
@@ -155,7 +143,7 @@ unset($_SESSION['catId']);
 			<?php
 			foreach ($section->getMainCategories() as $cat) {
 			    if ($cat->showFor($currentUser, FFBoka::ACCESS_CATADMIN)) {
-    				echo "<li><a href='category.php?catId={$cat->id}' data-ajax='false'>" .
+    				echo "<li><a data-transition='slide' href='category.php?catId={$cat->id}'>" .
     					htmlspecialchars($cat->caption) .
     					embedImage($cat->thumb);
     				$children = array();
@@ -164,7 +152,7 @@ unset($_SESSION['catId']);
     				echo "<span class='ui-li-count'>{$cat->itemCount}</span></a></li>";
 			    }
 			}
-			if ($section->getAccess($currentUser) & FFBoka::ACCESS_SECTIONADMIN) echo "<li><a href='category.php?action=new' data-ajax='false'>Skapa ny kategori</a></li>"; ?>
+			if ($section->getAccess($currentUser) & FFBoka::ACCESS_SECTIONADMIN) echo "<li><a href='category.php?action=new'>Skapa ny kategori</a></li>"; ?>
 			</ul>
 			<br>
 		</div>
@@ -240,7 +228,7 @@ unset($_SESSION['catId']);
 				
 			<p>Användare med admin-behörighet:</p>
 			<ul id="ul-sec-admins" data-role="listview" data-split-icon="delete" data-split-theme="c" data-inset="true">
-				<?= adminList($section) ?>
+				<?= adminList($section, $currentUser->id) ?>
 			</ul>
 		<?php } ?>
 		</div>
@@ -248,169 +236,6 @@ unset($_SESSION['catId']);
 	</div><!--/collapsibleset-->
 
 	</div><!--/main-->
-
-	<script>
-		showQuestionOptions("");
-		var questionId = 0;
-		var questionType = "";
-		
-    	$( document ).on( "pagecreate", "#page-section-admin", function() {
-        	getQuestions();
-        	
-    	    $( "#sec-adm-autocomplete" ).on( "filterablebeforefilter", function ( e, data ) {
-    	        var $ul = $( this ),
-    	            $input = $( data.input ),
-    	            value = $input.val(),
-    	            html = "";
-    	        $ul.html( "" );
-    	        if ( value && value.length > 2 ) {
-    	            $ul.html( "<li><div class='ui-loader'><span class='ui-icon ui-icon-loading'></span></div></li>" );
-    	            $ul.listview( "refresh" );
-    				$.getJSON("index.php", {action: "ajaxFindUser", q: value}, function(data, status) {
-    	                $.each( data, function ( i, val ) {
-        	                html += "<li style='cursor:pointer;' title='Lägg till " + val.name + " som LA-admin' onClick='addAdmin(" + val.userId + ");'>" + val.userId + " " + (val.name ? val.name : "(ingen persondata tillgänglig)") + "</li>";
-    	                });
-						if (data.length==0) {
-							if (Number(value)) html += "<li style='cursor:pointer;' title='Lägg till medlem med medlemsnummer " + Number(value) + " som LA-admin' onClick='addAdmin(" + Number(value) + ");'>" + Number(value) + " (ny användare)</li>";
-							else html += "<li>Sökningen på <i>" + value + "</i> gav ingen träff</li>";
-						}
-    	                $ul.html( html );
-    	                $ul.listview( "refresh" );
-    	                $ul.trigger( "updatelayout");
-    	            });
-    	        }
-    	    });
-
-    	    $("input[type=radio][name=sec-question-type]").click( function() {
-				showQuestionOptions(this.value);
-    	    });
-    	});
-		
-		function showQuestionOptions(type) {
-			questionType = type;
-			$("#sec-question-opts-checkboxradio").hide();
-			$("#sec-question-opts-text").hide();
-			$("#sec-question-opts-number").hide();
-			switch (questionType) {
-			case "radio":
-			case "checkbox":
-				$("#sec-question-opts-checkboxradio").show();
-				break;
-			case "text":
-				$("#sec-question-opts-text").show();
-				break;
-			case "number":
-				$("#sec-question-opts-number").show();
-				break;
-			}
-		}
-
-    	function getQuestions() {
-			$.mobile.loading("show", {});
-        	$.get("index.php", { action: "ajaxGetQuestions" }, function(data, status) {
-            	$("#sec-questions").html(data).listview("refresh");
-    			$.mobile.loading("hide", {});
-        	});
-    	}
-    	
-	   	function clearQuestionInputs() {
-		   	$("#sec-question-caption").val("");
-		   	$("#sec-question-choices").val("");
-		   	$("#sec-question-length").val("");
-		   	$("#sec-question-min").val("");
-		   	$("#sec-question-max").val("");
-	   	}
-
-	   	function saveQuestion() {
-		   	if ($("#sec-question-caption").val()=="") {
-			   	alert("Du måste skriva in frågan.");
-			   	return;
-		   	}
-			if (questionType=="") {
-				alert("Välj en frågetyp först.");
-				return;
-			}
-			$.mobile.loading("show", {});
-		   	$.getJSON("index.php", {
-			   	action: "ajaxSaveQuestion",
-			   	id: questionId,
-			   	caption: $("#sec-question-caption").val(),
-			   	type: questionType,
-			   	choices: $("#sec-question-choices").val(),
-			   	length: $("#sec-question-length").val(),
-			   	min: $("#sec-question-min").val(),
-			   	max: $("#sec-question-max").val()  
-		   	}, function(data, status) {
-	        	$("#popup-section-question").popup('close', { transition: "pop" } );
-				$.mobile.loading("hide", {});
-				getQuestions();
-		   	});
-	   	}
-
-	   	function deleteQuestion(id) {
-			$.mobile.loading("show", {});
-		   	$.getJSON("index.php", { action: "ajaxDeleteQuestion", id: id }, function(data, status) {
-				$.mobile.loading("hide", {});
-				getQuestions();
-		   	});
-	   	}
-	   	
-    	function showQuestion(id) {
-    		questionId = id;
-			clearQuestionInputs();
-        	if (id==0) {
-            	showQuestionOptions("");
-            	$("input[type=radio][name=sec-question-type]").removeAttr("checked").checkboxradio("refresh");
-				$("#popup-section-question").popup('open', { transition: "pop" } );
-        	} else {
-				$.mobile.loading("show", {});
-				$.getJSON("index.php", { action: "ajaxGetQuestion", id: id }, function(data, status) {
-					questionId = data.id;
-					$("#sec-question-caption").val( data.caption );
-					showQuestionOptions(data.type);
-					$("input[name=sec-question-type]").prop("checked", false);
-					$("#sec-question-type-"+data.type).prop("checked", "checked");
-					$("input[name=sec-question-type]").checkboxradio("refresh");
-					switch (data.type) {
-						case "radio":
-						case "checkbox":
-							$("#sec-question-choices").val(data.options.choices.join("\n")); break;
-						case "text":
-							$("#sec-question-length").val(data.options.length); break;
-						case "number":
-							$("#sec-question-min").val(data.options.min); $("#sec-question-max").val(data.options.max); break;
-					}
-					$.mobile.loading("hide", {});
-					$("#popup-section-question").popup('open', { transition: "pop" } );
-				});
-        	}
-    	}
-
-    	function addAdmin(id) {
-        	$.getJSON("index.php", {action: "ajaxAddSectionAdmin", id: id}, function(data, status) {
-    			if (data['html']) {
-					$("#ul-sec-admins").html(data['html']).listview("refresh");
-		        	$("#sec-adm-autocomplete-input").val("");
-		        	$("#sec-adm-autocomplete").html("");
-    			} else {
-        			alert(data['error']);
-    			}
-        	});
-    	}
-
-		function removeAdmin(id, name) {
-			if (confirm('Du håller på att återkalla admin-behörighet för ' + (id==<?= $currentUser->id ?> ? "dig själv" : (name ? name : "(okänd)")) + '. Vill du fortsätta?')) {
-    			$.getJSON("index.php", {action: "ajaxRemoveSectionAdmin", id: id}, function(data, status) {
-        			if (data['html']) {
-						$("#ul-sec-admins").html(data['html']).listview("refresh");
-						if (id==<?= $currentUser->id ?>) location.reload();
-        			} else {
-            			alert(data['error']);
-        			}
-    			});
-			}
-		}
-	</script>
 
 </div><!--/page-->
 </body>

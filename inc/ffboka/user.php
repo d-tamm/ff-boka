@@ -38,7 +38,8 @@ class User extends FFBoka {
         $this->sectionId = 52; // TODO: get real section from API
         // Get user's assignments from the FF API as an array[sectionId][names] (only assignments on section level)
         $this->assignments = array();
-        $data = json_decode(file_get_contents(self::$apiUrl . "/api/feed/Pan_Extbokning_GetAssingmentByMemberNoOrSocSecNo?MNoSocnr={$this->id}"));
+        if (self::$apiUrl) $data = json_decode(file_get_contents(self::$apiUrl . "/api/feed/Pan_Extbokning_GetAssingmentByMemberNoOrSocSecNo?MNoSocnr={$this->id}"));
+        else $data = (object)array("results"=>array()); // API not set (e.g. development environment)
         foreach ($data->results as $ass) {
             if ($ass->cint_assignment_party_type->value == FFBoka::TYPE_SECTION) {
                 // This will sort the assignments on section ID

@@ -6,6 +6,7 @@ use FFBoka\Section;
 session_start();
 require(__DIR__."/inc/common.php");
 global $db, $cfg, $FF;
+$message = "";
 
 if (isset($_REQUEST['action'])) {
     switch ($_REQUEST['action']) {
@@ -102,35 +103,22 @@ if ($_SESSION['authenticatedUser']) {
     }
 }
 
-if (isset($_REQUEST['message'])) $message .= "<br>".$_REQUEST['message'];
+if (isset($_REQUEST['message'])) $message = ($message ? "$message<br>" : "") . $_REQUEST['message'];
 
 ?><!DOCTYPE html>
 <html>
 <head>
 	<?php htmlHeaders("Friluftsfrämjandets resursbokning") ?>
-
-	<script>
-	$( document ).on( "mobileinit", function() {
-		<?php if (isset($message)) { // TODO: seems that no messages are being displayed. ?>
-		$( document ).on( "pagecontainershow", function( event, ui ) {
-			setTimeout(function() {
-				$("#popupMessage").popup('open');
-			}, 500); // We need some delay here to make this work on Chrome.
-		} );
-		<?php } ?>
-	});
-	</script>
-	<script src="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
 </head>
 
 
 <body>
-<div data-role="page" id="page_start">
+<div data-role="page" id="page-start">
 	<?= head("Resursbokning", $currentUser) ?>
 	<div role="main" class="ui-content">
 
-	<div data-role="popup" data-overlay-theme="b" id="popupMessage" class="ui-content">
-		<p><?= isset($message) ? $message : "" ?></p>
+	<div data-role="popup" data-overlay-theme="b" id="popup-msg-page-start" class="ui-content">
+		<p id="msg-page-start"><?= $message ?></p>
 		<a href='#' data-rel='back' class='ui-btn ui-btn-icon-left ui-btn-inline ui-corner-all ui-icon-check'>OK</a>
 	</div>
 
@@ -142,7 +130,7 @@ if (isset($_REQUEST['message'])) $message .= "<br>".$_REQUEST['message'];
 	if ($_SESSION['authenticatedUser']) {
     	if ($ub = $currentUser->unfinishedBookings()) {
     	    echo "<p class='ui-body ui-body-c'>Du har minst en påbörjad bokning som du bör avsluta eller ta bort.";
-    	    echo "<a href='book-sum.php?bookingId={$ub[0]}' class='ui-btn ui-btn-a' data-ajax='false'>Gå till bokningen</a></p>";
+    	    echo "<a href='book-sum.php?bookingId={$ub[0]}' class='ui-btn ui-btn-a'>Gå till bokningen</a></p>";
     	}
 	}
 	?>
@@ -156,7 +144,7 @@ if (isset($_REQUEST['message'])) $message .= "<br>".$_REQUEST['message'];
 			$sectionList = "";
 			foreach ($FF->getAllSections($currentUser->sectionId) as $section) {
 			    if ($section->showFor($currentUser) && count($section->getMainCategories())) {
-					$sectionList .= "<a href='book-part.php?sectionId={$section->id}' class='ui-btn' data-ajax='false'>" . htmlspecialchars($section->name) . "</a>";
+					$sectionList .= "<a href='book-part.php?sectionId={$section->id}' class='ui-btn'>" . htmlspecialchars($section->name) . "</a>";
 				}
 			}
 			if ($sectionList) echo $sectionList;
@@ -168,13 +156,13 @@ if (isset($_REQUEST['message'])) $message .= "<br>".$_REQUEST['message'];
 		$sectionList = "";
 		foreach ($FF->getAllSections() as $section) {
 			if ($section->showFor($currentUser, FFBoka::ACCESS_CATADMIN)) {
-				$sectionList .= "<a href='admin/?sectionId={$section->id}' class='ui-btn' data-ajax='false'>" . htmlspecialchars($section->name) . "</a>";
+				$sectionList .= "<a href='admin/?sectionId={$section->id}' class='ui-btn' data-transition='slideup'>" . htmlspecialchars($section->name) . "</a>";
 			}
 		}
 		if ($sectionList) echo "<div data-role='collapsible' data-collapsed='true'><h3>Administrera</h3>$sectionList";
 
 		// TODO: This is for testing only. Remove before switching to production! ?><br>
-		<form data-ajax="false" class="ui-body ui-body-a">
+		<form class="ui-body ui-body-a">
 			<p>Under testfasen kan du ge dig själv administratörs-behörighet i din lokalavdelning för att testa alla funktioner.</p>
 			<input type="hidden" name="action" value="make me admin">
 			<select name="sectionId">
@@ -198,12 +186,12 @@ if (isset($_REQUEST['message'])) $message .= "<br>".$_REQUEST['message'];
 			<?php // List of sections with categories open for guests
 			foreach ($FF->getAllSections() as $section) {
 				if ($section->showFor(new User(0)) && count($section->getMainCategories())) {
-					echo "<a href='book-part.php?sectionId={$section->id}&guest' data-ajax='false' class='ui-btn'>" . htmlspecialchars($section->name) . "</a>";
+					echo "<a href='book-part.php?sectionId={$section->id}&guest' class='ui-btn'>" . htmlspecialchars($section->name) . "</a>";
 				}
 			} ?>
 		</div>
 
-		<form id="formLogin" style="padding:10px 20px;" data-ajax="false" method="POST" action="index.php">
+		<form id="formLogin" style="padding:10px 20px;" action="index.php" method="post">
 			<h3>Inloggning <a href="#popup-help-login" data-rel="popup" class="tooltip ui-btn ui-alt-icon ui-nodisc-icon ui-btn-inline ui-icon-info ui-btn-icon-notext">Hjälp</a></h3>
 			<div data-role="popup" id="popup-help-login" class="ui-content" data-overlay-theme="b">
 				<p>Du loggar in med samma lösenord som i aktivitetshanteraren.</p>

@@ -43,35 +43,17 @@ if ($_GET['first_login']) $message = "Välkommen till resursbokningen! Innan du 
 <html>
 <head>
 	<?php htmlHeaders("Friluftsfrämjandets resursbokning") ?>
-
-	<script>
-	$( document ).on( "mobileinit", function() {
-		<?php if (isset($message)) { ?>
-		$( document ).on( "pagecontainershow", function( event, ui ) {
-			setTimeout(function() {
-				$("#popupMessage").popup('open');
-			}, 500); // We need some delay here to make this work on Chrome.
-		} );
-		<?php } ?>
-	});
-	
-	function deleteAccount() {
-		if (window.confirm("Bekräfta att du vill radera ditt konto i resursbokningen. Alla dina bokningar och persondata tas bort från systemet och kan inte återställas!")) {
-			location.href="userdata.php?action=deleteAccount";
-		}
-	}
-	</script>
-	<script src="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
 </head>
 
 
 <body>
-<div data-role="page" id="page_userdata">
+<div data-role="page" id="page-userdata">
 	<?= head("Min sida", $currentUser) ?>
 	<div role="main" class="ui-content">
-    <div data-role="popup" data-overlay-theme="b" id="popupMessage" class="ui-content">
-    	<p><?= isset($message) ? $message : "" ?></p>
-    	<a href='#' data-rel='back' class='ui-btn ui-btn-icon-left ui-btn-inline ui-corner-all ui-icon-check'>OK</a>
+
+    <div data-role="popup" data-overlay-theme="b" id="popup-msg-page-userdata" class="ui-content">
+        <p id="msg-page-userdata"><?= $message ?></p>
+        <a href='#' data-rel='back' class='ui-btn ui-btn-icon-left ui-btn-inline ui-corner-all ui-icon-check'>OK</a>
     </div>
 
 	<div data-role='collapsibleset' data-inset='false'>
