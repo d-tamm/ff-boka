@@ -71,9 +71,9 @@ switch ($_REQUEST['action']) {
         }
         break;
         
-    case "deleteItem":
-        $item->delete();
-        header("Location: category.php?expand=items");
+    case "ajaxDeleteItem":
+        header("Content-Type: application/json");
+        if ($item->delete()) die(json_encode(array("status"=>"OK")));
         break;
         
     case "ajaxAddImage":
