@@ -156,8 +156,8 @@ class FFBoka {
         $tmp = imagecreatetruecolor($thumbSize, $thumbSize);
         $bg = imagecolorallocatealpha($tmp, 255, 255, 255, 127);
         imagefill($tmp, 0, 0, $bg);
-        if ($ratio>1) imagecopyresampled($tmp, $src, $thumbSize/2*(1-1*$ratio), 0, 0, 0, $thumbSize*$ratio, $thumbSize, $size[0], $size[1]);
-        else imagecopyresampled($tmp, $src, 0, $thumbSize/2*(1-1/$ratio), 0, 0, $thumbSize, $thumbSize/$ratio, $size[0], $size[1]);
+        $offset = ($size[0]-$size[1])/2/($size[0]+$size[1])*$thumbSize;
+        imagecopyresampled($tmp, $src, -$offset, $offset, 0, 0, $thumbSize+2*$offset, $thumbSize-2*$offset, $size[0], $size[1]);
         // Get thumbnail as string
         ob_start();
         imagepng($tmp);
