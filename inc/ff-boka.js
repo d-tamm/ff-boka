@@ -8,6 +8,12 @@ $(document).on('pageshow', function(e) {
     console.log("pageshow", e.target.attributes.id);
 });*/
 
+// Prevent caching of pages
+$(document).on('pagehide', function (event, ui) { 
+    var page = jQuery(event.target);
+    page.remove(); 
+});
+
 // ========== index.php ==========
 $(document).on('pagecreate', "#page-start", function(e) {
     // bind events
@@ -598,7 +604,10 @@ $(document).on('pagecreate', "#page-admin-item", function() {
     
     $("#delete-item").click(function() {
         if (confirm("Du håller på att ta bort utrustningen. Fortsätta?")) {
-            location.href="?action=deleteItem";
+            $.getJSON("item.php", { action: "ajaxDeleteItem" }, function(data, status) {
+                if (data.status=='OK') location.href="category.php?expand=items";
+                else alert("Något har gått fel. :(");
+            });
         }
     });
 
