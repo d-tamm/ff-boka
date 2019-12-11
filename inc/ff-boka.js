@@ -37,7 +37,7 @@ $(document).on('pagecreate', "#page-book-part", function() {
     // bind events
 });
 
-$("#page-book-part").on('pagebeforeshow', function() {
+$(document).on('pageshow', "#page-book-part", function() {
     // Show message if there is any
     if ($("#msg-page-book-part").html()) {
         setTimeout(function() {
@@ -179,7 +179,7 @@ $(document).on('pagecreate', "#page-book-sum", function() {
     });
 });
 
-$("#page-book-sum").on('pagebeforeshow', function() {
+$(document).on('pageshow', "#page-book-sum", function() {
     // Show message if there is any
     if ($("#msg-page-book-sum").html()) {
         setTimeout(function() {
@@ -254,7 +254,7 @@ $(document).on('pagecreate', "#page-admin-section", function() {
     });
 });
 
-$("#page-admin-section").on('pagebeforeshow', function() {
+$(document).on('pageshow', "#page-admin-section", function() {
     // Show message if there is any
     if ($("#msg-page-admin-section").html()) {
         setTimeout(function() {
@@ -532,7 +532,7 @@ $(document).on('pagecreate', "#page-admin-category", function() {
     });
 });
 
-$("#page-admin-category").on('pagebeforeshow', function() {
+$(document).on('pageshow', "#page-admin-category", function() {
     // Show message if there is any
     if ($("#msg-page-admin-category").html()) {
         setTimeout(function() {
@@ -653,7 +653,7 @@ $(document).on('pagecreate', "#page-admin-item", function() {
     });
 });
 
-$("#page-admin-item").on('pagebeforeshow', function() {
+$(document).on('pageshow', "#page-admin-item", function() {
     // Show message if there is any
     if ($("#msg-page-admin-item").html()) {
         setTimeout(function() {
@@ -693,7 +693,7 @@ $(document).on('pagecreate', "#page-userdata", function() {
     // Bind events
 });
 
-$("#page-userdata").on('pagebeforeshow', function() {
+$(document).on('pageshow', "#page-userdata", function() {
     // Show message if there is any
     if ($("#msg-page-userdata").html()) {
         setTimeout(function() {
