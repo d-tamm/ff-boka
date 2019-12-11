@@ -139,6 +139,20 @@ class Section extends FFBoka {
     }
     
     /**
+     * Get a list of all categories in section which do not have an admin.
+     * @param int $startCatId ID of category where to start the search
+     * @return (id, name)[] Array of category IDs and names without admin assigned.
+     */
+    public function categoriesWithoutAdmin($startCatId = 0) {
+        foreach ($this->getMainCategories() as $cat) {
+            $admins = $cat->admins();
+            if (length($admins)==0) {
+            // TODO: continue coding categoriesWithoutAdmin
+            }
+        }
+    }
+    
+    /**
      * Add a booking question template to this section
      * @return boolean|\FFBoka\Question
      */
