@@ -117,12 +117,6 @@ function htmlHeaders(string $title) {
 	<link rel="stylesheet" href="/css/ff-boka.css" />
 	<link rel="stylesheet" href="/css/themes/jquery.mobile.icons.min.css" />
 	<script src="/inc/jquery-1.11.1.min.js"></script>
-	<script>
-        $(document).on("mobileinit", function(){
-//            $.mobile.ajaxEnabled = false;
-            $.mobile.changePage.defaults.allowSamePageTransitions = true;
-        });
-    </script>
 	<script src="/inc/jquery.mobile-1.4.5.min.js"></script>
 	<script>
 	    // Lift in some constants from PHP
