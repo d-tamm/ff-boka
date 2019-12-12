@@ -1,17 +1,9 @@
 // General vars
 var toutSetValue;
 
-/*$(document).on('pagecreate', function(e) {
-    console.log("pagecreate", e.target.attributes.id);
-});
-$(document).on('pageshow', function(e) {
-    console.log("pageshow", e.target.attributes.id);
-});*/
-
 // Prevent caching of pages
-$(document).on('pagehide', function (event, ui) { 
-    var page = jQuery(event.target);
-    page.remove(); 
+$(document).on('pagecontainerhide', function (event, ui) { 
+	ui.prevPage.remove(); 
 });
 
 // ========== index.php ==========
@@ -401,31 +393,31 @@ var chosenAccessId;
 
 $(document).on('pagecreate', "#page-admin-category", function() {
     // bind events
-    $("#cat-caption").on('input', function() {
+    $(document).off('input', "#cat-caption").on('input', "#cat-caption", function() {
         clearTimeout(toutSetValue);
         toutSetValue = setTimeout(setCatProp, 1000, "caption", this.value);
     });
 
-    $("#cat-parentId").on('change', function() {
+    $(document).off('change', "#cat-parentId").on('change', "#cat-parentId", function() {
         setCatProp("parentId", this.value);
     });
 
-    $("#cat-prebookMsg").on('input', function() {
+    $(document).off('input', "#cat-prebookMsg").on('input', "#cat-prebookMsg", function() {
         clearTimeout(toutSetValue);
         toutSetValue = setTimeout(setCatProp, 1000, "prebookMsg", this.value);
     });
 
-    $("#cat-postbookMsg").on('input', function() {
+    $(document).off('input', "#cat-postbookMsg").on('input', "#cat-postbookMsg", function() {
         clearTimeout(toutSetValue);
         toutSetValue = setTimeout(setCatProp, 1000, "postbookMsg", this.value);
     });
 
-    $("#cat-bufferAfterBooking").on('input', function() {
+    $(document).off('input', "#cat-bufferAfterBooking").on('input', "#cat-bufferAfterBooking", function() {
         clearTimeout(toutSetValue);
         toutSetValue = setTimeout(setCatProp, 1000, "bufferAfterBooking", this.value);
     });
 
-    $("#file-cat-img").change(function() {
+    $(document).off('change', "#file-cat-img").on('change', "#file-cat-img", function() {
         // Save image via ajax: https://makitweb.com/how-to-upload-image-file-using-ajax-and-jquery/
         var fd = new FormData();
         var file = $('#file-cat-img')[0].files[0];
@@ -443,7 +435,7 @@ $(document).on('pagecreate', "#page-admin-category", function() {
             success: function(data) {
                 if (data.status=="OK") {
                     var d = new Date();
-                    $('#cat-img-preview').attr("src", "/image.php?type=category&id=<?= $cat->id ?>&" + d.getTime()).show().trigger( "updatelayout" );
+                    $('#cat-img-preview').attr("src", "/image.php?type=category&id=" + data.id + "&" + d.getTime()).show().trigger( "updatelayout" );
                 } else {
                     alert(data.error);
                 }
@@ -452,7 +444,7 @@ $(document).on('pagecreate', "#page-admin-category", function() {
         });
     });
 
-    $( "#cat-contact-autocomplete" ).on( "filterablebeforefilter", function ( e, data ) {
+    $(document).off("filterablebeforefilter", "#cat-contact-autocomplete").on("filterablebeforefilter", "#cat-contact-autocomplete", function ( e, data ) {
         var $ul = $( this ),
             $input = $( data.input ),
             value = $input.val(),
@@ -476,7 +468,7 @@ $(document).on('pagecreate', "#page-admin-category", function() {
         }
     });
     
-    $( "#cat-adm-autocomplete" ).on( "filterablebeforefilter", function ( e, data ) {
+    $(document).off("filterablebeforefilter", "#cat-adm-autocomplete").on("filterablebeforefilter", "#cat-adm-autocomplete", function ( e, data ) {
         var $ul = $( this ),
             $input = $( data.input ),
             value = $input.val(),
@@ -499,14 +491,14 @@ $(document).on('pagecreate', "#page-admin-category", function() {
         }
     });
 
-    $("#cat-access-ids").on("change", ".cat-access-id", function(e, data) {
+    $(document).off("change", ".cat-access-id").on("change", ".cat-access-id", function(e, data) {
         // Triggered when user choses group or specific user for new access rights (step 1)
         $(".cat-access-level").attr("checked", false).checkboxradio("refresh");
         chosenAccessId = this.value;
         $("#cat-access-levels").show();
     });
 
-    $(".cat-access-level").click(function() {
+    $(document).off("click", ".cat-access-level").on("click", ".cat-access-level", function() {
         // Triggered when user choses access level (step 2)
         $.mobile.loading("show", {});
         $("#cat-access-levels").hide();
@@ -525,7 +517,7 @@ $(document).on('pagecreate', "#page-admin-category", function() {
         });
     });
 
-    $("#delete-cat").click(function() {
+    $(document).off('click', "#delete-cat").on('click', "#delete-cat", function() {
         if (confirm("Du håller på att ta bort kategorin och alla poster i den. Fortsätta?")) {
             location.href="?action=deleteCat";
         }
