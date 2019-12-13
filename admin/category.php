@@ -190,12 +190,15 @@ switch ($_REQUEST['action']) {
             die(json_encode(['html'=>showQuestions($cat, $section)]));
         }
         
-    case "deleteCat":
+    case "ajaxDeleteCat":
         if ($cat->getAccess($currentUser) >= FFBoka::ACCESS_CATADMIN) {
-            $cat->delete();
-            header("Location: index.php");
+            header("Content-Type: application/json");
+            if ($cat->delete()) {
+                die(json_encode(['status'=>'OK']));
+            } else {
+                die(json_encode(['status'=>'error']));
+            }
         }
-        die();
 }
 
 unset ($_SESSION['itemId']);
