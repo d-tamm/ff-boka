@@ -519,7 +519,9 @@ $(document).on('pagecreate', "#page-admin-category", function() {
 
     $(document).off('click', "#delete-cat").on('click', "#delete-cat", function() {
         if (confirm("Du håller på att ta bort kategorin och alla poster i den. Fortsätta?")) {
+            $.mobile.loading("show", {});
             $.getJSON("category.php", {action: "ajaxDeleteCat"}, function(data, status) {
+                $.mobile.loading("hide", {});
             	if (data.status=="OK") {
             		location.href="index.php";
             	} else {

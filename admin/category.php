@@ -333,8 +333,14 @@ unset ($_SESSION['itemId']);
 
 		<div data-role="collapsible" class="ui-filterable" data-collapsed="<?= $_REQUEST['expand']=="access" ? "false" : "true" ?>">
 			<h2>Bokningsfrågor</h2>
-			<p><small>Här ställer du in särskilda frågor som ska visas vid bokning av resurser i denna kategorin. Aktivera/avaktivera och byt mellan valfritt och obligatoriskt genom att klicka på frågorna. Valda frågor visas även vid bokning i underordnade kategorier.</small></p>
-			<ul data-role="listview" data-inset="true" id="cat-questions"><?php echo showQuestions($cat, $section); ?></ul>
+		    <p class='ui-body ui-body-a'><small>Här ställer du in särskilda frågor som ska visas vid bokning av resurser i denna kategorin. Aktivera/avaktivera och byt mellan valfritt och obligatoriskt genom att klicka på frågorna. Valda frågor visas även vid bokning i underordnade kategorier.</small></p>
+			<?php
+			if ($questions = showQuestions($cat, $section)) {
+			    echo "<ul data-role='listview' data-inset='true' id='cat-questions'>$questions</ul>";
+			} else {
+			    echo "<p class='ui-body ui-body-a'>Inga frågor har lagts upp i din lokalavdelning än. Om du vill att någon fråga ska visas vid bokning i denna kategori, be LA-administratören att lägga upp frågan.</p>";
+			}
+			?>
 		</div>
 		<?php } ?>
 		
