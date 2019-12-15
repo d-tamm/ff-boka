@@ -85,6 +85,7 @@ switch ($_REQUEST['action']) {
 	        }
 	        $mailItems .= "</ul>";
 		}
+		$booking->commentCust = $_REQUEST['commentCust'];
 		$answers = $booking->answers();
 		if (count($answers)) {
 		    $mailAnswers = "<p>Bokningsfrågor och dina svar:</p>"; 
@@ -156,7 +157,7 @@ switch ($_REQUEST['action']) {
         <a href='#' data-rel='back' class='ui-btn ui-btn-icon-left ui-btn-inline ui-corner-all ui-icon-check'>OK</a>
     </div>
 
-    <h4>Lokalavdelning: <?= htmlspecialchars($section->name).$message ?></h4>
+    <h4>Lokalavdelning: <?= htmlspecialchars($section->name) ?></h4>
 
 	<?php
 	if (count($unavail)) echo "<p class='ui-body ui-body-c'>Några av de resurser du har valt är inte längre tillgängliga vid den valda tiden. De är markerade nedan. För att kunna slutföra bokningen behöver du ta bort dessa resurser eller ändra tiden genom att ta bort dem och sedan lägga till dem igen med en annan, ledig tid.</p>";
@@ -222,6 +223,7 @@ switch ($_REQUEST['action']) {
 		    }
 		    echo "</fieldset>";
 		}
+		// We need to inject verification code for checking required questions here - can't be done in central js file. 
 		echo "<script>reqCheckRadios = " . json_encode($requiredCheckboxradios) . ";</script>";
 
 		if (count($questions)) echo "</div>\n\n";
@@ -252,6 +254,9 @@ switch ($_REQUEST['action']) {
     			</div>
     		</div>
 		<?php } ?>
+		
+		<textarea name="commentCust" placeholder="Här kan du lämna valfritt meddelande."><?= $booking->commentCust ?></textarea>
+
     	<input type="submit" data-icon="carat-r" data-iconpos="right" data-theme="b" data-corners="false" value="Bekräfta bokningen">
     	<a href="#" onClick="deleteBooking();" class='ui-btn ui-btn-c ui-icon-delete ui-btn-icon-right'>Ta bort bokningen</a>
     </form>
