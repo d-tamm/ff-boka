@@ -282,11 +282,13 @@ class Category extends FFBoka {
     
     /**
      * Retrieve all admins for category
+     * @param int $access Return all entries with at least this access level.
      * @return array [userId, name, access]
      */
-    public function admins() {
+    public function admins(int $access=FFBoka::ACCESS_READASK) {
         if (!$this->id) return array();
-        $stmt = self::$db->query("SELECT userId, name, access FROM cat_admins INNER JOIN users USING (userId) WHERE catId={$this->id} ORDER BY users.name");
+        $stmt = self::$db->prepare("SELECT userId, name, access FROM cat_admins INNER JOIN users USING (userId) WHERE catId={$this->id} AND access>=? ORDER BY users.name");
+        $stmt->execute(array($access));
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
     
