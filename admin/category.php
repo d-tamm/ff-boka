@@ -113,6 +113,7 @@ function contactData(User $u) {
     }
 }
 
+
 switch ($_REQUEST['action']) {
     case "new":
         if ($cat->getAccess($currentUser) >= FFBoka::ACCESS_CATADMIN) {

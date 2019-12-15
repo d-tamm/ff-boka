@@ -3,6 +3,7 @@ use FFBoka\FFBoka;
 use FFBoka\Section;
 use FFBoka\User;
 use FFBoka\Question;
+use FFBoka\Category;
 $message = "";
 
 /**
@@ -45,6 +46,33 @@ if (!$section->showFor($currentUser, FFBoka::ACCESS_CATADMIN)) {
     die();
 }
 $userAccess = $section->getAccess($currentUser);
+
+
+/**
+ * Find all categories in section which contain items but do not have an admin who at least can confirm bookings.
+ * @param Category $cat
+ * @param array[id=>caption] $catsWithoutAdmin Found categories are returned in this array
+ */
+function findCatsWithoutAdmin(Category $cat, &$catsWithoutAdmin) {
+    $admins = $cat->admins(FFBoka::ACCESS_CONFIRM);
+    if (count($admins)==0) {
+        if (count($cat->items())>0) {
+            $catsWithoutAdmin[$cat->id] = $cat->caption;
+        } else {
+            foreach ($cat->children() as $child) {
+                findCatsWithoutAdmin($child, $catsWithoutAdmin);
+            }
+        }
+    }
+    
+}
+$catsWithoutAdmin = array();
+if ($userAccess >= FFBoka::ACCESS_CATADMIN) {
+    foreach ($section->getMainCategories() as $cat) {
+        findCatsWithoutAdmin($cat, $catsWithoutAdmin);
+    }
+}
+
 
 switch ($_REQUEST['action']) {
     case "ajaxFindUser":
@@ -135,6 +163,16 @@ unset($_SESSION['catId']);
 		<a href='#' data-rel='back' class='ui-btn ui-btn-icon-left ui-btn-inline ui-corner-all ui-icon-check'>OK</a>
 	</div>
 
+	<?php
+	if ($userAccess >= FFBoka::ACCESS_CATADMIN && count($catsWithoutAdmin)>0) {
+	    echo "<div class='ui-body ui-body-a'><p>Följande kategorier innehåller resurser men saknar administratör. Lägg till minst en administratör med behörighet att bekräfta bokningar.</p><ul data-role='listview' data-inset='true'>";
+	    foreach ($catsWithoutAdmin as $id=>$caption) {
+	        echo "<li><a href='category.php?catId=$id'>" . htmlspecialchars($caption) . "</a></li>";
+	    }
+        echo "</ul></div>";
+	}
+	?>
+
 	<div data-role="collapsibleset" data-inset="false">
 
 		<div data-role="collapsible" data-collapsed="<?= isset($_REQUEST['expand']) ? "true" : "false" ?>">
@@ -152,12 +190,12 @@ unset($_SESSION['catId']);
     				echo "<span class='ui-li-count'>{$cat->itemCount}</span></a></li>";
 			    }
 			}
-			if ($section->getAccess($currentUser) & FFBoka::ACCESS_SECTIONADMIN) echo "<li><a href='category.php?action=new'>Skapa ny kategori</a></li>"; ?>
+			if ($userAccess & FFBoka::ACCESS_SECTIONADMIN) echo "<li><a href='category.php?action=new'>Skapa ny kategori</a></li>"; ?>
 			</ul>
 			<br>
 		</div>
 
-		<?php if ($section->getAccess($currentUser) & FFBoka::ACCESS_SECTIONADMIN) { ?>
+		<?php if ($userAccess & FFBoka::ACCESS_SECTIONADMIN) { ?>
 		
 		<div data-role="collapsible" data-collapsed="<?= $_REQUEST['expand']=="admins" ? "false" : "true" ?>">
 			<h2>Bokningsfrågor</h2>
