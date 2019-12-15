@@ -47,6 +47,7 @@ class Booking extends FFBoka {
             case "id":
             case "userId":
                 return $this->$name;
+            case "timestamp":
             case "commentCust":
             case "commentIntern":
             case "payed": //Datetime field
