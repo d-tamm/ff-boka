@@ -143,8 +143,9 @@ switch ($_REQUEST['action']) {
     case "ajaxSetImage":
         if ($cat->getAccess($currentUser) >= FFBoka::ACCESS_CATADMIN) {
             header("Content-Type: application/json");
-            if(json_encode( $cat->setImage($_FILES['image'] ) )) die(json_encode(["status"=>"OK", "id"=>$cat->id]));
-            else die(json_encode(["error"=>"Kan inte spara bilden. Bara jpg- och png-filer accepteras."]));
+            $ret = $cat->setImage($_FILES['image']);
+            if($ret===TRUE) die(json_encode(["status"=>"OK", "id"=>$cat->id]));
+            else die(json_encode(["error"=>$ret]));
         }
         
     case "ajaxSetContactUser":

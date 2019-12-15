@@ -74,11 +74,12 @@ class Category extends FFBoka {
      * @param int $maxSize Image will be scaled down if any dimension is bigger than this. 0=no limit
      * @param int $thumbSize Size of thumbnail
      * @param int $maxFileSize If file is bigger than this, it will be rejected. 0=no limit
-     * @return boolean Success
+     * @return boolean|string True on success, error message on failure
      */
     public function setImage($imgFile, $maxSize=0, $thumbSize=80, $maxFileSize=0) {
         if (!$this->id) throw new \Exception("Cannot set image on dummy category.");
         $images = $this->imgFileToString($imgFile, $maxSize, $thumbSize, $maxFileSize);
+        if ($images['error']) return $images['error'];
         $stmt = self::$db->prepare("UPDATE categories SET image=:image, thumb=:thumb WHERE catID={$this->id}");
         return $stmt->execute(array(
             ":image"=>$images['image'],
