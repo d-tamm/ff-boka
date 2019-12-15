@@ -1,6 +1,7 @@
 <?php
 use FFBoka\User;
 use FFBoka\Section;
+use FFBoka\Booking;
 
 session_start();
 require(__DIR__."/inc/common.php");
@@ -59,6 +60,26 @@ if ($_GET['first_login']) $message = "Välkommen till resursbokningen! Innan du 
 	<div data-role='collapsibleset' data-inset='false'>
 		
 		<div data-role='collapsible' data-collapsed='false'>
+			<h3>Mina bokningar</h3>
+			<ul data-role="listview">
+			<?php
+			$bookingIds = $currentUser->bookingIds();
+			if (count($bookingIds)) {
+    			foreach ($bookingIds as $id) {
+    			    $b = new Booking($id);
+    			    echo "<li><a href='book-sum.php?bookingId={$b->id}'><p>Bokat {$b->timestamp}:</p>";
+    			    foreach ($b->subbookings() as $sub) {
+    			        foreach ($sub->items() as $item) {
+    			            echo "<p>" . htmlspecialchars($item->caption) . "</p>";
+    			        }
+    			    }
+    			    echo "</a></li>";
+    			}
+			} else {
+			    echo "<li>Du har inga bokningar.</li>";
+			} ?>
+            </ul>
+		
 			<h3>Kontaktuppgifter</h3>
 			
 			<form action="" method="post" data-ajax="false">

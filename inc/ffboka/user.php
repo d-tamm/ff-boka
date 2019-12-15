@@ -117,6 +117,15 @@ class User extends FFBoka {
     }
     
     /**
+     * Get booking IDs of all the user's bookings, incl up to 1 year old ones
+     * @return int[] IDs of bookings no older than 1 year
+     */
+    public function bookingIds() {
+        $stmt = self::$db->query("SELECT bookingId FROM bookings WHERE userId={$this->id} AND timestamp>DATE_SUB(CURDATE(), INTERVAL 1 YEAR) ORDER BY timestamp DESC");
+        return $stmt->fetchAll(\PDO::FETCH_COLUMN, 0);
+    }
+    
+    /**
      * Get booking IDs of bookings which the user has initiated but not completed
      * @return int[] booking IDs
      */
