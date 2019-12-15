@@ -498,7 +498,7 @@ $(document).on('pagecreate', "#page-admin-category", function() {
         $("#cat-access-levels").show();
     });
 
-    $(document).off("click", ".cat-access-level").on("click", ".cat-access-level", function() {
+    $(document).off("change", ".cat-access-level").on("change", ".cat-access-level", function() {
         // Triggered when user choses access level (step 2)
         $.mobile.loading("show", {});
         $("#cat-access-levels").hide();
