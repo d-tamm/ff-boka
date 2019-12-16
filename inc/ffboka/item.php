@@ -216,12 +216,13 @@ class Item extends FFBoka {
      * Check whether the item is available in the given range.
      * @param int $start Unix timestamp
      * @param int $end Unix timestamp
+     * @param int $ignoreSubId Optional, don't count this subbooking as conflicting.
      * @return boolean False if there is any subbooking partly or completely inside the given range
      */
-    public function isAvailable(int $start, int $end) {
+    public function isAvailable(int $start, int $end, int $ignoreSubId=0) {
         $stmt = self::$db->prepare("SET @start = :start, @end = :end");
         $stmt->execute(array(":start"=>$start, ":end"=>$end));
-        $stmt = self::$db->query("SELECT subbookingId FROM booked_items INNER JOIN subbookings USING (subbookingId) INNER JOIN bookings USING (bookingId) INNER JOIN items USING (itemId) INNER JOIN categories USING (catId) WHERE itemId={$this->id} AND booked_items.status>=" . FFBoka::STATUS_PREBOOKED . " AND ((UNIX_TIMESTAMP(start)-bufferAfterBooking*3600<@start AND UNIX_TIMESTAMP(end)+bufferAfterBooking*3600>@end) OR (UNIX_TIMESTAMP(start)-bufferAfterBooking*3600>@start AND UNIX_TIMESTAMP(start)-bufferAfterBooking*3600<@end) OR (UNIX_TIMESTAMP(end)+bufferAfterBooking*3600>@start AND UNIX_TIMESTAMP(end)+bufferAfterBooking*3600<@end))");
+        $stmt = self::$db->query("SELECT subbookingId FROM booked_items INNER JOIN subbookings USING (subbookingId) INNER JOIN bookings USING (bookingId) INNER JOIN items USING (itemId) INNER JOIN categories USING (catId) WHERE itemId={$this->id} AND booked_items.status>=" . FFBoka::STATUS_PREBOOKED . " AND subbookingId!=$ignoreSubId AND ((UNIX_TIMESTAMP(start)-bufferAfterBooking*3600<=@start AND UNIX_TIMESTAMP(end)+bufferAfterBooking*3600>=@end) OR (UNIX_TIMESTAMP(start)-bufferAfterBooking*3600>=@start AND UNIX_TIMESTAMP(start)-bufferAfterBooking*3600<@end) OR (UNIX_TIMESTAMP(end)+bufferAfterBooking*3600>@start AND UNIX_TIMESTAMP(end)+bufferAfterBooking*3600<=@end))");
         return ($stmt->rowCount()===0);
     }
 }

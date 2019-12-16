@@ -79,7 +79,9 @@ if ($_GET['first_login']) $message = "Välkommen till resursbokningen! Innan du 
 			    echo "<li>Du har inga bokningar.</li>";
 			} ?>
             </ul>
+        </div>
 		
+		<div data-role='collapsible'>
 			<h3>Kontaktuppgifter</h3>
 			
 			<form action="" method="post" data-ajax="false">
