@@ -15,26 +15,29 @@ if (!$_SESSION['authenticatedUser']) {
 $currentUser = new User($_SESSION['authenticatedUser']);
 
 switch ($_REQUEST['action']) {
-case "deleteAccount":
-    if ($currentUser->delete()) {
-    	header("Location: index.php?logout&action=accountDeleted");
+    case "bookingDeleted":
+        $message = "Din bokning har nu tagits bort.";
         break;
-    } else {
-        $message = "Något gick fel. Kontakta webmaster tack.";
-    }
-    break;
-	
-case "save user data":
-	// User shall supply name, mail and phone
-	if ($_POST['name'] && $_POST['mail'] && $_POST['phone']) {
-	    $currentUser->name = $_POST['name'];
-	    $currentUser->mail = $_POST['mail'];
-	    $currentUser->phone = $_POST['phone'];
-		header("Location: index.php?message=" . urlencode("Dina kontaktuppgifter har sparats."));
-	} else {
-		$message = "Fyll i namn, epostadress och mobilnummer, tack.";
-	}
-	break;
+    case "deleteAccount":
+        if ($currentUser->delete()) {
+        	header("Location: index.php?logout&action=accountDeleted");
+            break;
+        } else {
+            $message = "Något gick fel. Kontakta webmaster tack.";
+        }
+        break;
+    	
+    case "save user data":
+    	// User shall supply name, mail and phone
+    	if ($_POST['name'] && $_POST['mail'] && $_POST['phone']) {
+    	    $currentUser->name = $_POST['name'];
+    	    $currentUser->mail = $_POST['mail'];
+    	    $currentUser->phone = $_POST['phone'];
+    		header("Location: index.php?message=" . urlencode("Dina kontaktuppgifter har sparats."));
+    	} else {
+    		$message = "Fyll i namn, epostadress och mobilnummer, tack.";
+    	}
+    	break;
 }
 	
 
