@@ -223,6 +223,7 @@ function sendmail(string $from, string $to, string $replyTo, string $subject, $o
 		$mail->SMTPSecure = 'tls';                            // Enable TLS encryption, `ssl` also accepted
 		// Message content
 		$mail->CharSet ="UTF-8";
+		$mail->Sender = $options['user'];
 		$mail->setFrom($from);
 		$mail->addAddress($to);
 		if ($replyTo) $mail->addReplyTo($replyTo);
