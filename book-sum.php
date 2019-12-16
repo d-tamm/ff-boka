@@ -39,7 +39,7 @@ $unavail = array();
 $conflicts = array();
 foreach ($booking->subbookings() as $subbooking) {
     foreach ($subbooking->items() as $item) {
-        if (!$item->isAvailable($subbooking->start, $subbooking->end)) {
+        if (!$item->isAvailable($subbooking->start, $subbooking->end, $subbooking->id)) {
             if ($item->category()->getAccess($currentUser) >= FFBoka::ACCESS_PREBOOK) {
                 // User can see freebusy information. Let him change booking.
                 $unavail[] = $item->bookedItemId;
