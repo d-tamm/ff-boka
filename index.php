@@ -23,6 +23,9 @@ if (isset($_REQUEST['action'])) {
 		case "accountDeleted":
 			$message = "Ditt konto har nu raderats. Välkommen åter!";
 			break;
+		case "bookingNotFound":
+		    $message = "Bokningen finns inte i systemet.";
+		    break;
 		case "sessionExpired":
 		    $message = "Du har blivit utloggad på grund av inaktivitet.";
 		    // Remove session

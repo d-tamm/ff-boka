@@ -18,7 +18,12 @@ if (isset($_REQUEST['bookingId'])) {
 
 if ($_SESSION['bookingId']) {
     // Open existing booking
-    $booking = new Booking($_SESSION['bookingId']);
+    try {
+        $booking = new Booking($_SESSION['bookingId']);
+    } catch (Exception $e) {
+        header("Location: index.php?action=bookingNotFound");
+        die();
+    }
 } else {
     header("Location: index.php");
     die();
@@ -116,13 +121,14 @@ switch ($_REQUEST['action']) {
 		header("Location: index.php?action=bookingConfirmed&mail=" . urlencode($_REQUEST['booker-mail']));
 		break;
 		
-	case "deleteBooking":
+	case "ajaxDeleteBooking":
+	    header("Content-Type: application/json");
 	    $booking->delete();
 	    unset($_SESSION['bookingId']);
-	    header("Location: index.php?action=bookingDeleted");
-	    break;
+	    die(json_encode([ "status"=>"OK" ]));
 	    
 	case "ajaxRemoveItem":
+	    header("Content-Type: application/json");
 	    $subbooking = new Subbooking($_REQUEST['subId']);
 	    if ($subbooking->removeItem($_REQUEST['bookedItemId'])) {
 	        if (count($subbooking->items()) == 0) {
@@ -258,7 +264,7 @@ switch ($_REQUEST['action']) {
 		<textarea name="commentCust" placeholder="Här kan du lämna valfritt meddelande."><?= $booking->commentCust ?></textarea>
 
     	<input type="submit" data-icon="carat-r" data-iconpos="right" data-theme="b" data-corners="false" value="Bekräfta bokningen">
-    	<a href="#" onClick="deleteBooking();" class='ui-btn ui-btn-c ui-icon-delete ui-btn-icon-right'>Ta bort bokningen</a>
+    	<a href="#" onClick="deleteBooking(<? $_SESSION['authenticatedUser'] ?>);" class='ui-btn ui-btn-c ui-icon-delete ui-btn-icon-right'>Ta bort bokningen</a>
     </form>
     
     </div><!--/main-->

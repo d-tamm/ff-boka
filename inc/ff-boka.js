@@ -202,9 +202,14 @@ function removeItem(subId, bookedItemId) {
     });
 }
 
-function deleteBooking() {
+function deleteBooking(userId=0) {
 	if (confirm("Är du säker på att du vill ta bort din bokning?")) {
-		location.href="?action=deleteBooking";
+	    $.mobile.loading("show", {});
+	    $.getJSON("book-sum.php", { action: "ajaxDeleteBooking" }, function(data, status) {
+	        $.mobile.loading("hide", {});
+	    	if (userId) location.href="/userdata.php?action=bookingDeleted";
+	    	else location.href="/index.php?action=bookingDeleted";
+	    });
 	}
 	return false;
 }
