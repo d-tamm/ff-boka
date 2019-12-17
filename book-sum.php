@@ -61,6 +61,8 @@ switch ($_REQUEST['action']) {
 	case "confirmBooking":
 	    if (count($unavail)) break;
 	    $mailItems = "";
+	    // remove old answers previously saved with booking
+	    $booking->clearAnswers();
 	    // save answers to questions
 	    if (isset($_REQUEST['questionId'])) {
     	    foreach ($_REQUEST["questionId"] as $id) {

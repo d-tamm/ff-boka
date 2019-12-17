@@ -150,8 +150,16 @@ class Booking extends FFBoka {
     }
     
     /**
+     * Deletes all answers to booking questions
+     * @return bool TRUE on success
+     */
+    public function clearAnswers() {
+        return self::$db->exec("DELETE FROM booking_answers WHERE bookingId={$this->id}");
+    }
+    
+    /**
      * Get all booking questions and answers
-     * @return [ id => { string question, string answer }, ... ]
+     * @return array( id => { string question, string answer }, ... )
      */
     public function answers() {
         $ans = array();
