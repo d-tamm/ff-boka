@@ -135,7 +135,8 @@ class FFBoka {
         // Get the picture and its size
         $src = @imagecreatefromstring(file_get_contents($file['tmp_name']));
         if (!$src) return array("error"=>"Filformatet stöds inte. Försök med en jpg- eller png-bild.");
-        $size = getimagesize($file['tmp_name']);
+        $size = @getimagesize($file['tmp_name']);
+        if (!$size) return array("error"=>"Kan inte läsa filformatet.");
         $ratio = $size[0]/$size[1];
         if ($maxSize && ($size[0]>$maxSize || $size[1]>$maxSize)) { // Resize
             if ($ratio > 1) { // portrait
