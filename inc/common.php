@@ -121,6 +121,7 @@ function htmlHeaders(string $title, string $mode="mobile") {
     	<script src="/inc/jquery-1.11.1.min.js"></script>
     	<script src="/inc/jquery.mobile-1.4.5.min.js"></script>
 	<?php } else { ?>
+		<script src="/inc/pace.min.js"></script>
         <link rel="stylesheet" href="/inc/jquery-ui-1.12.1/jquery-ui.min.css">
         <script src="/inc/jquery-ui-1.12.1/external/jquery/jquery.js"></script>
         <script src="/inc/jquery-ui-1.12.1/jquery-ui.min.js"></script>

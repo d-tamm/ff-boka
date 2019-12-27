@@ -7,12 +7,11 @@ use FFBoka\Item;
 
 session_start();
 require(__DIR__."/../inc/common.php");
-global $cfg, $FF;
 
 if ($_GET['sectionId']) $_SESSION['sectionId'] = $_GET['sectionId'];
 // This page may only be accessed by registered users
 if (!$_SESSION['authenticatedUser'] || !$_SESSION['sectionId']) {
-    header("Location: /?action=sessionExpired");
+    header("Location: /");
     die();
 }
 // Set current section and user
@@ -66,7 +65,7 @@ switch ($_REQUEST['action']) {
         $fbList = array();
         foreach ($_SESSION['itemIds'] as $id) {
             $item = new Item($id);
-            $fbList["item-$id"] = $item->freebusyBar($start->getTimestamp(), TRUE, $daysInMonth);
+            $fbList["item-$id"] = $item->freebusyBar(['start'=>$start->getTimestamp(), 'scale'=>TRUE, 'days'=>$daysInMonth]);
         }
         die(json_encode(["scale"=>$scale, "freebusy"=>$fbList]));
 }
@@ -82,6 +81,22 @@ switch ($_REQUEST['action']) {
 	$( function() {
         // Initialise date chooser
         scrollDate(0);
+
+        $(document).on('keydown', function(ev) {
+            switch(ev.which) {
+            case 37: // left
+                scrollDate(-1);
+                break;
+            case 39: // right
+                scrollDate(1);
+                break;
+            }
+        });
+        
+        $(document).on('click', ".freebusy-busy", function() {
+            var bookingView = window.open("booking.php?bookingId=" + this.dataset.bookingId, "booking" + this.dataset.bookingId);
+            bookingView.focus();
+        });
     });
 
 	// Scroll by x months
@@ -108,16 +123,28 @@ switch ($_REQUEST['action']) {
 
 <body>
 <div id='booking-admin'>
-	<h1>Bokningar i <?= $section->name ?></h1>
-	<table>
-		<tr><td class='col-caption' id='booking-adm-date'></td><td><div class='freebusy-bar' id='booking-adm-scale'></div></td></tr>
-	</table>
+	<div id="head">
+        <h1>Bokningar i <?= $section->name ?>, <span id='booking-adm-date'></span></h1>
+        <table>
+        	<tr><td class='col-caption'><button title="1 månad bakåt (&larr;)" onClick="scrollDate(-1);">&larr;</button><button title="1 månad framåt (&rarr;)" onClick="scrollDate(1);">&rarr;</button></td><td><div class='freebusy-bar' id='booking-adm-scale'></div></td></tr>
+        </table>
+	</div>
     <?php 
     $_SESSION['itemIds'] = array();
     foreach ($section->getMainCategories() as $cat) {
         showCat($cat, $currentUser);
     }
     ?>
+    
+    <div id='legend'>
+    	<h3>Teckenförklaring</h3>
+		<p>
+			<span class='freebusy-free' style='display:inline-block; width:2em;'>&nbsp;</span> tillgänglig tid<br>
+            <span class='freebusy-busy' style='display:inline-block; width:2em;'>&nbsp;</span> bokning<br>
+            <span class='freebusy-busy unconfirmed' style='display:inline-block; width:2em;'>&nbsp;</span> obekräftad bokning<br>
+            <span class='freebusy-blocked' style='display:inline-block; width:2em;'>&nbsp;</span> ej bokbar tid<br>
+        </p>
+    </div>
 </div>
 </body>
 </html>

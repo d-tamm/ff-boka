@@ -54,7 +54,7 @@ function getFreebusy(&$fbList, Category $cat, $user, $start) {
     foreach ($cat->items() as $item) {
         if ($item->active) {
             if ($acc >= FFBoka::ACCESS_PREBOOK) {
-				$fbList["item-".$item->id] = $item->freebusyBar($start);
+				$fbList["item-".$item->id] = $item->freebusyBar(['start'=>$start]);
             } else {
                 $fbList["item-".$item->id] = Item::freebusyUnknown();
             }
@@ -77,7 +77,7 @@ function getFreebusyCombined($ids, $user, $start) {
     foreach ($ids as $id) {
         $item = new Item($id);
         if ($item->category()->getAccess($user) >= FFBoka::ACCESS_PREBOOK) {
-            $freebusyCombined .= $item->freebusyBar($start);
+            $freebusyCombined .= $item->freebusyBar(['start'=>$start]);
         } else {
             $freebusyCombined .= Item::freebusyUnknown();
         }
