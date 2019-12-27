@@ -4,7 +4,6 @@ use FFBoka\Section;
 use FFBoka\User;
 use FFBoka\Question;
 use FFBoka\Category;
-$message = "";
 
 /**
  * Get the list of admins for this section

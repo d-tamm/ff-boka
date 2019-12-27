@@ -13,13 +13,9 @@
     --FF-gray: #54544A;
     --FF-busy: var(--FF-orange);
     --FF-free: #DDDDDD;
+    --FF-weekend: #E84F1C60; /* Orange with transparency */
     --FF-blocked: repeating-linear-gradient(-45deg, var(--FF-busy), var(--FF-free) 3px, var(--FF-busy) 6px);
     --FF-unknown: url(/resources/unknown_bg.png);
-}
-
-@keyframes fadeinout {
-  0%,100% { opacity: 0; }
-  20%,80% { opacity: 1; }
 }
 
 /* Make more space for text in the header. */
@@ -151,7 +147,8 @@ li.selected {
 .freebusy-bar .freebusy-busy,
 .freebusy-bar .freebusy-blocked,
 .freebusy-bar .freebusy-unknown,
-.freebusy-bar .freebusy-tic {
+.freebusy-bar .freebusy-tic,
+.freebusy-bar .freebusy-weekend {
     position: absolute;
     top: 0px;
     height: 100%;
@@ -181,4 +178,7 @@ li.selected {
 .freebusy-tic span {
     background-color: #ffffffa0;
     box-shadow: 0px 0px 4px #ffffff;
+}
+.freebusy-weekend {
+	background-color: var(--FF-weekend);
 }

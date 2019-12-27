@@ -102,6 +102,10 @@ class User extends FFBoka {
         return self::$db->exec("DELETE FROM users WHERE userID={$this->id}");
     }
     
+    /**
+     * Set the timestamp for the user to current time
+     * @return bool
+     */
     public function updateLastLogin() {
         return self::$db->exec("UPDATE users SET lastLogin=NULL WHERE userId='{$this->id}'");
     }
@@ -132,5 +136,19 @@ class User extends FFBoka {
     public function unfinishedBookings() {
         $stmt = self::$db->query("SELECT bookingId FROM booked_items INNER JOIN subbookings USING (subbookingId) INNER JOIN bookings USING (bookingId) WHERE userId={$this->id} AND status=" . FFBoka::STATUS_PENDING);
         return $stmt->fetchAll(\PDO::FETCH_COLUMN, 0);
+    }
+    
+    /**
+     * Find sections where user has booking admin roles
+     * @return Section[]
+     */
+    public function bookingAdminSections() {
+        $admSections = array();
+        foreach ($this->getAllSections() as $section) {
+            if ($section->showFor($this, FFBoka::ACCESS_CONFIRM)) {
+                $admSections[] = $section;
+            }
+        }
+        return $admSections;
     }
 }

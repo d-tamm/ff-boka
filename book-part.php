@@ -44,11 +44,10 @@ function displayCat(Category $cat, $user, $fbStart) {
 
 /**
  * Get freebusy information for all items in (and below) a category
- * @param [ string ] $fbList Array of HTML strings representing an item's freebusy information for 1 week. Found busy times will be appended to this array.
+ * @param string[] $fbList Array of HTML strings representing an item's freebusy information for 1 week. Found busy times will be appended to this array.
  * @param Category $cat Category in which to start searching for items
  * @param User $user User to which the items shall be visible.
  * @param int $start Unix timestamp of start of the week
- * @param bool $scale Whether to include the weekday scale.
  */
 function getFreebusy(&$fbList, Category $cat, $user, $start) {
     $acc = $cat->getAccess($user);
