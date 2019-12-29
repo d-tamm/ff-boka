@@ -13,6 +13,7 @@
     --FF-gray: #54544A;
     --FF-busy: var(--FF-orange);
     --FF-free: #DDDDDD;
+    --FF-unconfirmed: var(--FF-yellow);
     --FF-weekend: #E84F1C60; /* Orange with transparency */
     --FF-blocked: repeating-linear-gradient(-45deg, var(--FF-busy), var(--FF-free) 3px, var(--FF-busy) 6px);
     --FF-unknown: url(/resources/unknown_bg.png);
@@ -188,18 +189,18 @@ li.selected {
 
 /* ===== Booking admin ===== */
 
-#booking-admin * {
+.desktop * {
 	font-family: Arial, Helvetica, sans-serif;
 }
 
-#booking-admin #head {
+.desktop #head {
 	position: sticky;
 	top:0px;
 	background-color:white;
 	z-index:10;
 }
 
-#booking-admin h1 {
+.desktop h1 {
 	margin: 0px;
 	margin-bottom:10px;
 	padding: 10px 200px 10px 20px;
@@ -209,35 +210,39 @@ li.selected {
 	color: white;
 }
 
-#booking-admin h2, #booking-admin h3 {
+.desktop h2, #booking-admin h3 {
 	color: var(--FF-blue);
 }
 
-#booking-admin table {
+.desktop table {
 	width:100%;
 	table-layout:fixed;
 }
-#booking-admin .col-caption {
+.desktop .col-caption {
 	width:20%;
 	white-space:nowrap;
 	overflow:hidden;
 	text-overflow:ellipsis;
 }
 
-#booking-admin .freebusy-busy {
+.desktop .freebusy-busy {
 	cursor: pointer;
 }
 
-#booking-admin .freebusy-busy.unconfirmed {
-    background-color:var(--FF-yellow);
+.desktop .freebusy-busy.unconfirmed, #booking-admin .freebusy-busy.conflict {
+    background-color:var(--FF-unconfirmed);
+}
+.desktop .freebusy-busy.conflict {
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' version='1.1' height='50px' width='20px'><text x='0' y='15' fill='red' font-size='20'>⚠</text></svg>");
+    background-repeat: repeat-x;
 }
 
-#booking-admin #legend {
+.desktop #legend {
 	box-shadow: 1px 1px 5px gray;
 	margin-top:20px;
 	padding: 10px; 
 }
-#booking-admin #legend h3 {
+.desktop #legend h3 {
 	margin-top:5px;
 }
 

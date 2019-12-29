@@ -49,15 +49,21 @@ class FFBoka {
     /** string[] Assignments from API giving section admin access. */
     protected static $sectionAdmins;
     
+    /** string Timezone to use for bookings */
+    protected static $timezone;
+    
     /**
      * Initialize framework with API address and database connection.
      * These will also be used in the inherited classes 
      * @param PDO::Database $db
+     * @param array(string) $sectionAdmins Section level assignments giving sections admin access
+     * @param string $timezone Timezone for e.g. freebusy display (Europe/Stockholm)
      */
-    function __construct($apiUrl, $db, $sectionAdmins) {
+    function __construct($apiUrl, $db, $sectionAdmins, $timezone) {
         self::$apiUrl = $apiUrl;
     	self::$db = $db;
     	self::$sectionAdmins = $sectionAdmins;
+    	self::$timezone = $timezone;
     }
     
 

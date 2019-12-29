@@ -171,20 +171,24 @@ class Item extends FFBoka {
      * @param mixed $params Associative array of parameters. Supported elements are:<br>
      * <b>start</b> (int) First day of week to show, unix timestamp<br>
      * <b>scale</b> (bool) Whether to include the weekday scale. Default: False.<br>
-     * <b>days</b> (int) Number of days to show. Default: 7 days (1 week)
+     * <b>days</b> (int) Number of days to show. Default: 7 days (1 week)<br>
+     * <b>minStatus</b> (int) Don't show bookings with lower status than this. Defaults to STATUS_PREBOOKED.<br>
+     * <b>includeTokens</b> Include data-token properties, default:false
      * @return string HTML code showing blocks of free and busy times
      */
     function freebusyBar($params=[]) {
         $start = 0;
         $scale = FALSE;
         $days = 7;
+        $minStatus = FFBoka::STATUS_PREBOOKED;
+        $includeTokens = FALSE;
         extract($params, EXTR_IF_EXISTS);
 		// Store start date as user defined variable because it is used multiple times
 		$secs = $days * 24 * 60 * 60;
 		$stmt = self::$db->prepare("SET @start = :start");
 		$stmt->execute(array(":start"=>$start));
 		// Get freebusy information.
-        $stmt = self::$db->query("SELECT bookingId, subbookingId, bookedItemId, status, bufferAfterBooking, DATE_SUB(start, INTERVAL bufferAfterBooking HOUR) start, UNIX_TIMESTAMP(start) unixStart, DATE_ADD(end, INTERVAL bufferAfterBooking HOUR) end, UNIX_TIMESTAMP(end) unixEnd FROM booked_items INNER JOIN subbookings USING (subbookingId) INNER JOIN bookings USING (bookingId) INNER JOIN items USING (itemId) INNER JOIN categories USING (catId) WHERE itemId={$this->id} AND booked_items.status>=" . FFBoka::STATUS_PREBOOKED . " AND ((UNIX_TIMESTAMP(start)-bufferAfterBooking*3600<@start AND UNIX_TIMESTAMP(end)+bufferAfterBooking*3600>@start+$secs) OR (UNIX_TIMESTAMP(start)-bufferAfterBooking*3600>@start AND UNIX_TIMESTAMP(start)-bufferAfterBooking*3600<@start+$secs) OR (UNIX_TIMESTAMP(end)+bufferAfterBooking*3600>@start AND UNIX_TIMESTAMP(end)+bufferAfterBooking*3600<@start+$secs))");
+        $stmt = self::$db->query("SELECT bookingId, subbookingId, bookedItemId, status, token, bufferAfterBooking, DATE_SUB(start, INTERVAL bufferAfterBooking HOUR) start, UNIX_TIMESTAMP(start) unixStart, DATE_ADD(end, INTERVAL bufferAfterBooking HOUR) end, UNIX_TIMESTAMP(end) unixEnd FROM booked_items INNER JOIN subbookings USING (subbookingId) INNER JOIN bookings USING (bookingId) INNER JOIN items USING (itemId) INNER JOIN categories USING (catId) WHERE itemId={$this->id} AND booked_items.status>=$minStatus AND ((UNIX_TIMESTAMP(start)-bufferAfterBooking*3600<@start AND UNIX_TIMESTAMP(end)+bufferAfterBooking*3600>@start+$secs) OR (UNIX_TIMESTAMP(start)-bufferAfterBooking*3600>@start AND UNIX_TIMESTAMP(start)-bufferAfterBooking*3600<@start+$secs) OR (UNIX_TIMESTAMP(end)+bufferAfterBooking*3600>@start AND UNIX_TIMESTAMP(end)+bufferAfterBooking*3600<@start+$secs))");
 
         $ret = "";
         if ($scale) $ret .= self::freebusyWeekends($start, $days);
@@ -192,7 +196,7 @@ class Item extends FFBoka {
             if ($row->bufferAfterBooking) {
                 $ret .= "<div class='freebusy-blocked' style='left:" . (($row->unixStart-$start-$row->bufferAfterBooking*3600)/$secs*100) . "%; width:" . (($row->unixEnd - $row->unixStart + 2*$row->bufferAfterBooking*3600)/$secs*100) . "%' title='ej bokbar'></div>";
             }
-            $ret .= "<div class='freebusy-busy" . ($row->status==FFBoka::STATUS_PREBOOKED ? " unconfirmed" : "") . "' data-booking-id='{$row->bookingId}' data-subbooking-id='{$row->subbookingId}' data-booked-item-id='{$row->bookedItemId}' style='left:" . (($row->unixStart - $start) / $secs * 100) . "%; width:" . (($row->unixEnd - $row->unixStart) / $secs * 100) . "%;' title='{$row->start} till {$row->end}'></div>";
+            $ret .= "<div class='freebusy-busy" . ($row->status==FFBoka::STATUS_PREBOOKED ? " unconfirmed" : "") . ($row->status==FFBoka::STATUS_CONFLICT ? " conflict" : "") . "' data-booking-id='{$row->bookingId}' data-subbooking-id='{$row->subbookingId}' data-booked-item-id='{$row->bookedItemId}' " . ($includeTokens ? "data-token='{$row->token}' " : "") . "style='left:" . (($row->unixStart - $start) / $secs * 100) . "%; width:" . (($row->unixEnd - $row->unixStart) / $secs * 100) . "%;' title='{$row->start} till {$row->end}'></div>";
         }
         if ($scale) $ret .= self::freebusyScale(false, $days);
         return $ret;
@@ -222,7 +226,7 @@ class Item extends FFBoka {
      */
     public static function freebusyWeekends(int $start, int $days=7) {
         $date = new \DateTime("@$start");
-        $date->setTimezone(new \DateTimeZone("Europe/Stockholm"));
+        $date->setTimezone(new \DateTimeZone(self::$timezone));
         $ret = "";
         for ($day=0; $day<$days; $day++) {
             if ($date->format('N') > 5) $ret .= "<div class='freebusy-weekend' style='left:" . (100/$days*$day) . "%; width:" . (100/$days) . "%;'></div>"; 

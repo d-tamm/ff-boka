@@ -10,7 +10,7 @@ global $cfg;
 // Set locale
 setlocale(LC_ALL, $cfg['locale']);
 setlocale(LC_NUMERIC, "en_US.utf8");
-date_default_timezone_set ( "Europe/Stockholm" );
+date_default_timezone_set ( $cfg['timezone'] );
 
 // $message is used on several pages. Good to initialise.
 $message = "";
@@ -28,7 +28,7 @@ use FFBoka\User;
 $db = new PDO("mysql:host={$cfg['dbhost']};dbname={$cfg['dbname']};charset=utf8", $cfg['dbuser'], $cfg['dbpass']);
 
 // Create FF object
-$FF = new FFBoka($cfg['apiUrl'], $db, $cfg['sectionAdmins']);
+$FF = new FFBoka($cfg['apiUrl'], $db, $cfg['sectionAdmins'], $cfg['timezone']);
 
 // Check if there is a persistent login cookie
 //https://stackoverflow.com/questions/3128985/php-login-system-remember-me-persistent-cookie
@@ -161,7 +161,7 @@ function head(string $caption, $currentUser=NULL) {
 				<li data-icon="user"><a href="/userdata.php" data-transition='slide' data-rel="close"><?= htmlspecialchars($currentUser->name) ?></a></li>
 				<li data-icon="power"><a href="/index.php?logout" data-rel="close">Logga ut</a></li><?php
 				foreach ($currentUser->bookingAdminSections() as $section) {
-				    echo "<li data-icon='calendar'><a href='/admin/bookings.php?sectionId={$section->id}' data-rel='close' target='_blank'>Bokningar i " . htmlspecialchars($section->name) . "</a></li>\n";
+				    echo "<li data-icon='calendar'><a href='#' onClick='openBookingAdmin({$section->id});' data-rel='close'>Bokningar i " . htmlspecialchars($section->name) . "</a></li>\n";
 				}
 			} ?>
 			<li data-icon="info"><a href="help.php" data-transition='slide' data-rel="close">Hjälp</a></li>

@@ -53,9 +53,9 @@ class Subbooking extends FFBoka {
                 $row = $stmt->fetch(PDO::FETCH_OBJ);
                 return $row->$name;
             case "price":
-                $stmt = self::$db->query("SELECT $name FROM subbookings WHERE subbookingId={$this->id}");
+                $stmt = self::$db->query("SELECT SUM(price) price FROM booked_items WHERE subbookingId={$this->id}");
                 $row = $stmt->fetch(PDO::FETCH_OBJ);
-                return $row->$name;
+                return $row->price;
             default:
                 throw new \Exception("Use of undefined Subbooking property $name");
         }

@@ -19,7 +19,7 @@ class User extends FFBoka {
     /**
      * On user instatiation, get some static properties.
      * If user does not yet exist in database, create a record.
-     * @param int $id User ID. An $id=(empty|0) will result in an empty user with unset id property.
+     * @param int $id User ID. If empty|0, the user will be empty and with unset id property
      */
     function __construct($id) {
         if (!$id) return;
@@ -115,8 +115,10 @@ class User extends FFBoka {
      * @return \FFBoka\Booking
      */
     public function addBooking() {
-        if ($this->id) self::$db->exec("INSERT INTO bookings SET userId={$this->id}");
-        else self::$db->exec("INSERT INTO bookings () VALUES ()");
+        // Create token
+        for ($token = '', $i = 0, $z = strlen($a = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789')-1; $i < 40; $x = rand(0,$z), $token .= $a{$x}, $i++);
+        if ($this->id) self::$db->exec("INSERT INTO bookings SET userId={$this->id}, token='$token'");
+        else self::$db->exec("INSERT INTO bookings SET token='$token'");
         return new Booking(self::$db->lastInsertId());
     }
     

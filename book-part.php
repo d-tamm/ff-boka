@@ -160,6 +160,7 @@ switch ($_REQUEST['action']) {
 	        } else {
 	            $booking = $currentUser->addBooking();
 	            $_SESSION['bookingId'] = $booking->id;
+	            $_SESSION['token'] = $booking->token;
 	        }
 	        $subbooking = $booking->addSubbooking();
 	        $subbooking->start = $_REQUEST['start'];

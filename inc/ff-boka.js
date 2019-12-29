@@ -6,6 +6,14 @@ $(document).on('pagecontainerhide', function (event, ui) {
 	ui.prevPage.remove(); 
 });
 
+function openBookingAdmin(sectionId) {
+	if (screen.width < 700) {
+		location.href= "/admin/bookings-m.php?sectionId=" + sectionId;		
+	} else {
+		location.href= "/admin/bookings-d.php?sectionId=" + sectionId;
+	}
+}
+
 // ========== index.php ==========
 $(document).on('pagecreate', "#page-start", function(e) {
     // bind events
@@ -214,6 +222,15 @@ function deleteBooking(userId=0) {
 	return false;
 }
 
+function confirmBookedItem(bookedItemId) {
+    $.mobile.loading("show", {});
+    var _this = this;
+    $.getJSON("book-sum.php", { action: "ajaxConfirmBookedItem", bookedItemId: bookedItemId }, function(data, status) {
+        $.mobile.loading("hide", {});
+        if (data.status=="OK") $(_this).parent().html("Bekräftat");
+        else alert("Upps. Något har gått fel. Kunde inte bekräfta bokningen. Vänligen kontakta admin.");
+    });
+}
 
 
 
