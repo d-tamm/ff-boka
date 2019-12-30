@@ -13,15 +13,15 @@ use PDO;
  */
 class User extends FFBoka {
     private $id;
-    private $sectionId;
     private $assignments;
     
     /**
      * On user instatiation, get some static properties.
      * If user does not yet exist in database, create a record.
      * @param int $id User ID. An $id=(empty|0) will result in an empty user with unset id property.
+     * @param int|string $section Id or name of section the user belongs to
      */
-    function __construct($id) {
+    function __construct($id, $section=0) {
         if (!$id) return;
         if (!is_numeric($id)) return;
         // Check if user with that member ID exists in the database
@@ -35,10 +35,17 @@ class User extends FFBoka {
             $this->id = (int)$id;
         }
         // Get home section for user
-        $this->sectionId = 52; // TODO: get real section from API
+        if ($section) {
+            $stmt = self::$db->prepare("UPDATE users SET sectionId=(SELECT sectionId FROM sections WHERE sectionId=:sectionId OR name=:name) WHERE userId=:userId");
+            $stmt->execute(array(
+                ":sectionId"=> $section,
+                ":name"     => $section,
+                ":userId"   => $this->id
+            ));
+        }
         // Get user's assignments from the FF API as an array[sectionId][names] (only assignments on section level)
         $this->assignments = array();
-        if (self::$apiUrl) $data = json_decode(file_get_contents(self::$apiUrl . "/api/feed/Pan_Extbokning_GetAssingmentByMemberNoOrSocSecNo?MNoSocnr={$this->id}"));
+        if (self::$apiAssUrl) $data = json_decode(file_get_contents(self::$apiAssUrl . "?MNoSocnr={$this->id}"));
         else $data = (object)array("results"=>array()); // API not set (e.g. development environment)
         foreach ($data->results as $ass) {
             if ($ass->cint_assignment_party_type->value == FFBoka::TYPE_SECTION) {
@@ -57,10 +64,10 @@ class User extends FFBoka {
     public function __get($name) {
         switch ($name) {
             case "id":
-            case "sectionId":
                 return $this->$name;
             case "section":
                 return new Section($this->sectionId);
+            case "sectionId":
             case "name":
             case "mail":
             case "phone":
@@ -85,6 +92,7 @@ class User extends FFBoka {
             case "name":
             case "mail":
             case "phone":
+            case "sectionId":
                 $stmt = self::$db->prepare("UPDATE users SET $name=? WHERE userId={$this->id}");
                 if ($stmt->execute(array($value))) return $value;
                 break;

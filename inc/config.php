@@ -10,9 +10,7 @@ $cfg = array(
 	"dbpass" => "", // see credentials.php
 
 	// API connection
-	"apiUser" => "",
-	"apiPass" => "",
-	"apiUrl" => "", // see credentials.php. If not set, API calls will be disabled.
+	"ff-api" => array(), // see credentials.php
 	
 	// Logging
 	"logMaxSize" => 1*1024*1024, // in bytes

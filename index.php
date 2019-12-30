@@ -1,7 +1,7 @@
 <?php
 use FFBoka\FFBoka;
-use FFBoka\User;
 use FFBoka\Section;
+use FFBoka\User;
 
 session_start();
 require(__DIR__."/inc/common.php");
@@ -54,8 +54,10 @@ if (isset($_POST['login'])) {
 		// Too many attempts. We do not even bother to log this to login log.
 		$message = "För många inloggningsförsök. Försök igen om {$cfg['DoSDelay']} sekunder.";
 	} else {
-	    if ($_SESSION['authenticatedUser'] = $FF->authenticateUser($_POST['id'], $_POST['password'])) {
-			$u = new User($_SESSION['authenticatedUser']);
+	    $result = $FF->authenticateUser($_POST['id'], $_POST['password']);
+	    if ($result['authenticated']) {
+	        $_SESSION['authenticatedUser'] = $_POST['id'];
+			$u = new User($_SESSION['authenticatedUser'], $result['section']);
 			if (!$u->updateLastLogin()) die("Cannot update user.");
 	        $db->exec("INSERT INTO logins (ip, success) VALUES (INET_ATON('{$_SERVER['REMOTE_ADDR']}'), 1)");
             // If requested, set persistent login cookie
@@ -166,7 +168,7 @@ if (isset($_REQUEST['message'])) $message = ($message ? "$message<br>" : "") . $
 
 		// TODO: This is for testing only. Remove before switching to production! ?><br>
 		<form class="ui-body ui-body-a">
-			<p>Under testfasen kan du ge dig själv administratörs-behörighet i din lokalavdelning för att testa alla funktioner.</p>
+			<p>Under testfasen kan du ge dig själv administratörs-behörighet i valfri lokalavdelning för att testa alla funktioner.</p>
 			<input type="hidden" name="action" value="make me admin">
 			<select name="sectionId">
 				<option>Välj lokalavdelning</option><?php
@@ -198,8 +200,8 @@ if (isset($_REQUEST['message'])) $message = ($message ? "$message<br>" : "") . $
 			<h3>Inloggning <a href="#popup-help-login" data-rel="popup" class="tooltip ui-btn ui-alt-icon ui-nodisc-icon ui-btn-inline ui-icon-info ui-btn-icon-notext">Hjälp</a></h3>
 			<div data-role="popup" id="popup-help-login" class="ui-content" data-overlay-theme="b">
 				<p>Du loggar in med samma lösenord som i aktivitetshanteraren.</p>
-				<p class="ui-body ui-body-b">Kopplingarna till FFs centrala användarhantering är inte helt klar. Därför verifieras inte ditt lösenord än, och du hamnar än så länge under LA Mölndal.</p>
 			</div>
+			<p class="ui-body ui-body-c">Nu är kopplingarna till FFs centrala användarhantering klar, så nu behöver du ange ditt lösenord och ska hamna i rätt lokalavdelning!</p>
 			<input type="hidden" name="redirect" id="loginRedirect" value="">
 			<input name="id" value="" placeholder="medlems- eller personnr" required>
 			<input name="password" value="" placeholder="Lösenord" type="password">
