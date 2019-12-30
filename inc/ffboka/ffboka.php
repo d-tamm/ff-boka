@@ -38,8 +38,11 @@ class FFBoka {
     /** Booking has been placed and is confirmed */
     const STATUS_CONFIRMED=3;
     
-    /** URL to Friluftsfrämjandet's API */
-    protected static $apiUrl;
+    /** URL and key to Friluftsfrämjandet's API */
+    protected static $apiAuthUrl;
+    protected static $apiAuthKey;
+    protected static $apiAssUrl;
+    
     /** GUID in API indicating sections */
     const TYPE_SECTION = 478880001;
     
@@ -54,13 +57,16 @@ class FFBoka {
     
     /**
      * Initialize framework with API address and database connection.
-     * These will also be used in the inherited classes 
+     * These will also be used in the inherited classes
+     * @param array(string) $api Array with connection details to FF's API, with members authUrl, authKey, assUrl
      * @param PDO::Database $db
      * @param array(string) $sectionAdmins Section level assignments giving sections admin access
      * @param string $timezone Timezone for e.g. freebusy display (Europe/Stockholm)
      */
-    function __construct($apiUrl, $db, $sectionAdmins, $timezone) {
-        self::$apiUrl = $apiUrl;
+    function __construct($api, $db, $sectionAdmins, $timezone) {
+        self::$apiAuthUrl = $api['authUrl'];
+        self::$apiAuthKey = $api['authKey'];
+        self::$apiAssUrl = $api['assUrl'];
     	self::$db = $db;
     	self::$sectionAdmins = $sectionAdmins;
     	self::$timezone = $timezone;
@@ -87,12 +93,23 @@ class FFBoka {
      * Authenticate the given user data by querying the API
      * @param string $userId
      * @param string $password
-     * @return int/bool Member ID on success 
+     * @return array(bool authenticated, string section) 
      */
     public function authenticateUser($userId, $password) {
-        // TODO: Currently, there is no such function in the API. Hope this comes in early 2020.
-        return $userId;
-        return false;
+        $options = array(
+            'http' => array(
+                'header'  => "Content-Type: application/json\r\n" .
+                "Cache-Control: no-cache\r\n".
+                "Ocp-Apim-Subscription-Key: " . self::$apiAuthKey . "\r\n",
+                'method'  => 'POST',
+                'content' => json_encode([ 'membernumber' => $userId, 'password' => $password ])
+            )
+        );
+        $context  = stream_context_create($options);
+        $result = file_get_contents(self::$apiAuthUrl, false, $context);
+        if ($result === FALSE) return FALSE;
+        $result = json_decode($result);
+        return array("authenticated" => $result->isMember, "section" => $result->isMemberOfLokalavdelning);
     }
 
 	/**
@@ -170,37 +187,5 @@ class FFBoka {
         imagepng($tmp);
         $thumb = ob_get_clean();
         return array("image"=>$image, "thumb"=>$thumb);
-    }
-    
-    /**
-     * Fetch a new user token from API.
-     * TODO: This method is deprecated since it fetches a token from the API giving elevated access
-     * to user data at FF. Here, we just want to verify the password, don't need the token.
-     * @deprecated
-     * @param int $userId
-     * @param string $password
-     * @return string[]|mixed On success (correct credentials): [ access_token, expires_in, userName ], where userName is the memberId. On failure (e.g. wrong credentials): [ error="invalid_grant", error_description ]
-     */
-    function getApiToken($userId, $password) {
-        global $cfg;
-        $data = array(
-            'username' => $userId,
-            'password' => $password,
-            'grant_type' => 'password'
-        );
-        $options = array('http' => array(
-            'header'  => "Content-type: application/x-www-form-urlencoded\r\n",
-            'method'  => 'POST',
-            'content' => http_build_query($data)
-        ));
-        $context  = stream_context_create($options);
-        $result = file_get_contents($cfg['apiUrl']."/token", false, $context);
-        // Sample response: {"access_token":"xxxx","token_type":"bearer","expires_in":28799,"userName":"864015","contactId":"xxxx","impersonateAs":"xxxx","authorizationLevel":"1",".issued":"Thu, 10 Oct 2019 12:29:05 GMT",".expires":"Thu, 10 Oct 2019 20:29:05 GMT"}
-        // If wrong credentials: {"error":"invalid_grant","error_description":"The user name or password is incorrect."}
-        if ($result === FALSE) {
-            return array("error"=>"Generic error", "error_description"=>"Failed to verify credentials. Please try again later.");
-        } else {
-            return json_decode($result, true);
-        }
     }
 }
