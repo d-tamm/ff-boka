@@ -39,6 +39,24 @@ class BookedItem extends Item {
             $this->id = 0;
         }
     }
+
+    /**
+     * Get the booking the item belongs to
+     * @return \FFBoka\Booking
+     */
+    public function booking() {
+        $stmt = self::$db->query("SELECT bookingId FROM subbookings WHERE subbookingId={$this->subbookingId}");
+        $row = $stmt->fetch(\PDO::FETCH_OBJ);
+        return new Booking($row->bookingId);
+    }
+    
+    /**
+     * Get the subbooking the item belongs to
+     * @return \FFBoka\Subbooking
+     */
+    public function subbooking() {
+        return new Subbooking($this->subbookingId);
+    }
     
     /**
      * Remove bookedItem from its subbooking

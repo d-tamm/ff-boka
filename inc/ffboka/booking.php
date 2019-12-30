@@ -96,6 +96,14 @@ class Booking extends FFBoka {
     }
     
     /**
+     * Get the user of the booking
+     * @return \FFBoka\User empty User for external bookings
+     */
+    public function user() {
+        return new User(is_null($this->userId) ? 0 : $this->userId);
+    }
+    
+    /**
      * Remove the whole booking
      * @return bool Success
      */

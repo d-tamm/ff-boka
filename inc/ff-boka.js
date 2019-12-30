@@ -196,11 +196,10 @@ function popupItemDetails(id) {
     });
 }
 
-function removeItem(subId, bookedItemId) {
+function removeItem(bookedItemId) {
     $.mobile.loading("show", {});
     $.getJSON("book-sum.php", {
         action: "ajaxRemoveItem",
-        subId: subId,
         bookedItemId: bookedItemId
     }, function(data, status) {
         $.mobile.loading("hide", {});
@@ -215,8 +214,9 @@ function deleteBooking(userId=0) {
 	    $.mobile.loading("show", {});
 	    $.getJSON("book-sum.php", { action: "ajaxDeleteBooking" }, function(data, status) {
 	        $.mobile.loading("hide", {});
-	    	if (userId) location.href="/userdata.php?action=bookingDeleted";
-	    	else location.href="/index.php?action=bookingDeleted";
+	        if (data.error) alert(data.error);
+	        else if (userId) location.href="/userdata.php?action=bookingDeleted";
+        	else location.href="/index.php?action=bookingDeleted";
 	    });
 	}
 	return false;
@@ -224,11 +224,24 @@ function deleteBooking(userId=0) {
 
 function confirmBookedItem(bookedItemId) {
     $.mobile.loading("show", {});
-    var _this = this;
     $.getJSON("book-sum.php", { action: "ajaxConfirmBookedItem", bookedItemId: bookedItemId }, function(data, status) {
         $.mobile.loading("hide", {});
-        if (data.status=="OK") $(_this).parent().html("Bekräftat");
-        else alert("Upps. Något har gått fel. Kunde inte bekräfta bokningen. Vänligen kontakta admin.");
+        if (data.error) alert(data.error);
+        else {
+        	$("#book-item-status-"+bookedItemId).html("Bekräftat");
+            $("#book-item-btn-confirm-"+bookedItemId).hide();
+        }
+    });
+}
+
+function setPrice(bookedItemId) {
+	var price = prompt("Pris för resursen (hela kronor):", "0");
+	if (isNaN(price)) { alert(price + " är inte ett tal."); return; }
+    $.mobile.loading("show", {});
+    $.getJSON("book-sum.php", { action: "ajaxSetPrice", bookedItemId: bookedItemId, price: price }, function(data, status) {
+        $.mobile.loading("hide", {});
+        if (data.error) alert(data.error);
+        else $("#book-item-price-"+bookedItemId).html(price + " kr");
     });
 }
 

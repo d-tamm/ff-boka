@@ -65,7 +65,7 @@ switch ($_REQUEST['action']) {
         $fbList = array();
         foreach ($_SESSION['itemIds'] as $id) {
             $item = new Item($id);
-            $fbList["item-$id"] = $item->freebusyBar(['start'=>$start->getTimestamp(), 'scale'=>TRUE, 'days'=>$daysInMonth, 'minStatus'=>FFBoka::STATUS_CONFLICT, 'includeTokens'=>TRUE]);
+            $fbList["item-$id"] = $item->freebusyBar(['start'=>$start->getTimestamp(), 'scale'=>TRUE, 'days'=>$daysInMonth, 'minStatus'=>FFBoka::STATUS_CONFLICT]);
         }
         die(json_encode(["scale"=>$scale, "freebusy"=>$fbList]));
 }
@@ -99,7 +99,7 @@ switch ($_REQUEST['action']) {
         });
         
         $(document).on('click', ".freebusy-busy", function() {
-            var bookingView = window.open("/book-sum.php?bookingId=" + this.dataset.bookingId + "&token=" + this.dataset.token, "booking" + this.dataset.bookingId);
+            var bookingView = window.open("/book-sum.php?bookingId=" + this.dataset.bookingId, "booking" + this.dataset.bookingId);
             bookingView.focus();
         });
     });
