@@ -27,7 +27,7 @@ use FFBoka\User;
 $db = new PDO("mysql:host={$cfg['dbhost']};dbname={$cfg['dbname']};charset=utf8", $cfg['dbuser'], $cfg['dbpass']);
 
 // Create FF object
-$FF = new FFBoka($cfg['apiUrl'], $db, $cfg['sectionAdmins']);
+$FF = new FFBoka($cfg['ff-api'], $db, $cfg['sectionAdmins']);
 
 // Check if there is a persistent login cookie
 //https://stackoverflow.com/questions/3128985/php-login-system-remember-me-persistent-cookie
@@ -241,12 +241,12 @@ function sendmail(string $from, string $to, string $replyTo, string $subject, $o
 /**
  * Get html code for an embedded image tag. 
  * @param string $data Image data
- * @param string $overlay Name of overlay image file
+ * @param string $overlay Name of overlay image file (accepted|rejected|new)
  * @return string HTML img tag with embedded base64 encoded data
  */
 function embedImage($data, $overlay="") {
 	// Returns string for embedded img tag.
-	if (!in_array($overlay, array("accepted", "rejected", "new"))) $overlay=""; // TODO: This comes from another project. If not needed, remove it.
+	if (!in_array($overlay, array("accepted", "rejected", "new"))) $overlay="";
 	if (!$data) $data = file_get_contents(__DIR__."/../resources/noimage.png");
 	$info = getimagesizefromstring($data);
 	if ($overlay) {

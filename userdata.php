@@ -91,6 +91,7 @@ if ($_GET['first_login']) $message = "Välkommen till resursbokningen! Innan du 
 				<p>Uppgifter om dig så andra vet vem du är och hur de kan får tag i dig.</p>
 				<input type="hidden" name="action" value="save user data">
 				<p>Medlemsnummer: <?= $currentUser->id ?></p>
+				<p>Lokalavdelning: <?= $currentUser->section->name ?></p>
 				<div class="ui-field-contain">
 					<label for="userdata-name" class="required">Namn:</label>
 					<input type="text" name="name" id="userdata-name" required placeholder="Namn" value="<?= htmlspecialchars($_POST['name'] ? $_POST['name'] : $currentUser->name) ?>">
