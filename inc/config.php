@@ -37,7 +37,8 @@ $cfg = array(
 
 	// Locale to use
 	"locale" => "sv_SE.UTF-8",
-
+    "timezone" => "Europe/Stockholm",
+    
 	// Section bound assignments always giving admin access to section
 	"sectionAdmins" => array('Ordförande', 'Vice ordförande'),
 	"catAccessLevels" => array(

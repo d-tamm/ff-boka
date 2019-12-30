@@ -7,6 +7,7 @@ use FFBoka\Section;
 session_start();
 require(__DIR__ . "/../inc/common.php");
 global $cfg;
+$message = "";
 
 if (!isset($_SESSION['sectionId']) || !isset($_SESSION['authenticatedUser'])) {
     header("Location: /?action=sessionExpired");

@@ -10,6 +10,7 @@ global $cfg;
 // Set locale
 setlocale(LC_ALL, $cfg['locale']);
 setlocale(LC_NUMERIC, "en_US.utf8");
+date_default_timezone_set ( $cfg['timezone'] );
 
 // $message is used on several pages. Good to initialise.
 $message = "";
@@ -27,7 +28,7 @@ use FFBoka\User;
 $db = new PDO("mysql:host={$cfg['dbhost']};dbname={$cfg['dbname']};charset=utf8", $cfg['dbuser'], $cfg['dbpass']);
 
 // Create FF object
-$FF = new FFBoka($cfg['ff-api'], $db, $cfg['sectionAdmins']);
+$FF = new FFBoka($cfg['ff-api'], $db, $cfg['sectionAdmins'], $cfg['timezone']);
 
 // Check if there is a persistent login cookie
 //https://stackoverflow.com/questions/3128985/php-login-system-remember-me-persistent-cookie
@@ -106,18 +107,27 @@ function createToken($use, $forId, $data="", $ttl=86400) {
 /**
  * Output the file headers for HTML pages (title, meta tags, common stylesheets, jquery)
  * @param string $title
+ * @param string $mode mobile|desktop
  */
-function htmlHeaders(string $title) { 
+function htmlHeaders(string $title, string $mode="mobile") { 
 	// output meta tags and include stylesheets, jquery etc	?>
 	<title><?= $title ?></title>
 	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1"/>
-	<link rel="stylesheet" href="/inc/jquery.mobile-1.4.5.min.css" />
-	<link rel="stylesheet" href="/css/themes/ff-boka.css" />
+	<?php if ($mode=="mobile") { ?>
+    	<meta name="viewport" content="width=device-width, initial-scale=1"/>
+    	<link rel="stylesheet" href="/inc/jquery.mobile-1.4.5.min.css" />
+    	<link rel="stylesheet" href="/css/themes/ff-boka.css" />
+    	<link rel="stylesheet" href="/css/themes/jquery.mobile.icons.min.css" />
+    	<script src="/inc/jquery-1.11.1.min.js"></script>
+    	<script src="/inc/jquery.mobile-1.4.5.min.js"></script>
+	<?php } else { ?>
+		<script src="/inc/pace.min.js"></script>
+        <link rel="stylesheet" href="/inc/jquery-ui-1.12.1/jquery-ui.min.css">
+        <script src="/inc/jquery-ui-1.12.1/external/jquery/jquery.js"></script>
+        <script src="/inc/jquery-ui-1.12.1/jquery-ui.min.js"></script>
+        <link rel="stylesheet" href="/css/desktop.css">        
+	<?php } ?>
 	<link rel="stylesheet" href="/css/ff-boka.css" />
-	<link rel="stylesheet" href="/css/themes/jquery.mobile.icons.min.css" />
-	<script src="/inc/jquery-1.11.1.min.js"></script>
-	<script src="/inc/jquery.mobile-1.4.5.min.js"></script>
 	<script>
 	    // Lift in some constants from PHP
 	    const ACCESS_NONE = <?= FFBoka::ACCESS_NONE ?>;
@@ -150,6 +160,9 @@ function head(string $caption, $currentUser=NULL) {
 			if ($_SESSION['authenticatedUser']) { ?>
 				<li data-icon="user"><a href="/userdata.php" data-transition='slide' data-rel="close"><?= htmlspecialchars($currentUser->name) ?></a></li>
 				<li data-icon="power"><a href="/index.php?logout" data-rel="close">Logga ut</a></li><?php
+				foreach ($currentUser->bookingAdminSections() as $section) {
+				    echo "<li data-icon='calendar'><a href='#' onClick='openBookingAdmin({$section->id});' data-rel='close'>Bokningar i " . htmlspecialchars($section->name) . "</a></li>\n";
+				}
 			} ?>
 			<li data-icon="info"><a href="help.php" data-transition='slide' data-rel="close">Hjälp</a></li>
 			<li data-icon="info"><a href="cookies.php" data-transition='slide' data-rel="close">Om kakor (cookies)</a></li>
@@ -160,7 +173,7 @@ function head(string $caption, $currentUser=NULL) {
 		<H1><?= $caption ?></H1>
 		<a href="#navpanel" data-rel="popup" data-transition="pop" data-role="button" data-icon="bars" data-iconpos="notext" class="ui-btn-left ui-nodisc-icon ui-alt-icon">Menu</a>
 		<?php 
-		switch ($_SERVER['PHP_SELF']) {
+        switch ($_SERVER['PHP_SELF']) {
 		case "/admin/category.php": $href="/admin/"; $icon="back"; break;
 		case "/admin/item.php": $href="/admin/category.php?expand=items"; $icon="back"; break;
 		case "/subbooking.php": $href="javascript:history.back();"; $icon="back"; break;

@@ -39,6 +39,24 @@ class BookedItem extends Item {
             $this->id = 0;
         }
     }
+
+    /**
+     * Get the booking the item belongs to
+     * @return \FFBoka\Booking
+     */
+    public function booking() {
+        $stmt = self::$db->query("SELECT bookingId FROM subbookings WHERE subbookingId={$this->subbookingId}");
+        $row = $stmt->fetch(\PDO::FETCH_OBJ);
+        return new Booking($row->bookingId);
+    }
+    
+    /**
+     * Get the subbooking the item belongs to
+     * @return \FFBoka\Subbooking
+     */
+    public function subbooking() {
+        return new Subbooking($this->subbookingId);
+    }
     
     /**
      * Remove bookedItem from its subbooking
@@ -66,11 +84,39 @@ class BookedItem extends Item {
     
     /**
      * Get the booking status of the item
-     * @return int $status
+     * @return int Status of the item
      */
     public function getStatus() {
         $stmt = self::$db->query("SELECT status FROM booked_items WHERE bookedItemId={$this->bookedItemId}");
         $row = $stmt->fetch(\PDO::FETCH_OBJ);
         return $row->status;
+    }
+    
+    /**
+     * Set the price for the item
+     * @param int $price
+     * @return bool True on success
+     */
+    public function setPrice(int $price) {
+        $stmt = self::$db->prepare("UPDATE booked_items SET price=? WHERE bookedItemId={$this->bookedItemId}");
+        if ($stmt->execute(array($status))) return $status;
+        else return FALSE;
+    }
+    
+    /**
+     * Unset the price for the item
+     */
+    public function unsetPrice() {
+        return self::$db->exec("UPDATE booked_items SET price=null WHERE bookedItemId={$this->bookedItemId}");
+    }
+    
+    /**
+     * Get the booking status of the item
+     * @return int Price for the item, NULL if not set
+     */
+    public function getPrice() {
+        $stmt = self::$db->query("SELECT price FROM booked_items WHERE bookedItemId={$this->bookedItemId}");
+        $row = $stmt->fetch(\PDO::FETCH_OBJ);
+        return $row->price;
     }
 }

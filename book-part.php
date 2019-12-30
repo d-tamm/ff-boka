@@ -44,18 +44,17 @@ function displayCat(Category $cat, $user, $fbStart) {
 
 /**
  * Get freebusy information for all items in (and below) a category
- * @param [ string ] $fbList Array of HTML strings representing an item's freebusy information for 1 week. Found busy times will be appended to this array.
+ * @param string[] $fbList Array of HTML strings representing an item's freebusy information for 1 week. Found busy times will be appended to this array.
  * @param Category $cat Category in which to start searching for items
  * @param User $user User to which the items shall be visible.
  * @param int $start Unix timestamp of start of the week
- * @param bool $scale Whether to include the weekday scale.
  */
 function getFreebusy(&$fbList, Category $cat, $user, $start) {
     $acc = $cat->getAccess($user);
     foreach ($cat->items() as $item) {
         if ($item->active) {
             if ($acc >= FFBoka::ACCESS_PREBOOK) {
-				$fbList["item-".$item->id] = $item->freebusyBar($start);
+				$fbList["item-".$item->id] = $item->freebusyBar(['start'=>$start]);
             } else {
                 $fbList["item-".$item->id] = Item::freebusyUnknown();
             }
@@ -78,7 +77,7 @@ function getFreebusyCombined($ids, $user, $start) {
     foreach ($ids as $id) {
         $item = new Item($id);
         if ($item->category()->getAccess($user) >= FFBoka::ACCESS_PREBOOK) {
-            $freebusyCombined .= $item->freebusyBar($start);
+            $freebusyCombined .= $item->freebusyBar(['start'=>$start]);
         } else {
             $freebusyCombined .= Item::freebusyUnknown();
         }
@@ -161,6 +160,7 @@ switch ($_REQUEST['action']) {
 	        } else {
 	            $booking = $currentUser->addBooking();
 	            $_SESSION['bookingId'] = $booking->id;
+	            $_SESSION['token'] = $booking->token;
 	        }
 	        $subbooking = $booking->addSubbooking();
 	        $subbooking->start = $_REQUEST['start'];

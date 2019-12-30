@@ -5,6 +5,8 @@ use FFBoka\FFBoka;
 use FFBoka\Booking;
 use FFBoka\Question;
 use FFBoka\Subbooking;
+use FFBoka\Category;
+use FFBoka\BookedItem;
 global $cfg;
 
 session_start();
@@ -21,6 +23,7 @@ if ($_SESSION['bookingId']) {
     try {
         $booking = new Booking($_SESSION['bookingId']);
     } catch (Exception $e) {
+        unset($_SESSION['bookingId']);
         header("Location: index.php?action=bookingNotFound");
         die();
     }
@@ -29,11 +32,27 @@ if ($_SESSION['bookingId']) {
     die();
 }
 
-// Check that current booking belongs to current user
-if (($_SESSION['authenticatedUser'] && $booking->userId != $currentUser->id) || (!$_SESSION['authenticatedUser'] && !is_null($booking->userId))) {
-    unset($_SESSION['bookingId']);
-    header("Location: index.php?action=sessionExpired");
-    die();
+// Check that current booking belongs to current user, or correct token is given
+if (isset($_REQUEST['token'])) $_SESSION['token'] = $_REQUEST['token'];
+if (!(
+    (isset($_SESSION['token']) && ($_SESSION['token'] == $booking->token)) || // correct token
+    ($_SESSION['authenticatedUser'] && ($booking->userId == $currentUser->id)) // same user
+)) {
+    // Last access check: current user must be admin of some used category
+    $isAdmin = FALSE;
+    foreach ($booking->subbookings() as $sub) {
+        foreach ($sub->items() as $item) {
+            if ($item->category()->getAccess($currentUser) >= FFBoka::ACCESS_CONFIRM) {
+                $isAdmin = TRUE;
+                break;
+            }
+        }
+    }
+    if (!$isAdmin) {
+        unset($_SESSION['bookingId']);
+        header("Location: index.php?action=accessDenied&to=" . urlencode("bokningen"));
+        die();
+    }
 }
 
 $_SESSION['sectionId'] = $booking->sectionId;
@@ -74,15 +93,15 @@ switch ($_REQUEST['action']) {
 		$leastStatus = FFBoka::STATUS_CONFIRMED;
 		$messages = array();
 		foreach ($booking->subbookings() as $subbooking) {
-		    $mailItems .= "<p><b>Bokat från " . strftime("%F kl %k", $subbooking->start) . " till " . strftime("%F kl %k", $subbooking->end) . ":</b></p><ul>";
+		    $mailItems .= "<p><b>Bokat från " . strftime("%F kl %k:00", $subbooking->start) . " till " . strftime("%F kl %k:00", $subbooking->end) . ":</b></p><ul>";
 			foreach ($subbooking->items() as $item) {
-			    $msgRef = array();
+			    $msgRef = "";
 			    foreach ($item->category()->postbookMsgs() as $msg) {
-    			    if (in_array($msg, $messages)) $msgRef[] = "(".(array_search($msg, $messages)+1).")";
-    			    else { $messages[] = "<p>(" . (count($messages)+1) . ") $msg</p>"; $msgRef[] = "(".count($messages).")"; }
+    			    if (in_array($msg, $messages)) $msgRef .= " (".(array_search($msg, $messages)+1).")";
+    			    else { $messages[] = $msg; $msgRef .= "(".count($messages).")"; }
 			    }
-			    $mailItems .= "<li>{$item->caption} " . implode(" ", $msgRef) . "</li>";
-			    if ($item->category()->getAccess($currentUser) >= FFBoka::ACCESS_BOOK) $status=FFBoka::STATUS_CONFIRMED;
+			    $mailItems .= "<li>" . htmlspecialchars($item->caption) . "$msgRef</li>";
+			    if ($item->category()->getAccess($currentUser) >= FFBoka::ACCESS_BOOK) $status = FFBoka::STATUS_CONFIRMED;
 			    else {
 			        if (in_array($item->bookedItemId, $conflicts)) $status = FFBoka::STATUS_CONFLICT;
 			        else $status = FFBoka::STATUS_PREBOOKED; 
@@ -93,6 +112,10 @@ switch ($_REQUEST['action']) {
 	        $mailItems .= "</ul>";
 		}
 		$booking->commentCust = $_REQUEST['commentCust'];
+		if ($_REQUEST['commentIntern']) $booking->commentIntern = $_REQUEST['commentIntern'];
+		$booking->extName = $_REQUEST['extName'];
+		$booking->extPhone = $_REQUEST['extPhone'];
+		$booking->extMail = $_REQUEST['extMail'];
 		$answers = $booking->answers();
 		if (count($answers)) {
 		    $mailAnswers = "<p>Bokningsfrågor och dina svar:</p>"; 
@@ -100,19 +123,20 @@ switch ($_REQUEST['action']) {
 		}
 		try {
 		    sendmail(
-		        $cfg['mailFrom'],
-		        $_REQUEST['booker-mail'],
-		        "",
-		        "Bokningsbekräftelse #{$booking->id}",
+		        $cfg['mailFrom'], // from
+		        is_null($booking->userId) ? $_REQUEST['extMail'] : $booking->user()->mail, // to
+		        "", // replyTo
+		        "Bokningsbekräftelse #{$booking->id}", // subject
 		        $cfg['SMTP'], // SMPT options
 		        "confirm_booking", // template name
 		        array( // replace.
-		            "{{name}}"   => $_REQUEST['booker-name'],
-		            "{{items}}"  => $mailItems,
-		            "{{messages}}" => implode("", $messages),
-		            "{{status}}" => $leastStatus==FFBoka::STATUS_CONFIRMED ? "Bokningen är nu bekräftad." : "Bokningen är preliminär och behöver bekräftas av ansvarig handläggare.",
-		            "{{answers}}"=> $mailAnswers,
-		            "{{bookingLink}}" => $_SESSION['authenticatedUser'] ? "<a href='{$cfg['url']}'>Logga in på resursbokningen</a> för att se och ändra din bokning." : "",
+		            "{{name}}"    => is_null($booking->userId) ? $_REQUEST['extName'] : $booking->user()->name,
+		            "{{items}}"   => $mailItems,
+		            "{{messages}}"=> $messages ? "<li>".implode("</li><li>", $messages)."</li>" : "",
+		            "{{status}}"  => $leastStatus==FFBoka::STATUS_CONFIRMED ? "Bokningen är nu bekräftad." : "Bokningen är preliminär och behöver bekräftas av ansvarig handläggare.",
+		            "{{answers}}" => $mailAnswers,
+		            "{{commentCust}}" => $booking->commentCust ? "Meddelande du har lämnat:<br>{$booking->commentCust}" : "",
+		            "{{bookingLink}}" => "{$cfg['url']}book-sum.php?bookingId={$booking->id}&token={$booking->token}",
 		        )
 	        );
 	    } catch(Exception $e) {
@@ -120,18 +144,27 @@ switch ($_REQUEST['action']) {
 	        break;
 	    }
 		unset($_SESSION['bookingId']);
-		header("Location: index.php?action=bookingConfirmed&mail=" . urlencode($_REQUEST['booker-mail']));
+		header("Location: index.php?action=bookingConfirmed&mail=" . urlencode(is_null($booking->userId) ? $_REQUEST['extMail'] : $currentUser->mail));
 		break;
 		
 	case "ajaxDeleteBooking":
 	    header("Content-Type: application/json");
+	    // Check permissions: Only the original user and section admin can delete whole bookings
+	    if ($section->getAccess($currentUser) < FFBoka::ACCESS_SECTIONADMIN && $booking->userId !== $_SESSION['authenticatedUser'] && $_SESSION['token'] != $booking->token) {
+	        die(json_encode([ "error"=>"Du har inte behörighet att ta bort bokningen." ]));
+	    }
 	    $booking->delete();
-	    unset($_SESSION['bookingId']);
+        unset($_SESSION['bookingId']);
 	    die(json_encode([ "status"=>"OK" ]));
 	    
 	case "ajaxRemoveItem":
 	    header("Content-Type: application/json");
-	    $subbooking = new Subbooking($_REQUEST['subId']);
+	    // Check permissions
+	    $item = new BookedItem($_REQUEST['bookedItemId']);
+	    if ($item->category()->getAccess($currentuser) < FFBoka::ACCESS_CONFIRM || $booking->userId !== $_SESSION['authenticatedUser'] && $_SESSION['token'] != $booking->token) {
+	        die(json_encode([ "error"=>"Du har inte behörighet att ta bort resursen." ]));
+	    }
+	    $subbooking = $item->subbooking();
 	    if ($subbooking->removeItem($_REQUEST['bookedItemId'])) {
 	        if (count($subbooking->items()) == 0) {
 	            if ($subbooking->delete()) {
@@ -146,6 +179,48 @@ switch ($_REQUEST['action']) {
 	        die(json_encode([ "status"=>"OK" ]));
 	    }
 	    die(json_encode([ "error"=>"Oväntat fel: Kan inte ta bort resursen. Kontakta systemadministratören."]));
+	    
+	case "ajaxConfirmBookedItem":
+	    header("Content-Type: application/json");
+        $item = new BookedItem($_REQUEST['bookedItemId']);
+        if ($item->category()->getAccess($currentUser) < FFBoka::ACCESS_CONFIRM && $booking->userId !== $_SESSION['authenticatedUser'] && $booking->token != $_SESSION['token']) {
+            die(json_encode([ "error" => "Du har inte behörighet att bekräfta resursen." ]));
+        }
+        if ($item->setStatus(FFBoka::STATUS_CONFIRMED) === FALSE) {
+            die(json_encode([ 'error' => 'Kunde inte sätta status.' ]));
+        } else {
+            // Check if this was the last item to be confirmed in booking
+            $allConfirmed = TRUE;
+            foreach ($item->booking()->subbookings() as $sub) {
+                foreach ($sub->items() as $it) {
+                    if ($it->getStatus() < FFBoka::STATUS_CONFIRMED) { $allConfirmed = FALSE; break; }
+                }
+                if (!$allConfirmed) break;
+            }
+            if ($allConfirmed) {
+                try {
+                    sendmail(
+                        $cfg['mailFrom'], // from
+                        is_null($booking->userId) ? $booking->extMail : $booking->user()->mail, // to
+                        "", // replyTo
+                        "Bokning #{$booking->id} är nu bekräftad", // subject
+                        $cfg['SMTP'], // SMPT options
+                        "all_items_confirmed", // template name
+                        array( // replace
+                            "{{name}}"    => is_null($booking->userId) ? $booking->extName : $booking->user()->name,
+                            "{{bookingLink}}" => "{$cfg['url']}book-sum.php?bookingId={$booking->id}&token={$booking->token}",
+                        )
+                    );
+                } catch(Exception $e) {
+                    die(json_encode([ "error" => "Kunde inte skicka meddelande till användaren:" . $e ]));
+                }
+            }
+            die(json_encode(['status'=>'OK']));
+        }
+        
+	case "ajaxSetPrice":
+	    // TODO: continue here
+	    die();
 }
 
 ?><!DOCTYPE html>
@@ -174,27 +249,37 @@ switch ($_REQUEST['action']) {
 	<ul data-role='listview' data-inset='true' data-divider-theme='a' data-split-icon='delete'>
 	<?php
 	$questions = array();
+	$isSomeCatAdmin = FALSE;
 	foreach ($booking->subbookings() as $sub) {
 		echo "<li data-role='list-divider'>" . strftime("%F kl %H", $sub->start) . " &mdash; " . strftime("%F kl %H", $sub->end) . "</li>";
 		foreach ($sub->items() as $item) {
+		    if ($item->category()->getAccess($currentUser) >= FFBoka::ACCESS_CONFIRM) $isSomeCatAdmin=TRUE;
 		    foreach ($item->category()->getQuestions() as $id=>$q) {
 		        if (isset($questions[$id])) $questions[$id]=($questions[$id] || $q->required);
 		        else $questions[$id]=$q->required;
 		    }
-		    
-			echo "<li" . (in_array($item->bookedItemId, $unavail) ? " data-theme='c'" : "") . "><a href='javascript:popupItemDetails({$item->id})'>" .
-			embedImage($item->getFeaturedImage()->thumb) .
+			echo "<li" . (in_array($item->bookedItemId, $unavail) ? " data-theme='c'" : "") . ">";
+			if ($item->category()->getAccess($currentUser) >= FFBoka::ACCESS_CONFIRM) {
+			    echo "<div style='font-size:0.6em; text-align:right; position:absolute; top:0px; right:40px; z-index:1; margin:0.5em;'>";
+			    if ($item->getStatus()==FFBoka::STATUS_CONFLICT || $item->getStatus()==FFBoka::STATUS_PREBOOKED) echo "<button id='book-item-btn-confirm-{$item->bookedItemId}' class='ui-btn ui-btn-inline ui-btn-b' style='margin:0px;' onclick=\"confirmBookedItem({$item->bookedItemId});\">Bekräfta</button><br>";
+			    echo "<button class='ui-btn ui-btn-inline ui-btn-b' style='margin:0px;' onclick=\"setPrice({$item->bookedItemId});\">Sätt pris</button>";
+			    echo "</div>";
+			}
+			echo "<a href='javascript:popupItemDetails({$item->id})'>" . embedImage($item->getFeaturedImage()->thumb) .
 			"<h3 style='white-space:normal;'>" . htmlspecialchars($item->caption) . "</h3><p>";
 			if (in_array($item->bookedItemId, $unavail)) echo "Inte tillgänglig";
 			else {
 			    switch ($item->getStatus()) {
 			    case FFBoka::STATUS_PENDING: echo "Bokning ej slutförd än"; break;
 			    case FFBoka::STATUS_CONFLICT:
-			    case FFBoka::STATUS_PREBOOKED: echo "Väntar på bekräftelse"; break;
+			    case FFBoka::STATUS_PREBOOKED:
+			        echo "<span id='book-item-status-{$item->bookedItemId}'>Väntar på bekräftelse</span>"; break;
 			    case FFBoka::STATUS_CONFIRMED: echo "Bekräftat"; break;
 			    }
-		    };
-		    echo "</p></a><a href='#' onClick='removeItem({$sub->id},{$item->bookedItemId});'>Ta bort</a></li>\n";
+			}
+			if (!is_null($item->getPrice())) echo "<span id='book-item-price-{$item->bookedItemId}' class='ui-li-count'>{$item->getPrice()} kr</span>";
+		    echo "</p></a>\n";
+		    echo "<a href='#' onClick='removeItem({$item->bookedItemId});'>Ta bort</a></li>\n";
 		}
 	}
 	?>
@@ -206,10 +291,18 @@ switch ($_REQUEST['action']) {
 		<input type="hidden" name="action" value="confirmBooking">
 		
 		<?php
+		$prevAnswers = $booking->answers();
 		$requiredCheckboxradios = array();
 		if (count($questions)) echo "<div class='ui-body ui-body-a'>";
 		foreach ($questions as $id=>$required) {
 		    $question = new Question($id);
+		    $prevAns = "";
+		    foreach ($prevAnswers as $prev) {
+		        if ($prev->question == $question->caption) {
+		            $prevAns = $prev->answer;
+		            break;
+		        }
+		    }
 		    echo "<input type='hidden' name='questionId[]' value='$id'>\n";
 		    echo "<fieldset data-role='controlgroup' data-mini='true'>\n";
 		    // For checkbox questions with only one empty choice, move the caption to the checkbox instead
@@ -219,53 +312,57 @@ switch ($_REQUEST['action']) {
 		        case "checkbox":
 		            if ($required) $requiredCheckboxradios[$id] = $question->caption;
 		            foreach ($question->options->choices as $choice) {
-		                echo "\t<label><input type='{$question->type}' name='answer-{$id}[]' value='" . htmlspecialchars($choice ? $choice : "Ja") . "'> " . htmlspecialchars($choice ? $choice : $question->caption) . ($choice ? "" : " <span class='required'></span>") . "</label>\n";
+		                echo "\t<label><input type='{$question->type}' name='answer-{$id}[]' value='" . htmlspecialchars($choice ? $choice : "Ja") . "'" . ($prevAns==($choice ? $choice : "Ja") ? " checked" : "") . "> " . htmlspecialchars($choice ? $choice : $question->caption) . ($choice ? "" : " <span class='required'></span>") . "</label>\n";
 		            }
 		            break;
 		        case "text":
-		            echo "<input" . ($question->options->length ? " maxlength='{$question->options->length}'" : "") . " name='answer-{$id}[]'" . ($required ? " required='true'" : "") . ">\n";
+		            echo "<input" . ($question->options->length ? " maxlength='{$question->options->length}'" : "") . " name='answer-{$id}[]' value='$prevAns'" . ($required ? " required='true'" : "") . ">\n";
 		            break;
 		        case "number":
-		            echo "<input type='number'" . (strlen($question->options->min) ? " min='{$question->options->min}'" : "") . ($question->options->max ? " max='{$question->options->max}'" : "") . " name='answer-{$id}[]'" . ($required ? " required='true'" : "") . ">\n";
+		            echo "<input type='number'" . (strlen($question->options->min) ? " min='{$question->options->min}'" : "") . ($question->options->max ? " max='{$question->options->max}'" : "") . " name='answer-{$id}[]' value='$prevAns'" . ($required ? " required='true'" : "") . ">\n";
 		            break;
 		    }
 		    echo "</fieldset>";
 		}
-		// We need to inject verification code for checking required questions here - can't be done in central js file. 
+		// We need to inject verification JS code for checking required questions here - can't be done in central js file. 
 		echo "<script>reqCheckRadios = " . json_encode($requiredCheckboxradios) . ";</script>";
 
 		if (count($questions)) echo "</div>\n\n";
 		?>
 		
 		
-		<?php if ($currentUser->id) { ?>
+		<?php if ($booking->userId) { 
+            $bookUser = new User($booking->userId); ?>
 			<p class='ui-body ui-body-a'>
-				Du är inloggad som <?= htmlspecialchars($currentUser->name) ?>, med följande kontaktuppgifter:<br>
-				&#9742;: <?= htmlspecialchars($currentUser->phone) ?><br>
-				<b>@</b>: <?= htmlspecialchars($currentUser->mail) ?>
+				Bokningen görs för <?= htmlspecialchars($bookUser->name) ?>.<br>
+				Medlemsnummer: <?= $bookUser->id ?><br>
+				&#9742;: <?= htmlspecialchars($bookUser->phone) ?><br>
+				<b>@</b>: <?= htmlspecialchars($bookUser->mail) ?>
 			</p>
-			<input type="hidden" name="booker-mail" value="<?= htmlspecialchars($currentUser->mail) ?>">
-			<input type="hidden" name="booker-name" value="<?= htmlspecialchars($currentUser->name) ?>">
 		<?php } else { ?>
     	    <div class='ui-body ui-body-a'>Ange dina kontaktuppgifter så vi kan nå dig vid frågor:<br>
     			<div class="ui-field-contain">
     				<label for="booker-name" class="required">Namn:</label>
-    				<input type="text" name="booker-name" id="booker-name" required placeholder="Namn">
+    				<input type="text" name="extName" id="booker-name" required placeholder="Namn" value="<?= $booking->extName ?>">
     			</div>
     			<div class="ui-field-contain">
     				<label for="booker-mail" class="required">Epost:</label>
-    				<input type="email" name="booker-mail" id="booker-mail" required placeholder="Epost">
+    				<input type="email" name="extMail" id="booker-mail" required placeholder="Epost" value="<?= $booking->extMail ?>">
     			</div>
     			<div class="ui-field-contain">
     				<label for="booker-phone" class="required">Telefon:</label>
-    				<input type="tel" name="booker-phone" id="booker-phone" required placeholder="Mobilnummer">
+    				<input type="tel" name="extPhone" id="booker-phone" required placeholder="Mobilnummer" value="<?= $booking->extPhone ?>">
     			</div>
     		</div>
 		<?php } ?>
 		
-		<textarea name="commentCust" placeholder="Här kan du lämna valfritt meddelande."><?= $booking->commentCust ?></textarea>
+		Här kan du lämna valfritt meddelande:<textarea name="commentCust" placeholder="Plats för meddelande"><?= $booking->commentCust ?></textarea>
+		
+		<?php
+		if ($isSomeCatAdmin) echo "Intern anteckning:<br><textarea name='commentIntern' placeholder='Intern anteckning'>{$booking->commentIntern}</textarea>";
+		?>
 
-    	<input type="submit" data-icon="carat-r" data-iconpos="right" data-theme="b" data-corners="false" value="Bekräfta bokningen">
+    	<input type="submit" data-icon="carat-r" data-iconpos="right" data-theme="b" data-corners="false" value="Slutför bokningen">
     	<a href="#" onClick="deleteBooking(<? $_SESSION['authenticatedUser'] ?>);" class='ui-btn ui-btn-c ui-icon-delete ui-btn-icon-right'>Ta bort bokningen</a>
     </form>
     

@@ -4,7 +4,6 @@ use FFBoka\Section;
 use FFBoka\User;
 use FFBoka\Question;
 use FFBoka\Category;
-$message = "";
 
 /**
  * Get the list of admins for this section
@@ -25,28 +24,28 @@ session_start();
 require(__DIR__."/../inc/common.php");
 global $cfg, $FF;
 
-// This page may only be accessed by registered users
-if (!$_SESSION['authenticatedUser']) {
-    header("Location: /?action=sessionExpired");
-    die();
-}
-
 // Set current section and user
 if ($_GET['sectionId']) $_SESSION['sectionId'] = $_GET['sectionId'];
 if (!$_SESSION['sectionId']) {
-    header("Location: /?action=sessionExpired");
+    header("Location: /");
     die();
 }
 $section = new Section($_SESSION['sectionId']);
-$currentUser = new User($_SESSION['authenticatedUser']);
 
+// This page may only be accessed by registered users
+if (!$_SESSION['authenticatedUser']) {
+    header("Location: /?action=accessDenied&to=" . urlencode("administrationssidan för {$section->name}"));
+    die();
+}
 // Only allow users which have at least some admin role in this section
+$currentUser = new User($_SESSION['authenticatedUser']);
 if (!$section->showFor($currentUser, FFBoka::ACCESS_CATADMIN)) {
     header("Location: /?action=accessDenied&to=" . urlencode("administrationssidan för {$section->name}"));
     die();
 }
 $userAccess = $section->getAccess($currentUser);
 
+if ($_REQUEST['message']) $message = $_REQUEST['message'];
 
 /**
  * Find all categories in section which contain items but do not have an admin who at least can confirm bookings.

@@ -54,6 +54,7 @@ class Booking extends FFBoka {
             case "extName":
             case "extPhone":
             case "extMail":
+            case "token":
                 $stmt = self::$db->query("SELECT $name FROM bookings WHERE bookingId={$this->id}");
                 $row = $stmt->fetch(PDO::FETCH_OBJ);
                 return $row->$name;
@@ -61,6 +62,10 @@ class Booking extends FFBoka {
                 // We just follow the path of one item in the booking to get to the section (all belong to same section)
                 $stmt = self::$db->query("SELECT sectionId FROM subbookings INNER JOIN booked_items USING (subbookingId) INNER JOIN items USING (itemId) INNER JOIN categories USING (catId) WHERE bookingId={$this->id}");
                 return $stmt->fetch(\PDO::FETCH_OBJ)->sectionId;
+            case "price":
+                $stmt = self::$db->query("SELECT SUM(price) price FROM booked_items INNER JOIN subbookings USING (subbookingId) WHERE bookingId={$this->id} AND NOT price IS NULL");
+                $row = $stmt->fetch(PDO::FETCH_OBJ);
+                return is_null($row->price) ? 0 : $row->price;
             default:
                 throw new \Exception("Use of undefined Booking property $name");
         }
@@ -81,13 +86,21 @@ class Booking extends FFBoka {
             case "extName":
             case "extPhone":
             case "extMail":
-                $stmt = self::$db->prepare("UPDATE bookings SET $name=? WHERE userId={$this->id}");
+                $stmt = self::$db->prepare("UPDATE bookings SET $name=? WHERE bookingId={$this->id}");
                 if ($stmt->execute(array($value))) return $value;
                 break;
             default:
                 throw new \Exception("Use of undefined Booking property $name");
         }
         return false;
+    }
+    
+    /**
+     * Get the user of the booking
+     * @return \FFBoka\User empty User for external bookings
+     */
+    public function user() {
+        return new User(is_null($this->userId) ? 0 : $this->userId);
     }
     
     /**
