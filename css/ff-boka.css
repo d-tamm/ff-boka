@@ -3,7 +3,9 @@
 /* Define Friluftsframjandet custom colors */
 :root {
     --FF-blue: #407EC9;
+    --FF-blue-transp: #407EC980;
     --FF-lightblue: #72b2ff;
+    --FF-lightblue-transp: #72b2ff80;
     --FF-cyan: #00A49D;
     --FF-green: #75B22A;
     --FF-yellow: #FBD600;
@@ -176,15 +178,36 @@ li.selected {
     border-left:1px solid var(--FF-gray);
     z-index: 5;
 }
+#book-combined-freebusy-bar ~ .freebusy-tic {
+	cursor: pointer;
+}
+#book-combined-freebusy-bar ~ .freebusy-tic:hover {
+	background: var(--FF-lightblue-transp);
+}
+#book-combined-freebusy-bar ~ .freebusy-tic:active {
+	background: var(--FF-blue-transp);
+}
 .freebusy-tic span {
-    background-color: #ffffffa0;
+    background-color: #ffffff50;
     box-shadow: 0px 0px 4px #ffffff;
 }
 .freebusy-weekend {
 	background-color: var(--FF-weekend);
 }
-
-
+#book-chosen-timeframe {
+	position: absolute;
+	bottom: 0;
+    left: -10px;
+	height: 50%;
+    min-width: 3px;
+	background-color: var(--FF-blue);
+	z-index: 5;
+}
+#book-warning-conflict {
+	color:var(--FF-orange);
+	font-weight:bold;
+	display:none;
+}
 
 
 /* ===== Booking admin ===== */

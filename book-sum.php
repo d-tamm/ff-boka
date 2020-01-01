@@ -161,7 +161,7 @@ switch ($_REQUEST['action']) {
 	    header("Content-Type: application/json");
 	    // Check permissions
 	    $item = new BookedItem($_REQUEST['bookedItemId']);
-	    if ($item->category()->getAccess($currentuser) < FFBoka::ACCESS_CONFIRM || $booking->userId !== $_SESSION['authenticatedUser'] && $_SESSION['token'] != $booking->token) {
+	    if ($item->category()->getAccess($currentUser) < FFBoka::ACCESS_CONFIRM || $booking->userId !== $_SESSION['authenticatedUser'] && $_SESSION['token'] != $booking->token) {
 	        die(json_encode([ "error"=>"Du har inte behörighet att ta bort resursen." ]));
 	    }
 	    $subbooking = $item->subbooking();
@@ -219,7 +219,7 @@ switch ($_REQUEST['action']) {
         }
         
 	case "ajaxSetPrice":
-	    // TODO: continue here
+	    // TODO: ajaxSetPrice - continue coding
 	    die();
 }
 
@@ -259,7 +259,7 @@ switch ($_REQUEST['action']) {
 		        else $questions[$id]=$q->required;
 		    }
 			echo "<li" . (in_array($item->bookedItemId, $unavail) ? " data-theme='c'" : "") . ">";
-			if ($item->category()->getAccess($currentUser) >= FFBoka::ACCESS_CONFIRM) {
+			if ($item->category()->getAccess($currentUser) >= FFBoka::ACCESS_CONFIRM && $item->getStatus()>FFBoka::STATUS_PENDING) {
 			    echo "<div style='font-size:0.6em; text-align:right; position:absolute; top:0px; right:40px; z-index:1; margin:0.5em;'>";
 			    if ($item->getStatus()==FFBoka::STATUS_CONFLICT || $item->getStatus()==FFBoka::STATUS_PREBOOKED) echo "<button id='book-item-btn-confirm-{$item->bookedItemId}' class='ui-btn ui-btn-inline ui-btn-b' style='margin:0px;' onclick=\"confirmBookedItem({$item->bookedItemId});\">Bekräfta</button><br>";
 			    echo "<button class='ui-btn ui-btn-inline ui-btn-b' style='margin:0px;' onclick=\"setPrice({$item->bookedItemId});\">Sätt pris</button>";
