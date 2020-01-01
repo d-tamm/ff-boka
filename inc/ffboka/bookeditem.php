@@ -14,9 +14,9 @@ use PDO;
  */
 class BookedItem extends Item {
     /** The ID of the item's booking (not to be confused with the item ID) */
-    public $bookedItemId;
-    /** The ID of the subbooking the item belongs to */
-    public $subbookingId;
+    private $bookedItemId;
+    /** The ID of the booking the item belongs to */
+    private $bookingId;
     
     /**
      * Initialize bookedItem with ID and get some static properties.
@@ -25,11 +25,11 @@ class BookedItem extends Item {
      */
     public function __construct($bookedItemId){
         if ($bookedItemId) { // Try to return an existing item from database
-            $stmt = self::$db->prepare("SELECT bookedItemId, subbookingId, itemId, catId FROM booked_items INNER JOIN items USING (itemId) WHERE bookedItemId=?");
+            $stmt = self::$db->prepare("SELECT bookedItemId, bookingId, itemId, catId FROM booked_items INNER JOIN items USING (itemId) WHERE bookedItemId=?");
             $stmt->execute(array($bookedItemId));
             if ($row = $stmt->fetch(PDO::FETCH_OBJ)) {
                 $this->bookedItemId = $row->bookedItemId;
-                $this->subbookingId = $row->subbookingId;
+                $this->bookingId = $row->bookingId;
                 $this->id = $row->itemId;
                 $this->catId = $row->catId;
             } else {
@@ -41,25 +41,59 @@ class BookedItem extends Item {
     }
 
     /**
+     * Get booking start time of item
+     * @return int Unix timestamp of start time
+     */
+    public function start() {
+        $stmt = self::$db->query("SELECT UNIX_TIMESTAMP(start) start FROM booked_items WHERE bookedItemId={$this->bookedItemId}");
+        $row = $stmt->fetch(PDO::FETCH_OBJ);
+        return $row->start;
+    }
+
+    /**
+     * Set the booking start time of the item
+     * @param int|string $start Start time as Unix timestamp or string
+     * @return int|bool Unix timestamp of start time, or false on failure
+     */
+    public function setStart($start) {
+        if (is_numeric($start)) $stmt = self::$db->prepare("UPDATE booked_items SET start=FROM_UNIXTIME(?) WHERE bookedItemId={$this->bookedItemId}");
+        else $stmt = self::$db->prepare("UPDATE booked_items SET start=? WHERE bookedItemId={$this->bookedItemId}");
+        if ($stmt->execute(array($start))) return $this->start();
+        else return FALSE;
+    }
+    
+    /**
+     * Set the booking end time of the item
+     * @param int|string $end End time as Unix timestamp or string
+     * @return int|bool Unix timestamp of end time, or false on failure
+     */
+    public function setEnd($end) {
+        if (is_numeric($end)) $stmt = self::$db->prepare("UPDATE booked_items SET end=FROM_UNIXTIME(?) WHERE bookedItemId={$this->bookedItemId}");
+        else $stmt = self::$db->prepare("UPDATE booked_items SET end=? WHERE bookedItemId={$this->bookedItemId}");
+        if ($stmt->execute(array($end))) return $this->end();
+        else return FALSE;
+    }
+    
+    /**
+     * Get booking end time of item
+     * @return int Unix timestamp of end time
+     */
+    public function end() {
+        $stmt = self::$db->query("SELECT UNIX_TIMESTAMP(end) end FROM booked_items WHERE bookedItemId={$this->bookedItemId}");
+        $row = $stmt->fetch(PDO::FETCH_OBJ);
+        return $row->end;
+    }
+    
+    /**
      * Get the booking the item belongs to
      * @return \FFBoka\Booking
      */
     public function booking() {
-        $stmt = self::$db->query("SELECT bookingId FROM subbookings WHERE subbookingId={$this->subbookingId}");
-        $row = $stmt->fetch(\PDO::FETCH_OBJ);
-        return new Booking($row->bookingId);
+        return new Booking($this->bookingId);
     }
     
     /**
-     * Get the subbooking the item belongs to
-     * @return \FFBoka\Subbooking
-     */
-    public function subbooking() {
-        return new Subbooking($this->subbookingId);
-    }
-    
-    /**
-     * Remove bookedItem from its subbooking
+     * Remove bookedItem from its booking
      * @throws \Exception
      * @return boolean True on success
      */
@@ -70,7 +104,7 @@ class BookedItem extends Item {
             throw new \Exception("Failed to remove item from subbooking.");
         }
     }
-    
+
     /**
      * Set the booking status of the item
      * @param int $status One of the FFBoka::STATUS_xx constants
@@ -99,7 +133,7 @@ class BookedItem extends Item {
      */
     public function setPrice(int $price) {
         $stmt = self::$db->prepare("UPDATE booked_items SET price=? WHERE bookedItemId={$this->bookedItemId}");
-        if ($stmt->execute(array($status))) return $status;
+        if ($stmt->execute(array($price))) return $price;
         else return FALSE;
     }
     

@@ -4,8 +4,6 @@ use FFBoka\User;
 use FFBoka\FFBoka;
 use FFBoka\Booking;
 use FFBoka\Question;
-use FFBoka\Subbooking;
-use FFBoka\Category;
 use FFBoka\BookedItem;
 global $cfg;
 

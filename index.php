@@ -129,6 +129,7 @@ if (isset($_REQUEST['message'])) $message = ($message ? "$message<br>" : "") . $
 
 	<img src="resources/liggande-bla.png" style="width:100%; max-width:600px; display:block; margin-left:auto; margin-right:auto;">
 
+	<p class="ui-body ui-body-c">Ombyggnad av koden pågår. Just nu fungerar inte något... Beräknat klart på fredag 3/5. Välkommen åter!</p> 
 	<p class="ui-body ui-body-b">Välkommen till testplattformen för FFs framtida resursbokningssystem! Här kan du följa utvecklingen av projektet och testa. Var inte rädd för att förstöra något, utan försök gärna att utmana funktionerna och hitta svaga punkter!<br>Mer information hittar du på <a style="color:white;" target="_blank" href="https://github.com/d-tamm/ff-boka">GitHub</a></p>
 
 	<?php
