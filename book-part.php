@@ -86,7 +86,10 @@ function getFreebusyCombined($ids, $user, $start) {
 }
     
 
-if (isset($_REQUEST['sectionId'])) $_SESSION['sectionId'] = $_REQUEST['sectionId'];
+if (isset($_REQUEST['sectionId'])) {
+    $_SESSION['sectionId'] = $_REQUEST['sectionId'];
+    unset($_SESSION['bookingId']);
+}
 if (!$_SESSION['sectionId']) {
     header("Location: index.php?action=sessionExpired");
     die();
@@ -95,7 +98,6 @@ if (!$_SESSION['sectionId']) {
 $section = new Section($_SESSION['sectionId']);
 if ($_SESSION['authenticatedUser']) $currentUser = new User($_SESSION['authenticatedUser']);
 else $currentUser = new User(0);
-
 
 switch ($_REQUEST['action']) {
     case "ajaxItemDetails":
@@ -153,7 +155,7 @@ switch ($_REQUEST['action']) {
 	            if (!$item->isAvailable($_REQUEST['start'], $_REQUEST['end'])) $unavail[] = htmlspecialchars($item->caption);
 	        }
 	    }
-	    if (count($unavail)===0) {
+	    if (count($unavail)===0 && $_REQUEST['saveSubbooking']==="true") {
 	        // Times are OK. Create (sub)booking
 	        if (isset($_SESSION['bookingId'])) {
 	            $booking = new Booking($_SESSION['bookingId']);
@@ -225,40 +227,42 @@ switch ($_REQUEST['action']) {
 
     <div id="book-step2" style="display:none">
         <h3 class="ui-bar ui-bar-a">Steg 2. Välj tid</h3>
-        <div id="book-combined-freebusy-container" class="ui-body ui-body-a" style="margin:1em 0;">
-            <h3>Tillgängliga tider</h3>
-            <p>Nedan visas en sammanfattning av tiderna då dina valda poster är tillgängliga / bokade.
-		        <a href="#popup-help-book2" data-rel="popup" class="tooltip ui-btn ui-alt-icon ui-nodisc-icon ui-btn-inline ui-icon-info ui-btn-icon-notext">Tipps</a>
-            </p>
-		    <div data-role="popup" id="popup-help-book2" class="ui-content" data-overlay-theme="b">
-                <span class='freebusy-free' style='display:inline-block; width:2em;'>&nbsp;</span> tillgänglig tid<br>
-                <span class='freebusy-busy' style='display:inline-block; width:2em;'>&nbsp;</span> upptagen tid<br>
-                <span class='freebusy-blocked' style='display:inline-block; width:2em;'>&nbsp;</span> ej bokbar tid<br>
-                <span class='freebusy-unknown' style='display:inline-block; width:2em;'>&nbsp;</span> ingen information tillgänglig<br>
-            </div>
-            <div class='freebusy-bar' style='height:50px;'><div id='book-combined-freebusy-bar'></div><?= Item::freebusyScale(true) ?></div>
-	        <div id='book-access-msg'></div>
+        <p>Nedan visas en sammanfattning av tiderna då dina valda poster är tillgängliga / bokade.
+	        <a href="#popup-help-book2" data-rel="popup" class="tooltip ui-btn ui-alt-icon ui-nodisc-icon ui-btn-inline ui-icon-info ui-btn-icon-notext">Tipps</a>
+        </p>
+	    <div data-role="popup" id="popup-help-book2" class="ui-content" data-overlay-theme="b">
+            <span class='freebusy-free' style='display:inline-block; width:2em;'>&nbsp;</span> tillgänglig tid<br>
+            <span class='freebusy-busy' style='display:inline-block; width:2em;'>&nbsp;</span> upptagen tid<br>
+            <span class='freebusy-blocked' style='display:inline-block; width:2em;'>&nbsp;</span> ej bokbar tid<br>
+            <span class='freebusy-unknown' style='display:inline-block; width:2em;'>&nbsp;</span> ingen information tillgänglig<br>
         </div>
-        
-        <div class="ui-body ui-body-a">
-            <h3>Önskad tid</h3>
-            <div class="ui-field-contain">
-                <label class="required">Från:</label>
-                <fieldset data-role="controlgroup" data-type="horizontal">
-                    <input type="date" id="book-date-start" data-wrapper-class="ui-btn controlgroup-textinput">
-                    <input type="time" id="book-time-start" data-wrapper-class="ui-btn controlgroup-textinput">
-                </fieldset>
-            </div>
-            <div class="ui-field-contain">
-                <label class="required">Till:</label>
-                <fieldset data-role="controlgroup" data-type="horizontal">
-                    <input type="date" id="book-date-end" data-wrapper-class="ui-btn controlgroup-textinput">
-                    <input type="time" id="book-time-end" data-wrapper-class="ui-btn controlgroup-textinput">
-                </fieldset>
-            </div>
-	        <button onClick="checkTimes()">Gå vidare</button>
-        </div>
-    </div><!-- /step 2 -->
+        <div id='book-access-msg'></div>
+
+        <div class='freebusy-bar' style='height:50px;'>
+        	<div id='book-combined-freebusy-bar'></div>
+        	<div id='book-chosen-timeframe'></div>
+        	<?= Item::freebusyScale(true) ?>
+    	</div>
+    	<div id='book-warning-conflict'>Den valda tiden krockar med befintliga bokningar.</div>
+        <div id='book-date-chooser-next-click'>Klicka på önskat startdatum.</div>
+
+		<div class='ui-field-contain'>
+			<label for='book-time-start'>Vald bokningstid från:</label>
+			<div data-role='controlgroup' data-type='horizontal'>
+				<input type='date' id='book-date-start' data-wrapper-class='controlgroup-textinput ui-btn'>
+	        	<select name='book-time-start' id='book-time-start'><?php for ($h=0;$h<24;$h++) echo "<option value='$h'>$h:00</option>"; ?></select>
+			</div>
+		</div>
+		<div class='ui-field-contain'>
+			<label for='book-time-end'>Till:</label>
+			<div data-role='controlgroup' data-type='horizontal'>
+				<input type='date' id='book-date-end' data-wrapper-class='controlgroup-textinput ui-btn'>
+	        	<select name='book-time-end' id='book-time-end'><?php for ($h=0;$h<24;$h++) echo "<option value='$h'>$h:00</option>"; ?></select>
+			</div>
+		</div>
+		
+        <button id="book-btn-save-sub" disabled="disabled" onClick="checkTimes(true);">Gå vidare</button>
+    </div><!-- /#book-step2 -->
     
     </div><!--/main-->
     

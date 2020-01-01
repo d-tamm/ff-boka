@@ -130,7 +130,7 @@ switch ($_REQUEST['action']) {
 <body class='desktop'>
 <div id='booking-admin'>
 	<div id="head">
-        <h1>Bokningar i <?= $section->name ?>, <span id='booking-adm-date'></span></h1>
+        <h1><a href="/index.php"><span class="ui-icon ui-icon-home"></span></a> Bokningar i <?= $section->name ?>, <span id='booking-adm-date'></span></h1>
         <table>
         	<tr><td class='col-caption'>
         		<button title="1 månad bakåt (&larr;)" onClick="scrollDate(-1);"><span class='ui-icon ui-icon-caret-1-w'></span></button>

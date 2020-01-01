@@ -210,10 +210,10 @@ class Item extends FFBoka {
      */
     public static function freebusyScale(bool $weekdays = FALSE, int $days=7) {
         $dayNames = $weekdays ? array("<span>mån</span>","<span>tis</span>","<span>ons</span>","<span>tor</span>","<span>fre</span>","<span>lör</span>","<span>sön</span>") : array_fill(0,$days,"");
-        $style = "border-left:none;";
+        $noborder = "border-left:none;";
         for ($day=0; $day<$days; $day++) {
-            $ret .= "<div class='freebusy-tic' style='$style left:" . (100/$days*$day) . "%;'>{$dayNames[$day]}</div>";
-            $style = "";
+            $ret .= "<div class='freebusy-tic' data-day='$day' style='$noborder " . ($weekdays ? "width:" . (100/$days) . "%; " : "") . "left:" . (100/$days*$day) . "%;'>{$dayNames[$day]}</div>";
+            $noborder = "";
         }
         return $ret;
     }

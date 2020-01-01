@@ -1,5 +1,6 @@
 // General vars
-var toutSetValue;
+var toutSetValue,
+	weekdays = [ 'sön', 'mån', 'tis', 'ons', 'tor', 'fre', 'lör' ];
 
 // Prevent caching of pages
 $(document).on('pagecontainerhide', function (event, ui) { 
@@ -8,7 +9,7 @@ $(document).on('pagecontainerhide', function (event, ui) {
 
 function openBookingAdmin(sectionId) {
 	if (screen.width < 700) {
-		location.href= "/admin/bookings-m.php?sectionId=" + sectionId;		
+		location.href= "/admin/bookings-d.php?sectionId=" + sectionId;		
 	} else {
 		location.href= "/admin/bookings-d.php?sectionId=" + sectionId;
 	}
@@ -31,10 +32,77 @@ $(document).on('pageshow', "#page-start", function() {
 
 
 // ========== book-part.php ==========
-var checkedItems, fbStart, wday;
+var checkedItems,
+	fbStart,
+	wday,
+	startDate,
+	startTime,
+	endDate,
+	endTime,
+	nextDateClick;
 
 $(document).on('pagecreate', "#page-book-part", function() {
     // bind events
+	
+	/**
+	 * User chose start or end time for subbooking
+	 */
+	$("#book-combined-freebusy-bar ~ .freebusy-tic").click(function(event) {
+		var hour = Math.floor(event.offsetX / parseInt($(this).css('width')) * 24);
+		if (nextDateClick=="start") {
+			startDate = new Date(fbStart.valueOf());
+			startDate.setDate(startDate.getDate() + Number(this.dataset.day));
+			startTime = hour;
+		} else {
+			endDate = new Date(fbStart.valueOf());
+			endDate.setDate(endDate.getDate() + Number(this.dataset.day));
+			endTime = hour;
+		}
+		nextDateClick = nextDateClick=="start" ? "end" : "start"; 
+		updateBookedTimeframe();
+		document.activeElement.blur();
+	});
+
+	/**
+	 * User chose a new start date from date picker for subbooking
+	 */
+	$('#book-date-start').change(function(event) {
+		startDate = new Date(this.value);
+        if (startDate<fbStart || startDate.valueOf()>fbStart.valueOf()+7*24*60*60) {
+            // scroll to chosen week
+            fbStart = new Date(this.value);
+            wday = fbStart.getDay() ? fbStart.getDay()-1 : 6; // Weekday, where Monday=0 ... Sunday=6
+            fbStart.setDate(fbStart.getDate() - wday); // Should now be last Monday
+            scrollDate(0);
+        }
+        nextDateClick = "end";
+		updateBookedTimeframe();
+	});
+	
+	/**
+	 * User chose a new end date from date picker for subbooking
+	 */
+	$('#book-date-end').change(function(event) {
+        endDate = new Date(this.value);
+        nextDateClick = "start";
+		updateBookedTimeframe();
+	});
+
+    /**
+     * User chose a new start time from dropdown for subbooking
+     */
+	$('#book-time-start').change(function(event) {
+		startTime = Number(this.value);
+		updateBookedTimeframe();
+	});
+
+    /**
+     * User chose a new end time from dropdown for subbooking
+     */
+	$('#book-time-end').change(function(event) {
+		endTime = Number(this.value);
+		updateBookedTimeframe();
+	});
 });
 
 $(document).on('pageshow', "#page-book-part", function() {
@@ -49,15 +117,25 @@ $(document).on('pageshow', "#page-book-part", function() {
     $(".book-item").removeClass("item-checked");
     // Initialise date chooser
     fbStart = new Date();
+    startTime = fbStart.getHours();
+    endTime = fbStart.getHours();
     fbStart.setHours(0,0,0,0); // Midnight
-    wday = fbStart.getDay() ? fbStart.getDay()-1 : 6; // Weekday, where monday=0 ... sunday=6
-    fbStart.setDate(fbStart.getDate() - wday); // Should now be last monday
+    startDate = new Date(fbStart.valueOf());
+    endDate = new Date(fbStart.valueOf());
+    nextDateClick = "start";
+    wday = fbStart.getDay() ? fbStart.getDay()-1 : 6; // Weekday, where Monday=0 ... Sunday=6
+    fbStart.setDate(fbStart.getDate() - wday); // Should now be last Monday
     scrollDate(0);
+    updateBookedTimeframe();
 });
 
+/**
+ * Scrolls the currently shown freebusy bars to another start date
+ * @param int offset Number of days to scroll
+ */
 function scrollDate(offset) {
     $.mobile.loading("show", {});
-    // Calculate start end end of week
+    // Calculate start and end of week
     fbStart.setDate(fbStart.getDate() + offset);
     var fbEnd = new Date(fbStart.valueOf());
     fbEnd.setDate(fbEnd.getDate() + 6);
@@ -71,10 +149,15 @@ function scrollDate(offset) {
             $("#freebusy-"+key).html(value);
         });
         $("#book-combined-freebusy-bar").html(data.freebusyCombined);
+        updateBookedTimeframe();
         $.mobile.loading("hide", {});
     });
 }
 
+/**
+ * Toggle the item between unselected and selected state, and get updated combined freebusy data
+ * @param itemId ID of item to toggle
+ */
 function toggleItem(itemId){
     if (checkedItems[itemId]) {
         delete checkedItems[itemId];
@@ -104,56 +187,91 @@ function toggleItem(itemId){
     }
 }
 
-function popupItemDetails(id) {
+/**
+ * Show item details in popup
+ * @param itemId ID of item to show
+ */
+function popupItemDetails(itemId) {
     $.mobile.loading("show", {});
-    $.getJSON("book-part.php", { action: "ajaxItemDetails", id: id }, function(data, status) {
+    $.getJSON("book-part.php", { action: "ajaxItemDetails", id: itemId }, function(data, status) {
         $.mobile.loading("hide", {});
         $("#popup-item-details").html(data).popup('open', { transition: "pop", y: 0 });
     });
 }
 
-function checkTimes() {
-    // User has chosen start and end time. Check that the chosen range  
-    // does not collide with existing bookings visible to the user.
-    // First, check that user has entered some times:
-    if ($("#book-date-start").val()=="" | $("#book-time-start").val()=="" | $("#book-date-end").val()=="" | $("#book-time-end").val()=="") {
-        alert("Du måste välja start- och sluttid först.");
-        return false;
+/**
+ * Update currently chosen start and end date/time in user interface
+ */
+function updateBookedTimeframe() {
+    // switch start and end time if start time is after end time
+    if (endDate.valueOf()+endTime*60*60*1000 < startDate.valueOf()+startTime*60*60*1000) {
+        if (nextDateClick == "start") {
+            var temp = new Date(endDate.valueOf());
+            endDate = new Date(startDate.valueOf());
+            startDate = new Date(temp.valueOf());
+            temp = endTime;
+            endTime = startTime;
+            startTime = temp;
+        } else {
+            endDate = new Date(startDate.valueOf());
+            endTime = startTime;
+        }
     }
-    // Ensure that end time is later than start time:
-    var startDate = new Date($("#book-date-start").val() + " " + $("#book-time-start").val());
-    var endDate = new Date($("#book-date-end").val() + " " + $("#book-time-end").val());
-    if (startDate.valueOf() >= endDate.valueOf()) {
-        alert("Du har valt en sluttid som ligger före starttiden.");
-        return false;
+    $("#book-date-start").val( startDate.toLocaleDateString("sv-SE") );
+    $("#book-time-start").val( startTime ).selectmenu("refresh");
+    $("#book-date-end").val( endDate.toLocaleDateString("sv-SE") );
+    $("#book-time-end").val( endTime ).selectmenu("refresh");
+    if (nextDateClick=="start") {
+        $("#book-date-chooser-next-click").html("Klicka på önskat startdatum för att ändra datum.");
+    } else {
+        $("#book-date-chooser-next-click").html("Klicka på önskat slutdatum.");
     }
-    // Send times to server to check availability:
+    $('#book-chosen-timeframe').css('left', ((startDate-fbStart)/1000/60/60+startTime)/24/7*100 + "%");
+    $('#book-chosen-timeframe').css('width', ((endDate-startDate)/1000/60/60-startTime+endTime)/24/7*100 + "%");
+    checkTimes();
+}
+
+/**
+ * Check that the chosen range does not collide with existing bookings visible to the user
+ * @param bool saveSubbooking Whether to also save the subbooking and go to booking summary
+ */
+function checkTimes(saveSubbooking=false) {
     $.mobile.loading("show", {});
+    // Send times to server to check availability:
     $.getJSON("book-part.php", {
         action: "ajaxCheckTimes",
         ids: checkedItems,
-        start: startDate.valueOf()/1000,
-        end: endDate.valueOf()/1000
+        start: startDate.valueOf()/1000 + startTime*60*60,
+        end: endDate.valueOf()/1000 + endTime*60*60,
+        saveSubbooking: saveSubbooking
     }, function(data, status) {
         $.mobile.loading("hide", {});
+		$("#book-btn-save-sub").prop("disabled", !data.timesOK);
         if (data.timesOK) {
-            // Reset subbooking section to prepare for next subbooking
-            checkedItems = {};
-            $(".book-item").removeClass("item-checked");
-            $("#book-step2").hide();
-            $("#book-date-start").val("");
-            $("#book-time-start").val("");
-            $("#book-date-end").val("");
-            $("#book-time-end").val("");
-            // update freebusy
-            scrollDate(0);
-            location.href="book-sum.php";
+        	if (saveSubbooking) {
+	            // Reset subbooking section to prepare for next subbooking
+	            checkedItems = {};
+	            $(".book-item").removeClass("item-checked");
+	            $("#book-step2").hide();
+	            $("#book-date-start").val("");
+	            $("#book-time-start").val("");
+	            $("#book-date-end").val("");
+	            $("#book-time-end").val("");
+	            // update freebusy
+	            scrollDate(0);
+	            location.href="book-sum.php";
+        	}
+    		$("#book-warning-conflict").hide();
         } else {
-            $("#ul-items-unavail").html("");
-            $.each(data.unavail, function( key, item ) {
-                $("#ul-items-unavail").append("<li>"+item+"</li>");
-            });
-            $("#popup-items-unavail").popup('open', { transition: "pop" });
+        	if (saveSubbooking) {
+	            $("#ul-items-unavail").html("");
+	            $.each(data.unavail, function( key, item ) {
+	                $("#ul-items-unavail").append("<li>"+item+"</li>");
+	            });
+	            $("#popup-items-unavail").popup('open', { transition: "pop" });
+        	} else {
+        		$("#book-warning-conflict").show();
+        	}
         }
     });
 }
@@ -166,8 +284,11 @@ var reqCheckRadios;
 
 $(document).on('pagecreate', "#page-book-sum", function() {
     // bind events
+	
+	/**
+	 * Validate required checkboxes and radios before submitting the booking
+	 */
     $("#form-booking").submit(function(event) {
-	    // Validate required checkboxes and radios
 	    $.each(reqCheckRadios, function( id, q ) {
 		    if ($("[name^=answer-"+id+"]:checked").length == 0) {
 			    alert("Du måste först svara på frågan: "+q);
@@ -179,8 +300,10 @@ $(document).on('pagecreate', "#page-book-sum", function() {
     });
 });
 
+/**
+ * Show message if there is any
+ */
 $(document).on('pageshow', "#page-book-sum", function() {
-    // Show message if there is any
     if ($("#msg-page-book-sum").html()) {
         setTimeout(function() {
             $("#popup-msg-page-book-sum").popup('open');
@@ -188,14 +311,22 @@ $(document).on('pageshow', "#page-book-sum", function() {
     }
 });
 
-function popupItemDetails(id) {
+/**
+ * Get item details and show them in a popup
+ * @param int itemId ID of the item to show
+ */
+function popupItemDetails(itemId) {
     $.mobile.loading("show", {});
-    $.getJSON("book-part.php", { action: "ajaxItemDetails", id: id }, function(data, status) {
+    $.getJSON("book-part.php", { action: "ajaxItemDetails", id: itemId }, function(data, status) {
         $.mobile.loading("hide", {});
         $("#popup-item-details").html(data).popup('open', { transition: "pop", y: 0 });
     });
 }
 
+/**
+ * Remove a single item from booking
+ * @param int bookedItemId ID of item to remove
+ */
 function removeItem(bookedItemId) {
     $.mobile.loading("show", {});
     $.getJSON("book-sum.php", {
@@ -209,6 +340,10 @@ function removeItem(bookedItemId) {
     });
 }
 
+/**
+ * Delete the whole booking
+ * @param userId Used to redirect to userdata page for logged in users, or index for guests
+ */
 function deleteBooking(userId=0) {
 	if (confirm("Är du säker på att du vill ta bort din bokning?")) {
 	    $.mobile.loading("show", {});
@@ -222,6 +357,10 @@ function deleteBooking(userId=0) {
 	return false;
 }
 
+/**
+ * Mark an item as confirmed
+ * @param int bookedItemId ID of item to confirm
+ */
 function confirmBookedItem(bookedItemId) {
     $.mobile.loading("show", {});
     $.getJSON("book-sum.php", { action: "ajaxConfirmBookedItem", bookedItemId: bookedItemId }, function(data, status) {
@@ -234,6 +373,10 @@ function confirmBookedItem(bookedItemId) {
     });
 }
 
+/**
+ * Set a price for a booked item
+ * @param bookedItemId ID of item to set the price for
+ */
 function setPrice(bookedItemId) {
 	var price = prompt("Pris för resursen (hela kronor):", "0");
 	if (isNaN(price)) { alert(price + " är inte ett tal."); return; }
@@ -252,6 +395,10 @@ var questionId, questionType;
 
 $(document).on('pagecreate', "#page-admin-section", function() {
     // bind events
+	
+	/**
+	 * Get suggestions for users when adding section admin
+	 */
     $( "#sec-adm-autocomplete" ).on( "filterablebeforefilter", function ( e, data ) {
         var $ul = $( this ),
             $input = $( data.input ),
@@ -276,6 +423,9 @@ $(document).on('pagecreate', "#page-admin-section", function() {
         }
     });
 
+    /**
+     * Update question options when user changes question type 
+     */
     $("input[type=radio][name=sec-question-type]").click( function() {
         showQuestionOptions(this.value);
     });
@@ -294,6 +444,10 @@ $(document).on('pageshow', "#page-admin-section", function() {
     getQuestions();
 });
 
+/**
+ * Update booking question options
+ * @param type Question type to show options for (radio|checkbox|text|number)
+ */
 function showQuestionOptions(type) {
     questionType = type;
     $("#sec-question-opts-checkboxradio").hide();
@@ -313,6 +467,9 @@ function showQuestionOptions(type) {
     }
 }
 
+/**
+ * Get a list of all questions defined in section
+ */
 function getQuestions() {
     $.mobile.loading("show", {});
     $.get("index.php", { action: "ajaxGetQuestions" }, function(data, status) {
@@ -321,6 +478,9 @@ function getQuestions() {
     });
 }
 
+/**
+ * Clear all inputs for booking questions
+ */
 function clearQuestionInputs() {
     $("#sec-question-caption").val("");
     $("#sec-question-choices").val("");
@@ -329,6 +489,9 @@ function clearQuestionInputs() {
     $("#sec-question-max").val("");
 }
 
+/**
+ * Save currently edited booking question
+ */
 function saveQuestion() {
     if ($("#sec-question-caption").val()=="") {
         alert("Du måste skriva in frågan.");
@@ -355,14 +518,23 @@ function saveQuestion() {
     });
 }
 
+/**
+ * Delete booking question
+ * @param id ID of question to delete
+ * @returns
+ */
 function deleteQuestion(id) {
 $.mobile.loading("show", {});
-   $.getJSON("index.php", { action: "ajaxDeleteQuestion", id: id }, function(data, status) {
-    $.mobile.loading("hide", {});
+	$.getJSON("index.php", { action: "ajaxDeleteQuestion", id: id }, function(data, status) {
+	$.mobile.loading("hide", {});
     getQuestions();
    });
 }
 
+/**
+ * Show a popup for editing a booking question
+ * @param id ID of booking question to edit
+ */
 function showQuestion(id) {
     questionId = id;
     clearQuestionInputs();
@@ -394,8 +566,12 @@ function showQuestion(id) {
     }
 }
 
-function addAdmin(id) {
-    $.getJSON("index.php", {action: "ajaxAddSectionAdmin", id: id}, function(data, status) {
+/**
+ * Add a new section admin
+ * @param userId UserId of new admin
+ */
+function addAdmin(userId) {
+    $.getJSON("index.php", {action: "ajaxAddSectionAdmin", id: userId}, function(data, status) {
         if (data['html']) {
             $("#ul-sec-admins").html(data['html']).listview("refresh");
             $("#sec-adm-autocomplete-input").val("");
@@ -406,13 +582,18 @@ function addAdmin(id) {
     });
 }
 
-
-function removeAdmin(id, currentUserId, name) {
-    if (confirm('Du håller på att återkalla admin-behörighet för ' + (currentUserId==id ? "dig själv" : (name ? name : "(okänd)")) + '. Vill du fortsätta?')) {
-        $.getJSON("index.php", {action: "ajaxRemoveSectionAdmin", id: id}, function(data, status) {
+/**
+ * Revoke section admin permissions for a user
+ * @param int userId ID of the affected user
+ * @param int currentUserId ID of user executing the request. Used for special behaviour if user revokes his|her own permissions.
+ * @param string name Name of affected user
+ */
+function removeAdmin(userId, currentUserId, name) {
+    if (confirm('Du håller på att återkalla admin-behörighet för ' + (currentUserId==userId ? "dig själv" : (name ? name : "(okänd)")) + '. Vill du fortsätta?')) {
+        $.getJSON("index.php", {action: "ajaxRemoveSectionAdmin", id: userId}, function(data, status) {
             if (data['html']) {
                 $("#ul-sec-admins").html(data['html']).listview("refresh");
-                if (currentUserId==id) location.reload();
+                if (currentUserId==userId) location.reload();
             } else {
                 alert(data['error']);
             }
@@ -428,30 +609,49 @@ var chosenAccessId;
 
 $(document).on('pagecreate', "#page-admin-category", function() {
     // bind events
+	
+	/**
+	 * Set timeout for saving category caption
+	 */
     $(document).off('input', "#cat-caption").on('input', "#cat-caption", function() {
         clearTimeout(toutSetValue);
         toutSetValue = setTimeout(setCatProp, 1000, "caption", this.value);
     });
 
+    /**
+     * Set timeout for saving changed parent category
+     */
     $(document).off('change', "#cat-parentId").on('change', "#cat-parentId", function() {
         setCatProp("parentId", this.value);
     });
 
+    /**
+     * Set timeout for saving prebook message
+     */
     $(document).off('input', "#cat-prebookMsg").on('input', "#cat-prebookMsg", function() {
         clearTimeout(toutSetValue);
         toutSetValue = setTimeout(setCatProp, 1000, "prebookMsg", this.value);
     });
 
+    /**
+     * Set timeout for saving postbook message
+     */
     $(document).off('input', "#cat-postbookMsg").on('input', "#cat-postbookMsg", function() {
         clearTimeout(toutSetValue);
         toutSetValue = setTimeout(setCatProp, 1000, "postbookMsg", this.value);
     });
 
+    /**
+     * Set timeout for saving buffer time after/around bookings
+     */
     $(document).off('input', "#cat-bufferAfterBooking").on('input', "#cat-bufferAfterBooking", function() {
         clearTimeout(toutSetValue);
         toutSetValue = setTimeout(setCatProp, 1000, "bufferAfterBooking", this.value);
     });
 
+    /**
+     * Save new category image
+     */
     $(document).off('change', "#file-cat-img").on('change', "#file-cat-img", function() {
         // Save image via ajax: https://makitweb.com/how-to-upload-image-file-using-ajax-and-jquery/
         var fd = new FormData();
@@ -479,6 +679,9 @@ $(document).on('pagecreate', "#page-admin-category", function() {
         });
     });
 
+    /**
+     * Get suggestions of users for category contact person
+     */
     $(document).off("filterablebeforefilter", "#cat-contact-autocomplete").on("filterablebeforefilter", "#cat-contact-autocomplete", function ( e, data ) {
         var $ul = $( this ),
             $input = $( data.input ),
@@ -502,7 +705,10 @@ $(document).on('pagecreate', "#page-admin-category", function() {
             });
         }
     });
-    
+
+    /**
+     * Get suggestions of users for adding category admins
+     */
     $(document).off("filterablebeforefilter", "#cat-adm-autocomplete").on("filterablebeforefilter", "#cat-adm-autocomplete", function ( e, data ) {
         var $ul = $( this ),
             $input = $( data.input ),
@@ -526,15 +732,23 @@ $(document).on('pagecreate', "#page-admin-category", function() {
         }
     });
 
+    /**
+     * Step 1 of adding category admin
+     * Triggered when user choses group or specific user for new access rights (step 1)
+     * Remembers choice and shows step 2
+     */
     $(document).off("change", ".cat-access-id").on("change", ".cat-access-id", function(e, data) {
-        // Triggered when user choses group or specific user for new access rights (step 1)
         $(".cat-access-level").attr("checked", false).checkboxradio("refresh");
         chosenAccessId = this.value;
         $("#cat-access-levels").show();
     });
 
+    /**
+     * Step 2 of adding new category admin
+     * Triggered when user choses access level (step 2)
+     * Saves new admin and clears input fields.
+     */
     $(document).off("change", ".cat-access-level").on("change", ".cat-access-level", function() {
-        // Triggered when user choses access level (step 2)
         $.mobile.loading("show", {});
         $("#cat-access-levels").hide();
         $(".cat-access-id").prop("checked", false).checkboxradio("refresh");
@@ -552,6 +766,9 @@ $(document).on('pagecreate', "#page-admin-category", function() {
         });
     });
 
+    /**
+     * Delete category
+     */
     $(document).off('click', "#delete-cat").on('click', "#delete-cat", function() {
         if (confirm("Du håller på att ta bort kategorin och alla poster i den. Fortsätta?")) {
             $.mobile.loading("show", {});
@@ -577,9 +794,13 @@ $(document).on('pageshow', "#page-admin-category", function() {
     chosenAccessId=0;
 });
 
+/**
+ * Revoke category admin permissions
+ * @param userId ID of affected user
+ */
 function unsetAccess(id) {
     $.mobile.loading("show", {});
-    $.get("?action=ajaxSetAccess&id=" + encodeURIComponent(id) + "&access=" + ACCESS_NONE, function(data, status) {
+    $.get("?action=ajaxSetAccess&id=" + encodeURIComponent(userId) + "&access=" + ACCESS_NONE, function(data, status) {
         if (data!=0) {
             $("#assigned-cat-access").html(data).enhanceWithin();
         } else {
@@ -589,6 +810,11 @@ function unsetAccess(id) {
     });
 }
 
+/**
+ * Saves a category property
+ * @param name Name of the property
+ * @param val Value of the property
+ */
 function setCatProp(name, val) {
     $.getJSON("category.php", {action: "ajaxSetCatProp", name: name, value: val}, function(data, status) {
         if (data.status=="OK") {
@@ -600,14 +826,22 @@ function setCatProp(name, val) {
     });
 }
 
-function setContactUser(id) {
-    $.getJSON("category.php", { action: "ajaxSetContactUser", id: id }, function(data, status) {
+/**
+ * Saves contact user and clears user search field
+ * @param userId ID of contact user
+ */
+function setContactUser(userId) {
+    $.getJSON("category.php", { action: "ajaxSetContactUser", id: userId }, function(data, status) {
         $("#cat-contact-data").html(data.html);
         $("#cat-contact-autocomplete-input").val("");
         $("#cat-contact-autocomplete").html("");
     });
 }
 
+/**
+ * Toggles the state of a question between on, off, inherited and mandatory
+ * @param id Question ID
+ */
 function toggleQuestion(id) {
     $.getJSON("category.php", {
         action: "ajaxToggleQuestion",
@@ -623,20 +857,33 @@ function toggleQuestion(id) {
 // ========== admin/item.php ==========
 $(document).on('pagecreate', "#page-admin-item", function() {
     // Bind events
+	
+	/**
+	 * Set timeout for saving item caption
+	 */
     $("#item-caption").on('input', function() {
         clearTimeout(toutSetValue);
         toutSetValue = setTimeout(setItemProp, 1000, "caption", this.value);
     });
     
+    /**
+     * Set timeout for saving item description
+     */
     $("#item-description").on('input', function() {
         clearTimeout(toutSetValue);
         toutSetValue = setTimeout(setItemProp, 1000, "description", this.value);
     });
 
+    /**
+     * Save item active state
+     */
     $("#item-active").click(function() {
         setItemProp("active", this.checked ? 1 : 0);
     });
     
+    /**
+     * Delete item
+     */
     $("#delete-item").click(function() {
         if (confirm("Du håller på att ta bort utrustningen. Fortsätta?")) {
             $.getJSON("item.php", { action: "ajaxDeleteItem" }, function(data, status) {
@@ -646,6 +893,9 @@ $(document).on('pagecreate', "#page-admin-item", function() {
         }
     });
 
+    /**
+     * Add a new image to item
+     */
     $("#file-item-img").change(function() {
         // Save image via ajax: https://makitweb.com/how-to-upload-image-file-using-ajax-and-jquery/
         var fd = new FormData();
@@ -671,8 +921,10 @@ $(document).on('pagecreate', "#page-admin-item", function() {
         });
     });
     
+    /**
+     * Save item image caption
+     */
     $("#item-images").on("input", ".item-img-caption", function(e, data) {
-        // Save image caption to DB via ajax
         var _this = this;
         clearTimeout(toutSetValue);
         toutSetValue = setTimeout(function() {
@@ -697,6 +949,11 @@ $(document).on('pageshow', "#page-admin-item", function() {
     }
 });
 
+/**
+ * Save an item property
+ * @param name Property name
+ * @param val Property value
+ */
 function setItemProp(name, val) {
 	$.getJSON("item.php", {action: "setItemProp", name: name, value: val}, function(data, status) {
 		if (data.status=="OK") {
@@ -708,6 +965,10 @@ function setItemProp(name, val) {
 	});
 }
 
+/**
+ * Delete an item image
+ * @param id Image ID to delete
+ */
 function deleteImage(id) {
     if (confirm("Vill du ta bort denna bild?")) {
         $.getJSON("?action=ajaxDeleteImage&id="+id, function(data, status) {
@@ -737,6 +998,9 @@ $(document).on('pageshow', "#page-userdata", function() {
     }
 });
 
+/**
+ * Delete user account
+ */
 function deleteAccount() {
 	if (window.confirm("Bekräfta att du vill radera ditt konto i resursbokningen. Alla dina bokningar och persondata tas bort från systemet och kan inte återställas!")) {
 		location.href="userdata.php?action=deleteAccount";
