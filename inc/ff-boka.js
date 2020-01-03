@@ -45,7 +45,7 @@ $(document).on('pagecreate', "#page-book-part", function() {
     // bind events
 	
 	/**
-	 * User chose start or end time for subbooking
+	 * User chose start or end time for booking items
 	 */
 	$("#book-combined-freebusy-bar ~ .freebusy-tic").click(function(event) {
 		var hour = Math.floor(event.offsetX / parseInt($(this).css('width')) * 24);
@@ -64,7 +64,7 @@ $(document).on('pagecreate', "#page-book-part", function() {
 	});
 
 	/**
-	 * User chose a new start date from date picker for subbooking
+	 * User chose a new start date from date picker for booking items
 	 */
 	$('#book-date-start').change(function(event) {
 		startDate = new Date(this.value);
@@ -80,7 +80,7 @@ $(document).on('pagecreate', "#page-book-part", function() {
 	});
 	
 	/**
-	 * User chose a new end date from date picker for subbooking
+	 * User chose a new end date from date picker for booking items
 	 */
 	$('#book-date-end').change(function(event) {
         endDate = new Date(this.value);
@@ -89,7 +89,7 @@ $(document).on('pagecreate', "#page-book-part", function() {
 	});
 
     /**
-     * User chose a new start time from dropdown for subbooking
+     * User chose a new start time from dropdown for booking items
      */
 	$('#book-time-start').change(function(event) {
 		startTime = Number(this.value);
@@ -97,7 +97,7 @@ $(document).on('pagecreate', "#page-book-part", function() {
 	});
 
     /**
-     * User chose a new end time from dropdown for subbooking
+     * User chose a new end time from dropdown for booking items
      */
 	$('#book-time-end').change(function(event) {
 		endTime = Number(this.value);
@@ -233,23 +233,22 @@ function updateBookedTimeframe() {
 
 /**
  * Check that the chosen range does not collide with existing bookings visible to the user
- * @param bool saveSubbooking Whether to also save the subbooking and go to booking summary
+ * @param bool save Whether to also save the booking and go to booking summary
  */
-function checkTimes(saveSubbooking=false) {
+function checkTimes(save=false) {
     $.mobile.loading("show", {});
     // Send times to server to check availability:
     $.getJSON("book-part.php", {
-        action: "ajaxCheckTimes",
+        action: (save ? "ajaxSave" : "ajaxCheckTimes"),
         ids: checkedItems,
         start: startDate.valueOf()/1000 + startTime*60*60,
         end: endDate.valueOf()/1000 + endTime*60*60,
-        saveSubbooking: saveSubbooking
     }, function(data, status) {
         $.mobile.loading("hide", {});
 		$("#book-btn-save-sub").prop("disabled", !data.timesOK);
         if (data.timesOK) {
-        	if (saveSubbooking) {
-	            // Reset subbooking section to prepare for next subbooking
+        	if (save) {
+	            // Reset times section to prepare for next booking
 	            checkedItems = {};
 	            $(".book-item").removeClass("item-checked");
 	            $("#book-step2").hide();
@@ -263,7 +262,7 @@ function checkTimes(saveSubbooking=false) {
         	}
     		$("#book-warning-conflict").hide();
         } else {
-        	if (saveSubbooking) {
+        	if (save) {
 	            $("#ul-items-unavail").html("");
 	            $.each(data.unavail, function( key, item ) {
 	                $("#ul-items-unavail").append("<li>"+item+"</li>");
@@ -335,7 +334,6 @@ function removeItem(bookedItemId) {
     }, function(data, status) {
         $.mobile.loading("hide", {});
         if (data.error) alert(data.error);
-        else if (data.status=="booking empty") location.href="book-part.php";
         else location.reload();
     });
 }

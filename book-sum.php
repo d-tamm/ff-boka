@@ -4,7 +4,7 @@ use FFBoka\User;
 use FFBoka\FFBoka;
 use FFBoka\Booking;
 use FFBoka\Question;
-use FFBoka\BookedItem;
+use FFBoka\Item;
 global $cfg;
 
 session_start();
@@ -38,12 +38,10 @@ if (!(
 )) {
     // Last access check: current user must be admin of some used category
     $isAdmin = FALSE;
-    foreach ($booking->subbookings() as $sub) {
-        foreach ($sub->items() as $item) {
-            if ($item->category()->getAccess($currentUser) >= FFBoka::ACCESS_CONFIRM) {
-                $isAdmin = TRUE;
-                break;
-            }
+    foreach ($booking->items() as $item) {
+        if ($item->category()->getAccess($currentUser) >= FFBoka::ACCESS_CONFIRM) {
+            $isAdmin = TRUE;
+            break;
         }
     }
     if (!$isAdmin) {
@@ -59,18 +57,15 @@ $section = new Section($_SESSION['sectionId']);
 // Check if booking collides with existing ones
 $unavail = array();
 $conflicts = array();
-foreach ($booking->subbookings() as $subbooking) {
-    foreach ($subbooking->items() as $item) {
-        if (!$item->isAvailable($subbooking->start, $subbooking->end, $subbooking->id)) {
-            if ($item->category()->getAccess($currentUser) >= FFBoka::ACCESS_PREBOOK) {
-                // User can see freebusy information. Let him change booking.
-                $unavail[] = $item->bookedItemId;
-            } else {
-                // User can't see freebusy information. Flag as conflict upon confirmation.
-                $conflicts[] = $item->bookedItemId;
-            }
+foreach ($booking->items() as $item) {
+    if (!$item->isAvailable($item->start, $item->end)) {
+        if ($item->category()->getAccess($currentUser) >= FFBoka::ACCESS_PREBOOK) {
+            // User can see freebusy information. Let him change booking.
+            $unavail[] = $item->bookedItemId;
+        } else {
+            // User can't see freebusy information. Flag as conflict upon confirmation.
+            $conflicts[] = $item->bookedItemId;
         }
-        
     }
 }
 
@@ -90,23 +85,21 @@ switch ($_REQUEST['action']) {
 		// Set booking status of each item, and build confirmation string incl post-booking messages
 		$leastStatus = FFBoka::STATUS_CONFIRMED;
 		$messages = array();
-		foreach ($booking->subbookings() as $subbooking) {
-		    $mailItems .= "<p><b>Bokat från " . strftime("%F kl %k:00", $subbooking->start) . " till " . strftime("%F kl %k:00", $subbooking->end) . ":</b></p><ul>";
-			foreach ($subbooking->items() as $item) {
-			    $msgRef = "";
-			    foreach ($item->category()->postbookMsgs() as $msg) {
-    			    if (in_array($msg, $messages)) $msgRef .= " (".(array_search($msg, $messages)+1).")";
-    			    else { $messages[] = $msg; $msgRef .= "(".count($messages).")"; }
-			    }
-			    $mailItems .= "<li>" . htmlspecialchars($item->caption) . "$msgRef</li>";
-			    if ($item->category()->getAccess($currentUser) >= FFBoka::ACCESS_BOOK) $status = FFBoka::STATUS_CONFIRMED;
-			    else {
-			        if (in_array($item->bookedItemId, $conflicts)) $status = FFBoka::STATUS_CONFLICT;
-			        else $status = FFBoka::STATUS_PREBOOKED; 
-			    }
-		        $item->setStatus($status);
-		        $leastStatus = $leastStatus & $status;
-	        }
+		foreach ($booking->items() as $item) {
+		    $mailItems .= "<ul>";
+		    $msgRef = "";
+		    foreach ($item->category()->postbookMsgs() as $msg) {
+			    if (in_array($msg, $messages)) $msgRef .= " (".(array_search($msg, $messages)+1).")";
+			    else { $messages[] = $msg; $msgRef .= "(".count($messages).")"; }
+		    }
+		    $mailItems .= "<li><b>" . htmlspecialchars($item->caption) . "</b> " . strftime("%a %F kl %k:00", $item->start) . " till " . strftime("%a %F kl %k:00", $item->end) . " $msgRef</li>";
+		    if ($item->category()->getAccess($currentUser) >= FFBoka::ACCESS_BOOK) $status = FFBoka::STATUS_CONFIRMED;
+		    else {
+		        if (in_array($item->bookedItemId, $conflicts)) $status = FFBoka::STATUS_CONFLICT;
+		        else $status = FFBoka::STATUS_PREBOOKED; 
+		    }
+	        $item->status = $status;
+	        $leastStatus = $leastStatus & $status;
 	        $mailItems .= "</ul>";
 		}
 		$booking->commentCust = $_REQUEST['commentCust'];
@@ -158,63 +151,44 @@ switch ($_REQUEST['action']) {
 	case "ajaxRemoveItem":
 	    header("Content-Type: application/json");
 	    // Check permissions
-	    $item = new BookedItem($_REQUEST['bookedItemId']);
+	    $item = new Item($_REQUEST['bookedItemId'], TRUE);
 	    if ($item->category()->getAccess($currentUser) < FFBoka::ACCESS_CONFIRM || $booking->userId !== $_SESSION['authenticatedUser'] && $_SESSION['token'] != $booking->token) {
 	        die(json_encode([ "error"=>"Du har inte behörighet att ta bort resursen." ]));
 	    }
-	    $subbooking = $item->subbooking();
-	    if ($subbooking->removeItem($_REQUEST['bookedItemId'])) {
-	        if (count($subbooking->items()) == 0) {
-	            if ($subbooking->delete()) {
-	                if (count($booking->subbookings()) == 0) {
-	                    $booking->delete();
-	                    unset($_SESSION['bookingId']);
-	                    die(json_encode([ "status"=>"booking empty" ]));
-	                }
-	            }
-	            else die(json_encode([ "error"=>"Oväntat fel: Kan inte ta bort delbokningen. Kontakta systemadministratören."]));
-	        }
-	        die(json_encode([ "status"=>"OK" ]));
-	    }
-	    die(json_encode([ "error"=>"Oväntat fel: Kan inte ta bort resursen. Kontakta systemadministratören."]));
+	    if ($item->removeFromBooking()) die(json_encode([ "status"=>"OK" ]));
+	    else die(json_encode([ "error"=>"Oväntat fel: Kan inte ta bort resursen. Kontakta systemadministratören."]));
 	    
 	case "ajaxConfirmBookedItem":
 	    header("Content-Type: application/json");
-        $item = new BookedItem($_REQUEST['bookedItemId']);
+        $item = new Item($_REQUEST['bookedItemId'], TRUE);
         if ($item->category()->getAccess($currentUser) < FFBoka::ACCESS_CONFIRM && $booking->userId !== $_SESSION['authenticatedUser'] && $booking->token != $_SESSION['token']) {
             die(json_encode([ "error" => "Du har inte behörighet att bekräfta resursen." ]));
         }
-        if ($item->setStatus(FFBoka::STATUS_CONFIRMED) === FALSE) {
-            die(json_encode([ 'error' => 'Kunde inte sätta status.' ]));
-        } else {
-            // Check if this was the last item to be confirmed in booking
-            $allConfirmed = TRUE;
-            foreach ($item->booking()->subbookings() as $sub) {
-                foreach ($sub->items() as $it) {
-                    if ($it->getStatus() < FFBoka::STATUS_CONFIRMED) { $allConfirmed = FALSE; break; }
-                }
-                if (!$allConfirmed) break;
-            }
-            if ($allConfirmed) {
-                try {
-                    sendmail(
-                        $cfg['mailFrom'], // from
-                        is_null($booking->userId) ? $booking->extMail : $booking->user()->mail, // to
-                        "", // replyTo
-                        "Bokning #{$booking->id} är nu bekräftad", // subject
-                        $cfg['SMTP'], // SMPT options
-                        "all_items_confirmed", // template name
-                        array( // replace
-                            "{{name}}"    => is_null($booking->userId) ? $booking->extName : $booking->user()->name,
-                            "{{bookingLink}}" => "{$cfg['url']}book-sum.php?bookingId={$booking->id}&token={$booking->token}",
-                        )
-                    );
-                } catch(Exception $e) {
-                    die(json_encode([ "error" => "Kunde inte skicka meddelande till användaren:" . $e ]));
-                }
-            }
-            die(json_encode(['status'=>'OK']));
+        $item->status = FFBoka::STATUS_CONFIRMED;
+        // Check if this was the last item to be confirmed in booking
+        $allConfirmed = TRUE;
+        foreach ($item->booking()->items() as $it) {
+            if ($it->status < FFBoka::STATUS_CONFIRMED) { $allConfirmed = FALSE; break; }
         }
+        if ($allConfirmed) {
+            try {
+                sendmail(
+                    $cfg['mailFrom'], // from
+                    is_null($booking->userId) ? $booking->extMail : $booking->user()->mail, // to
+                    "", // replyTo
+                    "Bokning #{$booking->id} är nu bekräftad", // subject
+                    $cfg['SMTP'], // SMPT options
+                    "all_items_confirmed", // template name
+                    array( // replace
+                        "{{name}}"    => is_null($booking->userId) ? $booking->extName : $booking->user()->name,
+                        "{{bookingLink}}" => "{$cfg['url']}book-sum.php?bookingId={$booking->id}&token={$booking->token}",
+                    )
+                );
+            } catch(Exception $e) {
+                die(json_encode([ "error" => "Kunde inte skicka meddelande till användaren:" . $e ]));
+            }
+        }
+        die(json_encode(['status'=>'OK']));
         
 	case "ajaxSetPrice":
 	    // TODO: ajaxSetPrice - continue coding
@@ -248,37 +222,35 @@ switch ($_REQUEST['action']) {
 	<?php
 	$questions = array();
 	$isSomeCatAdmin = FALSE;
-	foreach ($booking->subbookings() as $sub) {
-		echo "<li data-role='list-divider'>" . strftime("%F kl %H", $sub->start) . " &mdash; " . strftime("%F kl %H", $sub->end) . "</li>";
-		foreach ($sub->items() as $item) {
-		    if ($item->category()->getAccess($currentUser) >= FFBoka::ACCESS_CONFIRM) $isSomeCatAdmin=TRUE;
-		    foreach ($item->category()->getQuestions() as $id=>$q) {
-		        if (isset($questions[$id])) $questions[$id]=($questions[$id] || $q->required);
-		        else $questions[$id]=$q->required;
-		    }
-			echo "<li" . (in_array($item->bookedItemId, $unavail) ? " data-theme='c'" : "") . ">";
-			if ($item->category()->getAccess($currentUser) >= FFBoka::ACCESS_CONFIRM && $item->getStatus()>FFBoka::STATUS_PENDING) {
-			    echo "<div style='font-size:0.6em; text-align:right; position:absolute; top:0px; right:40px; z-index:1; margin:0.5em;'>";
-			    if ($item->getStatus()==FFBoka::STATUS_CONFLICT || $item->getStatus()==FFBoka::STATUS_PREBOOKED) echo "<button id='book-item-btn-confirm-{$item->bookedItemId}' class='ui-btn ui-btn-inline ui-btn-b' style='margin:0px;' onclick=\"confirmBookedItem({$item->bookedItemId});\">Bekräfta</button><br>";
-			    echo "<button class='ui-btn ui-btn-inline ui-btn-b' style='margin:0px;' onclick=\"setPrice({$item->bookedItemId});\">Sätt pris</button>";
-			    echo "</div>";
-			}
-			echo "<a href='javascript:popupItemDetails({$item->id})'>" . embedImage($item->getFeaturedImage()->thumb) .
-			"<h3 style='white-space:normal;'>" . htmlspecialchars($item->caption) . "</h3><p>";
-			if (in_array($item->bookedItemId, $unavail)) echo "Inte tillgänglig";
-			else {
-			    switch ($item->getStatus()) {
-			    case FFBoka::STATUS_PENDING: echo "Bokning ej slutförd än"; break;
-			    case FFBoka::STATUS_CONFLICT:
-			    case FFBoka::STATUS_PREBOOKED:
-			        echo "<span id='book-item-status-{$item->bookedItemId}'>Väntar på bekräftelse</span>"; break;
-			    case FFBoka::STATUS_CONFIRMED: echo "Bekräftat"; break;
-			    }
-			}
-			if (!is_null($item->getPrice())) echo "<span id='book-item-price-{$item->bookedItemId}' class='ui-li-count'>{$item->getPrice()} kr</span>";
-		    echo "</p></a>\n";
-		    echo "<a href='#' onClick='removeItem({$item->bookedItemId});'>Ta bort</a></li>\n";
+	foreach ($booking->items() as $item) {
+		if ($item->category()->getAccess($currentUser) >= FFBoka::ACCESS_CONFIRM) $isSomeCatAdmin=TRUE;
+	    foreach ($item->category()->getQuestions() as $id=>$q) {
+	        if (isset($questions[$id])) $questions[$id]=($questions[$id] || $q->required);
+	        else $questions[$id]=$q->required;
+	    }
+		echo "<li" . (in_array($item->bookedItemId, $unavail) ? " data-theme='c'" : "") . ">";
+		if ($item->category()->getAccess($currentUser) >= FFBoka::ACCESS_CONFIRM && $item->status > FFBoka::STATUS_PENDING) {
+		    echo "<div style='font-size:0.6em; text-align:right; position:absolute; top:0px; right:40px; z-index:1; margin:0.5em;'>";
+		    if ($item->status == FFBoka::STATUS_CONFLICT || $item->status == FFBoka::STATUS_PREBOOKED) echo "<button id='book-item-btn-confirm-{$item->bookedItemId}' class='ui-btn ui-btn-inline ui-btn-b' style='margin:0px;' onclick=\"confirmBookedItem({$item->bookedItemId});\">Bekräfta</button><br>";
+		    echo "<button class='ui-btn ui-btn-inline ui-btn-b' style='margin:0px;' onclick=\"setPrice({$item->bookedItemId});\">Sätt pris</button>";
+		    echo "</div>";
 		}
+		echo "<a href='javascript:popupItemDetails({$item->id})'>" . embedImage($item->getFeaturedImage()->thumb) .
+		"<h3 style='white-space:normal;'>" . htmlspecialchars($item->caption) . "</h3><p>";
+		echo strftime("%F kl %H", $item->start) . " &mdash; " . strftime("%F kl %H", $item->end) . "<br>\n";
+		if (in_array($item->bookedItemId, $unavail)) echo "Inte tillgänglig";
+		else {
+		    switch ($item->status) {
+		    case FFBoka::STATUS_PENDING: echo "Bokning ej slutförd än"; break;
+		    case FFBoka::STATUS_CONFLICT:
+		    case FFBoka::STATUS_PREBOOKED:
+		        echo "<span id='book-item-status-{$item->bookedItemId}'>Väntar på bekräftelse</span>"; break;
+		    case FFBoka::STATUS_CONFIRMED: echo "Bekräftat"; break;
+		    }
+		}
+		if (!is_null($item->price)) echo "<span id='book-item-price-{$item->bookedItemId}' class='ui-li-count'>{$item->price} kr</span>";
+	    echo "</p></a>\n";
+	    echo "<a href='#' onClick='removeItem({$item->bookedItemId});'>Ta bort</a></li>\n";
 	}
 	?>
 	</ul>

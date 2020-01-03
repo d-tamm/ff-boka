@@ -15,6 +15,7 @@ class Booking extends FFBoka {
     
     private $id;
     private $userId;
+    private $sectionId;
     
     /**
      * Booking instantiation. 
@@ -23,10 +24,11 @@ class Booking extends FFBoka {
      */
     public function __construct($id) {
         if ($id) { // Try to return an existing booking from database
-            $stmt = self::$db->prepare("SELECT bookingId, userId FROM bookings WHERE bookingId=?");
+            $stmt = self::$db->prepare("SELECT bookingId, sectionId, userId FROM bookings WHERE bookingId=?");
             $stmt->execute(array($id));
             if ($row = $stmt->fetch(PDO::FETCH_OBJ)) {
                 $this->id = $row->bookingId;
+                $this->sectionId = $row->sectionId;
                 $this->userId = $row->userId;
             } else {
                 throw new \Exception("Can't instatiate Booking with ID $id.");
@@ -46,6 +48,7 @@ class Booking extends FFBoka {
         switch ($name) {
             case "id":
             case "userId":
+            case "sectionId":
                 return $this->$name;
             case "timestamp":
             case "commentCust":
@@ -58,10 +61,6 @@ class Booking extends FFBoka {
                 $stmt = self::$db->query("SELECT $name FROM bookings WHERE bookingId={$this->id}");
                 $row = $stmt->fetch(PDO::FETCH_OBJ);
                 return $row->$name;
-            case "sectionId":
-                // We just follow the path of one item in the booking to get to the section (all belong to same section)
-                $stmt = self::$db->query("SELECT sectionId FROM booked_items INNER JOIN items USING (itemId) INNER JOIN categories USING (catId) WHERE bookingId={$this->id}");
-                return $stmt->fetch(\PDO::FETCH_OBJ)->sectionId;
             case "price":
                 $stmt = self::$db->query("SELECT SUM(price) price FROM booked_items WHERE bookingId={$this->id} AND NOT price IS NULL");
                 $row = $stmt->fetch(PDO::FETCH_OBJ);
@@ -104,6 +103,14 @@ class Booking extends FFBoka {
     }
     
     /**
+     * Get the section the booking belongs to
+     * @return \FFBoka\Section
+     */
+    public function section() {
+            return new Section($this->sectionId);
+    }
+
+    /**
      * Remove the whole booking
      * @return bool Success
      */
@@ -126,11 +133,11 @@ class Booking extends FFBoka {
     /**
      * Add an item to the booking.
      * @param int $itemId ID of the item to add
-     * @return int|bool BookedItemID of added item on success, false on failure
+     * @return Item|bool BookedItemID of added item on success, false on failure
      */
     public function addItem(int $itemId) {
         $stmt = self::$db->prepare("INSERT INTO booked_items SET bookingId={$this->id}, itemId=?");
-        if ($stmt->execute(array( $itemId ))) return self::$db->lastInsertId();
+        if ($stmt->execute(array( $itemId ))) return new Item(self::$db->lastInsertId(), TRUE);
         else return FALSE;
     }
 
@@ -146,13 +153,13 @@ class Booking extends FFBoka {
     
     /**
      * Get all items contained in this booking
-     * @return \FFBoka\BookedItem[]
+     * @return Item[]
      */
     public function items() {
         $stmt = self::$db->query("SELECT bookedItemId, status FROM booked_items WHERE bookingId={$this->id}");
         $items = array();
         while ($row = $stmt->fetch(\PDO::FETCH_OBJ)) {
-            $items[] = new BookedItem($row->bookedItemId);
+            $items[] = new Item($row->bookedItemId, TRUE);
         }
         return $items;
     }

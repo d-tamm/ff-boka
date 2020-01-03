@@ -141,8 +141,9 @@ switch ($_REQUEST['action']) {
 	    ]));
 
 	case "ajaxCheckTimes":
+	case "ajaxSave":
 	    // Check that chosen start and end time are OK
-	    // If everything is OK, create a subbooking.
+	    // If everything is OK and "save", create a booking if necessary and save item.
 	    header("Content-Type: application/json");
 	    $unavail = array();
 	    $minAccess = FFBoka::ACCESS_CATADMIN;
@@ -155,21 +156,20 @@ switch ($_REQUEST['action']) {
 	            if (!$item->isAvailable($_REQUEST['start'], $_REQUEST['end'])) $unavail[] = htmlspecialchars($item->caption);
 	        }
 	    }
-	    if (count($unavail)===0 && $_REQUEST['saveSubbooking']==="true") {
-	        // Times are OK. Create (sub)booking
+	    if (count($unavail)===0 && $_REQUEST['action']==="ajaxSave") {
+	        // Times are OK. Create booking
 	        if (isset($_SESSION['bookingId'])) {
 	            $booking = new Booking($_SESSION['bookingId']);
 	        } else {
-	            $booking = $currentUser->addBooking();
+	            $booking = $currentUser->addBooking($section->id);
 	            $_SESSION['bookingId'] = $booking->id;
 	            $_SESSION['token'] = $booking->token;
 	        }
-	        $subbooking = $booking->addSubbooking();
-	        $subbooking->start = $_REQUEST['start'];
-	        $subbooking->end = $_REQUEST['end'];
-			// Add items to subbooking
+			// Add items to booking
 	        foreach (array_keys($_REQUEST['ids']) as $id) {
-	            $subbooking->addItem($id);
+	            $item = $booking->addItem($id);
+	            $item->start = $_REQUEST['start'];
+	            $item->end = $_REQUEST['end'];
 	        }
 	    }
 	    die(json_encode([

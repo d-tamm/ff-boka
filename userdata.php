@@ -70,11 +70,9 @@ if ($_GET['first_login']) $message = "Välkommen till resursbokningen! Innan du 
 			if (count($bookingIds)) {
     			foreach ($bookingIds as $id) {
     			    $b = new Booking($id);
-    			    echo "<li><a href='book-sum.php?bookingId={$b->id}'><p>Bokat {$b->timestamp}:</p>";
-    			    foreach ($b->subbookings() as $sub) {
-    			        foreach ($sub->items() as $item) {
-    			            echo "<p>" . htmlspecialchars($item->caption) . "</p>";
-    			        }
+    			    echo "<li><a href='book-sum.php?bookingId={$b->id}'><p>Bokat {$b->timestamp} i LA {$b->section()->name}:</p>";
+    			    foreach ($b->items() as $item) {
+    			        echo "<p><b>" . htmlspecialchars($item->caption) . "</b> (" . strftime("%F kl %k:00", $item->start) . " &mdash; " . strftime("%F kl %k:00", $item->end) . ")</p>";
     			    }
     			    echo "</a></li>";
     			}
