@@ -120,13 +120,15 @@ class User extends FFBoka {
     
     /**
      * Create a new booking for this user
+     * @param int $sectionId ID of section which this booking belongs to
      * @return \FFBoka\Booking
      */
-    public function addBooking() {
+    public function addBooking(int $sectionId) {
         // Create token
         for ($token = '', $i = 0, $z = strlen($a = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789')-1; $i < 40; $x = rand(0,$z), $token .= $a{$x}, $i++);
-        if ($this->id) self::$db->exec("INSERT INTO bookings SET userId={$this->id}, token='$token'");
-        else self::$db->exec("INSERT INTO bookings SET token='$token'");
+        if ($this->id) $stmt = self::$db->prepare("INSERT INTO bookings SET sectionId=? userId={$this->id}, token='$token'");
+        else $stmt = self::$db->prepare("INSERT INTO bookings SET sectionId=?, token='$token'");
+        $stmt->execute(array($sectionId));
         return new Booking(self::$db->lastInsertId());
     }
     
@@ -144,7 +146,7 @@ class User extends FFBoka {
      * @return int[] booking IDs
      */
     public function unfinishedBookings() {
-        $stmt = self::$db->query("SELECT bookingId FROM booked_items INNER JOIN subbookings USING (subbookingId) INNER JOIN bookings USING (bookingId) WHERE userId={$this->id} AND status=" . FFBoka::STATUS_PENDING);
+        $stmt = self::$db->query("SELECT bookingId FROM booked_items INNER JOIN bookings USING (bookingId) WHERE userId={$this->id} AND status=" . FFBoka::STATUS_PENDING);
         return $stmt->fetchAll(\PDO::FETCH_COLUMN, 0);
     }
     

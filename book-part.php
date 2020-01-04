@@ -102,19 +102,27 @@ else $currentUser = new User(0);
 switch ($_REQUEST['action']) {
     case "ajaxItemDetails":
         header("Content-Type: application/json");
-        $item = new Item($_REQUEST['id']);
-        $ret = "<h3>" . htmlspecialchars($item->caption) . "</h3>";
-        $ret .= str_replace("\n", "<br>", htmlspecialchars($item->description));
+        $item = new Item($_REQUEST['id'], $_REQUEST['bookingStep']==2);
+        if ($_REQUEST['bookingStep']==2) {
+            // Remember for ajax requests for changing booking properties from popup
+            $_SESSION['bookedItemId'] = $_REQUEST['id']; 
+        }
+        $html = "";
+        if ($_REQUEST['bookingStep']==2 && $item->category()->getAccess($currentUser) >= FFBoka::ACCESS_CONFIRM && $item->status > FFBoka::STATUS_PENDING) {
+            $start = $item->start;
+            $end = $item->end;
+        }
+        $html .= str_replace("\n", "<br>", htmlspecialchars($item->description));
         $cat = $item->category();
         foreach ($item->images() as $img) {
-            $ret .= "<div class='item-image'><img src='image.php?type=itemImage&id={$img->id}'><label>" . htmlspecialchars($img->caption) . "</label></div>";
+            $html .= "<div class='item-image'><img src='image.php?type=itemImage&id={$img->id}'><label>" . htmlspecialchars($img->caption) . "</label></div>";
         }
-        $ret .= "<a href='#' data-rel='back' class='ui-btn ui-icon-delete ui-btn-icon-left'>Stäng inforutan</a>";
-        die(json_encode($ret));
+        $html .= "<a href='#' data-rel='back' class='ui-btn ui-icon-delete ui-btn-icon-left'>Stäng inforutan</a>";
+        die(json_encode([ "caption"=>htmlspecialchars($item->caption), "html"=>$html, "start"=>$start, "end"=>$end ]));
 
 	case "ajaxFreebusy":
         // Get freebusy bars for all items in section
-	    // Also include freebusy bar for current selection.
+	    // Also include combined freebusy bar for current selection.
 	    $freebusyBars = array();
 		foreach ($section->getMainCategories() as $cat) {
 			getFreebusy($freebusyBars, $cat, $currentUser, $_REQUEST['start']);
@@ -141,35 +149,43 @@ switch ($_REQUEST['action']) {
 	    ]));
 
 	case "ajaxCheckTimes":
+	case "ajaxSave":
 	    // Check that chosen start and end time are OK
-	    // If everything is OK, create a subbooking.
+	    // If everything is OK and "save", create a booking if necessary and save item.
 	    header("Content-Type: application/json");
 	    $unavail = array();
 	    $minAccess = FFBoka::ACCESS_CATADMIN;
 	    foreach (array_keys($_REQUEST['ids']) as $id) {
 	        // For every item with visible freebusy information, check availability
-	        $item = new Item($id);
+	        $item = new Item($id, $_REQUEST['bookingStep']==2);
 	        $acc = $item->category()->getAccess($currentUser);
 	        $minAccess = ($minAccess & $acc);
 	        if ($acc >= FFBoka::ACCESS_PREBOOK) {
 	            if (!$item->isAvailable($_REQUEST['start'], $_REQUEST['end'])) $unavail[] = htmlspecialchars($item->caption);
 	        }
 	    }
-	    if (count($unavail)===0 && $_REQUEST['saveSubbooking']==="true") {
-	        // Times are OK. Create (sub)booking
-	        if (isset($_SESSION['bookingId'])) {
-	            $booking = new Booking($_SESSION['bookingId']);
+	    if (count($unavail)===0 && $_REQUEST['action']==="ajaxSave") {
+	        // Times are OK. Create or change booking
+	        if ($_REQUEST['bookingStep']==2) {
+	            // In step 2, only single items are modified
+	            $item = new Item(array_keys($_REQUEST['ids'])[0], TRUE);
+	            $item->start = $_REQUEST['start'];
+	            $item->end = $_REQUEST['end'];
 	        } else {
-	            $booking = $currentUser->addBooking();
-	            $_SESSION['bookingId'] = $booking->id;
-	            $_SESSION['token'] = $booking->token;
-	        }
-	        $subbooking = $booking->addSubbooking();
-	        $subbooking->start = $_REQUEST['start'];
-	        $subbooking->end = $_REQUEST['end'];
-			// Add items to subbooking
-	        foreach (array_keys($_REQUEST['ids']) as $id) {
-	            $subbooking->addItem($id);
+	            // Step 1: Several items to save
+    	        if (isset($_SESSION['bookingId'])) {
+    	            $booking = new Booking($_SESSION['bookingId']);
+    	        } else {
+    	            $booking = $currentUser->addBooking($section->id);
+    	            $_SESSION['bookingId'] = $booking->id;
+    	            $_SESSION['token'] = $booking->token;
+    	        }
+    			// Add items to booking
+    	        foreach (array_keys($_REQUEST['ids']) as $id) {
+    	            $item = $booking->addItem($id);
+    	            $item->start = $_REQUEST['start'];
+    	            $item->end = $_REQUEST['end'];
+    	        }
 	        }
 	    }
 	    die(json_encode([
@@ -261,7 +277,7 @@ switch ($_REQUEST['action']) {
 			</div>
 		</div>
 		
-        <button id="book-btn-save-sub" disabled="disabled" onClick="checkTimes(true);">Gå vidare</button>
+        <button id="book-btn-save-part" disabled="disabled" onClick="checkTimes(true);">Gå vidare</button>
     </div><!-- /#book-step2 -->
     
     </div><!--/main-->
@@ -279,7 +295,10 @@ switch ($_REQUEST['action']) {
         </div>
     </div><!--/footer-->
 	
-	<div data-role="popup" id="popup-item-details" class="ui-content" data-overlay-theme="b"></div>
+	<div data-role="popup" id="popup-item-details" class="ui-content" data-overlay-theme="b">
+		<h3 id='item-caption'></h3>
+		<div id='item-details'></div>
+	</div>
 	
 	<div data-role="popup" id="popup-items-unavail" class="ui-content" data-overlay-theme="b">
 		<h3>Kan inte boka</h3>

@@ -12,20 +12,32 @@ use PDO;
  * Bookable items in the booking system.
  */
 class Item extends FFBoka {
-    protected $id;
-    protected $catId;
+    private $id;
+    private $catId;
+    
+    /** The following properties are only applicable if used in booking context.
+     * ID of the item's booking (not to be confused with the item ID) */
+    private $bookedItemId;
+    /** The ID of the booking the item belongs to */
+    private $bookingId;
     
     /**
      * Initialize item with ID and get some static properties.
      * @param int $id ID of requested item. If 0|FALSE|"" or invalid, returns a dummy item with id=0.
+     * @param bool $bookedItem If TRUE, item will belong to a booking and $id is interpreted as bookedItemId instead
      */
-    public function __construct($id){
+    public function __construct($id, $bookedItem=FALSE){
         if ($id) { // Try to return an existing item from database
-            $stmt = self::$db->prepare("SELECT itemId, catId FROM items WHERE itemId=?");
+            if ($bookedItem) $stmt = self::$db->prepare("SELECT bookedItemId, bookingId, itemId, catId FROM booked_items INNER JOIN items USING (itemId) WHERE bookedItemId=?");
+            else $stmt = self::$db->prepare("SELECT itemId, catId FROM items WHERE itemId=?");
             $stmt->execute(array($id));
             if ($row = $stmt->fetch(PDO::FETCH_OBJ)) {
                 $this->id = $row->itemId;
                 $this->catId = $row->catId;
+                if ($bookedItem) {
+                    $this->bookedItemId = $row->bookedItemId;
+                    $this->bookingId = $row->bookingId;
+                }
             } else {
                 $this->id = 0;
             }
@@ -37,7 +49,7 @@ class Item extends FFBoka {
     /**
      * Setter function for item properties
      * @param string $name
-     * @param string|int|Image $value
+     * @param string|int $value
      * @throws \Exception
      * @return string|boolean
      */
@@ -56,6 +68,18 @@ class Item extends FFBoka {
                 $stmt = self::$db->prepare("UPDATE items SET $name=? WHERE itemId={$this->id}");
                 if ($stmt->execute(array($value))) return $value;
                 break;
+                
+            case "price":
+            case "status":
+            case "start": // int|string Start time as Unix timestamp or string
+            case "end": // int|string Start time as Unix timestamp or string
+                if ($this->bookedItemId) {
+                    if (($name=="start" || $name=="end") && is_numeric($value)) $stmt = self::$db->prepare("UPDATE booked_items SET $name=FROM_UNIXTIME(?) WHERE bookedItemId={$this->bookedItemId}");
+                    else $stmt = self::$db->prepare("UPDATE booked_items SET $name=? WHERE bookedItemId={$this->bookedItemId}");
+                    if ($stmt->execute(array($value))) return $this->$name;
+                    else return FALSE;
+                } else throw new \Exception("Cannot set $name property on item without bookedItemId.");
+                
             default:
                 throw new \Exception("Use of undefined Item property $name");
         }
@@ -74,12 +98,14 @@ class Item extends FFBoka {
     /**
      * Getter function for item properties
      * @param string $name Name of the property
-     * @return string Value of the property.
+     * @throws \Exception
+     * @return string|int Value of the property.
      */
     public function __get($name) {
         switch ($name) {
             case "id":
             case "catId":
+            case "bookedItemId":
                 return $this->$name;
                 
             case "caption":
@@ -91,6 +117,17 @@ class Item extends FFBoka {
                 $row = $stmt->fetch(PDO::FETCH_OBJ);
                 return $row->$name;
                 
+            case "price":
+            case "status":
+            case "start": // booking start time (as unix timestamp) of booked item
+            case "end": // booking end time (as unix timestamp) of booked item
+                if ($this->bookedItemId) {
+                    if ($name=="start" || $name=="end") $stmt = self::$db->query("SELECT UNIX_TIMESTAMP($name) $name FROM booked_items WHERE bookedItemId={$this->bookedItemId}");
+                    else $stmt = self::$db->query("SELECT $name FROM booked_items WHERE bookedItemId={$this->bookedItemId}");
+                    $row = $stmt->fetch(PDO::FETCH_OBJ);
+                    return $row->$name;
+                } else throw new \Exception("Cannot get $name property on item without bookedItemId.");
+
             default:
                 throw new \Exception("Use of undefined Item property $name");
         }
@@ -103,6 +140,15 @@ class Item extends FFBoka {
     public function category() {
         return new Category($this->catId);
     }
+
+    /**
+     * Get the booking the item belongs to
+     * @return \FFBoka\Booking|false
+     */
+    public function booking() {
+        if ($this->bookingId) return new Booking($this->bookingId);
+        else return FALSE;
+    }
     
     /**
      * Remove item from database
@@ -114,6 +160,21 @@ class Item extends FFBoka {
             return TRUE;
         } else {
             throw new \Exception("Failed to delete item.");
+        }
+    }
+    
+    /**
+     * Remove bookedItem from its booking
+     * @throws \Exception
+     * @return boolean True on success
+     */
+    public function removeFromBooking() {
+        if (self::$db->exec("DELETE FROM booked_items WHERE bookedItemId={$this->bookedItemId}")) {
+            unset($this->bookedItemId);
+            unset($this->bookingId);
+            return TRUE;
+        } else {
+            throw new \Exception("Failed to remove item from booking.");
         }
     }
     
@@ -167,7 +228,7 @@ class Item extends FFBoka {
     }
     
     /**
-     * Get a linear representation of free-busy information for one week
+     * Get a linear representation of free-busy information
      * @param mixed $params Associative array of parameters. Supported elements are:<br>
      * <b>start</b> (int) First day of week to show, unix timestamp<br>
      * <b>scale</b> (bool) Whether to include the weekday scale. Default: False.<br>
@@ -188,7 +249,26 @@ class Item extends FFBoka {
 		$stmt = self::$db->prepare("SET @start = :start");
 		$stmt->execute(array(":start"=>$start));
 		// Get freebusy information.
-        $stmt = self::$db->query("SELECT bookingId, subbookingId, bookedItemId, status, token, bufferAfterBooking, DATE_SUB(start, INTERVAL bufferAfterBooking HOUR) start, UNIX_TIMESTAMP(start) unixStart, DATE_ADD(end, INTERVAL bufferAfterBooking HOUR) end, UNIX_TIMESTAMP(end) unixEnd FROM booked_items INNER JOIN subbookings USING (subbookingId) INNER JOIN bookings USING (bookingId) INNER JOIN items USING (itemId) INNER JOIN categories USING (catId) WHERE itemId={$this->id} AND booked_items.status>=$minStatus AND ((UNIX_TIMESTAMP(start)-bufferAfterBooking*3600<@start AND UNIX_TIMESTAMP(end)+bufferAfterBooking*3600>@start+$secs) OR (UNIX_TIMESTAMP(start)-bufferAfterBooking*3600>@start AND UNIX_TIMESTAMP(start)-bufferAfterBooking*3600<@start+$secs) OR (UNIX_TIMESTAMP(end)+bufferAfterBooking*3600>@start AND UNIX_TIMESTAMP(end)+bufferAfterBooking*3600<@start+$secs))");
+        $stmt = self::$db->query("
+            SELECT bookingId, bookedItemId, status, token, bufferAfterBooking, DATE_SUB(start, INTERVAL bufferAfterBooking HOUR) start, UNIX_TIMESTAMP(start) unixStart, DATE_ADD(end, INTERVAL bufferAfterBooking HOUR) end, UNIX_TIMESTAMP(end) unixEnd 
+            FROM booked_items 
+            INNER JOIN bookings USING (bookingId) 
+            INNER JOIN items USING (itemId) 
+            INNER JOIN categories USING (catId) 
+            WHERE 
+                itemId={$this->id} " . 
+                (isset($this->bookedItemId) ? "AND bookedItemId != {$this->bookedItemId} " : "") . " 
+            AND 
+                booked_items.status>=$minStatus 
+            AND (
+                    (
+                        UNIX_TIMESTAMP(start)-bufferAfterBooking*3600<@start AND UNIX_TIMESTAMP(end)+bufferAfterBooking*3600>@start+$secs
+                    ) OR (
+                        UNIX_TIMESTAMP(start)-bufferAfterBooking*3600>@start AND UNIX_TIMESTAMP(start)-bufferAfterBooking*3600<@start+$secs
+                    ) OR (
+                        UNIX_TIMESTAMP(end)+bufferAfterBooking*3600>@start AND UNIX_TIMESTAMP(end)+bufferAfterBooking*3600<@start+$secs
+                    )
+                )");
 
         $ret = "";
         if ($scale) $ret .= self::freebusyWeekends($start, $days);
@@ -196,7 +276,7 @@ class Item extends FFBoka {
             if ($row->bufferAfterBooking) {
                 $ret .= "<div class='freebusy-blocked' style='left:" . (($row->unixStart-$start-$row->bufferAfterBooking*3600)/$secs*100) . "%; width:" . (($row->unixEnd - $row->unixStart + 2*$row->bufferAfterBooking*3600)/$secs*100) . "%' title='ej bokbar'></div>";
             }
-            $ret .= "<div class='freebusy-busy" . ($row->status==FFBoka::STATUS_PREBOOKED ? " unconfirmed" : "") . ($row->status==FFBoka::STATUS_CONFLICT ? " conflict" : "") . "' data-booking-id='{$row->bookingId}' data-subbooking-id='{$row->subbookingId}' data-booked-item-id='{$row->bookedItemId}' " . ($includeTokens ? "data-token='{$row->token}' " : "") . "style='left:" . (($row->unixStart - $start) / $secs * 100) . "%; width:" . (($row->unixEnd - $row->unixStart) / $secs * 100) . "%;' title='{$row->start} till {$row->end}'></div>";
+            $ret .= "<div class='freebusy-busy" . ($row->status==FFBoka::STATUS_PREBOOKED ? " unconfirmed" : "") . ($row->status==FFBoka::STATUS_CONFLICT ? " conflict" : "") . "' data-booking-id='{$row->bookingId}' data-booked-item-id='{$row->bookedItemId}' " . ($includeTokens ? "data-token='{$row->token}' " : "") . "style='left:" . (($row->unixStart - $start) / $secs * 100) . "%; width:" . (($row->unixEnd - $row->unixStart) / $secs * 100) . "%;' title='{$row->start} till {$row->end}'></div>";
         }
         if ($scale) $ret .= self::freebusyScale(false, $days);
         return $ret;
@@ -248,13 +328,30 @@ class Item extends FFBoka {
      * Check whether the item is available in the given range.
      * @param int $start Unix timestamp
      * @param int $end Unix timestamp
-     * @param int $ignoreSubId Optional, don't count this subbooking as conflicting.
-     * @return boolean False if there is any subbooking partly or completely inside the given range
+     * @return boolean False if there is any booking partly or completely inside the given range
      */
-    public function isAvailable(int $start, int $end, int $ignoreSubId=0) {
+    public function isAvailable(int $start, int $end) {
         $stmt = self::$db->prepare("SET @start = :start, @end = :end");
         $stmt->execute(array(":start"=>$start, ":end"=>$end));
-        $stmt = self::$db->query("SELECT subbookingId FROM booked_items INNER JOIN subbookings USING (subbookingId) INNER JOIN bookings USING (bookingId) INNER JOIN items USING (itemId) INNER JOIN categories USING (catId) WHERE itemId={$this->id} AND booked_items.status>=" . FFBoka::STATUS_PREBOOKED . " AND subbookingId!=$ignoreSubId AND ((UNIX_TIMESTAMP(start)-bufferAfterBooking*3600<=@start AND UNIX_TIMESTAMP(end)+bufferAfterBooking*3600>=@end) OR (UNIX_TIMESTAMP(start)-bufferAfterBooking*3600>=@start AND UNIX_TIMESTAMP(start)-bufferAfterBooking*3600<@end) OR (UNIX_TIMESTAMP(end)+bufferAfterBooking*3600>@start AND UNIX_TIMESTAMP(end)+bufferAfterBooking*3600<=@end))");
+        $stmt = self::$db->query("
+            SELECT bookingId FROM booked_items 
+                INNER JOIN bookings USING (bookingId) 
+                INNER JOIN items USING (itemId)
+                INNER JOIN categories USING (catId)
+            WHERE
+                itemId={$this->id} " . 
+                (isset($this->bookedItemId) ? "AND bookedItemId != {$this->bookedItemId} " : "") . 
+                "AND booked_items.status>=" . FFBoka::STATUS_PREBOOKED . " 
+                AND (
+                    (UNIX_TIMESTAMP(start)-bufferAfterBooking*3600<=@start AND UNIX_TIMESTAMP(end)+bufferAfterBooking*3600>=@end) 
+                    OR (
+                        UNIX_TIMESTAMP(start)-bufferAfterBooking*3600>=@start 
+                        AND UNIX_TIMESTAMP(start)-bufferAfterBooking*3600<@end
+                    ) OR (
+                        UNIX_TIMESTAMP(end)+bufferAfterBooking*3600>@start 
+                        AND UNIX_TIMESTAMP(end)+bufferAfterBooking*3600<=@end
+                    )
+                )");
         return ($stmt->rowCount()===0);
     }
 }

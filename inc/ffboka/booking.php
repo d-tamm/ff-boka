@@ -9,12 +9,13 @@ use PDO;
 
 /**
  * Class Booking
- * Class containing complete booking, with one or more subbookings.
+ * Class containing complete booking.
  */
 class Booking extends FFBoka {
     
     private $id;
     private $userId;
+    private $sectionId;
     
     /**
      * Booking instantiation. 
@@ -23,10 +24,11 @@ class Booking extends FFBoka {
      */
     public function __construct($id) {
         if ($id) { // Try to return an existing booking from database
-            $stmt = self::$db->prepare("SELECT bookingId, userId FROM bookings WHERE bookingId=?");
+            $stmt = self::$db->prepare("SELECT bookingId, sectionId, userId FROM bookings WHERE bookingId=?");
             $stmt->execute(array($id));
             if ($row = $stmt->fetch(PDO::FETCH_OBJ)) {
                 $this->id = $row->bookingId;
+                $this->sectionId = $row->sectionId;
                 $this->userId = $row->userId;
             } else {
                 throw new \Exception("Can't instatiate Booking with ID $id.");
@@ -46,6 +48,7 @@ class Booking extends FFBoka {
         switch ($name) {
             case "id":
             case "userId":
+            case "sectionId":
                 return $this->$name;
             case "timestamp":
             case "commentCust":
@@ -58,12 +61,8 @@ class Booking extends FFBoka {
                 $stmt = self::$db->query("SELECT $name FROM bookings WHERE bookingId={$this->id}");
                 $row = $stmt->fetch(PDO::FETCH_OBJ);
                 return $row->$name;
-            case "sectionId":
-                // We just follow the path of one item in the booking to get to the section (all belong to same section)
-                $stmt = self::$db->query("SELECT sectionId FROM subbookings INNER JOIN booked_items USING (subbookingId) INNER JOIN items USING (itemId) INNER JOIN categories USING (catId) WHERE bookingId={$this->id}");
-                return $stmt->fetch(\PDO::FETCH_OBJ)->sectionId;
             case "price":
-                $stmt = self::$db->query("SELECT SUM(price) price FROM booked_items INNER JOIN subbookings USING (subbookingId) WHERE bookingId={$this->id} AND NOT price IS NULL");
+                $stmt = self::$db->query("SELECT SUM(price) price FROM booked_items WHERE bookingId={$this->id} AND NOT price IS NULL");
                 $row = $stmt->fetch(PDO::FETCH_OBJ);
                 return is_null($row->price) ? 0 : $row->price;
             default:
@@ -104,6 +103,14 @@ class Booking extends FFBoka {
     }
     
     /**
+     * Get the section the booking belongs to
+     * @return \FFBoka\Section
+     */
+    public function section() {
+            return new Section($this->sectionId);
+    }
+
+    /**
      * Remove the whole booking
      * @return bool Success
      */
@@ -117,36 +124,46 @@ class Booking extends FFBoka {
      */
     public function status() {
         $leastStatus = FFBoka::STATUS_CONFIRMED;
-        foreach ($this->subbookings() as $sub) {
-            foreach ($sub->items() as $item) {
-                $leastStatus = $leastStatus & $item->getStatus();
-            }
+        foreach ($this->items() as $item) {
+            $leastStatus = $leastStatus & $item->getStatus();
         }
         return $leastStatus;
     }
     
     /**
-     * Create a new subbooking
-     * @return \FFBoka\Subbooking
+     * Add an item to the booking.
+     * @param int $itemId ID of the item to add
+     * @return Item|bool BookedItemID of added item on success, false on failure
      */
-    public function addSubbooking() {
-        self::$db->exec("INSERT INTO subbookings SET bookingId={$this->id}");
-        return new Subbooking(self::$db->lastInsertId());
+    public function addItem(int $itemId) {
+        $stmt = self::$db->prepare("INSERT INTO booked_items SET bookingId={$this->id}, itemId=?");
+        if ($stmt->execute(array( $itemId ))) return new Item(self::$db->lastInsertId(), TRUE);
+        else return FALSE;
     }
 
     /**
-     * Get all subbookings belonging to this booking.
-     * @return \FFBoka\Subbooking[]
+     * Remove an item from the booking
+     * @param int $bookedItemId Booking ID of the item to be removed
+     * @return bool True on success
      */
-    public function subbookings() {
-        $stmt = self::$db->query("SELECT subbookingId FROM subbookings WHERE bookingId={$this->id}");
-        $subs = array();
-        while ($row = $stmt->fetch(\PDO::FETCH_OBJ)) {
-            $subs[] = new Subbooking($row->subbookingId);
-        }
-        return $subs;
+    public function removeItem(int $bookedItemId) {
+        $stmt = self::$db->prepare("DELETE FROM booked_items WHERE bookedItemId=?");
+        return $stmt->execute(array( $bookedItemId ));
     }
     
+    /**
+     * Get all items contained in this booking
+     * @return Item[]
+     */
+    public function items() {
+        $stmt = self::$db->query("SELECT bookedItemId, status FROM booked_items WHERE bookingId={$this->id}");
+        $items = array();
+        while ($row = $stmt->fetch(\PDO::FETCH_OBJ)) {
+            $items[] = new Item($row->bookedItemId, TRUE);
+        }
+        return $items;
+    }
+
     /**
      * Add the answer to a booking question to the booking
      * @param string $question The asked question
