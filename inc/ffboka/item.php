@@ -228,7 +228,7 @@ class Item extends FFBoka {
     }
     
     /**
-     * Get a linear representation of free-busy information for one week
+     * Get a linear representation of free-busy information
      * @param mixed $params Associative array of parameters. Supported elements are:<br>
      * <b>start</b> (int) First day of week to show, unix timestamp<br>
      * <b>scale</b> (bool) Whether to include the weekday scale. Default: False.<br>
@@ -249,7 +249,26 @@ class Item extends FFBoka {
 		$stmt = self::$db->prepare("SET @start = :start");
 		$stmt->execute(array(":start"=>$start));
 		// Get freebusy information.
-        $stmt = self::$db->query("SELECT bookingId, bookedItemId, status, token, bufferAfterBooking, DATE_SUB(start, INTERVAL bufferAfterBooking HOUR) start, UNIX_TIMESTAMP(start) unixStart, DATE_ADD(end, INTERVAL bufferAfterBooking HOUR) end, UNIX_TIMESTAMP(end) unixEnd FROM booked_items INNER JOIN bookings USING (bookingId) INNER JOIN items USING (itemId) INNER JOIN categories USING (catId) WHERE itemId={$this->id} AND booked_items.status>=$minStatus AND ((UNIX_TIMESTAMP(start)-bufferAfterBooking*3600<@start AND UNIX_TIMESTAMP(end)+bufferAfterBooking*3600>@start+$secs) OR (UNIX_TIMESTAMP(start)-bufferAfterBooking*3600>@start AND UNIX_TIMESTAMP(start)-bufferAfterBooking*3600<@start+$secs) OR (UNIX_TIMESTAMP(end)+bufferAfterBooking*3600>@start AND UNIX_TIMESTAMP(end)+bufferAfterBooking*3600<@start+$secs))");
+        $stmt = self::$db->query("
+            SELECT bookingId, bookedItemId, status, token, bufferAfterBooking, DATE_SUB(start, INTERVAL bufferAfterBooking HOUR) start, UNIX_TIMESTAMP(start) unixStart, DATE_ADD(end, INTERVAL bufferAfterBooking HOUR) end, UNIX_TIMESTAMP(end) unixEnd 
+            FROM booked_items 
+            INNER JOIN bookings USING (bookingId) 
+            INNER JOIN items USING (itemId) 
+            INNER JOIN categories USING (catId) 
+            WHERE 
+                itemId={$this->id} " . 
+                (isset($this->bookedItemId) ? "AND bookedItemId != {$this->bookedItemId} " : "") . " 
+            AND 
+                booked_items.status>=$minStatus 
+            AND (
+                    (
+                        UNIX_TIMESTAMP(start)-bufferAfterBooking*3600<@start AND UNIX_TIMESTAMP(end)+bufferAfterBooking*3600>@start+$secs
+                    ) OR (
+                        UNIX_TIMESTAMP(start)-bufferAfterBooking*3600>@start AND UNIX_TIMESTAMP(start)-bufferAfterBooking*3600<@start+$secs
+                    ) OR (
+                        UNIX_TIMESTAMP(end)+bufferAfterBooking*3600>@start AND UNIX_TIMESTAMP(end)+bufferAfterBooking*3600<@start+$secs
+                    )
+                )");
 
         $ret = "";
         if ($scale) $ret .= self::freebusyWeekends($start, $days);

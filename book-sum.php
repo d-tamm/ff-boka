@@ -70,7 +70,18 @@ foreach ($booking->items() as $item) {
 }
 
 switch ($_REQUEST['action']) {
-	case "confirmBooking":
+    case "ajaxFreebusyItem":
+        // Get freebusy bars for current booked item
+        $item = new Item($_SESSION['bookedItemId'], TRUE);
+        header("Content-Type: application/json");
+        if ($item->category()->getAccess($currentUser) >= FFBoka::ACCESS_PREBOOK) {
+            $freebusyBar = $item->freebusyBar([ 'start'=>$_REQUEST['start'] ]);
+        }
+        die(json_encode([
+            "freebusyBar"=>$freebusyBar,
+        ]));
+
+    case "confirmBooking":
 	    if (count($unavail)) break;
 	    $mailItems = "";
 	    // remove old answers previously saved with booking
@@ -217,7 +228,7 @@ switch ($_REQUEST['action']) {
 	<?php
 	if (count($unavail)) echo "<p class='ui-body ui-body-c'>Några av de resurser du har valt är inte längre tillgängliga vid den valda tiden. De är markerade nedan. För att kunna slutföra bokningen behöver du ta bort dessa resurser eller ändra tiden genom att ta bort dem och sedan lägga till dem igen med en annan, ledig tid.</p>";
 	?>
-
+	
 	<ul data-role='listview' data-inset='true' data-divider-theme='a' data-split-icon='delete'>
 	<?php
 	$questions = array();
@@ -230,13 +241,12 @@ switch ($_REQUEST['action']) {
 	    }
 		echo "<li" . (in_array($item->bookedItemId, $unavail) ? " data-theme='c'" : "") . ">";
 		if ($item->category()->getAccess($currentUser) >= FFBoka::ACCESS_CONFIRM && $item->status > FFBoka::STATUS_PENDING) {
-		    echo "<div style='font-size:0.6em; text-align:right; position:absolute; top:0px; right:40px; z-index:1; margin:0.5em;'>";
-		    if ($item->status == FFBoka::STATUS_CONFLICT || $item->status == FFBoka::STATUS_PREBOOKED) echo "<button id='book-item-btn-confirm-{$item->bookedItemId}' class='ui-btn ui-btn-inline ui-btn-b' style='margin:0px;' onclick=\"confirmBookedItem({$item->bookedItemId});\">Bekräfta</button><br>";
-		    echo "<button class='ui-btn ui-btn-inline ui-btn-b' style='margin:0px;' onclick=\"setPrice({$item->bookedItemId});\">Sätt pris</button>";
-		    echo "</div>";
+		    if ($item->status == FFBoka::STATUS_CONFLICT || $item->status == FFBoka::STATUS_PREBOOKED) {
+		        echo "<div style='position:absolute; top:0px; right:37px; font-size:0.6em; z-index:1;'><button id='book-item-btn-confirm-{$item->bookedItemId}' class='ui-btn ui-btn-inline ui-btn-b' onclick=\"confirmBookedItem({$item->bookedItemId});\">Bekräfta</button></div>";
+		    }
 		}
-		echo "<a href='javascript:popupItemDetails({$item->id})'>" . embedImage($item->getFeaturedImage()->thumb) .
-		"<h3 style='white-space:normal;'>" . htmlspecialchars($item->caption) . "</h3><p>";
+		echo "<a href='javascript:popupItemDetails({$item->bookedItemId})'>" . embedImage($item->getFeaturedImage()->thumb) .
+		"<h3 style='white-space:normal;'>" . htmlspecialchars($item->caption) . "</h3><p style='overflow:auto; white-space:normal; margin-bottom:0px;'>";
 		echo strftime("%F kl %H", $item->start) . " &mdash; " . strftime("%F kl %H", $item->end) . "<br>\n";
 		if (in_array($item->bookedItemId, $unavail)) echo "Inte tillgänglig";
 		else {
@@ -249,7 +259,7 @@ switch ($_REQUEST['action']) {
 		    }
 		}
 		if (!is_null($item->price)) echo "<span id='book-item-price-{$item->bookedItemId}' class='ui-li-count'>{$item->price} kr</span>";
-	    echo "</p></a>\n";
+		echo "</p></a>\n";
 	    echo "<a href='#' onClick='removeItem({$item->bookedItemId});'>Ta bort</a></li>\n";
 	}
 	?>
@@ -338,7 +348,50 @@ switch ($_REQUEST['action']) {
     
     </div><!--/main-->
 
-	<div data-role="popup" id="popup-item-details" class="ui-content" data-overlay-theme="b"></div>
+	<div data-role="popup" id="popup-item-details" class="ui-content" data-overlay-theme="b">
+		<h2 id='item-caption'></h2>
+		<div class='ui-body ui-body-a' id='book-item-booking-details'>
+			<p>Bokad från <span id='book-item-booked-start'></span> till <span id='book-item-booked-end'></span>.</p>
+			<h3>Ändra bokningen</h3>
+    		<div id='book-item-select-dates'>
+                <div class='freebusy-bar' style='height:50px;'>
+    	            <div id='book-freebusy-bar-item'></div>
+    	            <div id='book-chosen-timeframe'></div>
+    	            <?= Item::freebusyScale(true) ?>
+    	        </div>
+    
+                <div>
+                    <a href='#' onclick='scrollItemDate(-7);' class='ui-btn ui-btn-inline ui-btn-icon-notext ui-icon-carat-l'>bakåt</a>
+                    <span id='book-current-range-readable'>1/1 - 7/1 2020</span>
+                    <a href='#' onclick='scrollItemDate(7);' class='ui-btn ui-btn-inline ui-btn-icon-notext ui-icon-carat-r'>framåt</a>
+                </div>
+    
+        		<div id='book-warning-conflict'>Den valda tiden krockar med befintliga bokningar.</div>
+            	<div id='book-date-chooser-next-click'>Klicka på önskat startdatum.</div>
+    
+                <div class='ui-field-contain'>
+                    <label for='book-time-start'>Vald bokningstid från:</label>
+                    <div data-role='controlgroup' data-type='horizontal'>
+                    	<input type='date' id='book-date-start' data-wrapper-class='controlgroup-textinput ui-btn'>
+                    	<select name='book-time-start' id='book-time-start'><?php
+                        for ($h=0;$h<24;$h++) echo "\n<option value='$h'>$h:00</option>"; ?>
+                    	</select>
+                	</div>
+            	</div>
+                <div class='ui-field-contain'>
+                    <label for='book-time-end'>Till:</label>
+                    <div data-role='controlgroup' data-type='horizontal'>
+        				<input type='date' id='book-date-end' data-wrapper-class='controlgroup-textinput ui-btn'>
+        	        	<select name='book-time-end' id='book-time-end'><?php
+                        for ($h=0;$h<24;$h++) echo "\n<option value='$h'>$h:00</option>"; ?>
+                    	</select>
+                	</div>
+            	</div>
+        	</div>
+	        <button id="book-btn-save-part" disabled="disabled" onClick="checkTimes(true);">Spara ändringarna</button>
+		</div><!-- /ui-body change booking -->
+    	<div id="item-details"></div>
+	</div>
 
 </div><!-- /page -->
 

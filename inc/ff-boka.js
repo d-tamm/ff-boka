@@ -32,7 +32,8 @@ $(document).on('pageshow', "#page-start", function() {
 
 
 // ========== book-part.php ==========
-var checkedItems,
+var bookingStep,
+	checkedItems,
 	fbStart,
 	wday,
 	startDate,
@@ -45,7 +46,7 @@ $(document).on('pagecreate', "#page-book-part", function() {
     // bind events
 	
 	/**
-	 * User chose start or end time for booking items
+	 * User chose start or end time for booking items on freebusy bar
 	 */
 	$("#book-combined-freebusy-bar ~ .freebusy-tic").click(function(event) {
 		var hour = Math.floor(event.offsetX / parseInt($(this).css('width')) * 24);
@@ -60,7 +61,6 @@ $(document).on('pagecreate', "#page-book-part", function() {
 		}
 		nextDateClick = nextDateClick=="start" ? "end" : "start"; 
 		updateBookedTimeframe();
-		document.activeElement.blur();
 	});
 
 	/**
@@ -112,6 +112,7 @@ $(document).on('pageshow', "#page-book-part", function() {
             $("#popup-msg-page-book-part").popup('open');
         }, 500); // We need some delay here to make this work on Chrome.
     }
+    bookingStep=1;
     // Uncheck all items
     checkedItems = {};
     $(".book-item").removeClass("item-checked");
@@ -193,9 +194,36 @@ function toggleItem(itemId){
  */
 function popupItemDetails(itemId) {
     $.mobile.loading("show", {});
-    $.getJSON("book-part.php", { action: "ajaxItemDetails", id: itemId }, function(data, status) {
+    $.getJSON("book-part.php", {
+    	action: "ajaxItemDetails",
+    	id: itemId,
+    	bookingStep: bookingStep
+	}, function(data, status) {
+		$("#item-caption").html(data.caption);
+		$("#item-details").html(data.html);
+		$("#popup-item-details").popup('open', { transition: "pop", y: 0 });
         $.mobile.loading("hide", {});
-        $("#popup-item-details").html(data).popup('open', { transition: "pop", y: 0 });
+		if (bookingStep==2 && data.start!==null) {
+			$("#book-item-booking-details").show();
+			checkedItems = {};
+			checkedItems[itemId] = true;
+		    // Initialise date chooser
+			startDate = new Date(Number(data.start)*1000);
+		    startTime = startDate.getHours();
+		    startDate.setHours(0,0,0,0); // Midnight
+		    endDate = new Date(Number(data.end)*1000);
+		    endTime = endDate.getHours();
+		    endDate.setHours(0,0,0,0); // Midnight
+		    fbStart = new Date(startDate.valueOf());
+		    wday = fbStart.getDay() ? fbStart.getDay()-1 : 6; // Weekday, where Monday=0 ... Sunday=6
+		    fbStart.setDate(fbStart.getDate() - wday); // Should now be last Monday
+		    nextDateClick = "start";
+		    $("#book-item-booked-start").html(startDate.toLocaleDateString() + ' ' + startTime + ':00');
+		    $("#book-item-booked-end").html(endDate.toLocaleDateString() + ' ' + endTime + ':00');
+		    scrollItemDate(0);
+		} else {
+			$("#book-item-booking-details").hide();			
+		}
     });
 }
 
@@ -240,14 +268,15 @@ function checkTimes(save=false) {
     // Send times to server to check availability:
     $.getJSON("book-part.php", {
         action: (save ? "ajaxSave" : "ajaxCheckTimes"),
+        bookingStep: bookingStep,
         ids: checkedItems,
         start: startDate.valueOf()/1000 + startTime*60*60,
         end: endDate.valueOf()/1000 + endTime*60*60,
     }, function(data, status) {
         $.mobile.loading("hide", {});
-		$("#book-btn-save-sub").prop("disabled", !data.timesOK);
+		$("#book-btn-save-part").prop("disabled", !data.timesOK);
         if (data.timesOK) {
-        	if (save) {
+        	if (save && bookingStep==1) {
 	            // Reset times section to prepare for next booking
 	            checkedItems = {};
 	            $(".book-item").removeClass("item-checked");
@@ -259,6 +288,9 @@ function checkTimes(save=false) {
 	            // update freebusy
 	            scrollDate(0);
 	            location.href="book-sum.php";
+        	} else if (save && bookingStep==2) {
+        		$("#popup-item-details").popup("close");
+        		location.reload();
         	}
     		$("#book-warning-conflict").hide();
         } else {
@@ -285,6 +317,65 @@ $(document).on('pagecreate', "#page-book-sum", function() {
     // bind events
 	
 	/**
+	 * User changes start or end time for booking item on freebusy bar
+	 */
+	$("#book-item-select-dates .freebusy-tic").click(function(event) {
+		var hour = Math.floor(event.offsetX / parseInt($(this).css('width')) * 24);
+		if (nextDateClick=="start") {
+			startDate = new Date(fbStart.valueOf());
+			startDate.setDate(startDate.getDate() + Number(this.dataset.day));
+			startTime = hour;
+		} else {
+			endDate = new Date(fbStart.valueOf());
+			endDate.setDate(endDate.getDate() + Number(this.dataset.day));
+			endTime = hour;
+		}
+		nextDateClick = nextDateClick=="start" ? "end" : "start"; 
+		updateBookedTimeframe();
+	});
+
+	/**
+	 * User chose a new start date from date picker for booking items
+	 */
+	$('#book-date-start').change(function(event) {
+		startDate = new Date(this.value);
+        if (startDate<fbStart || startDate.valueOf()>fbStart.valueOf()+7*24*60*60) {
+            // scroll to chosen week
+            fbStart = new Date(this.value);
+            wday = fbStart.getDay() ? fbStart.getDay()-1 : 6; // Weekday, where Monday=0 ... Sunday=6
+            fbStart.setDate(fbStart.getDate() - wday); // Should now be last Monday
+            scrollDate(0);
+        }
+        nextDateClick = "end";
+		updateBookedTimeframe();
+	});
+	
+	/**
+	 * User chose a new end date from date picker for booking items
+	 */
+	$('#book-date-end').change(function(event) {
+        endDate = new Date(this.value);
+        nextDateClick = "start";
+		updateBookedTimeframe();
+	});
+
+    /**
+     * User chose a new start time from dropdown for booking items
+     */
+	$('#book-time-start').change(function(event) {
+		startTime = Number(this.value);
+		updateBookedTimeframe();
+	});
+
+    /**
+     * User chose a new end time from dropdown for booking items
+     */
+	$('#book-time-end').change(function(event) {
+		endTime = Number(this.value);
+		updateBookedTimeframe();
+	});
+	
+	/**
 	 * Validate required checkboxes and radios before submitting the booking
 	 */
     $("#form-booking").submit(function(event) {
@@ -308,19 +399,8 @@ $(document).on('pageshow', "#page-book-sum", function() {
             $("#popup-msg-page-book-sum").popup('open');
         }, 500); // We need some delay here to make this work on Chrome.
     }
+    bookingStep=2;
 });
-
-/**
- * Get item details and show them in a popup
- * @param int itemId ID of the item to show
- */
-function popupItemDetails(itemId) {
-    $.mobile.loading("show", {});
-    $.getJSON("book-part.php", { action: "ajaxItemDetails", id: itemId }, function(data, status) {
-        $.mobile.loading("hide", {});
-        $("#popup-item-details").html(data).popup('open', { transition: "pop", y: 0 });
-    });
-}
 
 /**
  * Remove a single item from booking
@@ -385,6 +465,29 @@ function setPrice(bookedItemId) {
         else $("#book-item-price-"+bookedItemId).html(price + " kr");
     });
 }
+
+/**
+ * Scrolls the freebusy bar of a single booked item to another start date
+ * @param int offset Number of days to scroll
+ */
+function scrollItemDate(offset) {
+    $.mobile.loading("show", {});
+    // Calculate start and end of week
+    fbStart.setDate(fbStart.getDate() + offset);
+    var fbEnd = new Date(fbStart.valueOf());
+    fbEnd.setDate(fbEnd.getDate() + 6);
+    var readableRange = "må " + fbStart.getDate() + "/" + (fbStart.getMonth()+1);
+    if (fbStart.getFullYear() != fbEnd.getFullYear()) readableRange += " '"+fbStart.getFullYear().toString().substr(-2);
+    readableRange += " &ndash; sö " + fbEnd.getDate() + "/" + (fbEnd.getMonth()+1) + " '"+fbEnd.getFullYear().toString().substr(-2);
+    // Get freebusy bar
+    $.getJSON("book-sum.php", { action: "ajaxFreebusyItem", start: fbStart.valueOf()/1000 }, function(data, status) {
+        $("#book-current-range-readable").html( readableRange );
+        $("#book-freebusy-bar-item").html( data.freebusyBar );
+        updateBookedTimeframe();
+        $.mobile.loading("hide", {});
+    });
+}
+
 
 
 
