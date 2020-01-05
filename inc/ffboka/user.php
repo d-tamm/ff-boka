@@ -119,6 +119,18 @@ class User extends FFBoka {
     }
     
     /**
+     * Get an HTML formatted string with contact data
+     * @return string
+     */
+    public function contactData() {
+        $ret = array();
+        if ($this->name) $ret[] = htmlspecialchars($this->name);
+        if ($this->phone) $ret[] = "&phone;: " . htmlspecialchars($this->phone);
+        if ($this->mail) $ret[] = "<b>@</b>: " . htmlspecialchars($this->mail);
+        return implode("<br>", $ret);
+    }
+    
+    /**
      * Create a new booking for this user
      * @param int $sectionId ID of section which this booking belongs to
      * @return \FFBoka\Booking
@@ -126,7 +138,7 @@ class User extends FFBoka {
     public function addBooking(int $sectionId) {
         // Create token
         for ($token = '', $i = 0, $z = strlen($a = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789')-1; $i < 40; $x = rand(0,$z), $token .= $a{$x}, $i++);
-        if ($this->id) $stmt = self::$db->prepare("INSERT INTO bookings SET sectionId=? userId={$this->id}, token='$token'");
+        if ($this->id) $stmt = self::$db->prepare("INSERT INTO bookings SET sectionId=?, userId={$this->id}, token='$token'");
         else $stmt = self::$db->prepare("INSERT INTO bookings SET sectionId=?, token='$token'");
         $stmt->execute(array($sectionId));
         return new Booking(self::$db->lastInsertId());
