@@ -142,12 +142,37 @@ class Item extends FFBoka {
     }
 
     /**
-     * Get the booking the item belongs to
+     * Get the booking the item belongs to (only applicable for bookedItems)
      * @return \FFBoka\Booking|false
      */
     public function booking() {
         if ($this->bookingId) return new Booking($this->bookingId);
         else return FALSE;
+    }
+
+    /**
+     * Get all bookings for the next time
+     * @param int $days Number of days to return bookings for
+     * @return array of objects { bookingId, bookedItemId, unixtimestamp start, unixtimestamp end }
+     */
+    public function upcomingBookings(int $days=60) {
+        // Get freebusy information.
+        $stmt = self::$db->prepare("
+            SELECT bookingId, bookedItemId, UNIX_TIMESTAMP(start)-bufferAfterBooking*3600 AS start, UNIX_TIMESTAMP(end)+bufferAfterBooking*3600 AS end
+            FROM booked_items
+            INNER JOIN bookings USING (bookingId)
+            INNER JOIN items USING (itemId)
+            INNER JOIN categories USING (catId)
+            WHERE
+                itemId={$this->id}
+            AND (
+                    (start>NOW() AND start<DATE_ADD(NOW(), INTERVAL :days DAY))
+                OR
+                    (end>NOW() AND end<DATE_ADD(NOW(), INTERVAL :days DAY))
+                )
+            ");
+        $stmt->execute(array( ":days"=>$days ));
+        return $stmt->fetchAll(\PDO::FETCH_OBJ);
     }
     
     /**
