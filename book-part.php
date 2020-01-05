@@ -112,10 +112,18 @@ switch ($_REQUEST['action']) {
             $start = $item->start;
             $end = $item->end;
         }
-        $html .= str_replace("\n", "<br>", htmlspecialchars($item->description));
         $cat = $item->category();
+        $html .= str_replace("\n", "<br>", htmlspecialchars($item->description));
         foreach ($item->images() as $img) {
             $html .= "<div class='item-image'><img src='image.php?type=itemImage&id={$img->id}'><label>" . htmlspecialchars($img->caption) . "</label></div>";
+        }
+        if ($cat->getAccess($currentUser)>=FFBoka::ACCESS_PREBOOK) { // show coming bookings
+            $bookings = $item->upcomingBookings();
+            if (count($bookings)) $html .= "<div class='ui-body ui-body-a'><h3>Kommande bokningar</h3>\n<ul>\n";
+            foreach ($bookings as $b) {
+                $html .= "<li>" . strftime("%a %e/%m %R", $b->start) . " till " . strftime("%a %e/%m %R", $b->end) . "</li>\n";
+            }
+            if (count($bookings)) $html .= "</ul></div>\n";
         }
         $html .= "<a href='#' data-rel='back' class='ui-btn ui-icon-delete ui-btn-icon-left'>Stäng inforutan</a>";
         die(json_encode([ "caption"=>htmlspecialchars($item->caption), "html"=>$html, "start"=>$start, "end"=>$end ]));
