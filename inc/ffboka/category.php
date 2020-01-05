@@ -38,7 +38,7 @@ class Category extends FFBoka {
     /**
      * Setter function for category properties
      * @param string $name Property name
-     * @param string $value Property value
+     * @param string|NULL $value Property value
      * @return string Set value on success, false on failure.
      */
     public function __set($name, $value) {
@@ -53,14 +53,24 @@ class Category extends FFBoka {
             case "prebookMsg":
             case "postbookMsg":
             case "bufferAfterBooking":
+            case "contactName":
+            case "contactPhone":
+            case "contactMail":
             case "contactUserId":
             case "accessExternal":
             case "accessMember":
             case "accessLocal":
             case "hideForExt":
                 if (!$this->id) throw new \Exception("Cannot set property $name on dummy category.");
-                $stmt = self::$db->prepare("UPDATE categories SET $name=? WHERE catId={$this->id}");
-                if ($stmt->execute(array($value))) return $value;
+                // For contact data, only allow either member as contact person, or single data
+                if ($name=="contactName" || $name=="contactPhone" || $name=="contactMail") {
+                    self::$db->exec("UPDATE categories SET contactUserId=NULL WHERE catId={$this->id}");
+                } elseif ($name=="contactUserId") {
+                    self::$db->exec("UPDATE categories SET contactName='', contactPhone='', contactMail='' WHERE catId={$this->id}");
+                }
+                $stmt = self::$db->prepare("UPDATE categories SET $name=:value WHERE catId={$this->id}");
+                $stmt->bindValue(":value", $value); // Use bindValue so contactUserId can be set to null
+                if ($stmt->execute()) return $value;
                 break;
             default:
                 throw new \Exception("Use of undefined Category property $name");
@@ -98,12 +108,20 @@ class Category extends FFBoka {
                 return $this->id;
             case "sectionId":
                 return $this->sectionId;
+            case "contactUserId": // can be inherited from parent
+                if (!$this->id) return "";
+                $stmt = self::$db->query("SELECT contactUserId, contactName, contactPhone, contactMail FROM categories WHERE catId={$this->id}");
+                $row = $stmt->fetch(PDO::FETCH_ASSOC);
+                if (is_null($row['contactUserId']) && $row['contactName']=="" && $row['contactPhone']=="" && $row['contactMail']=="" && $this->parentId) return $this->parent()->contactUserId;
+                else return $row['contactUserId'];
             case "parentId":
             case "caption":
             case "prebookMsg":
             case "postbookMsg":
             case "bufferAfterBooking":
-            case "contactUserId":
+            case "contactName":
+            case "contactPhone":
+            case "contactMail":
             case "image":
             case "thumb":
             case "accessExternal":
@@ -167,6 +185,23 @@ class Category extends FFBoka {
      */
     public function contactUser() {
         return new User($this->contactUserId);            
+    }
+
+    /**
+     * Get HTML formatted, safe string with contact information
+     * @return string If member is set as contact user, the member's data is returned, otherwise the name, mail and phone set in category
+     */
+    public function contactData() {
+        if (is_null($this->contactUserId)) {
+            if ($this->contactName=="" && $this->contactPhone=="" && $this->contactMail=="" && !is_null($this->parentId)) return $this->parent()->contactData();
+            $ret = array();
+            if ($this->contactName) $ret[] = htmlspecialchars($this->contactName);
+            if ($this->contactPhone) $ret[] = "&phone;: " . htmlspecialchars($this->contactPhone);
+            if ($this->contactMail) $ret[] = "<b>@</b>: " . htmlspecialchars($this->contactMail);
+            return implode("<br>", $ret);
+        } else {
+            return $this->contactUser()->contactData();
+        }
     }
     
     /**

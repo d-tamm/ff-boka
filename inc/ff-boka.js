@@ -751,6 +751,30 @@ $(document).on('pagecreate', "#page-admin-category", function() {
     });
 
     /**
+     * Set contact name
+     */
+    $(document).off('input', "#cat-contactName").on('input', "#cat-contactName", function() {
+        clearTimeout(toutSetValue);
+        toutSetValue = setTimeout(setCatProp, 1000, "contactName", this.value);
+    });
+
+    /**
+     * Set contact phone
+     */
+    $(document).off('input', "#cat-contactPhone").on('input', "#cat-contactPhone", function() {
+        clearTimeout(toutSetValue);
+        toutSetValue = setTimeout(setCatProp, 1000, "contactPhone", this.value);
+    });
+
+    /**
+     * Set contact mail
+     */
+    $(document).off('input', "#cat-contactMail").on('input', "#cat-contactMail", function() {
+        clearTimeout(toutSetValue);
+        toutSetValue = setTimeout(setCatProp, 1000, "contactMail", this.value);
+    });
+
+    /**
      * Save new category image
      */
     $(document).off('change', "#file-cat-img").on('change', "#file-cat-img", function() {
@@ -794,10 +818,10 @@ $(document).on('pagecreate', "#page-admin-category", function() {
             $ul.listview( "refresh" );
             $.getJSON("index.php", {action: "ajaxFindUser", q: value}, function(data, status) {
                 $.each( data, function ( i, val ) {
-                    html += "<li style='cursor:pointer;' title='Sätt " + val['name'] + " som kontaktperson' onClick='setContactUser(" + val['userId'] + ");'>" + val['userId'] + " " + (val['name'] ? val['name'] : "(ingen persondata tillgänglig)") + "</li>";
+                    html += "<li style='cursor:pointer;' title='Sätt " + val['name'] + " som kontaktperson' onClick=\"setCatProp('contactUserId', " + val['userId'] + ");\">" + val['userId'] + " " + (val['name'] ? val['name'] : "(ingen persondata tillgänglig)") + "</li>";
                 });
                 if (data.length==0) {
-                    if (Number(value)) html += "<li style='cursor:pointer;' title='Lägg till medlem med medlemsnummer " + Number(value) + " som kontaktperson' onClick='setContactUser(" + Number(value) + ");'>" + Number(value) + " (ny användare)</li>";
+                    if (Number(value)) html += "<li style='cursor:pointer;' title='Lägg till medlem med medlemsnummer " + Number(value) + " som kontaktperson' onClick=\"setCatProp('contactUserId', " + Number(value) + ");\">" + Number(value) + " (ny användare)</li>";
                     else html += "<li>Sökningen på <i>" + value + "</i> gav ingen träff</li>";
                 }
                 $ul.html( html );
@@ -917,25 +941,24 @@ function unsetAccess(id) {
  * @param val Value of the property
  */
 function setCatProp(name, val) {
+	console.log(name, val);
+    $.mobile.loading("show", {});
     $.getJSON("category.php", {action: "ajaxSetCatProp", name: name, value: val}, function(data, status) {
+        $.mobile.loading("hide", {});
         if (data.status=="OK") {
+            $("#cat-contact-data").html(data.contactData);
+            $("#cat-contactName").val(data.contactName);
+            $("#cat-contactPhone").val(data.contactPhone);
+            $("#cat-contactMail").val(data.contactMail);
+            $("#cat-contact-autocomplete-input").val("");
+            $("#cat-contact-autocomplete").html("");
+            if (data.contactUserId) $("#btn-unset-contact-user").show();
+            else $("#btn-unset-contact-user").hide();
             $("#cat-saved-indicator").addClass("saved");
             setTimeout(function(){ $("#cat-saved-indicator").removeClass("saved"); }, 2500);
         } else {
             alert("Kan inte spara ändringen :(");
         }
-    });
-}
-
-/**
- * Saves contact user and clears user search field
- * @param userId ID of contact user
- */
-function setContactUser(userId) {
-    $.getJSON("category.php", { action: "ajaxSetContactUser", id: userId }, function(data, status) {
-        $("#cat-contact-data").html(data.html);
-        $("#cat-contact-autocomplete-input").val("");
-        $("#cat-contact-autocomplete").html("");
     });
 }
 

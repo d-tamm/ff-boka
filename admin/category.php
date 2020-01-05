@@ -94,26 +94,6 @@ function displayCatAccess($cat, $accLevels) {
 	else return "<p><i>Inga behörigheter har tilldelats än. Använd alternativen nedan för att tilldela behörigheter.</i></p>";
 }
 
-/**
- * Show contact data for user
- * @param User $u
- * @return string Formatted HTML code
- */
-function contactData(User $u) {
-    if ($u->id) {
-        if ($u->name) {
-            $ret = htmlspecialchars($u->name) . "<br>";
-            $ret .= "&phone;: " . ($u->phone ? htmlspecialchars($u->phone) : "<b>Inget telefonnummer har angetts.</b>") . "<br>";
-            $ret .= "<b>@</b>: " . ($u->mail ? htmlspecialchars($u->mail) : "<b>Ingen epostadress har angetts.</b>");
-            return $ret;
-        } else {
-            return "Medlem med nummer ".$u->id."<br><b>OBS: Kontaktpersonen måste logga in och ange sina kontaktuppgifter!</b>";
-        }
-    } else {
-        return "<i>Ingen kontaktperson har valts.</i>";
-    }
-}
-
 
 switch ($_REQUEST['action']) {
     case "new":
@@ -127,6 +107,10 @@ switch ($_REQUEST['action']) {
     case "ajaxSetCatProp":
         if ($cat->getAccess($currentUser) >= FFBoka::ACCESS_CATADMIN) {
             switch ($_REQUEST['name']) {
+                case "contactUserId":
+                case "contactName":
+                case "contactPhone":
+                case "contactMail":
                 case "caption":
                 case "parentId":
                 case "prebookMsg":
@@ -135,11 +119,16 @@ switch ($_REQUEST['action']) {
                     header("Content-Type: application/json");
                     if ($_REQUEST['value']=="NULL") $cat->{$_REQUEST['name']} = null;
                     else $cat->{$_REQUEST['name']} = $_REQUEST['value'];
-                    die(json_encode(["status"=>"OK"]));
-                    break;
+                    die(json_encode([
+                        "status" => "OK",
+                        "contactUserId" => $cat->contactUserId,
+                        "contactData" => $cat->contactData(),
+                        "contactName" => $cat->contactName,
+                        "contactPhone" => $cat->contactPhone,
+                        "contactMail" => $cat->contactMail
+                    ]));
             }
-        }
-        break;
+        } else die();
         
     case "ajaxSetImage":
         if ($cat->getAccess($currentUser) >= FFBoka::ACCESS_CATADMIN) {
@@ -147,15 +136,7 @@ switch ($_REQUEST['action']) {
             $ret = $cat->setImage($_FILES['image']);
             if($ret===TRUE) die(json_encode(["status"=>"OK", "id"=>$cat->id]));
             else die(json_encode(["error"=>$ret]));
-        }
-        
-    case "ajaxSetContactUser":
-        if ($cat->getAccess($currentUser) >= FFBoka::ACCESS_CATADMIN) {
-            header("Content-Type: application/json");
-            $cuser = new User($_REQUEST['id']);
-            $cat->contactUserId = $cuser->id;
-            die(json_encode([ "status"=>"OK", "html"=>contactData($cuser) ]));
-        }
+        } else die();
         
     case "ajaxSetAccess":
         if ($cat->getAccess($currentUser) >= FFBoka::ACCESS_CATADMIN) {
@@ -270,13 +251,28 @@ unset ($_SESSION['itemId']);
 			<hr>
             
             <div class="ui-field-contain">
-                <label for="cat-bufferAfterBooking">Buffertid i timmar mellan bokningar (ärvs inte av överordnad kategori!):</label>
+                <label for="cat-bufferAfterBooking">Buffertid i timmar mellan bokningar (ärvs inte av överordnad kategori):</label>
                 <input name="bufferAfterBooking" type="number" min="0" class="ajax-input" id="cat-bufferAfterBooking" placeholder="Buffertid mellan bokingnar" value="<?= $cat->bufferAfterBooking ?>">
             </div>
 			
-			<h3>Kontaktperson</h3>
-			<div id="cat-contact-data"><?= contactData($cat->contactUser()) ?></div>
-				<input id="cat-contact-autocomplete-input" data-type="search" placeholder="Välj kontaktperson...">
+			<h3>Kontaktuppgifter</h3>
+			<p><small>Skickas med bokningarna i denna kategori, så att användarna kan vända sig till någon vid problem. Du kan antingen sätta namn, telefon och epost själv, eller välja en medlem som kontaktperson.</small></p>
+            <div class="ui-field-contain">
+                <label for="cat-contactName">Namn:</label>
+                <input name="contactName" class="ajax-input" id="cat-contactName" placeholder="Namn" value="<?= htmlspecialchars($cat->contactName) ?>">
+            </div>
+            <div class="ui-field-contain">
+                <label for="cat-contactPhone">Telefon:</label>
+                <input name="contactPhone" class="ajax-input" id="cat-contactPhone" placeholder="Telefon" value="<?= htmlspecialchars($cat->contactPhone) ?>">
+            </div>
+            <div class="ui-field-contain">
+                <label for="cat-contactMail">Epost:</label>
+                <input name="contactMail" class="ajax-input" id="cat-contactMail" placeholder="Epost" value="<?= htmlspecialchars($cat->contactMail) ?>">
+            </div>
+
+			<button id='btn-unset-contact-user' title='Ta bort kontaktperson' onClick="setCatProp('contactUserId', 'NULL');" style='position:absolute; right:1em; display:<?= is_null($cat->contactUserId) ? "none" : "block" ?>;' class='ui-btn ui-icon-delete ui-btn-icon-notext'>Ta bort</button>
+			<div id="cat-contact-data"><?= $cat->contactData() ?></div>
+				<input id="cat-contact-autocomplete-input" data-type="search" placeholder="Välj medlem som kontaktperson...">
 				<ul id="cat-contact-autocomplete" data-role="listview" data-filter="true" data-input="#cat-contact-autocomplete-input" data-inset="true"></ul>
 
 			<button class="ui-btn ui-btn-c" id="delete-cat">Radera kategorin</button>

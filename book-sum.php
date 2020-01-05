@@ -5,6 +5,7 @@ use FFBoka\FFBoka;
 use FFBoka\Booking;
 use FFBoka\Question;
 use FFBoka\Item;
+use FFBoka\Category;
 global $cfg;
 
 session_start();
@@ -96,7 +97,10 @@ switch ($_REQUEST['action']) {
 		// Set booking status of each item, and build confirmation string incl post-booking messages
 		$leastStatus = FFBoka::STATUS_CONFIRMED;
 		$messages = array();
+		$contData = array();
 		foreach ($booking->items() as $item) {
+		    $cd = $item->category()->contactData();
+		    if ($cd) $contData[$cd][] = htmlspecialchars($item->category()->caption);
 		    $mailItems .= "<ul>";
 		    $msgRef = "";
 		    foreach ($item->category()->postbookMsgs() as $msg) {
@@ -112,6 +116,10 @@ switch ($_REQUEST['action']) {
 	        $item->status = $status;
 	        $leastStatus = $leastStatus & $status;
 	        $mailItems .= "</ul>";
+		}
+		$contactData = "";
+		foreach ($contData as $cd=>$captions) {
+		    $contactData .= "<p>Kontakt vid frågor angående " . implode(" och ", array_unique($captions)) . ":<br>$cd</p>";
 		}
 		$booking->commentCust = $_REQUEST['commentCust'];
 		if ($_REQUEST['commentIntern']) $booking->commentIntern = $_REQUEST['commentIntern'];
@@ -136,6 +144,7 @@ switch ($_REQUEST['action']) {
 		            "{{items}}"   => $mailItems,
 		            "{{messages}}"=> $messages ? "<li>".implode("</li><li>", $messages)."</li>" : "",
 		            "{{status}}"  => $leastStatus==FFBoka::STATUS_CONFIRMED ? "Bokningen är nu bekräftad." : "Bokningen är preliminär och behöver bekräftas av ansvarig handläggare.",
+		            "{{contactData}}" => $contactData,
 		            "{{answers}}" => $mailAnswers,
 		            "{{commentCust}}" => $booking->commentCust ? "Meddelande du har lämnat:<br>{$booking->commentCust}" : "",
 		            "{{bookingLink}}" => "{$cfg['url']}book-sum.php?bookingId={$booking->id}&token={$booking->token}",
