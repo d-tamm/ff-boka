@@ -203,7 +203,7 @@ if (isset($_REQUEST['message'])) $message = ($message ? "$message<br>" : "") . $
 			</div>
 			<p class="ui-body ui-body-c">Nu är kopplingarna till FFs centrala användarhantering klar, så nu behöver du ange ditt lösenord och ska hamna i rätt lokalavdelning!</p>
 			<input type="hidden" name="redirect" id="loginRedirect" value="">
-			<input name="id" value="" placeholder="medlems- eller personnr" required>
+			<input name="id" value="" placeholder="Medlemsnummer" required>
 			<input name="password" value="" placeholder="Lösenord" type="password">
 			<div id="div-remember-me" style="<?= empty($_COOKIE['cookiesOK']) ? "display:none;" : "" ?>"><label><input data-mini='true' name='rememberMe' value='1' type='checkbox'> Kom ihåg mig</label></div>
 			<button name="login" value="login" class="ui-btn ui-shadow ui-btn-b ui-btn-icon-right ui-icon-user">Logga in</button>
