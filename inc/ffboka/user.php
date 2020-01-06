@@ -126,7 +126,7 @@ class User extends FFBoka {
         $ret = array();
         if ($this->name) $ret[] = htmlspecialchars($this->name);
         if ($this->phone) $ret[] = "&phone;: " . htmlspecialchars($this->phone);
-        if ($this->mail) $ret[] = "<b>@</b>: " . htmlspecialchars($this->mail);
+        if ($this->mail) $ret[] = "&#9993;: " . htmlspecialchars($this->mail);
         return implode("<br>", $ret);
     }
     
