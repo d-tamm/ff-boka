@@ -37,8 +37,8 @@ if (!$_SESSION['authenticatedUser'] && !empty($_COOKIE['remember'])) {
 	$stmt = $db->prepare("SELECT * FROM tokens WHERE useFor='persistent login' AND token=?");
 	$stmt->execute(array($selector));
 	if ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-		if (hash_equals($row['data'], hash('sha256', base64_decode($authenticator)))) {
-			// User authenticated.
+	    if (hash_equals($row['data'], hash('sha256', base64_decode($authenticator)))) {
+	        // User authenticated.
 			$_SESSION['authenticatedUser'] = $row['forId'];
 			// Regenerate login token
 			createPersistentAuth($row['forId']);
@@ -60,19 +60,20 @@ function createPersistentAuth($userId) {
 		'remember',
 		$selector.':'.base64_encode($authenticator),
 		time() + $cfg['persistLogin'],
-		dirname($_SERVER['SCRIPT_NAME']),
+		"/",
 		$_SERVER['SERVER_NAME'],
 		true, // TLS-only
 		true  // http-only
 	);
 	// Save token to database
 	$stmt = $db->prepare("INSERT INTO tokens (token, data, forId, ttl, usefor) VALUES (:token, :data, :forId, :ttl, 'persistent login')");
-	$stmt->execute(array(
+	if ($stmt->execute(array(
 		":token"=>$selector,
 		":data"=>hash('sha256', $authenticator),
 		":forId"=>$userId,
 		":ttl"=>$cfg['persistLogin']
-	));
+	))) return TRUE;
+	else die($stmt->errorInfo());
 }
 
 function removePersistentAuth($userId) {
