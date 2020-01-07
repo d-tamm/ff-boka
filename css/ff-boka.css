@@ -212,7 +212,12 @@ li.selected {
 
 /* ===== Booking admin ===== */
 
-.desktop * {
+.desktop h1,
+.desktop h2,
+.desktop h3,
+.desktop p,
+.desktop td,
+.desktop th {
 	font-family: Arial, Helvetica, sans-serif;
 }
 
@@ -243,9 +248,15 @@ li.selected {
 }
 .desktop .col-caption {
 	width:20%;
+	font-size:130%;
 	white-space:nowrap;
 	overflow:hidden;
 	text-overflow:ellipsis;
+}
+.desktop .col-caption a {
+	background-color:var(--FF-blue);
+	padding:5px;
+	color:white;
 }
 
 .desktop .freebusy-busy {

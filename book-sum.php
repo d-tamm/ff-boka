@@ -133,7 +133,8 @@ switch ($_REQUEST['action']) {
 		}
 		try {
 		    sendmail(
-		        $cfg['mailFrom'], // from
+		        $cfg['mailFrom'], // from address
+		        $cfg['mailFromName'], // from name
 		        is_null($booking->userId) ? $_REQUEST['extMail'] : $booking->user()->mail, // to
 		        "", // replyTo
 		        "Bokningsbekräftelse #{$booking->id}", // subject
@@ -155,7 +156,7 @@ switch ($_REQUEST['action']) {
 	        break;
 	    }
 		unset($_SESSION['bookingId']);
-		header("Location: index.php?action=bookingConfirmed&mail=" . urlencode(is_null($booking->userId) ? $_REQUEST['extMail'] : $currentUser->mail));
+		header("Location: index.php?action=bookingConfirmed&mail=" . urlencode(is_null($booking->userId) ? $_REQUEST['extMail'] : $booking->user()->mail));
 		break;
 		
 	case "ajaxDeleteBooking":
@@ -241,9 +242,7 @@ switch ($_REQUEST['action']) {
 	<ul data-role='listview' data-inset='true' data-divider-theme='a' data-split-icon='delete'>
 	<?php
 	$questions = array();
-	$isSomeCatAdmin = FALSE;
 	foreach ($booking->items() as $item) {
-		if ($item->category()->getAccess($currentUser) >= FFBoka::ACCESS_CONFIRM) $isSomeCatAdmin=TRUE;
 	    foreach ($item->category()->getQuestions() as $id=>$q) {
 	        if (isset($questions[$id])) $questions[$id]=($questions[$id] || $q->required);
 	        else $questions[$id]=$q->required;
@@ -348,7 +347,7 @@ switch ($_REQUEST['action']) {
 		Här kan du lämna valfritt meddelande:<textarea name="commentCust" placeholder="Plats för meddelande"><?= $booking->commentCust ?></textarea>
 		
 		<?php
-		if ($isSomeCatAdmin) echo "Intern anteckning:<br><textarea name='commentIntern' placeholder='Intern anteckning'>{$booking->commentIntern}</textarea>";
+		if ($section->showFor($currentUser, FFBoka::ACCESS_CONFIRM)) echo "Intern anteckning:<br><textarea name='commentIntern' placeholder='Intern anteckning'>{$booking->commentIntern}</textarea>";
 		?>
 
     	<input type="submit" data-icon="carat-r" data-iconpos="right" data-theme="b" data-corners="false" value="Slutför bokningen">
