@@ -126,7 +126,7 @@ function htmlHeaders(string $title, string $mode="mobile") {
         <link rel="stylesheet" href="/inc/jquery-ui-1.12.1/jquery-ui.min.css">
         <script src="/inc/jquery-ui-1.12.1/external/jquery/jquery.js"></script>
         <script src="/inc/jquery-ui-1.12.1/jquery-ui.min.js"></script>
-        <link rel="stylesheet" href="/css/desktop.css">        
+        <link rel="stylesheet" href="/vendor/fontawesome/css/all.css">        
 	<?php } ?>
 	<link rel="stylesheet" href="/css/ff-boka.css" />
 	<script>
@@ -196,8 +196,9 @@ function head(string $caption, $currentUser=NULL) {
 
 /**
  * Send an email basen on a template file
- * @param string $from
- * @param string $to
+ * @param string $from From address
+ * @param string $fromName Cleartext from name
+ * @param string $to To address
  * @param string $replyTo If empty, the $from address will be used.
  * @param string $subject
  * @param string[] $options Options for SMTP connection: array(host, port, user, pass)
@@ -207,7 +208,7 @@ function head(string $caption, $currentUser=NULL) {
  * @param array $replace [ search=>replace ] Array of strings to be replaced
  * @return boolean|string TRUE on success, error message on failure
  */
-function sendmail(string $from, string $to, string $replyTo, string $subject, $options, $template, $replace=NULL) {
+function sendmail(string $from, string $fromName, string $to, string $replyTo, string $subject, $options, $template, $replace=NULL) {
 	if (is_readable("templates/$template.html")) {
 		// Get template content
 		$body = file_get_contents("templates/$template.html");
@@ -237,8 +238,8 @@ function sendmail(string $from, string $to, string $replyTo, string $subject, $o
 		$mail->SMTPSecure = 'tls';                            // Enable TLS encryption, `ssl` also accepted
 		// Message content
 		$mail->CharSet ="UTF-8";
+		$mail->setFrom($from, $fromName);
 		$mail->Sender = $options['user'];
-		$mail->setFrom($from);
 		$mail->addAddress($to);
 		if ($replyTo) $mail->addReplyTo($replyTo);
 		if (isset($altBody)) $mail->isHTML(true);

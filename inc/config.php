@@ -15,8 +15,9 @@ $cfg = array(
 	// Logging
 	"logMaxSize" => 1*1024*1024, // in bytes
 
-	// Sender address of auto-generated emails
+	// Sender address and readable name of auto-generated emails
 	"mailFrom" => "daniel.tamm@friluftsframjandet.se",
+    "mailFromName" => "Friluftsfrämjandets resursbokning",
 	// SMTP settings for sending emails
 	"SMTP" => array(
 	    "host" => 'manu20.manufrog.com',

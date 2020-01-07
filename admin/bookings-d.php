@@ -4,12 +4,14 @@ use FFBoka\Section;
 use FFBoka\User;
 use FFBoka\Category;
 use FFBoka\Item;
+use FFBoka\Booking;
 
 session_start();
 require(__DIR__."/../inc/common.php");
+global $FF;
 
 if ($_GET['sectionId']) $_SESSION['sectionId'] = $_GET['sectionId'];
-// This page may only be accessed by registered users
+// This page may only be accessed by registered users 
 if (!$_SESSION['authenticatedUser'] || !$_SESSION['sectionId']) {
     header("Location: /");
     die();
@@ -17,6 +19,11 @@ if (!$_SESSION['authenticatedUser'] || !$_SESSION['sectionId']) {
 // Set current section and user
 $section = new Section($_SESSION['sectionId']);
 $currentUser = new User($_SESSION['authenticatedUser']);
+// User must have some sort of admin function
+if (!$section->showFor($currentUser, FFBoka::ACCESS_CONFIRM)) {
+    header("Location: /");
+    die();
+}
 
 /**
  * Displays the items of a category, including child categories, where user has admin access.
@@ -45,6 +52,10 @@ function showCat(Category $cat, User $user) {
 }
 
 switch ($_REQUEST['action']) {
+    case "ajaxFindUser":
+        header("Content-Type: application/json");
+        die(json_encode($FF->findUser($_REQUEST['term'])));
+
     case "ajaxGetFreebusy":
         header("Content-Type: application/json");
         $start = new DateTime("{$_GET['year']}-{$_GET['month']}-01");
@@ -68,6 +79,15 @@ switch ($_REQUEST['action']) {
             $fbList["item-$id"] = $item->freebusyBar(['start'=>$start->getTimestamp(), 'scale'=>TRUE, 'days'=>$daysInMonth, 'minStatus'=>FFBoka::STATUS_CONFLICT]);
         }
         die(json_encode(["scale"=>$scale, "freebusy"=>$fbList]));
+        
+    case "ajaxAddBookingOnBehalf":
+        header("Content-Type: application/json");
+        $user = new User($_REQUEST['userId']);
+        $booking = $user->addBooking($section->id);
+        $booking->commentIntern = "Bokning inlagd av " . $currentUser->name;
+        $_SESSION['bookingId'] = $booking->id;
+        $_SESSION['token'] = $booking->token;
+        die(json_encode([ "status"=>"OK" ]));
 }
 
 ?><!DOCTYPE html>
@@ -87,6 +107,25 @@ switch ($_REQUEST['action']) {
         // Initialise date chooser
         scrollDate(0);
 
+        $("#popup-add-booking").dialog({
+			autoOpen: false
+        });
+
+        $("#search-member").autocomplete({
+            source: "<?= basename(__FILE__) ?>?action=ajaxFindUser",
+            minLength: 2,
+            response: function( event, ui ) {
+                for (var i=0; i<ui.content.length; i++) {
+                    ui.content[i].label = "Boka som "+ui.content[i].name;
+                };
+                if (ui.content.length == 0) ui.content.push({ label:"Ingen träff. Boka som gäst?", value:0 });
+            },
+            select: function( event, ui ) {
+            	$("#search-member").val("");
+                addBooking(ui.item.userId);
+            }
+        });
+        
         $(document).on('keydown', function(ev) {
             switch(ev.which) {
             case 37: // left
@@ -107,7 +146,6 @@ switch ($_REQUEST['action']) {
 	// Scroll by x months
     function scrollDate(offset) {
         startDate.setMonth(startDate.getMonth() + offset, 1); // 1st of month
-        console.log("scrollDate", startDate);
         var endDate = new Date(startDate.valueOf());
         endDate.setMonth(endDate.getMonth() + 1);
         // Get freebusy bars
@@ -123,22 +161,45 @@ switch ($_REQUEST['action']) {
             });
         });
     }
+
+    function addBooking(userId) {
+        $.getJSON("<?= basename(__FILE__) ?>", { action: "ajaxAddBookingOnBehalf", userId: userId }, function(data) {
+            if (data.status=="OK") window.open("/book-part.php");
+            else alert("Något har gått fel. Kontakta systemadmin.");
+            $('#popup-add-booking').dialog('close');
+        });
+    }
 	</script>
 </head>
 
 
 <body class='desktop'>
+<div id='popup-add-booking' title="Lägg till bokning">
+	<div class="ui-widget">
+		<label for="search-member">Leta efter medlem:</label>
+		<input id="search-member">
+	</div>
+	<div>
+		eller:
+		<button onClick="addBooking(0);">Boka som gäst</button>
+	</div>
+</div>
+
 <div id='booking-admin'>
 	<div id="head">
-        <h1><a href="/index.php"><span class="ui-icon ui-icon-home"></span></a> Bokningar i <?= $section->name ?>, <span id='booking-adm-date'></span></h1>
+        <h1><a href="/index.php" title="Till startsidan"><i class='fas fa-home' style='color:white; margin-right:20px;'></i></a> Bokningar i <?= $section->name ?>, <span id='booking-adm-date'></span></h1>
         <table>
         	<tr><td class='col-caption'>
-        		<button title="1 månad bakåt (&larr;)" onClick="scrollDate(-1);"><span class='ui-icon ui-icon-caret-1-w'></span></button>
-        		<button title="Uppdatera" onClick="scrollDate(0);"><span class='ui-icon ui-icon-refresh'></span></button>
-        		<button title="1 månad framåt (&rarr;)" onClick="scrollDate(1);"><span class='ui-icon ui-icon-caret-1-e'></span></button>
-        	</td><td><div class='freebusy-bar' id='booking-adm-scale'></div></td></tr>
+        		<a title="1 månad bakåt (pil vänster)" href="#" onClick="scrollDate(-1);"><i class='fas fa-chevron-left'></i></a>
+        		<a title="Gå till idag" href="#" onClick="startDate = new Date(new Date().setHours(0,0,0,0));scrollDate(0);"><i class='fas fa-calendar-day'></i></a>
+        		<a title="1 månad framåt (pil höger)" href="#" onClick="scrollDate(1);"><i class='fas fa-chevron-right'></i></a>
+        		<a title="Uppdatera" href="#" onClick="scrollDate(0);"><i class='fas fa-sync'></i></a>
+        		<a title="Lägg in ny bokning" href="#" onClick="$('#popup-add-booking').dialog('open');"><i class='fas fa-plus'></i></a>
+        	</td>
+        	<td><div class='freebusy-bar' id='booking-adm-scale'></div></td></tr>
         </table>
 	</div>
+	
     <?php 
     $_SESSION['itemIds'] = array();
     foreach ($section->getMainCategories() as $cat) {
