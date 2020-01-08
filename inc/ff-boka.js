@@ -204,6 +204,7 @@ function popupItemDetails(itemId) {
 		$("#popup-item-details").popup('open', { transition: "pop", y: 0 });
         $.mobile.loading("hide", {});
 		if (bookingStep==2 && data.start!==null) {
+			// In step 2, show elements to change the item's booking
 			$("#book-item-booking-details").show();
 			checkedItems = {};
 			checkedItems[itemId] = true;
@@ -221,6 +222,7 @@ function popupItemDetails(itemId) {
 		    $("#book-item-booked-start").html(startDate.toLocaleDateString() + ' ' + startTime + ':00');
 		    $("#book-item-booked-end").html(endDate.toLocaleDateString() + ' ' + endTime + ':00');
 		    scrollItemDate(0);
+		    $("#book-item-price").val(data.price);
 		} else {
 			$("#book-item-booking-details").hide();			
 		}
@@ -272,6 +274,7 @@ function checkTimes(save=false) {
         ids: checkedItems,
         start: startDate.valueOf()/1000 + startTime*60*60,
         end: endDate.valueOf()/1000 + endTime*60*60,
+        price: $("#book-item-price").val(),
     }, function(data, status) {
         $.mobile.loading("hide", {});
 		$("#book-btn-save-part").prop("disabled", !data.timesOK);

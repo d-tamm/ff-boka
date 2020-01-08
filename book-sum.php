@@ -396,6 +396,13 @@ switch ($_REQUEST['action']) {
                 	</div>
             	</div>
         	</div>
+            <div class='ui-field-contain'>
+                <label for='book-item-price'>Pris:</label>
+                <div data-role='controlgroup' data-type='horizontal'>
+	            	<input type='number' min='0' id='book-item-price' data-wrapper-class='controlgroup-textinput ui-btn'>
+	            	<button>kr</button>
+            	</div>
+        	</div>
 	        <button id="book-btn-save-part" disabled="disabled" onClick="checkTimes(true);">Spara ändringarna</button>
 		</div><!-- /ui-body change booking -->
     	<div id="item-details"></div>
