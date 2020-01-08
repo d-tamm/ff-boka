@@ -170,7 +170,7 @@ class Item extends FFBoka {
                 OR
                     (end>NOW() AND end<DATE_ADD(NOW(), INTERVAL :days DAY))
                 )
-            ");
+            ORDER BY start");
         $stmt->execute(array( ":days"=>$days ));
         return $stmt->fetchAll(\PDO::FETCH_OBJ);
     }

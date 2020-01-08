@@ -173,7 +173,7 @@ switch ($_REQUEST['action']) {
 	    header("Content-Type: application/json");
 	    // Check permissions
 	    $item = new Item($_REQUEST['bookedItemId'], TRUE);
-	    if ($item->category()->getAccess($currentUser) < FFBoka::ACCESS_CONFIRM || $booking->userId !== $_SESSION['authenticatedUser'] && $_SESSION['token'] != $booking->token) {
+	    if ($item->category()->getAccess($currentUser) < FFBoka::ACCESS_CONFIRM && ($booking->userId && $booking->userId!==$_SESSION['authenticatedUser']) && $_SESSION['token'] != $booking->token) {
 	        die(json_encode([ "error"=>"Du har inte behörighet att ta bort resursen." ]));
 	    }
 	    if ($item->removeFromBooking()) die(json_encode([ "status"=>"OK" ]));
