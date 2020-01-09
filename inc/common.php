@@ -162,7 +162,7 @@ function head(string $caption, $currentUser=NULL) {
 				<li data-icon="user"><a href="/userdata.php" data-transition='slide' data-rel="close"><?= htmlspecialchars($currentUser->name) ?></a></li>
 				<li data-icon="power"><a href="/index.php?logout" data-rel="close">Logga ut</a></li><?php
 				foreach ($currentUser->bookingAdminSections() as $section) {
-				    echo "<li data-icon='calendar'><a href='#' onClick='openBookingAdmin({$section->id});' data-rel='close'>Bokningar i " . htmlspecialchars($section->name) . "</a></li>\n";
+				    echo "<li data-icon='calendar'><a href='#' onClick='openBookingAdmin({$section->id});' data-ajax='false' data-rel='close'>Bokningsadmin " . htmlspecialchars($section->name) . "</a></li>\n";
 				}
 			} ?>
 			<li data-icon="info"><a href="help.php" data-transition='slide' data-rel="close">Hjälp</a></li>
@@ -172,8 +172,8 @@ function head(string $caption, $currentUser=NULL) {
 	
 	<div data-role="header">
 		<H1><?= $caption ?></H1>
-		<a href="#navpanel" data-rel="popup" data-transition="pop" data-role="button" data-icon="bars" data-iconpos="notext" class="ui-btn-left ui-nodisc-icon ui-alt-icon">Menu</a>
-		<?php 
+	    <a href='#navpanel' data-rel='popup' data-transition='pop' data-role='button' data-icon='bars' data-iconpos='notext' class='ui-btn-left ui-nodisc-icon ui-alt-icon'>Menu</a>
+		<?php
         switch ($_SERVER['PHP_SELF']) {
 		case "/admin/category.php": $href="/admin/"; $icon="back"; break;
 		case "/admin/item.php": $href="/admin/category.php?expand=items"; $icon="back"; break;

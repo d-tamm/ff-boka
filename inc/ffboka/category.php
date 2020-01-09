@@ -196,8 +196,8 @@ class Category extends FFBoka {
             if ($this->contactName=="" && $this->contactPhone=="" && $this->contactMail=="" && !is_null($this->parentId)) return $this->parent()->contactData();
             $ret = array();
             if ($this->contactName) $ret[] = htmlspecialchars($this->contactName);
-            if ($this->contactPhone) $ret[] = "&phone;: " . htmlspecialchars($this->contactPhone);
-            if ($this->contactMail) $ret[] = "<b>@</b>: " . htmlspecialchars($this->contactMail);
+            if ($this->contactPhone) $ret[] = "☎ " . htmlspecialchars($this->contactPhone);
+            if ($this->contactMail) $ret[] = "✉ " . htmlspecialchars($this->contactMail);
             return implode("<br>", $ret);
         } else {
             return $this->contactUser()->contactData();

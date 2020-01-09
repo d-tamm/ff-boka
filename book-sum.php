@@ -163,11 +163,36 @@ switch ($_REQUEST['action']) {
 	    header("Content-Type: application/json");
 	    // Check permissions: Only the original user and section admin can delete whole bookings
 	    if ($section->getAccess($currentUser) < FFBoka::ACCESS_SECTIONADMIN && $booking->userId !== $_SESSION['authenticatedUser'] && $_SESSION['token'] != $booking->token) {
-	        die(json_encode([ "error"=>"Du har inte behörighet att ta bort bokningen." ]));
+	        die(json_encode([ "error"=>"Du har inte behörighet att ta bort bokningen. :-P" ]));
 	    }
 	    $booking->delete();
         unset($_SESSION['bookingId']);
 	    die(json_encode([ "status"=>"OK" ]));
+	    
+	case "ajaxSetItemPrice":
+	    header("Content-Type: application/json");
+	    // Check permissions: Only admins for this item may set price
+	    $item = new Item($_REQUEST['bookedItemId'], TRUE);
+	    if ($item->category()->getAccess($currentUser) >= FFBoka::ACCESS_CONFIRM) {
+	        if (is_numeric($_REQUEST['price'])) $item->price = $_REQUEST['price'];
+	        elseif ($_REQUEST['price']==="") $item->price = NULL;
+	        else die(json_encode([ "status"=>"error", "error"=>"Ogiltig inmatning." ]));
+	        die(json_encode([ "status"=>"OK" ]));
+	    } else {
+	        die(json_encode([ "status"=>"error", "error"=>"Du har inte behörighet att sätta pris. :-P"]));
+	    }
+	    
+	case "ajaxSetPaid":
+	    header("Content-Type: application/json");
+	    // Check permissions: User needs to have some admin assignment
+	    if ($section->showFor($currentUser, FFBoka::ACCESS_CONFIRM)) {
+	        if (is_numeric($_REQUEST['paid'])) $booking->paid = $_REQUEST['paid'];
+	        elseif ($_REQUEST['paid']==="") $booking->paid = NULL;
+	        else die(json_encode([ "status"=>"error", "error"=>"Ogiltig inmatning." ]));
+	        die(json_encode([ "status"=>"OK" ]));
+	    } else {
+	        die(json_encode([ "status"=>"error", "error"=>"Du har inte behörighet att sätta värdet. :-P"]));
+	    }
 	    
 	case "ajaxRemoveItem":
 	    header("Content-Type: application/json");
@@ -211,9 +236,6 @@ switch ($_REQUEST['action']) {
         }
         die(json_encode(['status'=>'OK']));
         
-	case "ajaxSetPrice":
-	    // TODO: ajaxSetPrice - continue coding
-	    die();
 }
 
 ?><!DOCTYPE html>
@@ -242,20 +264,25 @@ switch ($_REQUEST['action']) {
 	<ul data-role='listview' data-inset='true' data-divider-theme='a' data-split-icon='delete'>
 	<?php
 	$questions = array();
+	$leastStatus = FFBoka::STATUS_CONFIRMED;
 	foreach ($booking->items() as $item) {
+	    $leastStatus = min($leastStatus, $item->status);
+	    $showEditButtons = ($item->category()->getAccess($currentUser) >= FFBoka::ACCESS_CONFIRM);
 	    foreach ($item->category()->getQuestions() as $id=>$q) {
 	        if (isset($questions[$id])) $questions[$id]=($questions[$id] || $q->required);
 	        else $questions[$id]=$q->required;
 	    }
 		echo "<li" . (in_array($item->bookedItemId, $unavail) ? " data-theme='c'" : "") . ">";
-		if ($item->category()->getAccess($currentUser) >= FFBoka::ACCESS_CONFIRM && $item->status > FFBoka::STATUS_PENDING) {
+		if ($showEditButtons) {
+		    echo "<div class='item-edit-buttons'>";
 		    if ($item->status == FFBoka::STATUS_CONFLICT || $item->status == FFBoka::STATUS_PREBOOKED) {
-		        echo "<div style='position:absolute; top:0px; right:37px; font-size:0.6em; z-index:1;'><button id='book-item-btn-confirm-{$item->bookedItemId}' class='ui-btn ui-btn-inline ui-btn-b' onclick=\"confirmBookedItem({$item->bookedItemId});\">Bekräfta</button></div>";
+		        echo "<button id='book-item-btn-confirm-{$item->bookedItemId}' class='ui-btn ui-btn-inline ui-btn-b' onclick=\"confirmBookedItem({$item->bookedItemId});\">Bekräfta</button>";
 		    }
+		    echo "<button class='ui-btn ui-btn-inline ui-btn-b' onclick=\"setItemPrice({$item->bookedItemId}, {$item->price});\">Sätt pris</button></div>";
 		}
-		echo "<a href='javascript:popupItemDetails({$item->bookedItemId})'>" . embedImage($item->getFeaturedImage()->thumb) .
+		echo "<a href='#' onClick='popupItemDetails({$item->bookedItemId});'" . ($showEditButtons ? " class='has-edit-buttons'" : "") . ">" . embedImage($item->getFeaturedImage()->thumb) .
 		"<h3 style='white-space:normal;'>" . htmlspecialchars($item->caption) . "</h3><p style='overflow:auto; white-space:normal; margin-bottom:0px;'>";
-		echo strftime("%F kl %H", $item->start) . " &mdash; " . strftime("%F kl %H", $item->end) . "<br>\n";
+		echo strftime("%F kl %H", $item->start) . " &mdash; " . strftime("%F kl %H:00", $item->end) . "<br>\n";
 		if (in_array($item->bookedItemId, $unavail)) echo "Inte tillgänglig";
 		else {
 		    switch ($item->status) {
@@ -272,10 +299,26 @@ switch ($_REQUEST['action']) {
 	}
 	?>
 	</ul>
+
 	<button onClick="location.href='book-part.php'" data-transition='slide' data-direction='reverse' class='ui-btn ui-icon-plus ui-btn-icon-right'>Lägg till fler resurser</button>
 	
-
-	<form id='form-booking' action="book-sum.php" method='post'>
+	<?php
+	$price = $booking->price;
+	$paid = $booking->paid;
+	if (!is_null($price)) { ?>
+    	<div class='ui-body ui-body-a' style='margin-top: 20px;'>
+    	<table style='width: 100%;'>
+    		<tr><td>Pris för bokningen <?= $leastStatus < FFBoka::STATUS_CONFIRMED ? "(preliminärt)" : "" ?></td><td style='text-align: right;'><?= $price ?>&nbsp;kr</td></tr>
+    		<tr><td>Betalt</td><td style='text-align: right; white-space: nowrap;'>
+    		<?= $section->showFor($currentUser, FFBoka::ACCESS_CONFIRM) ? "<a href='#' onClick='setPaid($paid);' class='ui-btn ui-btn-a ui-btn-inline ui-icon-edit ui-btn-icon-notext'>Ändra</a>" : "" ?>
+    		<?= $paid ?>&nbsp;kr</td></tr>
+    		<tr><td>Kvar att betala</td><td style='font-weight:bold; text-align: right; border-top:1px solid var(--FF-blue); border-bottom:double var(--FF-blue);'><?= $price - $paid ?>&nbsp;kr</td></tr>
+    	</table>
+    	</div><?php
+	}
+	?>
+	
+	<form id='form-booking' action="book-sum.php" method='post' style='margin-top: 20px;'>
 		<input type="hidden" name="action" value="confirmBooking">
 		
 		<?php
@@ -322,10 +365,8 @@ switch ($_REQUEST['action']) {
 		<?php if ($booking->userId) { 
             $bookUser = new User($booking->userId); ?>
 			<p class='ui-body ui-body-a'>
-				Bokningen görs för <?= htmlspecialchars($bookUser->name) ?>.<br>
+				Bokningen görs för <?= $bookUser->contactData() ?> 
 				Medlemsnummer: <?= $bookUser->id ?><br>
-				&#9742;: <?= htmlspecialchars($bookUser->phone) ?><br>
-				<b>@</b>: <?= htmlspecialchars($bookUser->mail) ?>
 			</p>
 		<?php } else { ?>
     	    <div class='ui-body ui-body-a'>Ange dina kontaktuppgifter så vi kan nå dig vid frågor:<br>
@@ -394,13 +435,6 @@ switch ($_REQUEST['action']) {
                         for ($h=0;$h<24;$h++) echo "\n<option value='$h'>$h:00</option>"; ?>
                     	</select>
                 	</div>
-            	</div>
-        	</div>
-            <div class='ui-field-contain'>
-                <label for='book-item-price'>Pris:</label>
-                <div data-role='controlgroup' data-type='horizontal'>
-	            	<input type='number' min='0' id='book-item-price' data-wrapper-class='controlgroup-textinput ui-btn'>
-	            	<button>kr</button>
             	</div>
         	</div>
 	        <button id="book-btn-save-part" disabled="disabled" onClick="checkTimes(true);">Spara ändringarna</button>

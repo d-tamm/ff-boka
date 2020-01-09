@@ -180,7 +180,6 @@ switch ($_REQUEST['action']) {
 	            $item = new Item(array_keys($_REQUEST['ids'])[0], TRUE);
 	            $item->start = $_REQUEST['start'];
 	            $item->end = $_REQUEST['end'];
-	            $item->price = (is_numeric($_REQUEST['price']) ? $_REQUEST['price'] : NULL);
 	        } else {
 	            // Step 1: Several items to save
     	        if (isset($_SESSION['bookingId'])) {

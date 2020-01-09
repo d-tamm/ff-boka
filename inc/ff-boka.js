@@ -8,8 +8,8 @@ $(document).on('pagecontainerhide', function (event, ui) {
 });
 
 function openBookingAdmin(sectionId) {
-	if (screen.width < 700) {
-		location.href= "/admin/bookings-d.php?sectionId=" + sectionId;		
+	if (screen.width < 800) {
+		if(confirm("Bokningsadmin för mobila enheter är inte klar än. Vill du gå till desktop-versionen?")) location.href= "/admin/bookings-d.php?sectionId=" + sectionId;
 	} else {
 		location.href= "/admin/bookings-d.php?sectionId=" + sectionId;
 	}
@@ -274,7 +274,6 @@ function checkTimes(save=false) {
         ids: checkedItems,
         start: startDate.valueOf()/1000 + startTime*60*60,
         end: endDate.valueOf()/1000 + endTime*60*60,
-        price: $("#book-item-price").val(),
     }, function(data, status) {
         $.mobile.loading("hide", {});
 		$("#book-btn-save-part").prop("disabled", !data.timesOK);
@@ -422,6 +421,44 @@ function removeItem(bookedItemId) {
 }
 
 /**
+ * Set the price for a booked item
+ * @param bookedItemId
+ */
+function setItemPrice(bookedItemId, lastPrice) {
+	var price = prompt("Pris för den här resursen (hela kr):", lastPrice);
+	if (price==="" || price) { // otherwise user hit cancel
+	    $.mobile.loading("show", {});
+	    $.getJSON("book-sum.php", {
+	        action: "ajaxSetItemPrice",
+	        bookedItemId: bookedItemId,
+	        price: price
+	    }, function(data, status) {
+	        $.mobile.loading("hide", {});
+	        if (data.error) alert(data.error);
+	        else location.reload();
+	    });
+	}
+}
+
+/**
+ * Function for admins to input how much the client has paid.
+ */
+function setPaid(lastPaid) {
+	var paid = prompt("Hur mycket är betalt? (hela kronor)", lastPaid);
+	if (paid==="" || paid) { // otherwise user hit cancel
+	    $.mobile.loading("show", {});
+	    $.getJSON("book-sum.php", {
+	        action: "ajaxSetPaid",
+	        paid: paid
+	    }, function(data, status) {
+	        $.mobile.loading("hide", {});
+	        if (data.error) alert(data.error);
+	        else location.reload();
+	    });
+	}
+}
+
+/**
  * Delete the whole booking
  * @param userId Used to redirect to userdata page for logged in users, or index for guests
  */
@@ -454,20 +491,6 @@ function confirmBookedItem(bookedItemId) {
     });
 }
 
-/**
- * Set a price for a booked item
- * @param bookedItemId ID of item to set the price for
- */
-function setPrice(bookedItemId) {
-	var price = prompt("Pris för resursen (hela kronor):", "0");
-	if (isNaN(price)) { alert(price + " är inte ett tal."); return; }
-    $.mobile.loading("show", {});
-    $.getJSON("book-sum.php", { action: "ajaxSetPrice", bookedItemId: bookedItemId, price: price }, function(data, status) {
-        $.mobile.loading("hide", {});
-        if (data.error) alert(data.error);
-        else $("#book-item-price-"+bookedItemId).html(price + " kr");
-    });
-}
 
 /**
  * Scrolls the freebusy bar of a single booked item to another start date
