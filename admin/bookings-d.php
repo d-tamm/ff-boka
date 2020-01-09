@@ -76,7 +76,13 @@ switch ($_REQUEST['action']) {
         $fbList = array();
         foreach ($_SESSION['itemIds'] as $id) {
             $item = new Item($id);
-            $fbList["item-$id"] = $item->freebusyBar(['start'=>$start->getTimestamp(), 'scale'=>TRUE, 'days'=>$daysInMonth, 'minStatus'=>FFBoka::STATUS_CONFLICT]);
+            $fbList["item-$id"] = $item->freebusyBar([
+                'start'=>$start->getTimestamp(),
+                'scale'=>TRUE,
+                'days'=>$daysInMonth,
+                'minStatus'=>FFBoka::STATUS_CONFLICT,
+                'showPrice'=>TRUE
+            ]);
         }
         die(json_encode(["scale"=>$scale, "freebusy"=>$fbList]));
         
@@ -138,8 +144,14 @@ switch ($_REQUEST['action']) {
         });
         
         $(document).on('click', ".freebusy-busy", function() {
-            var bookingView = window.open("/book-sum.php?bookingId=" + this.dataset.bookingId, "booking" + this.dataset.bookingId);
-            bookingView.focus();
+			if (screen.width < 800) {
+				var newtab = window.open("/book-sum.php?bookingId=" + this.dataset.bookingId, "booking"+this.dataset.bookingId);
+				newtab.focus();
+			} else {
+				$("#iframe-booking").attr("src", "/book-sum.php?bookingId=" + this.dataset.bookingId).css('width','33%');
+				$("#booking-admin").css("padding-right", "35%");
+				$("#close-iframe-booking").show();
+			}
         });
     });
 
@@ -164,16 +176,35 @@ switch ($_REQUEST['action']) {
 
     function addBooking(userId) {
         $.getJSON("<?= basename(__FILE__) ?>", { action: "ajaxAddBookingOnBehalf", userId: userId }, function(data) {
-            if (data.status=="OK") window.open("/book-part.php");
+            if (data.status=="OK") {
+				if (screen.width < 800) {
+					var newtab = window.open("/book-part.php");
+					newtab.focus();
+				} else {
+					$("#iframe-booking").attr("src", "/book-part.php").css('width','33%');
+					$("#booking-admin").css("padding-right", "35%");
+					$("#close-iframe-booking").show();
+				}
+            }
             else alert("Något har gått fel. Kontakta systemadmin.");
             $('#popup-add-booking').dialog('close');
         });
     }
+	
+	function closeIframeBooking() {
+		$("#close-iframe-booking").hide();
+		$('#booking-admin').css('padding-right', '0');
+		$('#iframe-booking').css('width','0').attr('src','');
+	}
 	</script>
 </head>
 
 
 <body class='desktop'>
+
+<iframe id="iframe-booking"></iframe>
+<div id="close-iframe-booking"><a href="#" title="Stäng sidpanel" onClick="closeIframeBooking();"><i class="fas fa-times"></i></a></div>
+
 <div id='popup-add-booking' title="Lägg till bokning">
 	<div class="ui-widget">
 		<label for="search-member">Leta efter medlem:</label>
@@ -189,13 +220,13 @@ switch ($_REQUEST['action']) {
 	<div id="head">
         <h1><a href="/index.php" title="Till startsidan"><i class='fas fa-home' style='color:white; margin-right:20px;'></i></a> Bokningar i <?= $section->name ?>, <span id='booking-adm-date'></span></h1>
         <table>
-        	<tr><td class='col-caption'>
-        		<a title="1 månad bakåt (pil vänster)" href="#" onClick="scrollDate(-1);"><i class='fas fa-chevron-left'></i></a>
+        	<tr><td class='col-caption'><div class='buttons'>
+        		<a title="1 månad bakåt (vänsterpil)" href="#" onClick="scrollDate(-1);"><i class='fas fa-chevron-left'></i></a>
         		<a title="Gå till idag" href="#" onClick="startDate = new Date(new Date().setHours(0,0,0,0));scrollDate(0);"><i class='fas fa-calendar-day'></i></a>
-        		<a title="1 månad framåt (pil höger)" href="#" onClick="scrollDate(1);"><i class='fas fa-chevron-right'></i></a>
+        		<a title="1 månad framåt (högerpil)" href="#" onClick="scrollDate(1);"><i class='fas fa-chevron-right'></i></a>
         		<a title="Uppdatera" href="#" onClick="scrollDate(0);"><i class='fas fa-sync'></i></a>
         		<a title="Lägg in ny bokning" href="#" onClick="$('#popup-add-booking').dialog('open');"><i class='fas fa-plus'></i></a>
-        	</td>
+        	</div></td>
         	<td><div class='freebusy-bar' id='booking-adm-scale'></div></td></tr>
         </table>
 	</div>
@@ -211,7 +242,7 @@ switch ($_REQUEST['action']) {
     	<h3>Teckenförklaring</h3>
 		<p>
 			<span class='freebusy-free' style='display:inline-block; width:2em;'>&nbsp;</span> tillgänglig tid<br>
-            <span class='freebusy-busy' style='display:inline-block; width:2em;'>&nbsp;</span> bokning<br>
+            <span class='freebusy-busy' style='display:inline-block; width:2em;'>&nbsp;</span> bokad tid<br>
             <span class='freebusy-busy unconfirmed' style='display:inline-block; width:2em;'>&nbsp;</span> obekräftad bokning<br>
             <span class='freebusy-busy conflict' style='display:inline-block; width:2em;'>&nbsp;</span> obekräftad bokning som krockar med annan befintlig bokning<br>
             <span class='freebusy-blocked' style='display:inline-block; width:2em;'>&nbsp;</span> ej bokbar tid<br>

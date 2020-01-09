@@ -45,12 +45,16 @@ class User extends FFBoka {
         }
         // Get user's assignments from the FF API as an array[sectionId][names] (only assignments on section level)
         $this->assignments = array();
-        if (self::$apiAssUrl) $data = json_decode(file_get_contents(self::$apiAssUrl . "?MNoSocnr={$this->id}"));
-        else $data = (object)array("results"=>array()); // API not set (e.g. development environment)
-        foreach ($data->results as $ass) {
-            if ($ass->cint_assignment_party_type->value == FFBoka::TYPE_SECTION) {
-                // This will sort the assignments on section ID
-                $this->assignments[$ass->section__cint_nummer][] = $ass->cint_assignment_type_id->name;
+        $data = (object)array("results"=>array());
+        if (self::$apiAssUrl) { // API URL for assignments is set. Try to get user's assignments
+            $data = @file_get_contents(self::$apiAssUrl . "?MNoSocnr={$this->id}");
+            if ($data !== FALSE) { // Got an answer
+                foreach (json_decode($data->results) as $ass) {
+                    if ($ass->cint_assignment_party_type->value == FFBoka::TYPE_SECTION) {
+                        // This will sort the assignments on section ID
+                        $this->assignments[$ass->section__cint_nummer][] = $ass->cint_assignment_type_id->name;
+                    }
+                }
             }
         }
     }
@@ -125,8 +129,8 @@ class User extends FFBoka {
     public function contactData() {
         $ret = array();
         if ($this->name) $ret[] = htmlspecialchars($this->name);
-        if ($this->phone) $ret[] = "&phone;: " . htmlspecialchars($this->phone);
-        if ($this->mail) $ret[] = "&#9993;: " . htmlspecialchars($this->mail);
+        if ($this->phone) $ret[] = "☎ " . htmlspecialchars($this->phone);
+        if ($this->mail) $ret[] = "✉ " . htmlspecialchars($this->mail);
         return implode("<br>", $ret);
     }
     

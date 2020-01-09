@@ -48,6 +48,7 @@
     padding-bottom:0.22em;
 }
 
+
 /* required fields in forms */
 label.required:after, legend.required:after, span.required:after {
     content: " *";
@@ -164,6 +165,11 @@ li.selected {
     background-color:var(--FF-busy);
     z-index: 4;
 }
+.freebusy-busy.has-price::after {
+	position: absolute;
+	top: 1px;
+	content:"💰";
+}
 .freebusy-blocked {
     background: var(--FF-blocked);
     z-index: 3;
@@ -176,7 +182,7 @@ li.selected {
 }
 .freebusy-tic {
     border-left:1px solid var(--FF-gray);
-    z-index: 5;
+    z-index: 6;
 }
 #book-combined-freebusy-bar ~ .freebusy-tic {
 	cursor: pointer;
@@ -209,8 +215,22 @@ li.selected {
 	display:none;
 }
 
+#page-book-sum .has-edit-buttons {
+	padding-bottom:40px;
+}
+.item-edit-buttons {
+	position: absolute;
+	bottom: 0px;
+	left: 100px;
+	font-size: 0.6em;
+	z-index: 1;
+}
 
 /* ===== Booking admin ===== */
+
+#booking-admin {
+	transition: padding-right 1s;	
+}
 
 .desktop h1,
 .desktop h2,
@@ -248,15 +268,20 @@ li.selected {
 }
 .desktop .col-caption {
 	width:20%;
-	font-size:130%;
 	white-space:nowrap;
 	overflow:hidden;
 	text-overflow:ellipsis;
 }
-.desktop .col-caption a {
-	background-color:var(--FF-blue);
+.desktop .col-caption div.buttons {
+	font-size:150%;
+}
+.desktop .col-caption div.buttons a {
 	padding:5px;
+	color:var(--FF-blue);
+}
+.desktop .col-caption div.buttons a:hover {
 	color:white;
+	background-color:var(--FF-blue);
 }
 
 .desktop .freebusy-busy {
@@ -269,6 +294,7 @@ li.selected {
 .desktop .freebusy-busy.conflict {
     background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' version='1.1' height='50px' width='20px'><text x='0' y='15' fill='red' font-size='20'>⚠</text></svg>");
     background-repeat: repeat-x;
+    z-index: 5;
 }
 
 .desktop #legend {
@@ -278,6 +304,31 @@ li.selected {
 }
 .desktop #legend h3 {
 	margin-top:5px;
+}
+
+.desktop #iframe-booking {
+	position: absolute;
+	right: 0;
+	top: 0;
+	height: 100%;
+	width: 0;
+	border: none;
+	box-shadow: 0 0 10px;
+	background-color: white;
+	z-index: 100;
+	transition: width 1s;	
+}
+.desktop #close-iframe-booking {
+	position: absolute;
+	top: 20px;
+	right: 33%;
+	display: none;
+}
+.desktop #close-iframe-booking a {
+	color: white;
+	background: var(--FF-blue);
+	padding:8px;
+	border-radius: 5px 0 0 5px;
 }
 
 /* ==== Loading indicator ==== */

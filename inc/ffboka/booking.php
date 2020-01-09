@@ -53,7 +53,7 @@ class Booking extends FFBoka {
             case "timestamp":
             case "commentCust":
             case "commentIntern":
-            case "payed": //Datetime field
+            case "paid":
             case "extName":
             case "extPhone":
             case "extMail":
@@ -64,7 +64,7 @@ class Booking extends FFBoka {
             case "price":
                 $stmt = self::$db->query("SELECT SUM(price) price FROM booked_items WHERE bookingId={$this->id} AND NOT price IS NULL");
                 $row = $stmt->fetch(PDO::FETCH_OBJ);
-                return is_null($row->price) ? 0 : $row->price;
+                return $row->price;
             default:
                 throw new \Exception("Use of undefined Booking property $name");
         }
@@ -81,7 +81,7 @@ class Booking extends FFBoka {
             case "commentCust":
             case "commentIntern":
             case "status":
-            case "payed": //Datetime field
+            case "paid":
             case "extName":
             case "extPhone":
             case "extMail":
