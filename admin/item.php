@@ -9,8 +9,10 @@ global $cfg;
 session_start();
 require(__DIR__ . "/../inc/common.php");
 
+if (isset($_REQUEST['catId'])) $_SESSION['catId'] = $_REQUEST['catId'];
+
 if (!isset($_SESSION['sectionId']) || !isset($_SESSION['authenticatedUser']) || !isset($_SESSION['catId'])) {
-    header("Location: /?action=sessionExpired");
+    header("Location: /");
     die();
 }
 

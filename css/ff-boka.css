@@ -120,7 +120,7 @@ li.selected {
     font-size: small;
 }
 
-.inactive a {
+.inactive a, td.inactive {
     color:grey !important;
 }
 
@@ -272,14 +272,15 @@ li.selected {
 	overflow:hidden;
 	text-overflow:ellipsis;
 }
-.desktop .col-caption div.buttons {
-	font-size:150%;
+.desktop .col-caption span {
+	cursor: pointer;
 }
-.desktop .col-caption div.buttons a {
+.desktop td.navbuttons a {
+	font-size:150%;
 	padding:5px;
 	color:var(--FF-blue);
 }
-.desktop .col-caption div.buttons a:hover {
+.desktop td.navbuttons a:hover {
 	color:white;
 	background-color:var(--FF-blue);
 }
@@ -306,7 +307,7 @@ li.selected {
 	margin-top:5px;
 }
 
-.desktop #iframe-booking {
+.desktop #iframe-booking, .desktop #panel-item-details {
 	position: absolute;
 	right: 0;
 	top: 0;
@@ -322,9 +323,12 @@ li.selected {
 	position: absolute;
 	top: 20px;
 	right: 33%;
+	transition: right 1s;	
 	display: none;
+	z-index: 11;
 }
 .desktop #close-iframe-booking a {
+	box-shadow: 0 0 10px white;
 	color: white;
 	background: var(--FF-blue);
 	padding:8px;

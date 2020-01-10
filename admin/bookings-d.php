@@ -42,7 +42,7 @@ function showCat(Category $cat, User $user) {
             echo "</h2>\n<table>\n";
         }
         foreach ($items as $item) {
-            echo "<tr><td class='col-caption'>{$item->caption}</td>\n";
+            echo "<tr><td class='col-caption" . ($item->active ? "" : " inactive") . "' onClick=\"showItemDetails({$item->id});\"><span title='" . htmlspecialchars($item->caption) . "'>" . htmlspecialchars($item->caption) . "</span></td>\n";
             echo "<td class='col-freebusy'><div class='freebusy-bar' id='freebusy-item-{$item->id}' style='margin-bottom:0px;'></div></td></tr>\n";
             $_SESSION['itemIds'][] = $item->id;
         }
@@ -144,17 +144,15 @@ switch ($_REQUEST['action']) {
         });
         
         $(document).on('click', ".freebusy-busy", function() {
-			if (screen.width < 800) {
-				var newtab = window.open("/book-sum.php?bookingId=" + this.dataset.bookingId, "booking"+this.dataset.bookingId);
-				newtab.focus();
-			} else {
-				$("#iframe-booking").attr("src", "/book-sum.php?bookingId=" + this.dataset.bookingId).css('width','33%');
-				$("#booking-admin").css("padding-right", "35%");
-				$("#close-iframe-booking").show();
-			}
+        	openSidePanelOrWindow("/book-sum.php?bookingId=" + this.dataset.bookingId, "booking"+this.dataset.bookingId);
         });
     });
 
+	// Show details for an item in side panel
+	function showItemDetails(itemId) {
+    	openSidePanelOrWindow("/item-details.php?itemId=" + itemId, "itemDetails" + itemId);
+	}
+	
 	// Scroll by x months
     function scrollDate(offset) {
         startDate.setMonth(startDate.getMonth() + offset, 1); // 1st of month
@@ -174,24 +172,30 @@ switch ($_REQUEST['action']) {
         });
     }
 
+	// Add a new booking on behalf of another user	
     function addBooking(userId) {
         $.getJSON("<?= basename(__FILE__) ?>", { action: "ajaxAddBookingOnBehalf", userId: userId }, function(data) {
             if (data.status=="OK") {
-				if (screen.width < 800) {
-					var newtab = window.open("/book-part.php");
-					newtab.focus();
-				} else {
-					$("#iframe-booking").attr("src", "/book-part.php").css('width','33%');
-					$("#booking-admin").css("padding-right", "35%");
-					$("#close-iframe-booking").show();
-				}
+                openSidePanelOrWindow("/book-part.php");
             }
             else alert("Något har gått fel. Kontakta systemadmin.");
             $('#popup-add-booking').dialog('close');
         });
     }
+
+	function openSidePanelOrWindow(url, windowId="_blank") {
+		if (screen.width < 800) {
+			var newtab = window.open(url, windowId);
+			newtab.focus();
+		} else {
+			$("#iframe-booking").attr("src", url).css('width','33%');
+			$("#booking-admin").css("padding-right", "35%");
+			$("#close-iframe-booking").show();
+		}
+	}
 	
-	function closeIframeBooking() {
+	// Close the side panel
+	function closeSidePanel() {
 		$("#close-iframe-booking").hide();
 		$('#booking-admin').css('padding-right', '0');
 		$('#iframe-booking').css('width','0').attr('src','');
@@ -203,7 +207,7 @@ switch ($_REQUEST['action']) {
 <body class='desktop'>
 
 <iframe id="iframe-booking"></iframe>
-<div id="close-iframe-booking"><a href="#" title="Stäng sidpanel" onClick="closeIframeBooking();"><i class="fas fa-times"></i></a></div>
+<div id="close-iframe-booking"><a href="#" title="Stäng sidpanel" onClick="closeSidePanel();"><i class="fas fa-times"></i></a></div>
 
 <div id='popup-add-booking' title="Lägg till bokning">
 	<div class="ui-widget">
@@ -220,13 +224,13 @@ switch ($_REQUEST['action']) {
 	<div id="head">
         <h1><a href="/index.php" title="Till startsidan"><i class='fas fa-home' style='color:white; margin-right:20px;'></i></a> Bokningar i <?= $section->name ?>, <span id='booking-adm-date'></span></h1>
         <table>
-        	<tr><td class='col-caption'><div class='buttons'>
+        	<tr><td class='col-caption navbuttons'>
         		<a title="1 månad bakåt (vänsterpil)" href="#" onClick="scrollDate(-1);"><i class='fas fa-chevron-left'></i></a>
         		<a title="Gå till idag" href="#" onClick="startDate = new Date(new Date().setHours(0,0,0,0));scrollDate(0);"><i class='fas fa-calendar-day'></i></a>
         		<a title="1 månad framåt (högerpil)" href="#" onClick="scrollDate(1);"><i class='fas fa-chevron-right'></i></a>
         		<a title="Uppdatera" href="#" onClick="scrollDate(0);"><i class='fas fa-sync'></i></a>
         		<a title="Lägg in ny bokning" href="#" onClick="$('#popup-add-booking').dialog('open');"><i class='fas fa-plus'></i></a>
-        	</div></td>
+        	</td>
         	<td><div class='freebusy-bar' id='booking-adm-scale'></div></td></tr>
         </table>
 	</div>
