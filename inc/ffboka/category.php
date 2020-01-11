@@ -270,9 +270,10 @@ class Category extends FFBoka {
     /**
      * Get the granted access level for given user, taking into account inherited access.
      * @param \FFBoka\User $user
+     * @param bool $tieInSectionAdmin Whether to also include admin role set on section level
      * @return int Bitfield of granted access rights. For an empty (fake) category, returns ACCESS_CATADMIN.
      */
-    public function getAccess(User $user) {
+    public function getAccess(User $user, bool $tieInSectionAdmin=TRUE) {
         // On fake category, assume full cat access and don't go further
         if (!$this->id) return FFBoka::ACCESS_CATADMIN;
         $access = FFBoka::ACCESS_NONE;
@@ -288,10 +289,10 @@ class Category extends FFBoka {
         }
         if ($this->parentId) {
             // Tie in access rules from parent category
-            $access = $access | $this->parent()->getAccess($user);
-        } else {
+            $access = $access | $this->parent()->getAccess($user, $tieInSectionAdmin);
+        } elseif ($tieInSectionAdmin) {
             // Tie in access rules from section
-            $access = $access | $this->section()->getAccess($user);
+            $access = $access | $this->section()->getAccess($user, $tieInSectionAdmin);
         }
         return $access;
     }
@@ -319,13 +320,21 @@ class Category extends FFBoka {
     /**
      * Retrieve all admins for category
      * @param int $access Return all entries with at least this access level.
+     * @param bool $inherit Even return admins from superordinate categories
      * @return array [userId, name, access]
      */
-    public function admins(int $access=FFBoka::ACCESS_READASK) {
+    public function admins(int $access=FFBoka::ACCESS_READASK, bool $inherit=FALSE) {
         if (!$this->id) return array();
         $stmt = self::$db->prepare("SELECT userId, name, access FROM cat_admins INNER JOIN users USING (userId) WHERE catId={$this->id} AND access>=? ORDER BY users.name");
         $stmt->execute(array($access));
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $admins = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        if ($inherit && $this->parentId) {
+            // Tie in admins from parent category
+            foreach ($this->parent()->admins($access, TRUE) as $inh) {
+                if (!in_array($inh['userId'], array_column($admins, "userId"))) $admins[] = $inh;
+            }
+        }
+        return $admins;
     }
     
     /**
