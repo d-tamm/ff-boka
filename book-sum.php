@@ -5,7 +5,6 @@ use FFBoka\FFBoka;
 use FFBoka\Booking;
 use FFBoka\Question;
 use FFBoka\Item;
-use FFBoka\Category;
 global $cfg;
 
 session_start();
@@ -97,28 +96,43 @@ switch ($_REQUEST['action']) {
 		// Set booking status of each item, and build confirmation string incl post-booking messages
 		$leastStatus = FFBoka::STATUS_CONFIRMED;
 		$messages = array();
-		$contData = array();
+		$rawContData = array();
+		$adminsToNotify = array();
 		foreach ($booking->items() as $item) {
-		    $cd = $item->category()->contactData();
-		    if ($cd) $contData[$cd][] = htmlspecialchars($item->category()->caption);
-		    $mailItems .= "<ul>";
+		    $cat = $item->category();
+		    // remember contact data for item
+		    $itemContact = $cat->contactData();
+		    if ($itemContact) $rawContData[$itemContact][] = htmlspecialchars($cat->caption);
+		    // Remember postbook messages and build string of reference numbers (e.g. (1), (2))
 		    $msgRef = "";
-		    foreach ($item->category()->postbookMsgs() as $msg) {
+		    foreach ($cat->postbookMsgs() as $msg) {
 			    if (in_array($msg, $messages)) $msgRef .= " (".(array_search($msg, $messages)+1).")";
 			    else { $messages[] = $msg; $msgRef .= "(".count($messages).")"; }
 		    }
+		    // Bullet list with booked items
 		    $mailItems .= "<li><b>" . htmlspecialchars($item->caption) . "</b> " . strftime("%a %F kl %k:00", $item->start) . " till " . strftime("%a %F kl %k:00", $item->end) . " $msgRef</li>";
-		    if ($item->category()->getAccess($currentUser) >= FFBoka::ACCESS_BOOK) $status = FFBoka::STATUS_CONFIRMED;
-		    else {
-		        if (in_array($item->bookedItemId, $conflicts)) $status = FFBoka::STATUS_CONFLICT;
-		        else $status = FFBoka::STATUS_PREBOOKED; 
+		    // Decide which status the booked item shall get
+		    if ($cat->getAccess($currentUser) >= FFBoka::ACCESS_BOOK) {
+		        $item->status = FFBoka::STATUS_CONFIRMED;
 		    }
-	        $item->status = $status;
-	        $leastStatus = $leastStatus & $status;
-	        $mailItems .= "</ul>";
+		    else {
+		        if (in_array($item->bookedItemId, $conflicts)) $item->status = FFBoka::STATUS_CONFLICT;
+		        else $item->status = FFBoka::STATUS_PREBOOKED; 
+		    }
+	        $leastStatus = $leastStatus & $item->status;
+	        // collect admins to notify about booking: array[userId][itemId1, itemId2...]
+	        foreach ($cat->admins(FFBoka::ACCESS_CONFIRM, TRUE) as $adm) {
+	            $admin = new User($adm['userId']);
+	            switch ($admin->getNotifyAdminOnNewBooking($cat)) {
+	                case "confirmOnly":
+	                    if ($item->status > FFBoka::STATUS_PREBOOKED) break; 
+	                case "yes":
+	                    $adminsToNotify[$adm['userId']][] = $item->bookedItemId;
+	            }
+	        }
 		}
 		$contactData = "";
-		foreach ($contData as $cd=>$captions) {
+		foreach ($rawContData as $cd=>$captions) {
 		    $contactData .= "<p>Kontakt vid frågor angående " . implode(" och ", array_unique($captions)) . ":<br>$cd</p>";
 		}
 		$booking->commentCust = $_REQUEST['commentCust'];
@@ -136,7 +150,7 @@ switch ($_REQUEST['action']) {
 		        $cfg['mailFrom'], // from address
 		        $cfg['mailFromName'], // from name
 		        is_null($booking->userId) ? $_REQUEST['extMail'] : $booking->user()->mail, // to
-		        "", // replyTo
+		        "", // replyTo (use From address)
 		        "Bokningsbekräftelse #{$booking->id}", // subject
 		        $cfg['SMTP'], // SMPT options
 		        "confirm_booking", // template name
@@ -154,6 +168,31 @@ switch ($_REQUEST['action']) {
 	    } catch(Exception $e) {
 	        $message = "Kunde inte skicka bekräftelsen:" . $e;
 	        break;
+	    }
+	    // Send notifications to admins
+	    foreach ($adminsToNotify as $id=>$itemIds) {
+	        $adm = new User($id);
+	        if ($adm->mail) { // can only send if admin has email address
+    	        $mailItems = "";
+    	        foreach ($itemIds as $itemId) {
+    	            $item = new Item($itemId, TRUE);
+    	            $mailItems .= "<li><b>" . htmlspecialchars($item->caption) . "</b> " . strftime("%a %F kl %k:00", $item->start) . " till " . strftime("%a %F kl %k:00", $item->end) . "</li>";
+    	        }
+        	    sendmail(
+        	        $cfg['mailFrom'], // from address
+        	        $cfg['mailFromName'], // from Name
+        	        $adm->mail, // to
+        	        "", // replyTo (use From address)
+        	        "Ny bokning att bekräfta", // subject
+        	        $cfg['SMTP'], // SMTP options
+        	        "booking_alert",
+        	        array(
+                        "{{name}}"=>htmlspecialchars($adm->name),
+        	            "{{items}}"=>$mailItems,
+        	            "{{bookingLink}}" => "{$cfg['url']}book-sum.php?bookingId={$booking->id}",
+        	        )
+    	        );
+	        }
 	    }
 		unset($_SESSION['bookingId']);
 		header("Location: index.php?action=bookingConfirmed&mail=" . urlencode(is_null($booking->userId) ? $_REQUEST['extMail'] : $booking->user()->mail));

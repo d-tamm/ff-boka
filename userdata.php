@@ -2,6 +2,8 @@
 use FFBoka\User;
 use FFBoka\Section;
 use FFBoka\Booking;
+use FFBoka\Category;
+use FFBoka\FFBoka;
 
 session_start();
 require(__DIR__."/inc/common.php");
@@ -13,6 +15,30 @@ if (!$_SESSION['authenticatedUser']) {
 }
 
 $currentUser = new User($_SESSION['authenticatedUser']);
+
+/**
+ * Show a list of all categories and their children where user has admin permissions,
+ * with switches to opt out of messages when new bookings arrive 
+ * @param User $user
+ * @param Category $cat
+ */
+function showNotificationOptout(User $user, Category $cat) {
+    if ($cat->getAccess($user, FALSE) >= FFBoka::ACCESS_CONFIRM) {
+        $notify = $user->getNotifyAdminOnNewBooking($cat);
+        ?>
+        <div class='ui-field-contain'>
+        	<label><?= htmlspecialchars($cat->caption) ?></label>
+        	<fieldset data-role="controlgroup" data-type="horizontal" data-mini="true">
+            	<label><input type="radio" name="optout-cat-<?= $cat->id ?>" value="0"<?= $notify=="no" ? " checked='checked'" : "" ?> onClick="setNotificationOptout(<?= $cat->id ?>, 'no');">Av</label>
+            	<label><input type="radio" name="optout-cat-<?= $cat->id ?>" value="1"<?= $notify=="confirmOnly" ? " checked='checked'" : "" ?> onClick="setNotificationOptout(<?= $cat->id ?>, 'confirmOnly');">Bekräfta</label>
+            	<label><input type="radio" name="optout-cat-<?= $cat->id ?>" value="2"<?= $notify=="yes" ? " checked='checked'" : "" ?> onClick="setNotificationOptout(<?= $cat->id ?>, 'yes');">Alla</label>
+        	</fieldset>
+        </div><?php
+    }
+    foreach ($cat->children() as $child) {
+        if ($child->showFor($user, FFBoka::ACCESS_CONFIRM)) showNotificationOptout($user, $child);
+    }
+}
 
 switch ($_REQUEST['action']) {
     case "bookingDeleted":
@@ -38,6 +64,17 @@ switch ($_REQUEST['action']) {
     		$message = "Fyll i namn, epostadress och mobilnummer, tack.";
     	}
     	break;
+    	
+    case "ajaxSetNotificationOptout":
+        header("Content-Type: application/json");
+        $ret = $currentUser->setNotifyAdminOnNewBooking($_REQUEST['catId'], $_REQUEST['notify']);
+        if ($ret === FALSE ) {
+            die(json_encode([ "status"=>"error", "error"=>"Något har gått fel. Kunde inte spara." ]));
+        } elseif ($ret === 0) {
+            die(json_encode([ "status"=>"warning", "warning"=>"OBS: Nu finns det inte någon bokningsansvarig kvar som får meddelande om nya bokningar som måste bekräftas!" ]));
+        } else {
+            die(json_encode([ "status"=>"OK" ]));
+        }
 }
 	
 
@@ -81,6 +118,23 @@ if ($_GET['first_login']) $message = "Välkommen till resursbokningen! Innan du 
 			} ?>
             </ul>
         </div>
+		
+		<?php
+		$sections = $currentUser->bookingAdminSections();
+		if (count($sections)) { ?>
+		<div data-role='collapsible'>
+			<h3>Notifieringar</h3>
+			<h4>Meddelanden vid nya bokningar</h4>
+			<p><small>I följande kategorier har du administratörsbehörighet. Här kan du ställa in om du vill få meddelanden när nya bokningar görs. "Bekräfta" innebär att du bara får meddelanden för preliminärbokningar som måste bekräftas av någon bokningsansvarig.</small></p>
+			<?php 
+    		foreach ($sections as $sec) {
+    		    echo "<p><b>" . htmlspecialchars($sec->name) . "</b></p>";
+    		    foreach ($sec->getMainCategories() as $cat) {
+    		        if ($cat->showFor($currentUser, FFBoka::ACCESS_CONFIRM)) showNotificationOptout($currentUser, $cat);
+    		    }
+    		} ?>
+        </div><?php
+		} ?>
 		
 		<div data-role='collapsible'>
 			<h3>Kontaktuppgifter</h3>

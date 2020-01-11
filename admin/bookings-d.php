@@ -4,7 +4,6 @@ use FFBoka\Section;
 use FFBoka\User;
 use FFBoka\Category;
 use FFBoka\Item;
-use FFBoka\Booking;
 
 session_start();
 require(__DIR__."/../inc/common.php");
@@ -33,20 +32,26 @@ if (!$section->showFor($currentUser, FFBoka::ACCESS_CONFIRM)) {
  */
 function showCat(Category $cat, User $user) {
     if ($cat->showFor($user, FFBoka::ACCESS_CONFIRM)) {
-        $items = $cat->items();
-        if (count($items)) {
-            echo "<h2>";
-            $elems = array_column($cat->getPath(), "caption");
-            array_shift($elems);
-            echo implode(" &rarr; ", $elems); 
-            echo "</h2>\n<table>\n";
+        // User has access to this or some child category
+        if ($cat->getAccess($user) >= FFBoka::ACCESS_CONFIRM) {
+            // User has sufficient access to this category and its items.
+            $items = $cat->items();
+            if (count($items)) {
+                echo "<h2>";
+                for ($elems = $cat->getPath(), $i = 1; $i < count($elems); $i++) {
+                    if ($i > 1) echo " &rarr; ";
+                    if ($cat->showFor($user, FFBoka::ACCESS_CATADMIN)) echo "<a href='#' onClick=\"openSidePanelOrWindow('/admin/category.php?catId={$elems[$i]['id']}');\">{$elems[$i]['caption']}</a>";
+                    else echo $elems[$i]['caption'];
+                }
+                echo "</h2>\n<table>\n";
+            }
+            foreach ($items as $item) {
+                echo "<tr><td class='col-caption" . ($item->active ? "" : " inactive") . "' onClick=\"showItemDetails({$item->id});\"><span title='" . htmlspecialchars($item->caption) . "'>" . htmlspecialchars($item->caption) . "</span></td>\n";
+                echo "<td class='col-freebusy'><div class='freebusy-bar' id='freebusy-item-{$item->id}' style='margin-bottom:0px;'></div></td></tr>\n";
+                $_SESSION['itemIds'][] = $item->id;
+            }
+            if (count($items)) echo "</table>\n";
         }
-        foreach ($items as $item) {
-            echo "<tr><td class='col-caption" . ($item->active ? "" : " inactive") . "' onClick=\"showItemDetails({$item->id});\"><span title='" . htmlspecialchars($item->caption) . "'>" . htmlspecialchars($item->caption) . "</span></td>\n";
-            echo "<td class='col-freebusy'><div class='freebusy-bar' id='freebusy-item-{$item->id}' style='margin-bottom:0px;'></div></td></tr>\n";
-            $_SESSION['itemIds'][] = $item->id;
-        }
-        if (count($items)) echo "</table>\n";
         foreach ($cat->children() as $child) showCat($child, $user);
     }
 }

@@ -179,4 +179,45 @@ class User extends FFBoka {
         }
         return $admSections;
     }
+    
+    /**
+     * Returns whether user as a booking admin shall receive mails on new bookings in given category
+     * @param Category $cat Category for which to return the information
+     * @return string yes|confirmOnly|no If confirmOnly, the user shall only be notified on new
+     * bookings that need to be confirmed. 
+     */
+    public function getNotifyAdminOnNewBooking(Category $cat) {
+        $stmt = self::$db->query("SELECT notify FROM cat_admin_noalert WHERE userId={$this->id} AND catId={$cat->id}");
+        if ($row = $stmt->fetch(\PDO::FETCH_OBJ)) {
+            return $row->notify;
+        } else {
+            return "yes";
+        }
+    }
+
+    /**
+     * Set whether to notify a booking admin user on new bookings in given category
+     * @param int $catId Category ID for which to set the information
+     * @param string $value no|confirmOnly|yes
+     * @throws \Exception if $value is not one of the allowed values.
+     * @return boolean|int On success, returns the remaining number of admins receiving
+     * notifications in this category. Returns FALSE on failure
+     */
+    public function setNotifyAdminOnNewBooking(int $catId, string $value) {
+        if ($value=="yes") {
+            if (self::$db->exec("DELETE FROM cat_admin_noalert WHERE userId={$this->id} AND catId=$catId")===FALSE) return FALSE;
+        } elseif ($value=="no" || $value=="confirmOnly") {
+            if (self::$db->exec("INSERT INTO cat_admin_noalert SET userId={$this->id}, catId=$catId, notify='$value' ON DUPLICATE KEY UPDATE notify='$value'")===FALSE) return FALSE;
+        } else {
+            throw new \Exception("$value is not a valid value for admin notification.");
+        }
+        $cat = new Category($catId);
+        $remaining = 0;
+        foreach ($cat->admins(FFBoka::ACCESS_CONFIRM, TRUE) as $admin) {
+            $u = new User($admin['userId']);
+            if ($u->getNotifyAdminOnNewBooking($cat)!='no') $remaining++;
+        }
+        return $remaining;
+        
+    }
 }

@@ -159,7 +159,7 @@ function head(string $caption, $currentUser=NULL) {
 		<ul data-role="listview">
 			<li data-icon="home"><a href="/index.php" data-transition='slide' data-direction='reverse' data-rel="close">Startsida</a></li><?php
 			if ($_SESSION['authenticatedUser']) { ?>
-				<li data-icon="user"><a href="/userdata.php" data-transition='slide' data-rel="close"><?= htmlspecialchars($currentUser->name) ?></a></li>
+				<li data-icon="user"><a href="/userdata.php" data-transition='slide' data-rel="close">Min sida</a></li>
 				<li data-icon="power"><a href="/index.php?logout" data-rel="close">Logga ut</a></li><?php
 				foreach ($currentUser->bookingAdminSections() as $section) {
 				    echo "<li data-icon='calendar'><a href='#' onClick='openBookingAdmin({$section->id});' data-ajax='false' data-rel='close'>Bokningsadmin " . htmlspecialchars($section->name) . "</a></li>\n";

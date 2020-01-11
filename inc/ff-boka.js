@@ -949,7 +949,7 @@ $(document).on('pageshow', "#page-admin-category", function() {
  * Revoke category admin permissions
  * @param userId ID of affected user
  */
-function unsetAccess(id) {
+function unsetAccess(userId) {
     $.mobile.loading("show", {});
     $.get("?action=ajaxSetAccess&id=" + encodeURIComponent(userId) + "&access=" + ACCESS_NONE, function(data, status) {
         if (data!=0) {
@@ -1157,3 +1157,14 @@ function deleteAccount() {
 	}
 }
 
+function setNotificationOptout(catId, notify) {
+    $.getJSON("?action=ajaxSetNotificationOptout&catId=" + catId + "&notify=" + notify, function(data, status) {
+        switch (data.status) {
+        case "warning":
+        	alert(data.warning); break;
+        case "error":
+            alert(data.error); break;
+        }
+    });
+	
+}

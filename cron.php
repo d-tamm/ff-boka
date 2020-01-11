@@ -34,3 +34,5 @@ foreach ($data->results as $ass) {
 }
 // Delete all records not affected by the update
 $db->exec("DELETE FROM assignments WHERE TIMESTAMPDIFF(SECOND, timestamp, NOW())>10");
+
+// Delete records from cat_admin_noalert which do not any more belong to a user with admin rights 
