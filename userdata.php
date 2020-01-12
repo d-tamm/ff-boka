@@ -101,22 +101,32 @@ if ($_GET['first_login']) $message = "Välkommen till resursbokningen! Innan du 
 		
 		<div data-role='collapsible' data-collapsed='false'>
 			<h3>Mina bokningar</h3>
-			<ul data-role="listview">
 			<?php
 			$bookingIds = $currentUser->bookingIds();
 			if (count($bookingIds)) {
-    			foreach ($bookingIds as $id) {
+			    // Sort the bookings in unconfirmed, upcoming and completed
+			    $unconfirmed = "";
+			    $upcoming = "";
+			    $completed = "";
+			    foreach ($bookingIds as $id) {
     			    $b = new Booking($id);
-    			    echo "<li><a href='book-sum.php?bookingId={$b->id}'><p>Bokat {$b->timestamp} i LA {$b->section()->name}:</p>";
+    			    $latestEnd = time();
+    			    $html = "<li><a href='book-sum.php?bookingId={$b->id}'><p>Bokat {$b->timestamp} i LA {$b->section()->name}:</p>";
     			    foreach ($b->items() as $item) {
-    			        echo "<p><b>" . htmlspecialchars($item->caption) . "</b> (" . strftime("%F kl %k:00", $item->start) . " &mdash; " . strftime("%F kl %k:00", $item->end) . ")</p>";
+    			        $html .= "<p><b>" . htmlspecialchars($item->caption) . "</b> (" . strftime("%F kl %k:00", $item->start) . " &mdash; " . strftime("%F kl %k:00", $item->end) . ($item->status<FFBoka::STATUS_CONFIRMED ? ", <b>obekräftat</b>" : "") . ")</p>";
+    			        $latestEnd = min($latestEnd, $item->end);
     			    }
-    			    echo "</a></li>";
-    			}
+    			    $html .= "</a></li>";
+    			    if ($b->status() < FFBoka::STATUS_CONFIRMED) $unconfirmed .= $html;
+    			    elseif ($latestEnd<time()) $completed .= $html;
+    			    else $upcoming .= $html;
+			    }
+			    if ($unconfirmed) echo "<h4>Obekräftade bokningar</h4><ul data-role='listview'>$unconfirmed</ul>";
+			    if ($upcoming) echo "<h4>Kommande bokningar</h4><ul data-role='listview'>$upcoming</ul>";
+			    if ($completed) echo "<h4>Avslutade bokningar</h4><ul data-role='listview'>$completed</ul>";
 			} else {
-			    echo "<li>Du har inga bokningar.</li>";
+			    echo "<ul data-role='listview'><li>Du har inga bokningar.</li></ul>";
 			} ?>
-            </ul>
         </div>
 		
 		<?php
