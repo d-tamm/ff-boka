@@ -36,6 +36,10 @@ if (!(
     (isset($_SESSION['token']) && ($_SESSION['token'] == $booking->token)) || // correct token
     ($_SESSION['authenticatedUser'] && ($booking->userId == $currentUser->id)) // same user
 )) {
+    if (!$_SESSION['authenticatedUser']) {
+        header("Location: index.php?message=" . urlencode("Du måste logga in för att se bokningen.") . "&redirect=" . urlencode("book-sum.php?bookingId={$_REQUEST['bookingId']}"));
+        die();
+    }
     // Last access check: current user must be admin of some used category
     $isAdmin = FALSE;
     foreach ($booking->items() as $item) {
@@ -46,7 +50,7 @@ if (!(
     }
     if (!$isAdmin) {
         unset($_SESSION['bookingId']);
-        header("Location: index.php?action=accessDenied&to=" . urlencode("bokningen"));
+        header("Location: index.php?action=accessDenied&to=" . urlencode("bokningen.") . "&redirect=" . urlencode("book-sum.php?bookingId={$_REQUEST['bookingId']}"));
         die();
     }
 }
