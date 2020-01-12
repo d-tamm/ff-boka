@@ -125,7 +125,7 @@ class Booking extends FFBoka {
     public function status() {
         $leastStatus = FFBoka::STATUS_CONFIRMED;
         foreach ($this->items() as $item) {
-            $leastStatus = $leastStatus & $item->getStatus();
+            $leastStatus = $leastStatus & $item->status;
         }
         return $leastStatus;
     }
