@@ -20,9 +20,9 @@ $cfg = array(
     "mailFromName" => "Friluftsfrämjandets resursbokning",
 	// SMTP settings for sending emails
 	"SMTP" => array(
-	    "host" => 'manu20.manufrog.com',
-        "port" => 587,
-        "user" => 'nextcloud@tamm-tamm.de',
+	    "host" => '', // see credentials.php
+	    "port" => '', // see credentials.php
+	    "user" => '', // see credentials.php
     	"pass" => '', // see credentials.php
     ),
 	// ReplyTo address of auto-generated emails

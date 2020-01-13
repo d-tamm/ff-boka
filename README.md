@@ -4,11 +4,19 @@ för Friluftsfrämjandets lokalavdelningar
 Ett system som ska göra det enklare att boka utrustningen som lokalavdelningarna har till sina ledare och grupper.
 
 # Installera
-Du behöver [git](https://readwrite.com/2013/09/30/understanding-github-a-journey-for-beginners-part-1/) och [composer](https://getcomposer.org).
-
-För att installera projektet hos dig, klona det med `git clone https://github.com/d-tamm/ff-boka.git`. Det ska skapa en mapp `ff-boka`. Byt till mappen med `cd ff-boka`.
-Om du vill provköra koden på din egen maskin behöver du också en LAMP stack och sätta upp databasen (HUR?).
-Kör sedan `composer install` för att installera alla beroenden (dependencies).
+* Installera [git](https://readwrite.com/2013/09/30/understanding-github-a-journey-for-beginners-part-1/) och [composer](https://getcomposer.org)
+* Installera en LAMP stack (Apache, MariaDB, PHP)
+* Installera phpMyAdmin eller annat databas-hanteringsverktyg.
+* Skapa en databas-användare och databasen `ff-boka` och importera databasstrukturen (fråga på Slack efter senaste version)
+* Öppna en terminal och gå till document root (ofta /var/www/html)
+* klona det här förrådet med `git clone https://github.com/d-tamm/ff-boka.git`. Det ska skapa en mapp `ff-boka`. Byt till mappen med `cd ff-boka`.
+* Alternativt kan du klona mappen från /var/www och sedan byta mappnamnet från `ff-boka` till `html`. Då hamnar installationen i document root.
+* Kör sedan `composer install` för att installera alla beroenden (dependencies).
+* Installera följande i undermappen inc:
+  * JQueryUI (ladda ner från deras hemsida, packa upp arkivet och flytta mappen så att t.ex. jquery-ui.css ligger på inc/jquery-ui-1.12.1/jquery-ui.css)
+  * FontAwesome: ladda ner från deras hemsida (host yourself), packa upp, skapa en mapp `fontawesome` i mappen `vendor`, och flytta dit mapparna `css` och `webfonts` från arkivet.
+* Säkerställ att webbservern har läsrättigheter på alla mappar.
+* Kopiera filen `inc/credentials.sample.php` till `inc/credentials.php` och anpassa innehållet.
 
 # Engagera dig
 All hjälp är välkommen! Vi behöver folk som ger inspel till önskad funktion, programmering, layout, tester...

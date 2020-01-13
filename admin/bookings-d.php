@@ -12,7 +12,7 @@ global $FF;
 if ($_GET['sectionId']) $_SESSION['sectionId'] = $_GET['sectionId'];
 // This page may only be accessed by registered users 
 if (!$_SESSION['authenticatedUser'] || !$_SESSION['sectionId']) {
-    header("Location: /");
+    header("Location: /?message=" . urlencode("Du måste logga in för att använda bokningsöversikten.") . "&redirect=" . urlencode("/admin/bookings-d.php?sectionId={$_REQUEST['sectionId']}"));
     die();
 }
 // Set current section and user
@@ -106,8 +106,10 @@ switch ($_REQUEST['action']) {
 <head>
 	<?php htmlHeaders("Friluftsfrämjandets resursbokning - Bokningsadmin ".$section->name, "desktop") ?>
 	<script>
-	var startDate;
-	const dateOptions = { year: 'numeric', month: 'long' }
+	var startDate,
+		lastSeenBookingId=0;
+	const dateOptions = { year: 'numeric', month: 'long' };
+	
     startDate = new Date(new Date().setHours(0,0,0,0)); // Midnight
 
     setInterval(function() { // update view every 2 minutes
@@ -174,6 +176,7 @@ switch ($_REQUEST['action']) {
             $.each(data.freebusy, function(key, value) { // key will be "item-nn"
                 $("#freebusy-"+key).html(value);
             });
+            lastSeenBookingId = data.lastSeenBookingId;
         });
     }
 
@@ -227,6 +230,9 @@ switch ($_REQUEST['action']) {
 
 <div id='booking-admin'>
 	<div id="head">
+		<div id="indicator-new-bookings">10 (2 &#9889;)
+			<div>Nya bokningar:<ul><li>En bokning</li><li>Annan bokning</li><li>Tredje bokningen</li><li>Tredje bokningen</li></ul></div>
+		</div>
         <h1><a href="/index.php" title="Till startsidan"><i class='fas fa-home' style='color:white; margin-right:20px;'></i></a> Bokningar i <?= $section->name ?>, <span id='booking-adm-date'></span></h1>
         <table>
         	<tr><td class='col-caption navbuttons'>

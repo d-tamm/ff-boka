@@ -159,4 +159,17 @@ class Section extends FFBoka {
         }
         return $questions;
     }
+    
+    /**
+     * Return all unconfirmed items in the section
+     * @return \FFBoka\Item[]
+     */
+    public function getUnconfirmedItems() {
+        $stmt = self::$db->exec("SELECT bookedItemId FROM bookings INNER JOIN booked_items USING (bookingId) WHERE status>" . \FFBoka\FFBoka::STATUS_PENDING . " AND status<" . \FFBoka\FFBoka::STATUS_CONFIRMED . " AND sectionId={$this->id}");
+        $ret = array();
+        while ($row = $stmt->fetch(\PDO::FETCH_OBJ)) {
+            $ret[] = new Item($row->bookedItemId, TRUE);
+        }
+        return $ret;
+    }
 }
