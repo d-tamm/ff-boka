@@ -106,8 +106,10 @@ switch ($_REQUEST['action']) {
 <head>
 	<?php htmlHeaders("Friluftsfrämjandets resursbokning - Bokningsadmin ".$section->name, "desktop") ?>
 	<script>
-	var startDate;
-	const dateOptions = { year: 'numeric', month: 'long' }
+	var startDate,
+		lastSeenBookingId=0;
+	const dateOptions = { year: 'numeric', month: 'long' };
+	
     startDate = new Date(new Date().setHours(0,0,0,0)); // Midnight
 
     setInterval(function() { // update view every 2 minutes
@@ -174,6 +176,7 @@ switch ($_REQUEST['action']) {
             $.each(data.freebusy, function(key, value) { // key will be "item-nn"
                 $("#freebusy-"+key).html(value);
             });
+            lastSeenBookingId = data.lastSeenBookingId;
         });
     }
 
