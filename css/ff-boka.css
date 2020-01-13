@@ -236,6 +236,7 @@ li.selected {
 .desktop h2,
 .desktop h3,
 .desktop p,
+.desktop div,
 .desktop td,
 .desktop th {
 	font-family: Arial, Helvetica, sans-serif;
@@ -260,6 +261,35 @@ li.selected {
 
 .desktop h2, #booking-admin h3 {
 	color: var(--FF-blue);
+}
+
+.desktop #indicator-new-bookings {
+	position: fixed;
+	top: 0px;
+	right: 200px;
+	width: 4em;
+	height:1.2em;
+	padding: 5px;
+	background: white;
+	border-left: 10px solid var(--FF-yellow);
+	box-shadow:0 0 5px;
+	overflow:hidden;
+	transition: height 1s, width 1s, right 1s;
+	z-index:100;
+}
+.desktop #indicator-new-bookings:hover {
+	right: 100px;
+	height:8em;
+	width:300px;
+}
+.desktop #indicator-new-bookings div {
+	display:none;
+	overflow:scroll;
+	white-space: nowrap;
+	height:100%;
+}
+.desktop #indicator-new-bookings:hover div {
+	display:block;
 }
 
 .desktop table {

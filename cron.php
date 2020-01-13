@@ -3,7 +3,7 @@
 require("common.php");
 global $db, $cfg;
 
-// Update sections from API once a day
+// Update sections from API once a day TODO adapt to new urls
 $data = json_decode(file_get_contents($cfg['apiUrl']."/api/feed/PAN_ExtBokning_GetSections"));
 $stmt = $db->prepare("INSERT INTO sections SET sectionID=:sectionID, name=:name1, timestamp=NULL ON DUPLICATE KEY UPDATE name=:name2, timestamp=NULL");
 foreach ($data->results as $section) {
@@ -19,7 +19,7 @@ foreach ($data->results as $section) {
 // Delete all records not affected by the update
 $db->exec("DELETE FROM sections WHERE TIMESTAMPDIFF(SECOND, `timestamp`, NOW())>10");
 
-// Update assignments from API once a day
+// Update assignments from API once a day TODO adapt to new urls
 $data = json_decode(file_get_contents($cfg['apiUrl']."/api/feed/Pan_ExtBokning_GetAllAssignmenttypes"));
 $stmt = $db->prepare("INSERT INTO assignments SET ass_name=:name, typeID=:typeID, type_name=:type_name, timestamp=NULL ON DUPLICATE KEY UPDATE timestamp=NULL");
 foreach ($data->results as $ass) {

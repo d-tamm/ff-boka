@@ -48,7 +48,9 @@ class User extends FFBoka {
         $data = (object)array("results"=>array());
         if (self::$apiAssUrl) { // API URL for assignments is set. Try to get user's assignments
             $data = @file_get_contents(self::$apiAssUrl . "?MNoSocnr={$this->id}");
-            if ($data !== FALSE) { // Got an answer
+            if ($data === FALSE) { // no answer
+                $this->assignments[0][] = "Kunde inte läsa in uppdrag från API.";
+            } else { // Got an answer
                 foreach (json_decode($data->results) as $ass) {
                     if ($ass->cint_assignment_party_type->value == FFBoka::TYPE_SECTION) {
                         // This will sort the assignments on section ID

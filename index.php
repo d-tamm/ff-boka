@@ -196,7 +196,7 @@ if (isset($_REQUEST['message'])) $message = ($message ? "$message<br>" : "") . $
 			} ?>
 		</div>
 
-		<form id="formLogin" style="padding:10px 20px;" action="index.php" method="post">
+		<form id="formLogin" style="padding:10px 20px;" action="index.php" method="post" data-ajax="false">
 			<h3>Inloggning <a href="#popup-help-login" data-rel="popup" class="tooltip ui-btn ui-alt-icon ui-nodisc-icon ui-btn-inline ui-icon-info ui-btn-icon-notext">Hjälp</a></h3>
 			<div data-role="popup" id="popup-help-login" class="ui-content" data-overlay-theme="b">
 				<p>Du loggar in med samma lösenord som i aktivitetshanteraren.</p>

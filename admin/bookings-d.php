@@ -12,7 +12,7 @@ global $FF;
 if ($_GET['sectionId']) $_SESSION['sectionId'] = $_GET['sectionId'];
 // This page may only be accessed by registered users 
 if (!$_SESSION['authenticatedUser'] || !$_SESSION['sectionId']) {
-    header("Location: /");
+    header("Location: /?message=" . urlencode("Du måste logga in för att använda bokningsöversikten.") . "&redirect=" . urlencode("/admin/bookings-d.php?sectionId={$_REQUEST['sectionId']}"));
     die();
 }
 // Set current section and user
@@ -227,6 +227,9 @@ switch ($_REQUEST['action']) {
 
 <div id='booking-admin'>
 	<div id="head">
+		<div id="indicator-new-bookings">10 (2 &#9889;)
+			<div>Nya bokningar:<ul><li>En bokning</li><li>Annan bokning</li><li>Tredje bokningen</li><li>Tredje bokningen</li></ul></div>
+		</div>
         <h1><a href="/index.php" title="Till startsidan"><i class='fas fa-home' style='color:white; margin-right:20px;'></i></a> Bokningar i <?= $section->name ?>, <span id='booking-adm-date'></span></h1>
         <table>
         	<tr><td class='col-caption navbuttons'>
