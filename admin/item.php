@@ -12,7 +12,7 @@ require(__DIR__ . "/../inc/common.php");
 if (isset($_REQUEST['catId'])) $_SESSION['catId'] = $_REQUEST['catId'];
 
 if (!isset($_SESSION['sectionId']) || !isset($_SESSION['authenticatedUser']) || !isset($_SESSION['catId'])) {
-    header("Location: /");
+    header("Location: {$cfg['url']}");
     die();
 }
 
@@ -23,7 +23,7 @@ $cat = new Category($_SESSION['catId']);
 
 // Check access permissions.
 if (!$cat->showFor($currentUser, FFBoka::ACCESS_CATADMIN)) {
-    header("Location: /?action=accessDenied&to=" . urlencode("administrationssidan för " . htmlspecialchars($item->caption)));
+    header("Location: {$cfg['url']}?action=accessDenied&to=" . urlencode("administrationssidan för " . htmlspecialchars($item->caption)));
     die();
 }
 

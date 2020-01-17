@@ -27,20 +27,20 @@ global $cfg, $FF;
 // Set current section and user
 if ($_GET['sectionId']) $_SESSION['sectionId'] = $_GET['sectionId'];
 if (!$_SESSION['sectionId']) {
-    header("Location: /");
+    header("Location: {$cfg['url']}");
     die();
 }
 $section = new Section($_SESSION['sectionId']);
 
 // This page may only be accessed by registered users
 if (!$_SESSION['authenticatedUser']) {
-    header("Location: /?action=accessDenied&to=" . urlencode("administrationssidan för {$section->name}"));
+    header("Location: {$cfg['url']}?action=accessDenied&to=" . urlencode("administrationssidan för {$section->name}"));
     die();
 }
 // Only allow users which have at least some admin role in this section
 $currentUser = new User($_SESSION['authenticatedUser']);
 if (!$section->showFor($currentUser, FFBoka::ACCESS_CATADMIN)) {
-    header("Location: /?action=accessDenied&to=" . urlencode("administrationssidan för {$section->name}"));
+    header("Location: {$cfg['url']}?action=accessDenied&to=" . urlencode("administrationssidan för {$section->name}"));
     die();
 }
 $userAccess = $section->getAccess($currentUser);

@@ -435,7 +435,7 @@ switch ($_REQUEST['action']) {
 		?>
 
     	<input type="submit" data-icon="carat-r" data-iconpos="right" data-theme="b" data-corners="false" value="Slutför bokningen">
-    	<a href="#" onClick="deleteBooking(<? $_SESSION['authenticatedUser'] ?>);" class='ui-btn ui-btn-c ui-icon-delete ui-btn-icon-right'>Ta bort bokningen</a>
+    	<a href="#" onClick="deleteBooking(<?= $_SESSION['authenticatedUser'] ?>);" class='ui-btn ui-btn-c ui-icon-delete ui-btn-icon-right'>Ta bort bokningen</a>
     </form>
     
     </div><!--/main-->

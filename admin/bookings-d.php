@@ -12,7 +12,7 @@ global $FF;
 if ($_GET['sectionId']) $_SESSION['sectionId'] = $_GET['sectionId'];
 // This page may only be accessed by registered users 
 if (!$_SESSION['authenticatedUser'] || !$_SESSION['sectionId']) {
-    header("Location: /?message=" . urlencode("Du måste logga in för att använda bokningsöversikten.") . "&redirect=" . urlencode("/admin/bookings-d.php?sectionId={$_REQUEST['sectionId']}"));
+    header("Location: {$cfg['url']}index.php?message=" . urlencode("Du måste logga in för att använda bokningsöversikten.") . "&redirect=" . urlencode("{$cfg['url']}admin/bookings-d.php?sectionId={$_REQUEST['sectionId']}"));
     die();
 }
 // Set current section and user
@@ -20,7 +20,7 @@ $section = new Section($_SESSION['sectionId']);
 $currentUser = new User($_SESSION['authenticatedUser']);
 // User must have some sort of admin function
 if (!$section->showFor($currentUser, FFBoka::ACCESS_CONFIRM)) {
-    header("Location: /");
+    header("Location: {$cfg['url']}");
     die();
 }
 
@@ -40,7 +40,7 @@ function showCat(Category $cat, User $user) {
                 echo "<h2>";
                 for ($elems = $cat->getPath(), $i = 1; $i < count($elems); $i++) {
                     if ($i > 1) echo " &rarr; ";
-                    if ($cat->showFor($user, FFBoka::ACCESS_CATADMIN)) echo "<a href='#' onClick=\"openSidePanelOrWindow('/admin/category.php?catId={$elems[$i]['id']}');\">{$elems[$i]['caption']}</a>";
+                    if ($cat->showFor($user, FFBoka::ACCESS_CATADMIN)) echo "<a href='#' onClick=\"openSidePanelOrWindow('category.php?catId={$elems[$i]['id']}');\">{$elems[$i]['caption']}</a>";
                     else echo $elems[$i]['caption'];
                 }
                 echo "</h2>\n<table>\n";
@@ -151,13 +151,13 @@ switch ($_REQUEST['action']) {
         });
         
         $(document).on('click', ".freebusy-busy", function() {
-        	openSidePanelOrWindow("/book-sum.php?bookingId=" + this.dataset.bookingId, "booking"+this.dataset.bookingId);
+        	openSidePanelOrWindow("../book-sum.php?bookingId=" + this.dataset.bookingId, "booking"+this.dataset.bookingId);
         });
     });
 
 	// Show details for an item in side panel
 	function showItemDetails(itemId) {
-    	openSidePanelOrWindow("/item-details.php?itemId=" + itemId, "itemDetails" + itemId);
+    	openSidePanelOrWindow("../item-details.php?itemId=" + itemId, "itemDetails" + itemId);
 	}
 	
 	// Scroll by x months
@@ -184,7 +184,7 @@ switch ($_REQUEST['action']) {
     function addBooking(userId) {
         $.getJSON("<?= basename(__FILE__) ?>", { action: "ajaxAddBookingOnBehalf", userId: userId }, function(data) {
             if (data.status=="OK") {
-                openSidePanelOrWindow("/book-part.php");
+                openSidePanelOrWindow("../book-part.php");
             }
             else alert("Något har gått fel. Kontakta systemadmin.");
             $('#popup-add-booking').dialog('close');
@@ -233,7 +233,7 @@ switch ($_REQUEST['action']) {
 		<div id="indicator-new-bookings">10 (2 &#9889;)
 			<div>Nya bokningar:<ul><li>En bokning</li><li>Annan bokning</li><li>Tredje bokningen</li><li>Tredje bokningen</li></ul></div>
 		</div>
-        <h1><a href="/index.php" title="Till startsidan"><i class='fas fa-home' style='color:white; margin-right:20px;'></i></a> Bokningar i <?= $section->name ?>, <span id='booking-adm-date'></span></h1>
+        <h1><a href="<?= {$cfg['url']} ?>" title="Till startsidan"><i class='fas fa-home' style='color:white; margin-right:20px;'></i></a> Bokningar i <?= $section->name ?>, <span id='booking-adm-date'></span></h1>
         <table>
         	<tr><td class='col-caption navbuttons'>
         		<a title="1 månad bakåt (vänsterpil)" href="#" onClick="scrollDate(-1);"><i class='fas fa-chevron-left'></i></a>

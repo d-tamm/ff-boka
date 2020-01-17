@@ -10,7 +10,7 @@ global $cfg;
 $message = "";
 
 if (!isset($_SESSION['sectionId']) || !isset($_SESSION['authenticatedUser'])) {
-    header("Location: /?action=sessionExpired");
+    header("Location: {$cfg['url']}action=sessionExpired");
     die();
 }
 
@@ -21,7 +21,7 @@ $section = new Section($_SESSION['sectionId']);
 
 // Check access permissions.
 if (!$cat->showFor($currentUser, FFBoka::ACCESS_CATADMIN)) {
-    header("Location: /?action=accessDenied&to=" . urlencode("administrationssidan för {$cat->caption}"));
+    header("Location: {$cfg['url']}?action=accessDenied&to=" . urlencode("administrationssidan för {$cat->caption}"));
     die();
 }
 
