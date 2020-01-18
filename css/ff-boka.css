@@ -264,15 +264,15 @@ li.selected {
 }
 
 .desktop #indicator-new-bookings {
-	position: fixed;
+	position: absolute;
 	top: 0px;
-	right: 200px;
+	right: 220px;
 	width: 4em;
 	height:1.2em;
 	padding: 5px;
 	background: white;
 	border-left: 10px solid var(--FF-yellow);
-	box-shadow:0 0 5px;
+	box-shadow:0 0 4px;
 	overflow:hidden;
 	transition: height 1s, width 1s, right 1s;
 	z-index:100;
@@ -290,6 +290,14 @@ li.selected {
 }
 .desktop #indicator-new-bookings:hover div {
 	display:block;
+}
+.desktop #indicator-unconfirmed-count-label,
+.desktop #indicator-conflicts-count-label {
+	display: none;
+}
+.desktop #indicator-new-bookings:hover #indicator-unconfirmed-count-label,
+.desktop #indicator-new-bookings:hover #indicator-conflicts-count-label {
+	display: inline;
 }
 
 .desktop table {

@@ -152,24 +152,23 @@ class Item extends FFBoka {
 
     /**
      * Get all bookings for the next time
-     * @param int $days Number of days to return bookings for
-     * @return array of objects { bookingId, bookedItemId, unixtimestamp start, unixtimestamp end }
+     * @param int $days Number of days in future to return bookings for. If set to 0, all (even past) bookings are returned
+     * @return array of objects { bookingId, bookedItemId, unixtimestamp start, unixtimestamp end, status }
      */
     public function upcomingBookings(int $days=60) {
         // Get freebusy information.
+        if ($days) $timeConstraint = "AND (
+            (start>NOW() AND start<DATE_ADD(NOW(), INTERVAL :days DAY)) OR (end>NOW() AND end<DATE_ADD(NOW(), INTERVAL :days DAY))
+            )";
         $stmt = self::$db->prepare("
-            SELECT bookingId, bookedItemId, UNIX_TIMESTAMP(start)-bufferAfterBooking*3600 AS start, UNIX_TIMESTAMP(end)+bufferAfterBooking*3600 AS end
+            SELECT bookingId, bookedItemId, UNIX_TIMESTAMP(start)-bufferAfterBooking*3600 AS start, UNIX_TIMESTAMP(end)+bufferAfterBooking*3600 AS end, status
             FROM booked_items
             INNER JOIN bookings USING (bookingId)
             INNER JOIN items USING (itemId)
             INNER JOIN categories USING (catId)
             WHERE
                 itemId={$this->id}
-            AND (
-                    (start>NOW() AND start<DATE_ADD(NOW(), INTERVAL :days DAY))
-                OR
-                    (end>NOW() AND end<DATE_ADD(NOW(), INTERVAL :days DAY))
-                )
+            $timeConstraint
             ORDER BY start");
         $stmt->execute(array( ":days"=>$days ));
         return $stmt->fetchAll(\PDO::FETCH_OBJ);

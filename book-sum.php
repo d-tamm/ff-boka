@@ -325,7 +325,7 @@ switch ($_REQUEST['action']) {
 		}
 		echo "<a href='#' onClick='popupItemDetails({$item->bookedItemId});'" . ($showEditButtons ? " class='has-edit-buttons'" : "") . ">" . embedImage($item->getFeaturedImage()->thumb) .
 		"<h3 style='white-space:normal;'>" . htmlspecialchars($item->caption) . "</h3><p style='overflow:auto; white-space:normal; margin-bottom:0px;'>";
-		echo strftime("%F kl %H", $item->start) . " &mdash; " . strftime("%F kl %H:00", $item->end) . "<br>\n";
+		echo strftime("%F kl %H", $item->start) . " &mdash; " . strftime("%F kl %H", $item->end) . "<br>\n";
 		if (in_array($item->bookedItemId, $unavail)) echo "Inte tillgänglig";
 		else {
 		    switch ($item->status) {
