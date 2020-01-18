@@ -172,6 +172,8 @@ unset($_SESSION['catId']);
 	}
 	?>
 
+    <a class='ui-btn ui-btn-b ui-icon-calendar ui-btn-icon-left' href='#' onClick="openBookingAdmin('<?= $cfg['url'] ?>', <?= $section->id ?>);" data-ajax='false'>Öppna bokningsadmin</a>
+
 	<div data-role="collapsibleset" data-inset="false">
 
 		<div data-role="collapsible" data-collapsed="<?= isset($_REQUEST['expand']) ? "true" : "false" ?>">

@@ -77,8 +77,11 @@ switch ($_REQUEST['action']) {
             $style = "";
             $day->add(new DateInterval('P1D'));
         };
-        // Freebusy bars
+        // Get Freebusy bars and compile list with unconfirmed items
         $fbList = array();
+        $unconfirmed = array();
+        $conflicts = array();
+        $maxBookedItemId = 0;
         foreach ($_SESSION['itemIds'] as $id) {
             $item = new Item($id);
             $fbList["item-$id"] = $item->freebusyBar([
@@ -88,8 +91,20 @@ switch ($_REQUEST['action']) {
                 'minStatus'=>FFBoka::STATUS_CONFLICT,
                 'showPrice'=>TRUE
             ]);
+            foreach ($item->upcomingBookings(0) as $b) {
+                switch ($b->status) {
+                case FFBoka::STATUS_CONFLICT:
+                    $conflicts[] = "<span class='freebusy-busy conflict' style='display:inline-block; width:1em;'>&nbsp;</span> <a class='link-unconfirmed' href='#' data-booking-id='{$b->bookingId}'>{$item->caption} (" . strftime("%e %b", $b->start) . ")</a><br>";
+                    $maxBookedItemId = max($maxBookedItemId, $b->bookedItemId);
+                    break;
+                case FFBoka::STATUS_PREBOOKED:
+                    $unconfirmed[] = "<span class='freebusy-busy unconfirmed' style='display:inline-block; width:1em;'>&nbsp;</span> <a class='link-unconfirmed' href='#' data-booking-id='{$b->bookingId}'>{$item->caption} (" . strftime("%e %b", $b->start) . ")</a><br>";
+                    $maxBookedItemId = max($maxBookedItemId, $b->bookedItemId);
+                    break;
+                }
+            }
         }
-        die(json_encode(["scale"=>$scale, "freebusy"=>$fbList]));
+        die(json_encode([ "scale"=>$scale, "freebusy"=>$fbList, "unconfirmed"=>$unconfirmed, "conflicts"=>$conflicts, "maxBookedItemId"=>$maxBookedItemId ]));
         
     case "ajaxAddBookingOnBehalf":
         header("Content-Type: application/json");
@@ -107,7 +122,7 @@ switch ($_REQUEST['action']) {
 	<?php htmlHeaders("Friluftsfrämjandets resursbokning - Bokningsadmin ".$section->name, $cfg['url'], "desktop") ?>
 	<script>
 	var startDate,
-		lastSeenBookingId=0;
+		maxBookedItemId=0;
 	const dateOptions = { year: 'numeric', month: 'long' };
 	
     startDate = new Date(new Date().setHours(0,0,0,0)); // Midnight
@@ -150,7 +165,7 @@ switch ($_REQUEST['action']) {
             }
         });
         
-        $(document).on('click', ".freebusy-busy", function() {
+        $(document).on('click', ".freebusy-busy, .link-unconfirmed", function() {
         	openSidePanelOrWindow("../book-sum.php?bookingId=" + this.dataset.bookingId, "booking"+this.dataset.bookingId);
         });
     });
@@ -160,12 +175,13 @@ switch ($_REQUEST['action']) {
     	openSidePanelOrWindow("../item-details.php?itemId=" + itemId, "itemDetails" + itemId);
 	}
 	
-	// Scroll by x months
+	// Scroll by x months, and get updated booking information
+	// @param int offset Number of days to scroll
     function scrollDate(offset) {
         startDate.setMonth(startDate.getMonth() + offset, 1); // 1st of month
         var endDate = new Date(startDate.valueOf());
-        endDate.setMonth(endDate.getMonth() + 1);
-        // Get freebusy bars
+        endDate.setMonth(endDate.getMonth() + 1); // 1st of next month
+        // Get updated freebusy information for new time span
         $.getJSON("bookings-d.php", {
             action: "ajaxGetFreebusy",
             year: startDate.getFullYear(),
@@ -176,7 +192,25 @@ switch ($_REQUEST['action']) {
             $.each(data.freebusy, function(key, value) { // key will be "item-nn"
                 $("#freebusy-"+key).html(value);
             });
-            lastSeenBookingId = data.lastSeenBookingId;
+            if (Object.keys(data.unconfirmed).length + Object.keys(data.conflicts).length == 0) {
+                $("#indicator-new-bookings").hide();
+            } else {
+                $("#indicator-new-bookings").show();
+            }
+            $("#indicator-unconfirmed-count").text(Object.keys(data.unconfirmed).length + Object.keys(data.conflicts).length);
+            $("#indicator-conflicts-count").text(Object.keys(data.conflicts).length);
+            $("#indicator-new-bookings-list").html("");
+            $.each(data.conflicts, function( index, value ) {
+	            $("#indicator-new-bookings-list").append(value);
+            });
+            $.each(data.unconfirmed, function( index, value ) {
+	            $("#indicator-new-bookings-list").append(value);
+            });
+            if (maxBookedItemId < data.maxBookedItemId) {
+	            maxBookedItemId = data.maxBookedItemId;
+	            var audio = new Audio("../resources/bell.mp3");
+            	audio.play();
+            }
         });
     }
 
@@ -230,10 +264,10 @@ switch ($_REQUEST['action']) {
 
 <div id='booking-admin'>
 	<div id="head">
-		<div id="indicator-new-bookings">10 (2 &#9889;)
-			<div>Nya bokningar:<ul><li>En bokning</li><li>Annan bokning</li><li>Tredje bokningen</li><li>Tredje bokningen</li></ul></div>
+		<div id="indicator-new-bookings"><span id="indicator-unconfirmed-count">?</span><span id="indicator-unconfirmed-count-label"> bokningar att bekräfta</span> (<span id="indicator-conflicts-count">?</span>⚠<span id="indicator-conflicts-count-label"> konflikt</span>)
+			<div id="indicator-new-bookings-list"></div>
 		</div>
-        <h1><a href="<?= $cfg['url'] ?>" title="Till startsidan"><i class='fas fa-home' style='color:white; margin-right:20px;'></i></a> Bokningar i <?= $section->name ?>, <span id='booking-adm-date'></span></h1>
+        <h1><a href="index.php" title="Till startsidan"><i class='fas fa-home' style='color:white; margin-right:20px;'></i></a> Bokningar i <?= $section->name ?>, <span id='booking-adm-date'></span></h1>
         <table>
         	<tr><td class='col-caption navbuttons'>
         		<a title="1 månad bakåt (vänsterpil)" href="#" onClick="scrollDate(-1);"><i class='fas fa-chevron-left'></i></a>

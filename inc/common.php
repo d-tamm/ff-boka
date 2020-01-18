@@ -20,9 +20,6 @@ use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 use FFBoka\FFBoka;
 use FFBoka\User;
-//require 'PHPMailer/src/Exception.php';
-//require 'PHPMailer/src/PHPMailer.php';
-//require 'PHPMailer/src/SMTP.php';
 
 // Connect to database
 $db = new PDO("mysql:host={$cfg['dbhost']};dbname={$cfg['dbname']};charset=utf8", $cfg['dbuser'], $cfg['dbpass']);
@@ -163,9 +160,6 @@ function head(string $caption, string $baseUrl, $currentUser=NULL) {
 			if ($_SESSION['authenticatedUser']) { ?>
 				<li data-icon="user"><a href="<?= $baseUrl ?>userdata.php" data-transition='slide' data-rel="close">Min sida</a></li>
 				<li data-icon="power"><a href="<?= $baseUrl ?>index.php?logout" data-rel="close">Logga ut</a></li><?php
-				foreach ($currentUser->bookingAdminSections() as $section) {
-				    echo "<li data-icon='calendar'><a href='#' onClick=\"openBookingAdmin('{$baseUrl}', {$section->id});\" data-ajax='false' data-rel='close'>Bokningsadmin " . htmlspecialchars($section->name) . "</a></li>\n";
-				}
 			} ?>
 			<li data-icon="info"><a href="<?= $baseUrl ?>help.php" data-transition='slide' data-rel="close">Hjälp</a></li>
 			<li data-icon="info"><a href="<?= $baseUrl ?>cookies.php" data-transition='slide' data-rel="close">Om kakor (cookies)</a></li>
