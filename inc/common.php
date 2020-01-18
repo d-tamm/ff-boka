@@ -108,27 +108,28 @@ function createToken($use, $forId, $data="", $ttl=86400) {
 /**
  * Output the file headers for HTML pages (title, meta tags, common stylesheets, jquery)
  * @param string $title
+ * @param string $baseUrl Base URL of the installation
  * @param string $mode mobile|desktop
  */
-function htmlHeaders(string $title, string $mode="mobile") { 
+function htmlHeaders(string $title, string $baseUrl, string $mode="mobile") { 
 	// output meta tags and include stylesheets, jquery etc	?>
 	<title><?= $title ?></title>
 	<meta charset="UTF-8">
 	<?php if ($mode=="mobile") { ?>
     	<meta name="viewport" content="width=device-width, initial-scale=1"/>
-    	<link rel="stylesheet" href="/inc/jquery.mobile-1.4.5.min.css" />
-    	<link rel="stylesheet" href="/css/themes/ff-boka.css" />
-    	<link rel="stylesheet" href="/css/themes/jquery.mobile.icons.min.css" />
-    	<script src="/inc/jquery-1.11.1.min.js"></script>
-    	<script src="/inc/jquery.mobile-1.4.5.min.js"></script>
+    	<link rel="stylesheet" href="<?= $baseUrl ?>inc/jquery.mobile-1.4.5.min.css" />
+    	<link rel="stylesheet" href="<?= $baseUrl ?>css/themes/ff-boka.css" />
+    	<link rel="stylesheet" href="<?= $baseUrl ?>css/themes/jquery.mobile.icons.min.css" />
+    	<script src="<?= $baseUrl ?>inc/jquery-1.11.1.min.js"></script>
+    	<script src="<?= $baseUrl ?>inc/jquery.mobile-1.4.5.min.js"></script>
 	<?php } else { ?>
-		<script src="/inc/pace.min.js"></script>
-        <link rel="stylesheet" href="/inc/jquery-ui-1.12.1/jquery-ui.min.css">
-        <script src="/inc/jquery-ui-1.12.1/external/jquery/jquery.js"></script>
-        <script src="/inc/jquery-ui-1.12.1/jquery-ui.min.js"></script>
-        <link rel="stylesheet" href="/vendor/fontawesome/css/all.css">        
+		<script src="<?= $baseUrl ?>inc/pace.min.js"></script>
+        <link rel="stylesheet" href="<?= $baseUrl ?>inc/jquery-ui-1.12.1/jquery-ui.min.css">
+        <script src="<?= $baseUrl ?>inc/jquery-ui-1.12.1/external/jquery/jquery.js"></script>
+        <script src="<?= $baseUrl ?>inc/jquery-ui-1.12.1/jquery-ui.min.js"></script>
+        <link rel="stylesheet" href="<?= $baseUrl ?>vendor/fontawesome/css/all.css">        
 	<?php } ?>
-	<link rel="stylesheet" href="/css/ff-boka.css" />
+	<link rel="stylesheet" href="<?= $baseUrl ?>css/ff-boka.css" />
 	<script>
 	    // Lift in some constants from PHP
 	    const ACCESS_NONE = <?= FFBoka::ACCESS_NONE ?>;
@@ -143,30 +144,31 @@ function htmlHeaders(string $title, string $mode="mobile") {
 	    const STATUS_PREBOOKED = <?= FFBoka::STATUS_PREBOOKED ?>;
 	    const STATUS_CONFIRMED = <?= FFBoka::STATUS_CONFIRMED ?>;
 	</script>
-	<script src="/inc/ff-boka.js"></script>
+	<script src="<?= $baseUrl ?>inc/ff-boka.js"></script>
 	<?php
 }
 
 /**
  * Output HTML code for the common page heading and side panel
  * @param string $caption
+ * @param string $baseUrl Base URL of the installation
  * @param User $currentUser The currently logged in user
  */
-function head(string $caption, $currentUser=NULL) {
+function head(string $caption, string $baseUrl, $currentUser=NULL) {
 	// Declare side panel
 	?>
 	<div data-role="panel" data-theme="b" data-position-fixed="true" data-display="push" id="navpanel">
 		<ul data-role="listview">
-			<li data-icon="home"><a href="/index.php" data-transition='slide' data-direction='reverse' data-rel="close">Startsida</a></li><?php
+			<li data-icon="home"><a href="<?= $baseUrl ?>index.php" data-transition='slide' data-direction='reverse' data-rel="close">Startsida</a></li><?php
 			if ($_SESSION['authenticatedUser']) { ?>
-				<li data-icon="user"><a href="/userdata.php" data-transition='slide' data-rel="close">Min sida</a></li>
-				<li data-icon="power"><a href="/index.php?logout" data-rel="close">Logga ut</a></li><?php
+				<li data-icon="user"><a href="<?= $baseUrl ?>userdata.php" data-transition='slide' data-rel="close">Min sida</a></li>
+				<li data-icon="power"><a href="<?= $baseUrl ?>index.php?logout" data-rel="close">Logga ut</a></li><?php
 				foreach ($currentUser->bookingAdminSections() as $section) {
-				    echo "<li data-icon='calendar'><a href='#' onClick='openBookingAdmin({$section->id});' data-ajax='false' data-rel='close'>Bokningsadmin " . htmlspecialchars($section->name) . "</a></li>\n";
+				    echo "<li data-icon='calendar'><a href='#' onClick=\"openBookingAdmin('{$baseUrl}', {$section->id});\" data-ajax='false' data-rel='close'>Bokningsadmin " . htmlspecialchars($section->name) . "</a></li>\n";
 				}
 			} ?>
-			<li data-icon="info"><a href="help.php" data-transition='slide' data-rel="close">Hjälp</a></li>
-			<li data-icon="info"><a href="cookies.php" data-transition='slide' data-rel="close">Om kakor (cookies)</a></li>
+			<li data-icon="info"><a href="<?= $baseUrl ?>help.php" data-transition='slide' data-rel="close">Hjälp</a></li>
+			<li data-icon="info"><a href="<?= $baseUrl ?>cookies.php" data-transition='slide' data-rel="close">Om kakor (cookies)</a></li>
 		</ul>
 	</div><!-- /panel -->
 	
@@ -174,16 +176,10 @@ function head(string $caption, $currentUser=NULL) {
 		<H1><?= $caption ?></H1>
 	    <a href='#navpanel' data-rel='popup' data-transition='pop' data-role='button' data-icon='bars' data-iconpos='notext' class='ui-btn-left ui-nodisc-icon ui-alt-icon'>Menu</a>
 		<?php
-        switch ($_SERVER['PHP_SELF']) {
-		case "/admin/category.php": $href="/admin/"; $icon="back"; break;
-		case "/admin/item.php": $href="/admin/category.php?expand=items"; $icon="back"; break;
-		case "/subbooking.php": $href="javascript:history.back();"; $icon="back"; break;
-		default: $href="/index.php"; $icon="home";
-		}
-		echo "<a href='$href' data-transition='slide' data-direction='reverse' data-role='button' data-icon='$icon' data-iconpos='notext' class='ui-btn-right ui-nodisc-icon ui-alt-icon'></a>";
+		//echo "<a href='#' data-transition='slide' data-direction='reverse' data-role='button' data-icon='delete' data-iconpos='notext' class='ui-btn-right ui-nodisc-icon ui-alt-icon'></a>"; // TODO: use this button to implement context help (issue #64)
 		if (!isset($_COOKIE['cookiesOK'])) { // Display cookie chooser ?>
 			<div id="divCookieConsent" data-theme='b' class='ui-bar ui-bar-b' style='font-weight:normal;'>
-				För att vissa funktioner på denna webbplats ska fungera använder vi kakor. <a href='cookies.php' data-role='none'>Läs mer om kakor.</a><br>
+				För att vissa funktioner på denna webbplats ska fungera använder vi kakor. <a href='<?= $baseUrl ?>cookies.php' data-role='none'>Läs mer om kakor.</a><br>
 				<button onClick="var d=new Date(); d.setTime(d.getTime()+365*24*60*60*1000); document.cookie='cookiesOK=1; expires='+d.toUTCString()+'; Path=/'; $('#divCookieConsent').hide(); $('#div-remember-me').show();">Tillåt kakor</button>
 				<button onClick="document.cookie='cookiesOK=0; path=/'; $('#divCookieConsent').hide();$('#div-remember-me').hide();">Avböj kakor</button>
 			</div>

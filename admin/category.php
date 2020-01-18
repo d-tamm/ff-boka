@@ -190,13 +190,13 @@ unset ($_SESSION['itemId']);
 ?><!DOCTYPE html>
 <html>
 <head>
-	<?php htmlHeaders("Friluftsfrämjandets resursbokning - Kategori " . htmlspecialchars($cat->caption)) ?>
+	<?php htmlHeaders("Friluftsfrämjandets resursbokning - Kategori " . htmlspecialchars($cat->caption), $cfg['url']) ?>
 </head>
 
 
 <body>
 <div data-role="page" id="page-admin-category">
-	<?= head(htmlspecialchars($cat->caption), $currentUser) ?>
+	<?= head(htmlspecialchars($cat->caption), $cfg['url'], $currentUser) ?>
 	<div role="main" class="ui-content">
 
 	<div data-role="popup" data-overlay-theme="b" id="popup-msg-page-admin-category" class="ui-content">

@@ -113,13 +113,13 @@ if (isset($_REQUEST['message'])) $message = ($message ? "$message<br>" : "") . $
 ?><!DOCTYPE html>
 <html>
 <head>
-	<?php htmlHeaders("Friluftsfrämjandets resursbokning") ?>
+	<?php htmlHeaders("Friluftsfrämjandets resursbokning", $cfg['url']) ?>
 </head>
 
 
 <body>
 <div data-role="page" id="page-start">
-	<?= head("Resursbokning", $currentUser) ?>
+	<?= head("Resursbokning", $cfg['url'], $currentUser) ?>
 	<div role="main" class="ui-content">
 
 	<div data-role="popup" data-overlay-theme="b" id="popup-msg-page-start" class="ui-content">

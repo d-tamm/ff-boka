@@ -206,13 +206,13 @@ switch ($_REQUEST['action']) {
 ?><!DOCTYPE html>
 <html>
 <head>
-    <?php htmlHeaders("Friluftsfrämjandets resursbokning") ?>
+    <?php htmlHeaders("Friluftsfrämjandets resursbokning", $cfg['url']) ?>
 </head>
 
 
 <body>
 <div data-role="page" id="page-book-part">
-    <?= head("Lägg till resurser", $currentUser) ?>
+    <?= head("Lägg till resurser", $cfg['url'], $currentUser) ?>
     <div role="main" class="ui-content">
 
     <div data-role="popup" data-overlay-theme="b" id="popup-msg-page-book-part" class="ui-content">

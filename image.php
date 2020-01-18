@@ -1,6 +1,5 @@
 <?php
 use FFBoka\Category;
-use FFBoka\item;
 use FFBoka\Image;
 
 session_start();

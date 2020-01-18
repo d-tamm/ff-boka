@@ -148,13 +148,13 @@ unset($_SESSION['catId']);
 ?><!DOCTYPE html>
 <html>
 <head>
-	<?php htmlHeaders("Friluftsfrämjandets resursbokning - Admin ".$section->name) ?>
+	<?php htmlHeaders("Friluftsfrämjandets resursbokning - Admin ".$section->name, $cfg['url']) ?>
 </head>
 
 
 <body>
 <div data-role="page" id="page-admin-section">
-	<?= head("LA " . htmlspecialchars($section->name), $currentUser) ?>
+	<?= head("LA " . htmlspecialchars($section->name), $cfg['url'], $currentUser) ?>
 	<div role="main" class="ui-content">
 
 	<div data-role="popup" data-overlay-theme="b" id="popup-msg-page-admin-section" class="ui-content">

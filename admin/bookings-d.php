@@ -7,7 +7,7 @@ use FFBoka\Item;
 
 session_start();
 require(__DIR__."/../inc/common.php");
-global $FF;
+global $FF, $cfg;
 
 if ($_GET['sectionId']) $_SESSION['sectionId'] = $_GET['sectionId'];
 // This page may only be accessed by registered users 
@@ -104,7 +104,7 @@ switch ($_REQUEST['action']) {
 ?><!DOCTYPE html>
 <html>
 <head>
-	<?php htmlHeaders("Friluftsfrämjandets resursbokning - Bokningsadmin ".$section->name, "desktop") ?>
+	<?php htmlHeaders("Friluftsfrämjandets resursbokning - Bokningsadmin ".$section->name, $cfg['url'], "desktop") ?>
 	<script>
 	var startDate,
 		lastSeenBookingId=0;
@@ -233,7 +233,7 @@ switch ($_REQUEST['action']) {
 		<div id="indicator-new-bookings">10 (2 &#9889;)
 			<div>Nya bokningar:<ul><li>En bokning</li><li>Annan bokning</li><li>Tredje bokningen</li><li>Tredje bokningen</li></ul></div>
 		</div>
-        <h1><a href="<?= {$cfg['url']} ?>" title="Till startsidan"><i class='fas fa-home' style='color:white; margin-right:20px;'></i></a> Bokningar i <?= $section->name ?>, <span id='booking-adm-date'></span></h1>
+        <h1><a href="<?= $cfg['url'] ?>" title="Till startsidan"><i class='fas fa-home' style='color:white; margin-right:20px;'></i></a> Bokningar i <?= $section->name ?>, <span id='booking-adm-date'></span></h1>
         <table>
         	<tr><td class='col-caption navbuttons'>
         		<a title="1 månad bakåt (vänsterpil)" href="#" onClick="scrollDate(-1);"><i class='fas fa-chevron-left'></i></a>

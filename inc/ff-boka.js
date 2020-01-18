@@ -7,11 +7,11 @@ $(document).on('pagecontainerhide', function (event, ui) {
 	ui.prevPage.remove(); 
 });
 
-function openBookingAdmin(sectionId) {
+function openBookingAdmin(baseUrl, sectionId) {
 	if (screen.width < 800) {
-		if(confirm("Bokningsadmin för mobila enheter är inte klar än. Vill du gå till desktop-versionen?")) location.href= "/admin/bookings-d.php?sectionId=" + sectionId;
+		if(confirm("Bokningsadmin för mobila enheter är inte klar än. Vill du gå till desktop-versionen?")) location.href= baseUrl + "admin/bookings-d.php?sectionId=" + sectionId;
 	} else {
-		location.href= "/admin/bookings-d.php?sectionId=" + sectionId;
+		location.href= baseUrl + "admin/bookings-d.php?sectionId=" + sectionId;
 	}
 }
 
@@ -461,15 +461,16 @@ function setPaid(lastPaid) {
 /**
  * Delete the whole booking
  * @param userId Used to redirect to userdata page for logged in users, or index for guests
+ * @param baseUrl Base URL of the installation (for redirection after successful deletion)
  */
-function deleteBooking(userId=0) {
+function deleteBooking(userId=0, baseUrl) {
 	if (confirm("Är du säker på att du vill ta bort din bokning?")) {
 	    $.mobile.loading("show", {});
 	    $.getJSON("book-sum.php", { action: "ajaxDeleteBooking" }, function(data, status) {
 	        $.mobile.loading("hide", {});
 	        if (data.error) alert(data.error);
-	        else if (userId) location.href="/userdata.php?action=bookingDeleted";
-        	else location.href="/index.php?action=bookingDeleted";
+	        else if (userId) location.href = baseUrl + "userdata.php?action=bookingDeleted";
+        	else location.href = baseUrl + "index.php?action=bookingDeleted";
 	    });
 	}
 	return false;
@@ -821,7 +822,7 @@ $(document).on('pagecreate', "#page-admin-category", function() {
             success: function(data) {
                 if (data.status=="OK") {
                     var d = new Date();
-                    $('#cat-img-preview').attr("src", "/image.php?type=category&id=" + data.id + "&" + d.getTime()).show().trigger( "updatelayout" );
+                    $('#cat-img-preview').attr("src", "../image.php?type=category&id=" + data.id + "&" + d.getTime()).show().trigger( "updatelayout" );
                 } else {
                     alert(data.error);
                 }

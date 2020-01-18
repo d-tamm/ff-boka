@@ -110,13 +110,13 @@ switch ($_REQUEST['action']) {
 ?><!DOCTYPE html>
 <html>
 <head>
-    <?php htmlHeaders("Friluftsfrämjandets resursbokning - Utrustning") ?>
+    <?php htmlHeaders("Friluftsfrämjandets resursbokning - Utrustning", $cfg['url']) ?>
 </head>
 
 
 <body>
 <div data-role="page" id="page-admin-item">
-    <?= head($item->caption ? htmlspecialchars($item->caption) : "Ny utrustning", $currentUser) ?>
+    <?= head($item->caption ? htmlspecialchars($item->caption) : "Ny utrustning", $cfg['url'], $currentUser) ?>
     <div role="main" class="ui-content">
     
         <div data-role="popup" data-overlay-theme="b" id="popup-msg-page-admin-item" class="ui-content">

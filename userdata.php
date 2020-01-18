@@ -4,6 +4,7 @@ use FFBoka\Section;
 use FFBoka\Booking;
 use FFBoka\Category;
 use FFBoka\FFBoka;
+global $cfg;
 
 session_start();
 require(__DIR__."/inc/common.php");
@@ -83,13 +84,13 @@ if ($_GET['first_login']) $message = "Välkommen till resursbokningen! Innan du 
 ?><!DOCTYPE html>
 <html>
 <head>
-	<?php htmlHeaders("Friluftsfrämjandets resursbokning") ?>
+	<?php htmlHeaders("Friluftsfrämjandets resursbokning", $cfg['url']) ?>
 </head>
 
 
 <body>
 <div data-role="page" id="page-userdata">
-	<?= head("Min sida", $currentUser) ?>
+	<?= head("Min sida", $cfg['url'], $currentUser) ?>
 	<div role="main" class="ui-content">
 
     <div data-role="popup" data-overlay-theme="b" id="popup-msg-page-userdata" class="ui-content">
@@ -185,17 +186,21 @@ if ($_GET['first_login']) $message = "Välkommen till resursbokningen! Innan du 
 			<p>$_SESSION:</p>
 			<pre><?php print_r($_SESSION); ?></pre>
 
-			<?php if ($currentUser->assignments) { ?>
-				<p>Uppdrag enligt aktivitetshanteraren:</p>
-				<ul><?php
-					foreach ($currentUser->assignments as $sectionId=>$assInSec) {
+			<p>Uppdrag enligt aktivitetshanteraren:</p>
+			<ul><?php
+			if ($currentUser->assignments) {
+				foreach ($currentUser->assignments as $sectionId=>$assInSec) {
+				    if ($sectionId===0) {
+				        echo $assInSec[0];
+				    } else {
 						$section = new Section($sectionId);
 						foreach ($assInSec as $ass) {
 							echo "<li>$ass ({$section->name})</li>";
 						}
-					} ?>
-				</ul>
-			<?php } ?>
+				    }
+				} ?>
+			<?php }	else echo "<li>Inga uppdrag hittades</li>"; ?>
+			</ul>
 		</div>
 
 	</div><!--/collapsibleset-->
