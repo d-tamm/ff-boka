@@ -12,12 +12,12 @@ if ($_SESSION['authenticatedUser']) {
 ?><!DOCTYPE html>
 <html>
 <head>
-	<?php htmlHeaders("Friluftsfrämjandets resursbokning - Hjälp") ?>
+	<?php htmlHeaders("Friluftsfrämjandets resursbokning - Hjälp", $cfg['url']) ?>
 </head>
 
 <body>
 <div data-role="page" id="page-help">
-	<?= head("Hjälp till resursbokning", $currentUser) ?>
+	<?= head("Hjälp till resursbokning", $cfg['url'], $currentUser) ?>
 	<div role="main" class="ui-content">
 
 	<h3>Inloggning</h3>

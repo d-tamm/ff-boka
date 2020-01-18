@@ -24,13 +24,13 @@ if ($access < FFBoka::ACCESS_READASK) {
 ?><!DOCTYPE html>
 <html>
 <head>
-    <?php htmlHeaders("Friluftsfrämjandets resursbokning") ?>
+    <?php htmlHeaders("Friluftsfrämjandets resursbokning", $cfg['url']) ?>
 </head>
 
 
 <body>
 <div data-role="page" id="page-book-part">
-    <?= head($item->caption, $currentUser) ?>
+    <?= head($item->caption, $cfg['url'], $currentUser) ?>
     <div role="main" class="ui-content">
     
     <?php echo str_replace("\n", "<br>", htmlspecialchars($item->description));
@@ -46,7 +46,7 @@ if ($access < FFBoka::ACCESS_READASK) {
         if (count($bookings)) echo "</ul></div>\n";
     }
     if ($access >= FFBoka::ACCESS_CATADMIN) {
-        echo "<a class='ui-btn' href='/admin/item.php?catId={$cat->id}&itemId={$item->id}'>Bearbeta resursen</a>";
+        echo "<a class='ui-btn' href='{$cfg['url']}admin/item.php?catId={$cat->id}&itemId={$item->id}'>Bearbeta resursen</a>";
     } ?>
 
 	</div>

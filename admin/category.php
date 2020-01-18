@@ -10,7 +10,7 @@ global $cfg;
 $message = "";
 
 if (!isset($_SESSION['sectionId']) || !isset($_SESSION['authenticatedUser'])) {
-    header("Location: /?action=sessionExpired");
+    header("Location: {$cfg['url']}action=sessionExpired");
     die();
 }
 
@@ -21,7 +21,7 @@ $section = new Section($_SESSION['sectionId']);
 
 // Check access permissions.
 if (!$cat->showFor($currentUser, FFBoka::ACCESS_CATADMIN)) {
-    header("Location: /?action=accessDenied&to=" . urlencode("administrationssidan för {$cat->caption}"));
+    header("Location: {$cfg['url']}?action=accessDenied&to=" . urlencode("administrationssidan för {$cat->caption}"));
     die();
 }
 
@@ -190,13 +190,13 @@ unset ($_SESSION['itemId']);
 ?><!DOCTYPE html>
 <html>
 <head>
-	<?php htmlHeaders("Friluftsfrämjandets resursbokning - Kategori " . htmlspecialchars($cat->caption)) ?>
+	<?php htmlHeaders("Friluftsfrämjandets resursbokning - Kategori " . htmlspecialchars($cat->caption), $cfg['url']) ?>
 </head>
 
 
 <body>
 <div data-role="page" id="page-admin-category">
-	<?= head(htmlspecialchars($cat->caption), $currentUser) ?>
+	<?= head(htmlspecialchars($cat->caption), $cfg['url'], $currentUser) ?>
 	<div role="main" class="ui-content">
 
 	<div data-role="popup" data-overlay-theme="b" id="popup-msg-page-admin-category" class="ui-content">

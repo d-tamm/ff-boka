@@ -51,7 +51,8 @@ class User extends FFBoka {
             if ($data === FALSE) { // no answer
                 $this->assignments[0][] = "Kunde inte läsa in uppdrag från API.";
             } else { // Got an answer
-                foreach (json_decode($data->results) as $ass) {
+                $data = json_decode($data);
+                foreach ($data->results as $ass) {
                     if ($ass->cint_assignment_party_type->value == FFBoka::TYPE_SECTION) {
                         // This will sort the assignments on section ID
                         $this->assignments[$ass->section__cint_nummer][] = $ass->cint_assignment_type_id->name;

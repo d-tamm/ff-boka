@@ -284,13 +284,13 @@ switch ($_REQUEST['action']) {
 ?><!DOCTYPE html>
 <html>
 <head>
-    <?php htmlHeaders("Friluftsfrämjandets resursbokning - Bekräfta bokningen") ?>
+    <?php htmlHeaders("Friluftsfrämjandets resursbokning - Bekräfta bokningen", $cfg['url']) ?>
 </head>
 
 
 <body>
 <div data-role="page" id="page-book-sum">
-    <?= head("Din bokning", $currentUser) ?>
+    <?= head("Din bokning", $cfg['url'], $currentUser) ?>
     <div role="main" class="ui-content">
 
     <div data-role="popup" data-overlay-theme="b" id="popup-msg-page-book-sum" class="ui-content">
@@ -435,7 +435,7 @@ switch ($_REQUEST['action']) {
 		?>
 
     	<input type="submit" data-icon="carat-r" data-iconpos="right" data-theme="b" data-corners="false" value="Slutför bokningen">
-    	<a href="#" onClick="deleteBooking(<? $_SESSION['authenticatedUser'] ?>);" class='ui-btn ui-btn-c ui-icon-delete ui-btn-icon-right'>Ta bort bokningen</a>
+    	<a href="#" onClick="deleteBooking(<?= $_SESSION['authenticatedUser'] ?>, '<?= $cfg['url'] ?>');" class='ui-btn ui-btn-c ui-icon-delete ui-btn-icon-right'>Ta bort bokningen</a>
     </form>
     
     </div><!--/main-->

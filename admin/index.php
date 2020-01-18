@@ -27,20 +27,20 @@ global $cfg, $FF;
 // Set current section and user
 if ($_GET['sectionId']) $_SESSION['sectionId'] = $_GET['sectionId'];
 if (!$_SESSION['sectionId']) {
-    header("Location: /");
+    header("Location: {$cfg['url']}");
     die();
 }
 $section = new Section($_SESSION['sectionId']);
 
 // This page may only be accessed by registered users
 if (!$_SESSION['authenticatedUser']) {
-    header("Location: /?action=accessDenied&to=" . urlencode("administrationssidan för {$section->name}"));
+    header("Location: {$cfg['url']}?action=accessDenied&to=" . urlencode("administrationssidan för {$section->name}"));
     die();
 }
 // Only allow users which have at least some admin role in this section
 $currentUser = new User($_SESSION['authenticatedUser']);
 if (!$section->showFor($currentUser, FFBoka::ACCESS_CATADMIN)) {
-    header("Location: /?action=accessDenied&to=" . urlencode("administrationssidan för {$section->name}"));
+    header("Location: {$cfg['url']}?action=accessDenied&to=" . urlencode("administrationssidan för {$section->name}"));
     die();
 }
 $userAccess = $section->getAccess($currentUser);
@@ -148,13 +148,13 @@ unset($_SESSION['catId']);
 ?><!DOCTYPE html>
 <html>
 <head>
-	<?php htmlHeaders("Friluftsfrämjandets resursbokning - Admin ".$section->name) ?>
+	<?php htmlHeaders("Friluftsfrämjandets resursbokning - Admin ".$section->name, $cfg['url']) ?>
 </head>
 
 
 <body>
 <div data-role="page" id="page-admin-section">
-	<?= head("LA " . htmlspecialchars($section->name), $currentUser) ?>
+	<?= head("LA " . htmlspecialchars($section->name), $cfg['url'], $currentUser) ?>
 	<div role="main" class="ui-content">
 
 	<div data-role="popup" data-overlay-theme="b" id="popup-msg-page-admin-section" class="ui-content">

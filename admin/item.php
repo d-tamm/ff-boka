@@ -12,7 +12,7 @@ require(__DIR__ . "/../inc/common.php");
 if (isset($_REQUEST['catId'])) $_SESSION['catId'] = $_REQUEST['catId'];
 
 if (!isset($_SESSION['sectionId']) || !isset($_SESSION['authenticatedUser']) || !isset($_SESSION['catId'])) {
-    header("Location: /");
+    header("Location: {$cfg['url']}");
     die();
 }
 
@@ -23,7 +23,7 @@ $cat = new Category($_SESSION['catId']);
 
 // Check access permissions.
 if (!$cat->showFor($currentUser, FFBoka::ACCESS_CATADMIN)) {
-    header("Location: /?action=accessDenied&to=" . urlencode("administrationssidan för " . htmlspecialchars($item->caption)));
+    header("Location: {$cfg['url']}?action=accessDenied&to=" . urlencode("administrationssidan för " . htmlspecialchars($item->caption)));
     die();
 }
 
@@ -110,13 +110,13 @@ switch ($_REQUEST['action']) {
 ?><!DOCTYPE html>
 <html>
 <head>
-    <?php htmlHeaders("Friluftsfrämjandets resursbokning - Utrustning") ?>
+    <?php htmlHeaders("Friluftsfrämjandets resursbokning - Utrustning", $cfg['url']) ?>
 </head>
 
 
 <body>
 <div data-role="page" id="page-admin-item">
-    <?= head($item->caption ? htmlspecialchars($item->caption) : "Ny utrustning", $currentUser) ?>
+    <?= head($item->caption ? htmlspecialchars($item->caption) : "Ny utrustning", $cfg['url'], $currentUser) ?>
     <div role="main" class="ui-content">
     
         <div data-role="popup" data-overlay-theme="b" id="popup-msg-page-admin-item" class="ui-content">
