@@ -96,6 +96,12 @@ function displayCatAccess($cat, $accLevels) {
 
 
 switch ($_REQUEST['action']) {
+    case "help":
+        // TODO: write help text for category admin page
+        echo <<<EOF
+Det finnt inte ännu någon hjälp till denna sida.
+EOF;
+        die();
     case "new":
         if ($cat->getAccess($currentUser) >= FFBoka::ACCESS_CATADMIN) {
             $cat = $section->createCategory();

@@ -169,8 +169,8 @@ function head(string $caption, string $baseUrl, $currentUser=NULL) {
 	<div data-role="header">
 		<H1><?= $caption ?></H1>
 	    <a href='#navpanel' data-rel='popup' data-transition='pop' data-role='button' data-icon='bars' data-iconpos='notext' class='ui-btn-left ui-nodisc-icon ui-alt-icon'>Menu</a>
+		<a href='javascript:showHelp();' data-transition='slide' data-rel='popup' data-role='button' data-icon='help' data-iconpos='notext' class='ui-btn-right ui-nodisc-icon ui-alt-icon'></a>
 		<?php
-		//echo "<a href='#' data-transition='slide' data-direction='reverse' data-role='button' data-icon='delete' data-iconpos='notext' class='ui-btn-right ui-nodisc-icon ui-alt-icon'></a>"; // TODO: use this button to implement context help (issue #64)
 		if (!isset($_COOKIE['cookiesOK'])) { // Display cookie chooser ?>
 			<div id="divCookieConsent" data-theme='b' class='ui-bar ui-bar-b' style='font-weight:normal;'>
 				För att vissa funktioner på denna webbplats ska fungera använder vi kakor. <a href='<?= $baseUrl ?>cookies.php' data-role='none'>Läs mer om kakor.</a><br>
@@ -180,6 +180,9 @@ function head(string $caption, string $baseUrl, $currentUser=NULL) {
 		<?php } ?>
 	</div>
 	
+	<div data-role="popup" id="popup-help" class="ui-content" data-overlay-theme="b">
+	<h1>Hjälp</h1>
+	</div>
 	<?php
 }
 

@@ -15,6 +15,15 @@ if ($_REQUEST['itemId']) {
     die();
 }
 
+switch ($_REQUEST['action']) {
+    case "help":
+        // TODO: write help text for item details page
+        echo <<<EOF
+Det finnt inte ännu någon hjälp till denna sida.
+EOF;
+        die();
+}
+
 $cat = $item->category();
 $access = $cat->getAccess($currentUser);
 if ($access < FFBoka::ACCESS_READASK) {

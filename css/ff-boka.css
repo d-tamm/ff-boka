@@ -125,13 +125,20 @@ li.selected {
 }
 
 /* User defined icons */
-.ui-icon-carat-ll::after {
-    background-image: url("/resources/carat-ll.png");
-    background-size: 18px 18px;
+.ui-icon-left:after {
+    background-image: url("/resources/left.svg");
 }
-.ui-icon-carat-rr::after {
-    background-image: url("/resources/carat-rr.png");
-    background-size: 18px 18px;
+.ui-icon-right:after {
+    background-image: url("/resources/right.svg");
+}
+.ui-icon-leftleft:after {
+    background-image: url("/resources/leftleft.svg");
+}
+.ui-icon-rightright:after {
+    background-image: url("/resources/rightright.svg");
+}
+.ui-icon-help:after {
+	background-image: url("/resources/help.svg");
 }
 
 .freebusy-bar {

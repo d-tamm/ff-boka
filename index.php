@@ -10,6 +10,12 @@ $message = "";
 
 if (isset($_REQUEST['action'])) {
     switch ($_REQUEST['action']) {
+        case "help":
+            // TODO: write help text for start page
+            echo <<<EOF
+Det finnt inte ännu någon hjälp till denna sida.
+EOF;
+            die();
         case "make me admin":
 			if (is_numeric($_REQUEST['sectionId'])) {
 				$section = new Section($_REQUEST['sectionId']);

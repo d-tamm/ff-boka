@@ -42,6 +42,12 @@ function showNotificationOptout(User $user, Category $cat) {
 }
 
 switch ($_REQUEST['action']) {
+    case "help":
+        // TODO: write help text for user data page
+        echo <<<EOF
+Det finnt inte ännu någon hjälp till denna sida.
+EOF;
+        die();
     case "bookingDeleted":
         $message = "Din bokning har nu tagits bort.";
         break;

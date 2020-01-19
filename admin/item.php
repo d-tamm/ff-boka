@@ -49,6 +49,12 @@ function imageHtml(Item $item) {
 
 
 switch ($_REQUEST['action']) {
+    case "help":
+        // TODO: write help text for item admin page
+        echo <<<EOF
+Det finnt inte ännu någon hjälp till denna sida.
+EOF;
+        die();
     case "newItem":
         $item = $cat->addItem();
         $_SESSION['itemId'] = $item->id;

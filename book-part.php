@@ -5,6 +5,7 @@ use FFBoka\Category;
 use FFBoka\FFBoka;
 use FFBoka\Item;
 use FFBoka\Booking;
+global $cfg;
 session_start();
 require("inc/common.php");
 
@@ -100,6 +101,22 @@ if ($_SESSION['authenticatedUser']) $currentUser = new User($_SESSION['authentic
 else $currentUser = new User(0);
 
 switch ($_REQUEST['action']) {
+    case "help":
+        echo <<<END
+<h4>Hur bokar jag?</h4>
+<p>Här visas alla resurser i lokalavdelningen som du har tillgång till. Klicka på de resurser du vill boka. När du har valt resurserna går du vidare till nästa steg där du väljer start- och sluttid.</p>
+<p>För varje resurs visas tillgängligheten under en vecka i taget.<br>
+    <span class='freebusy-free' style='display:inline-block; width:2em;'>&nbsp;</span> tillgänglig tid<br>
+    <span class='freebusy-busy' style='display:inline-block; width:2em;'>&nbsp;</span> upptagen tid<br>
+    <span class='freebusy-blocked' style='display:inline-block; width:2em;'>&nbsp;</span> ej bokbar tid<br>
+    <span class='freebusy-unknown' style='display:inline-block; width:2em;'>&nbsp;</span> ingen information tillgänglig<br>
+    Med knapparna längst ned kan du bläddra bak och fram i tiden.
+    Administratören kan för vissa poster ha valt att inte visa upptaget-information.
+    I dessa fall blir din bokning bara en förfrågan där du anger önskad start- och sluttid i nästa steg.</p>
+<p>Du kan se mer information om varje resurs genom att klicka på info-knappen till höger.</p>
+<p>Om du vill göra en bokning där olika resurser behövs olika länge delar du upp bokningen. Börja med att boka alla resurser som ska ha samma tid. Sedan får du möjlighet att lägga till fler delbokningar med andra tider och/eller resurser.</p>
+END;
+        die();
     case "ajaxItemDetails":
         header("Content-Type: application/json");
         $item = new Item($_REQUEST['id'], $_REQUEST['bookingStep']==2);
@@ -220,24 +237,7 @@ switch ($_REQUEST['action']) {
         <a href='#' data-rel='back' class='ui-btn ui-btn-icon-left ui-btn-inline ui-corner-all ui-icon-check'>OK</a>
     </div>
 
-    <h4>Lokalavdelning: <?= htmlspecialchars($section->name) ?>
-        <a href="#popup-help-book1" data-rel="popup" class="tooltip ui-btn ui-alt-icon ui-nodisc-icon ui-btn-inline ui-icon-info ui-btn-icon-notext">Tipps</a>
-    </h4>
-    <div data-role="popup" id="popup-help-book1" class="ui-content" data-overlay-theme="b">
-        <a href="#" data-rel="back" class="ui-btn ui-corner-all ui-btn-a ui-icon-delete ui-btn-icon-notext ui-btn-right">Close</a>
-        <h4>Hur bokar jag?</h4>
-        <p>Här visas alla resurser i lokalavdelningen som du har tillgång till. Klicka på de resurser du vill boka. När du har valt resurserna går du vidare till nästa steg där du väljer start- och sluttid.</p>
-		<p>För varje resurs visas tillgängligheten under en vecka i taget.<br>
-            <span class='freebusy-free' style='display:inline-block; width:2em;'>&nbsp;</span> tillgänglig tid<br>
-            <span class='freebusy-busy' style='display:inline-block; width:2em;'>&nbsp;</span> upptagen tid<br>
-            <span class='freebusy-blocked' style='display:inline-block; width:2em;'>&nbsp;</span> ej bokbar tid<br>
-            <span class='freebusy-unknown' style='display:inline-block; width:2em;'>&nbsp;</span> ingen information tillgänglig<br>
-            Med knapparna längst ned kan du bläddra bak och fram i tiden.
-            Administratören kan för vissa poster ha valt att inte visa upptaget-information.
-            I dessa fall blir din bokning bara en förfrågan där du anger önskad start- och sluttid i nästa steg.</p>
-		<p>Du kan se mer information om varje resurs genom att klicka på info-knappen till höger.</p>
-		<p>Om du vill göra en bokning där olika resurser behövs olika länge delar du upp bokningen. Börja med att boka alla resurser som ska ha samma tid. Sedan får du möjlighet att lägga till fler delbokningar med andra tider och/eller resurser.</p>
-    </div>
+    <h4>Lokalavdelning: <?= htmlspecialchars($section->name) ?></h4>
 
 	<?php
 	if (isset($_SESSION['bookingId'])) echo "<p class='ui-body ui-body-a'>Du har en påbörjad bokning. Resurserna du väljer nedan kommer att läggas till bokningen.<a data-transition='slide' class='ui-btn' href='book-sum.php'>Visa bokningen</a></p>";
@@ -294,13 +294,13 @@ switch ($_REQUEST['action']) {
 
     <div data-role="footer" data-position="fixed" data-theme="a">
         <div class="footer-button-left">
-            <a href="javascript:scrollDate(-28);" class="ui-btn ui-corner-all ui-btn-icon-notext ui-icon-carat-ll ui-nodisc-icon">-4 veckor</a>
-            <a href="javascript:scrollDate(-7);" class="ui-btn ui-corner-all ui-btn-icon-notext ui-icon-carat-l ui-nodisc-icon ui-alt-icon">-1 vecka</a>
+            <a href="javascript:scrollDate(-28);" class="ui-btn ui-corner-all ui-btn-icon-notext ui-icon-leftleft ui-nodisc-icon">-4 veckor</a>
+            <a href="javascript:scrollDate(-7);" class="ui-btn ui-corner-all ui-btn-icon-notext ui-icon-left ui-nodisc-icon ui-alt-icon">-1 vecka</a>
         </div>
         <h2 id="book-current-range-readable"></h2>
         <div class="footer-button-right">
-            <a href="javascript:scrollDate(7);" class="ui-btn ui-corner-all ui-btn-icon-notext ui-icon-carat-r ui-nodisc-icon ui-alt-icon">+1 vecka</a>
-            <a href="javascript:scrollDate(28);" class="ui-btn ui-corner-all ui-btn-icon-notext ui-icon-carat-rr ui-nodisc-icon ui-alt-icon">+10 veckor</a>
+            <a href="javascript:scrollDate(7);" class="ui-btn ui-corner-all ui-btn-icon-notext ui-icon-right ui-nodisc-icon ui-alt-icon">+1 vecka</a>
+            <a href="javascript:scrollDate(28);" class="ui-btn ui-corner-all ui-btn-icon-notext ui-icon-rightright ui-nodisc-icon ui-alt-icon">+10 veckor</a>
         </div>
     </div><!--/footer-->
 	

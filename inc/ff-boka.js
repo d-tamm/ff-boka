@@ -7,6 +7,12 @@ $(document).on('pagecontainerhide', function (event, ui) {
 	ui.prevPage.remove(); 
 });
 
+function showHelp() {
+	$.get("?action=help", function( data ) {
+		$("#popup-help").html(data).popup("open", { transition: "slide" });
+	});
+}
+
 function openBookingAdmin(baseUrl, sectionId) {
 	if (screen.width < 800) {
 		if(confirm("Bokningsadmin för mobila enheter är inte klar än. Vill du gå till desktop-versionen?")) location.href= baseUrl + "admin/bookings-d.php?sectionId=" + sectionId;
