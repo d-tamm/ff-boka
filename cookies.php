@@ -8,6 +8,11 @@ if ($_SESSION['authenticatedUser']) {
     $currentUser = new User($_SESSION['authenticatedUser']);
 }
 
+switch ($_REQUEST['action']) {
+    case "help":
+        die("Mer hjälp än texten på sidan finns inte här.");
+}
+
 ?><!DOCTYPE html>
 <html>
 <head>

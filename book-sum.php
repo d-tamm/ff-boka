@@ -74,6 +74,12 @@ foreach ($booking->items() as $item) {
 }
 
 switch ($_REQUEST['action']) {
+    case "help":
+        // TODO: write help text for booking summary page
+        echo <<<EOF
+Det finnt inte ännu någon hjälp till denna sida.
+EOF;
+        die();
     case "ajaxFreebusyItem":
         // Get freebusy bars for current booked item
         $item = new Item($_SESSION['bookedItemId'], TRUE);
@@ -453,9 +459,9 @@ switch ($_REQUEST['action']) {
     	        </div>
     
                 <div>
-                    <a href='#' onclick='scrollItemDate(-7);' class='ui-btn ui-btn-inline ui-btn-icon-notext ui-icon-carat-l'>bakåt</a>
+                    <a href='#' onclick='scrollItemDate(-7);' class='ui-btn ui-btn-inline ui-btn-icon-notext ui-icon-left'>bakåt</a>
                     <span id='book-current-range-readable'>1/1 - 7/1 2020</span>
-                    <a href='#' onclick='scrollItemDate(7);' class='ui-btn ui-btn-inline ui-btn-icon-notext ui-icon-carat-r'>framåt</a>
+                    <a href='#' onclick='scrollItemDate(7);' class='ui-btn ui-btn-inline ui-btn-icon-notext ui-icon-right'>framåt</a>
                 </div>
     
         		<div id='book-warning-conflict'>Den valda tiden krockar med befintliga bokningar.</div>

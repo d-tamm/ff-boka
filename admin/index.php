@@ -74,6 +74,12 @@ if ($userAccess >= FFBoka::ACCESS_CATADMIN) {
 
 
 switch ($_REQUEST['action']) {
+    case "help":
+        // TODO: write help text for admin start page
+        echo <<<EOF
+Det finnt inte ännu någon hjälp till denna sida.
+EOF;
+        die();
     case "ajaxFindUser":
         // This is also called from category.php
         header("Content-Type: application/json");
