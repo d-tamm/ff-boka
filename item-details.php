@@ -6,15 +6,6 @@ use FFBoka\FFBoka;
 session_start();
 require("inc/common.php");
 
-if ($_SESSION['authenticatedUser']) $currentUser = new User($_SESSION['authenticatedUser']);
-else $currentUser = new User(0);
-if ($_REQUEST['itemId']) {
-    $item = new Item($_REQUEST['itemId']);
-} else {
-    header("HTTP/1.1 400 Bad Request");
-    die();
-}
-
 switch ($_REQUEST['action']) {
     case "help":
         // TODO: write help text for item details page
@@ -22,6 +13,15 @@ switch ($_REQUEST['action']) {
 Det finnt inte ännu någon hjälp till denna sida.
 EOF;
         die();
+}
+
+if ($_SESSION['authenticatedUser']) $currentUser = new User($_SESSION['authenticatedUser']);
+else $currentUser = new User(0);
+if ($_REQUEST['itemId']) {
+    $item = new Item($_REQUEST['itemId']);
+} else {
+    header("HTTP/1.1 400 Bad Request");
+    die();
 }
 
 $cat = $item->category();

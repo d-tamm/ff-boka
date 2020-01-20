@@ -161,7 +161,6 @@ function head(string $caption, string $baseUrl, $currentUser=NULL) {
 				<li data-icon="user"><a href="<?= $baseUrl ?>userdata.php" data-transition='slide' data-rel="close">Min sida</a></li>
 				<li data-icon="power"><a href="<?= $baseUrl ?>index.php?logout" data-rel="close">Logga ut</a></li><?php
 			} ?>
-			<li data-icon="info"><a href="<?= $baseUrl ?>help.php" data-transition='slide' data-rel="close">Hjälp</a></li>
 			<li data-icon="info"><a href="<?= $baseUrl ?>cookies.php" data-transition='slide' data-rel="close">Om kakor (cookies)</a></li>
 		</ul>
 	</div><!-- /panel -->

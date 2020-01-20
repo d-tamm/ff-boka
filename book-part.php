@@ -252,15 +252,7 @@ END;
 
     <div id="book-step2" style="display:none">
         <h3 class="ui-bar ui-bar-a">Steg 2. Välj tid</h3>
-        <p>Nedan visas en sammanfattning av tiderna då dina valda poster är tillgängliga / bokade.
-	        <a href="#popup-help-book2" data-rel="popup" class="tooltip ui-btn ui-alt-icon ui-nodisc-icon ui-btn-inline ui-icon-info ui-btn-icon-notext">Tipps</a>
-        </p>
-	    <div data-role="popup" id="popup-help-book2" class="ui-content" data-overlay-theme="b">
-            <span class='freebusy-free' style='display:inline-block; width:2em;'>&nbsp;</span> tillgänglig tid<br>
-            <span class='freebusy-busy' style='display:inline-block; width:2em;'>&nbsp;</span> upptagen tid<br>
-            <span class='freebusy-blocked' style='display:inline-block; width:2em;'>&nbsp;</span> ej bokbar tid<br>
-            <span class='freebusy-unknown' style='display:inline-block; width:2em;'>&nbsp;</span> ingen information tillgänglig<br>
-        </div>
+        <p>Nedan visas en sammanfattning av tiderna då dina valda poster är tillgängliga / bokade.</p>
         <div id='book-access-msg'></div>
 
         <div class='freebusy-bar' style='height:50px;'>

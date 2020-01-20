@@ -127,18 +127,23 @@ li.selected {
 /* User defined icons */
 .ui-icon-left:after {
     background-image: url("/resources/left.svg");
+	background-size: 18px 18px;
 }
 .ui-icon-right:after {
     background-image: url("/resources/right.svg");
+	background-size: 18px 18px;
 }
 .ui-icon-leftleft:after {
     background-image: url("/resources/leftleft.svg");
+	background-size: 18px 18px;
 }
 .ui-icon-rightright:after {
     background-image: url("/resources/rightright.svg");
+	background-size: 18px 18px;
 }
 .ui-icon-help:after {
 	background-image: url("/resources/help.svg");
+	background-size: 18px 18px;
 }
 
 .freebusy-bar {
