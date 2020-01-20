@@ -268,7 +268,8 @@ EOF;
         if ($allConfirmed) {
             try {
                 sendmail(
-                    $cfg['mailFrom'], // from
+                    $cfg['mailFrom'], // from address
+                    $cfg['mailFromName'], // from Name
                     is_null($booking->userId) ? $booking->extMail : $booking->user()->mail, // to
                     "", // replyTo
                     "Bokning #{$booking->id} är nu bekräftad", // subject
