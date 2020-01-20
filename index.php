@@ -11,10 +11,35 @@ $message = "";
 if (isset($_REQUEST['action'])) {
     switch ($_REQUEST['action']) {
         case "help":
-            // TODO: write help text for start page
-            echo <<<EOF
-Det finnt inte ännu någon hjälp till denna sida.
-EOF;
+			$allAss = $cfg['sectionAdmins'];
+			$oneAss = array_pop($allAss);
+			echo "
+<h3>Inloggning</h3>
+<p>Resursbokningen använder samma inloggning som Friluftsfrämjandets aktivitetshanterare. Har du problem med inloggningen, vänd dig i första hand till dem som har hand om inloggningen på friluftsframjandet.se.</p>
+
+<h3>Komma igång med din lokalavdelning</h3>
+<p>Uppdragen " . ($allAss ? implode(", ", $allAss) . " och " : "") . $oneAss . " har alltid administratörsbehörighet i varje lokalavdelning. För att komma igång med att använda resursbokningen i din lokalavdelning måste alltså någon med ett sådant uppdrag logga in och göra de första inställningarna, t.ex. lägga till behörighet för andra att ta över administrationen.</p>
+
+<h3>Säkerhet och integritet</h3>
+<p>Vi jobbar aktivt med säkerheten och integriteten på sajten:</p>
+<ul>
+	<li>Vi sparar inte ditt lösenord, varken i klartext eller krypterat.</li>
+	<li>När vi visar epostadresser här på hemsidan gör vi det på ett sätt som gör det praktiskt omöjligt för automatiserade system att läsa ut adressen i syfte att missbruka den för att skicka spam.</li>
+	<li>Vi delar aldrig dina uppgifter med tredje part. All data ligger på en server som finns i Sverige.</li>
+	<li>Det går att ansluta med en krypterad uppkoppling. Skriv \"https://\" i webbläsarens adressfält." . ($_SERVER['HTTPS'] ? " - Grattis! Du är ansluten med en säker, krypterad förbindelse." : "<strong>Du använder just nu en osäker anslutning.</strong> <a href='https://{$_SERVER['SERVER_NAME']}{$_SERVER['PHP_SELF']}'>Klicka här</a> för att byta till krypterad uppkoppling.") . "</li>
+</ul>
+
+<h3>Personuppgifter och GDPR</h3>
+<p>Det ligger i sakens natur att vi måste bearbeta personuppgifter för att kunna bedriva bokningssystemet. De uppgifter som sparas om dig i systemet är:</p>
+<ul>
+	<li>De userkontaktuppgifter som du själv har angett vid registreringen. De behövs för att plattformen ska kunna fungera. T.ex. används din epost-adress för att kunna skicka bekräftelser och påminnelser om bokningar. Kontaktuppgifterna kan även användas om det uppstår frågor om någon bokning.</li>
+	<li>Om du gör en bokning kommer all data som du lämnar med bokningen vara tillgänglig för respektive materialansvarig/administratör. Informationen visas inte för andra användare.</li>
+	<li>Om du tilldelas en administratörsroll behöver vi spara information om detta för att kunna ge dig tillgång till de funktioner som du behöver i rollen. Är du materialansvarig/administratör för en kategori kommer dina kontaktuppgifter att visas för användare som vill boka utrustningen.</li>
+</ul>
+<p>Du kan alltid höra av dig till oss för att ta reda på vad som är sparat om just dig.</p>
+
+<h3>Kontakt</h3>
+<p>Om du har frågor kan du skicka ett mejl till " . obfuscatedMaillink($cfg['mailReplyTo'], "Fråga om resursbokningen") . " eller ringa Daniel (076-105 69 75).</p>";
             die();
         case "make me admin":
 			if (is_numeric($_REQUEST['sectionId'])) {
@@ -203,11 +228,7 @@ if (isset($_REQUEST['message'])) $message = ($message ? "$message<br>" : "") . $
 		</div>
 
 		<form id="formLogin" style="padding:10px 20px;" action="index.php" method="post" data-ajax="false">
-			<h3>Inloggning <a href="#popup-help-login" data-rel="popup" class="tooltip ui-btn ui-alt-icon ui-nodisc-icon ui-btn-inline ui-icon-info ui-btn-icon-notext">Hjälp</a></h3>
-			<div data-role="popup" id="popup-help-login" class="ui-content" data-overlay-theme="b">
-				<p>Du loggar in med samma lösenord som i aktivitetshanteraren.</p>
-			</div>
-			<p class="ui-body ui-body-c">Nu är kopplingarna till FFs centrala användarhantering klar, så nu behöver du ange ditt lösenord och ska hamna i rätt lokalavdelning!</p>
+			<h3>Inloggning</h3>
 			<input type="hidden" name="redirect" id="loginRedirect" value="<?= $_REQUEST['redirect'] ?>">
 			<input name="id" value="" placeholder="Medlemsnummer" required>
 			<input name="password" value="" placeholder="Lösenord" type="password">
