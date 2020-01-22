@@ -126,6 +126,99 @@ class User extends FFBoka {
     }
     
     /**
+     * Restore an expired session from persistent-login cookie.
+     * On success, will also replace the persistent-login cookie with a new one.
+     * @param string $cookie String in the format selector:authenticator where authenticator is base64 encoded
+     * @param int $ttl TTL for the new cookie
+     */
+    static function restorePersistentLogin(string $cookie, int $ttl) {
+        list($selector, $authenticator) = explode(':', $cookie);
+        $stmt = self::$db->prepare("SELECT * FROM persistent_logins WHERE selector=? AND expires>NOW()");
+        $stmt->execute(array($selector));
+        if ($row = $stmt->fetch(PDO::FETCH_OBJ)) {
+            if (hash_equals($row->authenticator, hash('sha256', base64_decode($authenticator)))) {
+                // User authenticated. Set as logged in
+                $_SESSION['authenticatedUser'] = $row->userId;
+                // Regenerate login token
+                $u = new User($row->userId);
+                $u->createPersistentLogin($ttl);
+            }
+        }
+    }
+    
+    /**
+     * Create a cookie and db post to remember the logged-in user even when session has expired.
+     * The cookie is valid for the currently used device only.
+     * @param int $ttl How long the cookie shall be valid (seconds)
+     * @throws \Exception if DB post cannot be created
+     * @return boolean TRUE on success, FALSE on failure to create cookie
+     */
+    public function createPersistentLogin(int $ttl) {
+        //https://stackoverflow.com/questions/3128985/php-login-system-remember-me-persistent-cookie
+        // Remove old token
+        $this->removePersistentLogin();
+        // Create token
+        $selector = base64_encode(random_bytes(15));
+        $authenticator = random_bytes(40);
+        // Send token as cookie to browser
+        if (!setcookie(
+            'remember',
+            $selector.':'.base64_encode($authenticator),
+            time() + $ttl,
+            "/",
+            $_SERVER['SERVER_NAME'],
+            true, // TLS-only
+            true  // http-only
+            )) return FALSE;
+            // Save token to database
+            $stmt = self::$db->prepare("INSERT INTO persistent_logins SET userId=:userId, userAgent=:userAgent, selector=:selector, authenticator=:authenticator, expires=DATE_ADD(NOW(), INTERVAL $ttl SECOND)");
+            if (!$stmt->execute(array(
+                "userId"=>$this->id,
+                "userAgent"=>$_SERVER['HTTP_USER_AGENT'],
+                ":selector"=>$selector,
+                ":authenticator"=>hash('sha256', $authenticator),
+            ))) throw new \Exception($stmt->errorInfo()[2]);
+            return TRUE;
+    }
+    
+    /**
+     * Remove cookie and database post for persistent login
+     * @param string $userAgent If set, will remove the cookie belonging to that user agent (device),
+     * otherwise user agent for the current connection is used
+     * @throws \Exception if database post cannot be deleted
+     */
+    public function removePersistentLogin(string $userAgent="") {
+        // Removes cookie and database token for persistent login ("Remember me")
+        if ($userAgent == "") $userAgent = $_SERVER['HTTP_USER_AGENT'];
+        if ($userAgent == $_SERVER['HTTP_USER_AGENT']) {
+            // We are on the same device as the cookie. Remove it.
+            setcookie(
+                'remember',
+                '',
+                time() - 3600,
+                "/",
+                $_SERVER['SERVER_NAME'],
+                true, // TLS-only
+                true  // http-only
+            );
+        }
+        $stmt = self::$db->prepare("DELETE FROM persistent_logins WHERE userId=:userId AND userAgent=:userAgent");
+        if (!$stmt->execute(array(
+            ":userId"=>$this->id,
+            ":userAgent"=>$userAgent
+        ))) throw new \Exception($stmt->errorInfo()[2]);
+    }
+    
+    /**
+     * Get all persistent logins for user
+     * @return array of objects { string userAgent }
+     */
+    public function persistentLogins() {
+        $stmt = self::$db->query("SELECT userAgent FROM persistent_logins WHERE userId={$this->id}");
+        return $stmt->fetchall(\PDO::FETCH_OBJ);
+    }
+    
+    /**
      * Get an HTML formatted string with contact data
      * @return string
      */

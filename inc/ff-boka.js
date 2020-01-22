@@ -1175,3 +1175,13 @@ function setNotificationOptout(catId, notify) {
     });
 	
 }
+
+function removePersistentLogin(elem, userAgent) {
+    $.getJSON("?action=ajaxRemovePersistentLogin&userAgent=" + userAgent, function(data, status) {
+        switch (data.status) {
+        case "OK":
+        	elem.remove();
+        	break;
+        }
+    });
+}
