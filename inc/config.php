@@ -16,7 +16,7 @@ $cfg = array(
 	"logMaxSize" => 1*1024*1024, // in bytes
 
 	// Sender address and readable name of auto-generated emails
-	"mailFrom" => "daniel.tamm@friluftsframjandet.se",
+	"mailFrom" => "resursbokning@friluftsframjandet.se",
     "mailFromName" => "Friluftsfrämjandets resursbokning",
 	// SMTP settings for sending emails
 	"SMTP" => array(
@@ -26,7 +26,7 @@ $cfg = array(
     	"pass" => '', // see credentials.php
     ),
 	// ReplyTo address of auto-generated emails
-	"mailReplyTo" => "daniel.tamm@friluftsframjandet.se",
+	"mailReplyTo" => "resursbokning@friluftsframjandet.se",
 
 	// Base URL of this platform, with trailing slash
 	"url"    => "https://boka.tamm-tamm.de/",

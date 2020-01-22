@@ -140,6 +140,10 @@ if ($_SESSION['authenticatedUser']) {
 }
 
 if (isset($_REQUEST['message'])) $message = ($message ? "$message<br>" : "") . $_REQUEST['message'];
+elseif ($_SESSION['welcomeMessageShown']!==TRUE) {
+	$message = "<b>Hej och välkommen till resursbokningen!</b><br>Ett litet tipps till dig som snabbt vill få en överblick: Kolla på Mölndals lokalavdelning! Där finns det en del resurser upplagda som du kan testa att boka. När du har loggat in kan du även göra dig till admin i någon lokalavdelning - testa även här med Mölndal om du inte vill börja från scratch. Övriga lokalavdelningar är sannolikt tomma än så länge, men du är välkommen att ändra på det!";
+	$_SESSION['welcomeMessageShown'] = TRUE;
+}
 
 ?><!DOCTYPE html>
 <html>
@@ -160,7 +164,7 @@ if (isset($_REQUEST['message'])) $message = ($message ? "$message<br>" : "") . $
 
 	<img src="resources/liggande-bla.png" style="width:100%; max-width:600px; display:block; margin-left:auto; margin-right:auto;">
 
-	<p class="ui-body ui-body-b">Välkommen till testplattformen för FFs framtida resursbokningssystem! Här kan du följa utvecklingen av projektet och testa. Var inte rädd för att förstöra något, utan försök gärna att utmana funktionerna och hitta svaga punkter!<br>Mer information hittar du på <a style="color:white;" target="_blank" href="https://github.com/d-tamm/ff-boka">GitHub</a></p>
+	<p class="ui-body ui-body-b">Välkommen till testplattformen för FFs framtida resursbokningssystem! Här kan du följa utvecklingen av projektet och testa. Var inte rädd för att förstöra något, utan försök gärna att utmana funktionerna och hitta svaga punkter!<br>Kom ihåg att detta är bara testplattformen. Allt som läggs upp kommer att försvinna vid övergången till produktionsplattformen.<br>Mer information hittar du på <a style="color:white;" target="_blank" href="https://github.com/d-tamm/ff-boka">GitHub</a></p>
 
 	<?php
 	if ($_SESSION['authenticatedUser']) {
