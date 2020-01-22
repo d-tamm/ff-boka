@@ -92,7 +92,7 @@ if (isset($_POST['login'])) {
 			if (!$u->updateLastLogin()) die("Cannot update user.");
 	        $db->exec("INSERT INTO logins (ip, success) VALUES (INET_ATON('{$_SERVER['REMOTE_ADDR']}'), 1)");
             // If requested, set persistent login cookie
-            if (isset($_POST['rememberMe'])) createPersistentAuth($_POST['id']);
+            if (isset($_POST['rememberMe'])) $u->createPersistentLogin($cfg['TtlPersistentLogin']);
             // Redirect if requested by login form
             if ($_POST['redirect']) {
                 header("Location: {$_POST['redirect']}");
@@ -106,32 +106,17 @@ if (isset($_POST['login'])) {
 	}
 }
 
-if (isset($_REQUEST['logout'])) {
-	// Remove persistent login cookie
-	removePersistentAuth($_SESSION['authenticatedUser']);
-	// Remove session
-	session_unset();
-	session_destroy();
-	session_write_close();
-	setcookie(session_name(), "", 0, "/");
-}
-
-
-if (isset($_REQUEST['t'])) {
-	// Token handling.
-	// Figure out if the given token is still valid, and what it shall be used for.
-	$stmt = $db->query("SELECT UNIX_TIMESTAMP(timestamp) AS unixtime, tokens.* FROM tokens WHERE token='" . sha1($_REQUEST['t']) . "'");
-	if (!$row = $stmt->fetch(PDO::FETCH_ASSOC)) $message = "Ogiltig kod.";
-	elseif (time() > $row['unixtime']+$row['ttl']) $message = "Koden har förfallit.";
-	else {
-		switch ($row['useFor']) {
-		}
-	}
-}
-
 if ($_SESSION['authenticatedUser']) {
     $currentUser = new User($_SESSION['authenticatedUser']);
-    if (!$currentUser->name || !$currentUser->mail || !$currentUser->phone) {
+    if (isset($_REQUEST['logout'])) {
+        // Remove persistent login cookie
+        $currentUser->removePersistentLogin();
+        // Remove session
+        session_unset();
+        session_destroy();
+        session_write_close();
+        setcookie(session_name(), "", 0, "/");
+    } elseif (!$currentUser->name || !$currentUser->mail || !$currentUser->phone) {
     	// We are missing contact details for this user. Redirect to page where he/she must supply them.
     	// (We don't allow to use the system without contact data.)
     	header("Location: userdata.php?first_login=1");

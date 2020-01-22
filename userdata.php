@@ -82,6 +82,11 @@ EOF;
         } else {
             die(json_encode([ "status"=>"OK" ]));
         }
+        
+    case "ajaxRemovePersistentLogin":
+        header("Content-Type: application/json");
+        $currentUser->removePersistentLogin($_REQUEST['userAgent']);
+        die(json_encode([ "status"=>"OK" ]));
 }
 	
 
@@ -153,6 +158,17 @@ if ($_GET['first_login']) $message = "Välkommen till resursbokningen! Innan du 
         </div><?php
 		} ?>
 		
+		<div data-role='collapsible'>
+			<h3>Inloggningar</h3>
+			<ul data-role="listview" data-split-icon="delete">
+			<?php
+			foreach ($currentUser->persistentLogins() as $login) {
+			    echo "<li class='wrap'><a href='#' style='white-space:normal; font-weight:normal;'>" . htmlspecialchars($login->userAgent) . ($login->userAgent == $_SERVER['HTTP_USER_AGENT'] ? " <i>(den här inloggningen)</i>" : "") . "</a><a href='#' onClick=\"removePersistentLogin(this.parentElement, '" . htmlspecialchars($login->userAgent) . "');\" title='ta bort inloggningen'></a></li>";
+			}
+			?>
+			</ul>
+		</div>
+
 		<div data-role='collapsible'>
 			<h3>Kontaktuppgifter</h3>
 			

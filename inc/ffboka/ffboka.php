@@ -112,7 +112,7 @@ class FFBoka {
         return array("authenticated" => $result->isMember, "section" => $result->isMemberOfLokalavdelning);
     }
 
-	/**
+    /**
 	 * Get a list of all users without creating User objects.
 	 * This avoids sending many queries to the API
 	 * @return array[[int id, string name], ...]

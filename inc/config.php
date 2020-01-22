@@ -56,7 +56,7 @@ $cfg = array(
 	"DoSDelay" => 18,   // delay in seconds after DoSCount unsuccessful logins
 	
 	// How long shall persistent login ("remember me") be valid? (seconds)
-	"persistLogin" => 60*60*24*365,
+	"TtlPersistentLogin" => 60*60*24*365,
 );
 
 // Include secret settings, too (those not to be synchronized to Github).

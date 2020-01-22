@@ -30,63 +30,9 @@ $FF = new FFBoka($cfg['ff-api'], $db, $cfg['sectionAdmins'], $cfg['timezone']);
 // Check if there is a persistent login cookie
 //https://stackoverflow.com/questions/3128985/php-login-system-remember-me-persistent-cookie
 if (!$_SESSION['authenticatedUser'] && !empty($_COOKIE['remember'])) {
-	list($selector, $authenticator) = explode(':', $_COOKIE['remember']);
-	$stmt = $db->prepare("SELECT * FROM tokens WHERE useFor='persistent login' AND token=?");
-	$stmt->execute(array($selector));
-	if ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-	    if (hash_equals($row['data'], hash('sha256', base64_decode($authenticator)))) {
-	        // User authenticated.
-			$_SESSION['authenticatedUser'] = $row['forId'];
-			// Regenerate login token
-			createPersistentAuth($row['forId']);
-		}
-	}
+    User::restorePersistentLogin($_COOKIE['remember'], $cfg['TtlPersistentLogin']);
 }
 
-
-function createPersistentAuth($userId) {
-	//https://stackoverflow.com/questions/3128985/php-login-system-remember-me-persistent-cookie
-	global $db, $cfg;
-	// Remove old token
-	removePersistentAuth($userId);
-	// Create token
-	$selector = base64_encode(random_bytes(15));
-	$authenticator = random_bytes(40);
-	// Send token as cookie to browser
-	setcookie(
-		'remember',
-		$selector.':'.base64_encode($authenticator),
-		time() + $cfg['persistLogin'],
-		"/",
-		$_SERVER['SERVER_NAME'],
-		true, // TLS-only
-		true  // http-only
-	);
-	// Save token to database
-	$stmt = $db->prepare("INSERT INTO tokens (token, data, forId, ttl, usefor) VALUES (:token, :data, :forId, :ttl, 'persistent login')");
-	if ($stmt->execute(array(
-		":token"=>$selector,
-		":data"=>hash('sha256', $authenticator),
-		":forId"=>$userId,
-		":ttl"=>$cfg['persistLogin']
-	))) return TRUE;
-	else die($stmt->errorInfo());
-}
-
-function removePersistentAuth($userId) {
-	// Removes cookie and database token for persistent login ("Remember me")
-	global $db;
-	setcookie(
-		'remember',
-		'',
-		time() - 3600,
-		dirname($_SERVER['SCRIPT_NAME']),
-		$_SERVER['SERVER_NAME'],
-		true, // TLS-only
-		true  // http-only
-	);
-	$db->exec("DELETE FROM tokens WHERE usefor='persistent login' AND forId=$userId");
-}	
 
 
 function createToken($use, $forId, $data="", $ttl=86400) {
