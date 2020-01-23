@@ -52,8 +52,8 @@ $cfg = array(
     ),
 
 	// DoS prevention, throttling
-	"DoSCount" => 5,		// How many login attempts are allowed within DoSDelay seconds
-	"DoSDelay" => 18,   // delay in seconds after DoSCount unsuccessful logins
+	"DoSCount" => 3,		// How many login attempts are allowed within DoSDelay seconds
+	"DoSDelay" => 300,   // delay in seconds after DoSCount unsuccessful logins
 	
 	// How long shall persistent login ("remember me") be valid? (seconds)
 	"TtlPersistentLogin" => 60*60*24*365,

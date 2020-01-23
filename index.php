@@ -83,7 +83,7 @@ if (isset($_POST['login'])) {
 	$stmt = $db->query("SELECT * FROM logins WHERE INET_NTOA(IP)='{$_SERVER['REMOTE_ADDR']}' AND TIMESTAMPDIFF(SECOND, timestamp, NOW()) < {$cfg['DoSDelay']} AND NOT success");
 	if ($stmt->rowCount() > $cfg['DoSCount']) {
 		// Too many attempts. We do not even bother to log this to login log.
-		$message = "För många inloggningsförsök. Försök igen om {$cfg['DoSDelay']} sekunder.";
+		$message = "För många inloggningsförsök. Försök igen om " . (int)($cfg['DoSDelay']/60) . " minuter.";
 	} else {
 	    $result = $FF->authenticateUser($_POST['id'], $_POST['password']);
 	    if ($result['authenticated']) {
