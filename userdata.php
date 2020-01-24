@@ -43,9 +43,32 @@ function showNotificationOptout(User $user, Category $cat) {
 
 switch ($_REQUEST['action']) {
     case "help":
-        // TODO: write help text for user data page
         echo <<<EOF
-Det finnt inte ännu någon hjälp till denna sida.
+<p>På den här sidan kan du se och ändra dina personliga inställningar.</p>
+<h3>Mina bokningar</h3>
+<p>Här ser du alla bokningar du har gjort, uppdelade på kommande och avslutade (upp till 1 år gamla). Du kan klicka på bokningarna för att se detaljerna och ändra/avboka.</p>
+
+<h3>Aviseringar</h3>
+<p>Avsnittet visas bara om du har en administratörsroll i någon kategori (kategori- eller bokningsansvarig). Här listas alla sådana kategorier, och du kan ställa in om du vill få aviseringar per epost när nya bokningar kommer in.</p>
+<ul>
+    <li><b>Av</b> stänger av alla aviseringar.</li>
+    <li><b>Bekräfta</b> innebär att du bara får meddelanden för preliminärbokningar som måste bekräftas av någon bokningsansvarig.</li>
+    <li><b>Alla</b> innebär att du får en avisering för varje ny bokning, även om den inte behöver bekräftas.</li>
+</ul>
+<p>Om du byter till <b>Av</b> och hittills har varit den enda administratören som fått aviseringar så kommer du få en varning, eftersom nya bokningar som måste bekräftas riskerar att inte bearbetas.</p>
+
+<h3>Inloggningar</h3>
+<p>Här ser du alla enheter/webbläsare där du har loggat in med "Kom ihåg mig"-funktionen. Funktionen gör att du inte behöver logga in varje gång du använder resursbokningen. Du kan ta bort enskilda poster genom att klicka på knappen längst till höger. På det viset kan du t.ex. logga ut en enhet som du inte längre har kontroll över.</p>
+
+<h3>Kontaktuppgifter</h3>
+<p>Resursbokningen kan inte fungera utan att användarna kan ta kontakt med varandra. Därför måste man lägga in några grundläggande uppgifter om sig själv. Även om vi skulle kunna hämta dessa uppgifter från Friluftsfrämjandets centrala register gör vi det inte för att undvika krångel med GDPR. Uppgifterna som du matar in här (namn, epost och telefon) sparas lokalt i databasen och delas inte med något annat system.</p>
+<p>När du ändrar epostadressen kommer systemet att skicka en aktiveringskod till den nya adressen som du måste bekräfta. Det gör vi för att säkerställa att du kan nås på adressen och utesluta stavningsfel.</p>
+<p>Lösenordet kan du inte ändra här eftersom vi använder samma inloggning som Friluftsfrämjandets hemsida. Om du vill ändra ditt lösenord måste du därför logga in på <a target="_blank" href="https://www.friluftsframjandet.se">Friluftsfrämjandets hemsida</a>.</p>
+
+<h3>Radera kontot</h3>
+<p>Om du inte längre vill använda resursbokningen kan du radera alla dina personuppgifter i systemet. Om du gör det loggas du ut, och ditt konto med alla relaterade uppgifter <b>inklusive alla bokningar (både kommande och avslutade)</b> raderas.</p>
+<p>Om du åter vill använda tjänsten loggar du in igen med ditt medlemsnummer och måste då ange dina personuppgifter på nytt.</p>
+<p>Att radera ditt konto här påverkar inte ditt konto i aktivitetshanteraren.</p>
 EOF;
         die();
     case "bookingDeleted":
@@ -64,9 +87,28 @@ EOF;
     	// User shall supply name, mail and phone
     	if ($_POST['name'] && $_POST['mail'] && $_POST['phone']) {
     	    $currentUser->name = $_POST['name'];
-    	    $currentUser->mail = $_POST['mail'];
     	    $currentUser->phone = $_POST['phone'];
+    	    if ($_POST['mail'] != $currentUser->mail) {
+    	        $token = $currentUser->setUnverifiedMail($_POST['mail']);
+    	        sendmail(
+    	            $cfg['mailFrom'], // from address
+    	            $cfg['mailFromName'], // from name
+    	            $_POST['mail'], // to
+    	            "", // replyTo (use From address)
+    	            "Bekräfta din epostadress", // subject
+    	            $cfg['SMTP'], // SMPT options
+    	            "confirm_mail_address", // template name
+    	            array( // replace.
+    	                "{{name}}" => $currentUser->name,
+    	                "{{new_mail}}" => $_POST['mail'],
+    	                "{{link}}" => "{$cfg['url']}index.php?t=$token",
+    	            )
+	            );
+    	        header("Location: index.php?message=" . urlencode("Dina kontaktuppgifter har sparats. Ett meddelande har skickats till adressen {$_POST['mail']}. Använd länken i mejlet för att aktivera den nya adressen."));
+    	        die();
+    	    }
     		header("Location: index.php?message=" . urlencode("Dina kontaktuppgifter har sparats."));
+    		die();
     	} else {
     		$message = "Fyll i namn, epostadress och mobilnummer, tack.";
     	}
@@ -145,9 +187,7 @@ if ($_GET['first_login']) $message = "Välkommen till resursbokningen! Innan du 
 		$sections = $currentUser->bookingAdminSections();
 		if (count($sections)) { ?>
 		<div data-role='collapsible'>
-			<h3>Notifieringar</h3>
-			<h4>Meddelanden vid nya bokningar</h4>
-			<p><small>I följande kategorier har du administratörsbehörighet. Här kan du ställa in om du vill få meddelanden när nya bokningar görs. "Bekräfta" innebär att du bara får meddelanden för preliminärbokningar som måste bekräftas av någon bokningsansvarig.</small></p>
+			<h3>Avisering vid nya bokningar</h3>
 			<?php 
     		foreach ($sections as $sec) {
     		    echo "<p><b>" . htmlspecialchars($sec->name) . "</b></p>";
@@ -190,7 +230,6 @@ if ($_GET['first_login']) $message = "Välkommen till resursbokningen! Innan du 
 					<input type="tel" name="phone" id="userdata-phone" required placeholder="Mobilnummer" value="<?= htmlspecialchars($_POST['phone'] ? $_POST['phone'] : $currentUser->phone) ?>">
 				</div>
 				<input type="submit" value="Spara" data-icon="check">
-				<p>Ditt lösenord hanteras på <a href="https://www.friluftsframjandet.se" target="_blank">Friluftsfrämjandets hemsida</a>. Du kan inte ändra det här.</p>
 			</form>
 		</div>
 	

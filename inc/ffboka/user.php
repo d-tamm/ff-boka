@@ -316,4 +316,13 @@ class User extends FFBoka {
         return $remaining;
         
     }
+    
+    /**
+     * Save a new email address which needs to be confirmed before being used in the system
+     * @param string $newMail the new email address
+     * @return string the token used to preliminarily save the address
+     */
+    public function setUnverifiedMail(string $mail) {
+        return self::createToken("change mail address", $this->id, $mail);
+    }
 }

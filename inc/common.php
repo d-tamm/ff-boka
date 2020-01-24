@@ -34,20 +34,6 @@ if (!$_SESSION['authenticatedUser'] && !empty($_COOKIE['remember'])) {
 }
 
 
-
-function createToken($use, $forId, $data="", $ttl=86400) {
-	// Creates a new one-time token
-	global $db;
-	for ($token = '', $i = 0, $z = strlen($a = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789')-1; $i < 40; $x = rand(0,$z), $token .= $a{$x}, $i++);
-	$stmt = $db->prepare("REPLACE INTO tokens SET token=SHA1('$token'), ttl=$ttl, usefor='$use', forId=$forId, data=:data");
-	if (!$stmt->execute(array(":data"=>$data))) {
-		$e = $db->errorInfo();
-		return("Ett fel har uppstått." . $e[2]);
-	}
-	return($token);
-}
-
-
 /**
  * Output the file headers for HTML pages (title, meta tags, common stylesheets, jquery)
  * @param string $title
