@@ -91,6 +91,22 @@ EOF;
 	    if (!is_numeric($_REQUEST['id'])) {
 	        die(json_encode(["error"=>"Ogiltigt medlemsnummer {$_REQUEST['id']}."]));
 	    } elseif ($section->addAdmin($_REQUEST['id'])) {
+	        $adm = new User($_REQUEST['id']);
+	        if ($_REQUEST['id'] != $currentUser->id && $adm->mail) {
+    	        sendmail(
+    	            $adm->mail,
+    	            "Du är nu administratör",
+    	            "notify_new_admin",
+    	            array(
+    	                "{{name}}"=>$adm->name,
+    	                "{{role}}"=>"lokalavdelnings-admin",
+    	                "{{link}}"=>$cfg['url'],
+    	                "{{superadmin-name}}"=>$currentUser->name,
+    	                "{{superadmin-mail}}"=>$currentUser->mail,
+    	                "{{superadmin-phone}}"=>$currentUser->phone
+    	            )
+                );
+	        }
 	        die(json_encode(["html"=>adminList($section, $currentUser->id)]));
 		} else {
 		    die(json_encode(["error"=>"Kunde inte lägga till administratören. Är den kanske redan med i listan?"]));

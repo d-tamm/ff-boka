@@ -5,6 +5,7 @@ use FFBoka\FFBoka;
 
 session_start();
 require("inc/common.php");
+global $cfg;
 
 switch ($_REQUEST['action']) {
     case "help":

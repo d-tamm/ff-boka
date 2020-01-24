@@ -5,7 +5,7 @@ use FFBoka\FFBoka;
 use FFBoka\Booking;
 use FFBoka\Question;
 use FFBoka\Item;
-global $cfg;
+global $cfg, $message;
 
 session_start();
 require(__DIR__."/inc/common.php");
@@ -157,12 +157,8 @@ EOF;
 		}
 		try {
 		    sendmail(
-		        $cfg['mailFrom'], // from address
-		        $cfg['mailFromName'], // from name
 		        is_null($booking->userId) ? $_REQUEST['extMail'] : $booking->user()->mail, // to
-		        "", // replyTo (use From address)
 		        "Bokningsbekräftelse #{$booking->id}", // subject
-		        $cfg['SMTP'], // SMPT options
 		        "confirm_booking", // template name
 		        array( // replace.
 		            "{{name}}"    => is_null($booking->userId) ? $_REQUEST['extName'] : $booking->user()->name,
@@ -189,12 +185,8 @@ EOF;
     	            $mailItems .= "<li><b>" . htmlspecialchars($item->caption) . "</b> " . strftime("%a %F kl %k:00", $item->start) . " till " . strftime("%a %F kl %k:00", $item->end) . "</li>";
     	        }
         	    sendmail(
-        	        $cfg['mailFrom'], // from address
-        	        $cfg['mailFromName'], // from Name
         	        $adm->mail, // to
-        	        "", // replyTo (use From address)
         	        "Ny bokning att bekräfta", // subject
-        	        $cfg['SMTP'], // SMTP options
         	        "booking_alert",
         	        array(
                         "{{name}}"=>htmlspecialchars($adm->name),
@@ -268,12 +260,8 @@ EOF;
         if ($allConfirmed) {
             try {
                 sendmail(
-                    $cfg['mailFrom'], // from address
-                    $cfg['mailFromName'], // from Name
                     is_null($booking->userId) ? $booking->extMail : $booking->user()->mail, // to
-                    "", // replyTo
                     "Bokning #{$booking->id} är nu bekräftad", // subject
-                    $cfg['SMTP'], // SMPT options
                     "all_items_confirmed", // template name
                     array( // replace
                         "{{name}}"    => is_null($booking->userId) ? $booking->extName : $booking->user()->name,

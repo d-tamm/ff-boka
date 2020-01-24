@@ -5,7 +5,7 @@ use FFBoka\Category;
 use FFBoka\FFBoka;
 use FFBoka\Item;
 use FFBoka\Booking;
-global $cfg;
+global $cfg, $message;
 session_start();
 require("inc/common.php");
 
