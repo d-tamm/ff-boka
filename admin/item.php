@@ -4,7 +4,7 @@ use FFBoka\Category;
 use FFBoka\FFBoka;
 use FFBoka\Item;
 use FFBoka\Image;
-global $cfg;
+global $cfg, $message;
 
 session_start();
 require(__DIR__ . "/../inc/common.php");

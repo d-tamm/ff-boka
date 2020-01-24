@@ -98,9 +98,9 @@ function displayCatAccess($cat, $accLevels) {
 switch ($_REQUEST['action']) {
     case "help":
         // TODO: write help text for category admin page
-        echo <<<EOF
-Det finnt inte ännu någon hjälp till denna sida.
-EOF;
+        echo "<h4>Behörigheter</h4>
+<p>Här bestäms vem som får se och boka resurserna i kategorin <i>" . htmlspecialchars($cat->caption) . "</i>. Först väljer du vem som ska få behörighet. Sedan väljer du önskad behörighetsnivå.</p>
+<p>Återkalla behörigheter genom att klicka på den röda knappen höger om dem.</p>";
         die();
     case "new":
         if ($cat->getAccess($currentUser) >= FFBoka::ACCESS_CATADMIN) {
@@ -154,8 +154,27 @@ EOF;
             	    break;
             	default:
             	    $cat->setAccess($_GET['id'], $_GET['access']);
+            	    if ($_GET['access'] >= FFBoka::ACCESS_CONFIRM) {
+            	        // New admin added. Send notification if not current user
+            	        $adm = new User($_GET['id']);
+            	        if ($_GET['id'] != $currentUser->id && $adm->mail) {
+            	            sendmail(
+            	                $adm->mail,
+            	                "Du är nu bokningsansvarig",
+            	                "notify_new_admin",
+            	                array(
+            	                    "{{name}}"=>$adm->name,
+            	                    "{{role}}"=>"bokningsansvarig för kategorin {$cat->caption}",
+            	                    "{{link}}"=>$cfg['url'],
+            	                    "{{superadmin-name}}"=>$currentUser->name,
+            	                    "{{superadmin-mail}}"=>$currentUser->mail,
+            	                    "{{superadmin-phone}}"=>$currentUser->phone
+            	                )
+        	                );
+            	        } else $message = "OBS! Vi har inte någon epostadress till denna användare och kan inte meddela hen om den nya rollen. Därför ska du informera hen på annat sätt. Se gärna också till att hen loggar in och lägger upp sin epostadress för att kunna få meddelanden om nya bokningar.";
+            	    }
         	}
-        	die(displayCatAccess($cat, $cfg['catAccessLevels']));
+        	die(json_encode([ "html"=>displayCatAccess($cat, $cfg['catAccessLevels']), "message"=>$message ]));
         }
     	break;
     	
@@ -290,12 +309,6 @@ unset ($_SESSION['itemId']);
 		<?php if ($cat->getAccess($currentUser) >= FFBoka::ACCESS_CATADMIN) { ?>
 		<div data-role="collapsible" class="ui-filterable" data-collapsed="<?= $_REQUEST['expand']=="access" ? "false" : "true" ?>">
 			<h2>Behörigheter</h2>
-			<div data-role="collapsible" data-inset="true" data-mini="true" data-collapsed-icon="info">
-				<h4>Hur gör jag?</h4>
-				<p>Här bestäms vem som får se och boka resurserna i kategorin <i><?= htmlspecialchars($cat->caption) ?></i>. Först väljer du vem som ska få behörighet. Sedan väljer du önskad behörighetsnivå.</p>
-				<p>Återkalla behörigheter genom att klicka på den röda knappen höger om den.</p>
-			</div>
-			
 			<fieldset data-role="controlgroup" id="cat-access-ids" data-mini="true">
 				<p>1. Välj grupp eller enskild medlem:</p>
 				<label><input type="radio" class="cat-access-id" name="id" value="accessExternal">Icke-medlemmar </label>

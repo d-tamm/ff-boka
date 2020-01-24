@@ -3,6 +3,7 @@ use FFBoka\User;
 
 session_start();
 require("inc/common.php");
+global $cfg;
 
 if ($_SESSION['authenticatedUser']) {
     $currentUser = new User($_SESSION['authenticatedUser']);

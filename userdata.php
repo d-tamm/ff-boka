@@ -91,12 +91,8 @@ EOF;
     	    if ($_POST['mail'] != $currentUser->mail) {
     	        $token = $currentUser->setUnverifiedMail($_POST['mail']);
     	        sendmail(
-    	            $cfg['mailFrom'], // from address
-    	            $cfg['mailFromName'], // from name
     	            $_POST['mail'], // to
-    	            "", // replyTo (use From address)
     	            "Bekräfta din epostadress", // subject
-    	            $cfg['SMTP'], // SMPT options
     	            "confirm_mail_address", // template name
     	            array( // replace.
     	                "{{name}}" => $currentUser->name,

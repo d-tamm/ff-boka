@@ -119,25 +119,27 @@ function head(string $caption, string $baseUrl, $currentUser=NULL) {
 
 
 /**
- * Send an email basen on a template file
- * @param string $from From address
- * @param string $fromName Cleartext from name
+ * Send an email based on a template file
  * @param string $to To address
- * @param string $replyTo If empty, the $from address will be used.
  * @param string $subject
- * @param string[] $options Options for SMTP connection: array(host, port, user, pass)
- * @param string $template Name of template file to use. The file must be in the templates folder.
- * There must be at least a file named $template.html. Optionally, $template.txt (if exists) will
- * be used as non-HTML body. Otherwise, the function will try to strip off the tags from the html file.
+ * @param string $template Name of template file to use, without extension. The file must be in the templates folder.
+ * If there is a file named $template.html, it will be used. Optionally, $template.txt will
+ * be used as non-HTML body if it exists. Otherwise, the function will try to strip off the tags from the html file.
+ * If no html file exists, $template will be used as message body.
  * @param array $replace [ search=>replace ] Array of strings to be replaced
  * @return boolean|string TRUE on success, error message on failure
  */
-function sendmail(string $from, string $fromName, string $to, string $replyTo, string $subject, $options, $template, $replace=NULL) {
-	if (is_readable("templates/$template.html")) {
+function sendmail(string $to, string $subject, $template, $replace=NULL) {
+    global $cfg;
+    $from = $cfg['mailFrom'];
+    $fromName = $cfg['mailFromName'];
+    $replyTo = ""; 
+    $options = $cfg['SMTP'];
+	if (is_readable(__DIR__."/../templates/$template.html")) {
 		// Get template content
-		$body = file_get_contents("templates/$template.html");
-		$altBody = is_readable("templates/$template.txt")
-			? file_get_contents("templates/$template.txt")
+	    $body = file_get_contents(__DIR__."/../templates/$template.html");
+	    $altBody = is_readable(__DIR__."/../templates/$template.txt")
+			? file_get_contents(__DIR__."/../templates/$template.txt")
 			: str_replace(array("</p>", "<br>"), array("</p>\r\n\r\n", "\r\n"), strip_tags($body)); // TODO: this is probably buggy
 		// Replace placeholders
 		if (!is_null($replace)) {

@@ -912,15 +912,12 @@ $(document).on('pagecreate', "#page-admin-category", function() {
         $(".cat-access-id").prop("checked", false).checkboxradio("refresh");
         $("#cat-adm-autocomplete-input").val("");
         $("#cat-adm-autocomplete").html("");
-        $.get("?action=ajaxSetAccess&id="+encodeURIComponent(chosenAccessId)+"&access="+this.value, function(data, status) {
-            if (data!=0) {
-                $("#assigned-cat-access").html(data).enhanceWithin();
-                $("#assigned-cat-access a.ajax-input").addClass('change-confirmed');
-                setTimeout(function(){ $("#assigned-cat-access a.ajax-input").removeClass("change-confirmed"); }, 1500);
-            } else {
-                alert("Kunde inte spara behörigheten.");
-            }
+        $.getJSON("?action=ajaxSetAccess&id="+encodeURIComponent(chosenAccessId)+"&access="+this.value, function(data, status) {
+            $("#assigned-cat-access").html(data.html).enhanceWithin();
+            $("#assigned-cat-access a.ajax-input").addClass('change-confirmed');
+            setTimeout(function(){ $("#assigned-cat-access a.ajax-input").removeClass("change-confirmed"); }, 1500);
             $.mobile.loading("hide", {});
+            if (data.message!="") alert(data.message);
         });
     });
 
@@ -958,13 +955,10 @@ $(document).on('pageshow', "#page-admin-category", function() {
  */
 function unsetAccess(userId) {
     $.mobile.loading("show", {});
-    $.get("?action=ajaxSetAccess&id=" + encodeURIComponent(userId) + "&access=" + ACCESS_NONE, function(data, status) {
-        if (data!=0) {
-            $("#assigned-cat-access").html(data).enhanceWithin();
-        } else {
-            alert("Kunde inte återkalla behörigheten.");
-        }
+    $.getJSON("?action=ajaxSetAccess&id=" + encodeURIComponent(userId) + "&access=" + ACCESS_NONE, function(data, status) {
+        $("#assigned-cat-access").html(data.html).enhanceWithin();
         $.mobile.loading("hide", {});
+        if (data.message!="") alert(data.message);
     });
 }
 
