@@ -111,6 +111,7 @@ class FFBoka {
         $result = json_decode($result);
         return array("authenticated" => $result->isMember, "section" => $result->isMemberOfLokalavdelning);
     }
+    
 
     /**
 	 * Get a list of all users without creating User objects.
@@ -121,6 +122,7 @@ class FFBoka {
 		$stmt = self::$db->query("SELECT userId, name FROM users ORDER BY name");
 		return $stmt->fetchAll(PDO::FETCH_ASSOC);
 	}
+	
 	
     /**
      * Get all users complying to a search term. Name and member ID will be searched.
@@ -136,6 +138,7 @@ class FFBoka {
         }
         return $ret;
     }
+    
     
     /**
      * Takes an uploaded image file, resizes it, makes a thumbnail, and returns both versions as strings.
@@ -187,5 +190,52 @@ class FFBoka {
         imagepng($tmp);
         $thumb = ob_get_clean();
         return array("image"=>$image, "thumb"=>$thumb);
+    }
+    
+    
+    /**
+     * Creates a new one-time token
+     * @param string $useFor Key designating what the token shall be used for
+     * @param int $forId Entity ID the token shall be valid for
+     * @param string $data Additional data
+     * @param number $ttl TTL for the token
+     * @throws \Exception if database operation fails
+     * @return string The generated token
+     */
+    protected function createToken(string $useFor, int $forId, string $data="", int $ttl=86400) {
+        // generate 40 character random token
+        for ($token = '', $i = 0, $z = strlen($a = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789')-1; $i < 40; $x = rand(0,$z), $token .= $a{$x}, $i++);
+        $stmt = self::$db->prepare("REPLACE INTO tokens SET token=SHA1('$token'), ttl=$ttl, useFor=:useFor, forId=:forId, data=:data");
+        if (!$stmt->execute(array(
+            ":data"=>$data,
+            ":useFor"=>$useFor,
+            ":forId"=>$forId,
+        ))) {
+            throw new \Exception($stmt->errorInfo()[2]);
+        }
+        return($token);
+    }
+    
+    /**
+     * Delete a token from database
+     * @param string $token
+     * @return bool TRUE on success
+     */
+    public function deleteToken(string $token) {
+        $stmt = self::$db->prepare("DELETE FROM tokens WHERE token=?");
+        return $stmt->execute(array($token));
+    }
+    
+    /**
+     * Get stored information for a given token.
+     * @param string $token The token
+     * @throws \Exception if token not found or expired
+     * @return object { unixtime, token, timestamp, ttl, useFor, forId, data }
+     */
+    public function getToken(string $token) {
+        $stmt = self::$db->query("SELECT UNIX_TIMESTAMP(timestamp) AS unixtime, tokens.* FROM tokens WHERE token='" . sha1($token) . "'");
+        if (!$row = $stmt->fetch(PDO::FETCH_OBJ)) throw new \Exception("Ogiltig kod.");
+        elseif (time() > $row->unixtime + $row->ttl) throw new \Exception("Koden har förfallit.");
+        else return $row;
     }
 }

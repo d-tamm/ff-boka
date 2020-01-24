@@ -106,6 +106,25 @@ if (isset($_POST['login'])) {
 	}
 }
 
+if (isset($_REQUEST['t'])) {
+    // Token handling.
+    // Figure out if the given token is still valid, and what it shall be used for.
+    try {
+        $token = $FF->getToken($_REQUEST['t']);
+        switch ($token->useFor) {
+            case "change mail address":
+                $user = new User($token->forId);
+                $user->mail = $token->data;
+                $FF->deleteToken($token->token);
+                $message="Din epostadress {$token->data} är nu aktiverad.";
+                break;
+        }
+    } catch (Exception $e) {
+        $message = $e;
+    }
+}
+
+
 if ($_SESSION['authenticatedUser']) {
     $currentUser = new User($_SESSION['authenticatedUser']);
     if (isset($_REQUEST['logout'])) {
