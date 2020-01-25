@@ -893,12 +893,15 @@ $(document).on('pagecreate', "#page-admin-category", function() {
     /**
      * Step 1 of adding category admin
      * Triggered when user choses group or specific user for new access rights (step 1)
-     * Remembers choice and shows step 2
+     * Remembers choice and shows step 2. Disables admin levels if group is chosen.
      */
     $(document).off("change", ".cat-access-id").on("change", ".cat-access-id", function(e, data) {
         $(".cat-access-level").attr("checked", false).checkboxradio("refresh");
         chosenAccessId = this.value;
         $("#cat-access-levels").show();
+        // Enable admin levels only for specific members, not groups
+        if (isNaN(this.value)) $("input[type='radio'].cat-access-level-adm").checkboxradio('disable');
+        else $("input[type='radio'].cat-access-level-adm").checkboxradio('enable');
     });
 
     /**

@@ -372,11 +372,11 @@ unset ($_SESSION['itemId']);
 					<?= $cfg['catAccessLevels'][FFBoka::ACCESS_BOOK] ?>
 				</label>
 				<label>
-					<input type="radio" class="cat-access-level" name="cat-access" value="<?= FFBoka::ACCESS_CONFIRM ?>">
+					<input type="radio" class="cat-access-level cat-access-level-adm" name="cat-access" value="<?= FFBoka::ACCESS_CONFIRM ?>">
 					<?= $cfg['catAccessLevels'][FFBoka::ACCESS_CONFIRM] ?>
 				</label>
 				<label>
-					<input type="radio" class="cat-access-level" name="cat-access" value="<?= FFBoka::ACCESS_CATADMIN ?>">
+					<input type="radio" class="cat-access-level cat-access-level-adm" name="cat-access" value="<?= FFBoka::ACCESS_CATADMIN ?>">
 					<?= $cfg['catAccessLevels'][FFBoka::ACCESS_CATADMIN] ?>
 				</label>
 			</fieldset>
