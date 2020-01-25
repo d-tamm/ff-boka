@@ -97,10 +97,50 @@ function displayCatAccess($cat, $accLevels) {
 
 switch ($_REQUEST['action']) {
     case "help":
-        // TODO: write help text for category admin page
-        echo "<h4>Behörigheter</h4>
-<p>Här bestäms vem som får se och boka resurserna i kategorin <i>" . htmlspecialchars($cat->caption) . "</i>. Först väljer du vem som ska få behörighet. Sedan väljer du önskad behörighetsnivå.</p>
-<p>Återkalla behörigheter genom att klicka på den röda knappen höger om dem.</p>";
+        echo "
+<p>Alla resurser är organiserade i kategorier. På den här sidan kan du göra inställningarna för den aktuella kategorin. Det beror på din behörighetsnivå vilka avsnitt du kan se på sidan.</p>
+<h3>Allmänt</h3>
+<p>Här gör du de flesta inställningar som ska gälla för hela kategorin. Inställningarna sparas direkt, du behöver inte trycka på någon Spara-knapp. Inställningar du gör här gäller (med några få undantag) även för underordnade kategorier. Längst upp visas var kategorin sorteras in i strukturen, med klickbara länkar till överordnade element. Det är användbart för att snabbt navigera upp i hirarkin.</p>
+<dl>
+    <dt>Rubrik</dt><dd>Välj en rubrik som är tydlig och kort, t.ex. <tt>Kanadensare</tt> eller <tt>Kajaker</tt>.</dd>
+    <dt>Överordnad kategori</dt><dd>Här kan du flytta hela kategorin (inklusive alla resurser och eventuella underordnade kategorier) till ett annat ställe i hirarkin. Välj <tt>- ingen -</tt> för att ställa in kategorin som huvudkategori.</dd>
+    <dt>Bild</dt><dd>I listor kommer kategorin ofta att visas tillsammans med en liten bild. Här kan du ladda upp den.</dd>
+    <dt>Text vid bokning</dt><dd>Denna text kommer att visas i samband med kategorin medans man bokar resurser. Det är alltså information som gäller för alla resurser i den här kategorin, samt för underordnade kategorier, och som du vill att den visas i bokningsflödet även om användaren inte öppnar detaljsidan för resurserna. Det kan t.ex. vara särskilda bokningsregler som gäller, eller en påminnelse om att även boka relaterad utrustning som inte ingår per automatik.</dd>
+    <dt>Text i bokningsbekräftelse</dt><dd>Som ovan, men visas istället i meddelandet som användaren får som bokningsbekräftelse. Det är ett bra ställe för att nämna var nyckeln ska hämtas, regler kring slutstädning mm.</dd>
+    <dt>Bufferttid</dt><dd>Ibland behöver man lite tid mellan bokningarna, t.ex. för städning av stugor eller översyn av utrustning. Här kan du ställa in antalet timmar före/efter befintliga bokningar som är spärrade för nya bokningar. <b>OBS: Denna inställning gäller bara för resurser i den här kategorin och ärvs inte till underordnade kategorier!</b></dd>
+    <dt>Kontaktuppgifter</dt><dd>Skickas med bokningarna i denna kategori, så att användarna kan vända sig till någon vid problem. Du kan antingen sätta namn, telefon och epost själv, eller välja en medlem som kontaktperson. Om du väljer en medlem så används  kontaktuppgifterna till denne när bokningen görs, dvs ändringar som medlemmen gör i sina kontaktuppgifter tillämpas även här.</dd> 
+</dl>
+
+<h3>Behörigheter</h3>
+<p>Här bestäms vem som får se och boka resurserna i kategorin. Först väljer du vem som ska få behörighet. Sedan väljer du önskad behörighetsnivå.</p>
+<p>Återkalla behörigheter genom att klicka på den röda knappen höger om dem.</p>
+<p>Behörigheter ärvs, dvs de gäller även för underordnade kategorier.</p>
+<p>Du kan tilldela behörigheter för:</p>
+<ul>
+    <li>Icke-medlemmar (dvs externa användare som bokar som gäst utan inloggning)</li>
+    <li>Medlemmar i valfri lokalavdelning</li>
+    <li>Lokala medlemmar (dvs medlemmar som tillhör samma lokalavdelning som kategorin)</li>
+</ul>
+<p>Du kan välja mellan följande behörighetsnivåer:</p>
+<ol>
+    <li>" . $cfg['catAccessLevels'][FFBoka::ACCESS_READASK] . ": Användbar t.ex. för stugor där du av säkerhetsskäl inte vill visa för allmänheten när de är lediga</li>
+    <li>" . $cfg['catAccessLevels'][FFBoka::ACCESS_PREBOOK] . ": Användbar om du har en bokningsansvarig som ska ha sista ordet och ska bekräfta bokningar</li>
+    <li>" . $cfg['catAccessLevels'][FFBoka::ACCESS_BOOK] . ": Ingen bekräftelse från bokningsansvarig behövs</li>
+    <li>" . $cfg['catAccessLevels'][FFBoka::ACCESS_CONFIRM] . "</li>
+    <li>" . $cfg['catAccessLevels'][FFBoka::ACCESS_CATADMIN] . ": Som ovan, men kan även ändra inställningarna för kategorin och lägga till resurser.</li>
+</ol>
+<p>Nivå 4 eller 5 är bara tillgänglig för enskilda medlemmar, inte för grupper. När du tilldelar behörighet på dessa nivåer skickas ett meddelande till användaren så att hen är med på banan.</p>
+
+<h3>Bokningsfrågor</h3>
+<p>Om du vill hämta in kompletterande information vid bokning av resurser i den här kategorin använder du bokningsfrågor. Frågorna måste först läggas upp i din lokalavdelning, så prata med någon administratör om du saknar någon fråga.</p>
+<p>Aktivera/avaktivera och byt mellan valfritt och obligatoriskt genom att klicka på frågorna. Valda frågor visas även vid bokning i underordnade kategorier, men kan där ändras till obligatoriska respektive valfria.</p>
+
+<h3>Underkategorier</h3>
+<p>Vid komplex verksamhet kan det vara intressant att organisera resurserna på flera nivåer, t.ex. med <tt>Kanoter</tt> som huvudkategori och <tt>Kajaker</tt> och <tt>Kanadensare</tt> som underordnade kategorier. Du kan skapa så många nivåer som du behöver, eller bara använda den översta nivån.</p>
+
+<h3>Resurser</h3>
+<p>Här ser du alla resurser som finns i kategorin, med titel och grundläggande information. Klicka på resurserna för att ändra.</p>
+";
         die();
     case "new":
         if ($cat->getAccess($currentUser) >= FFBoka::ACCESS_CATADMIN) {
@@ -281,7 +321,6 @@ unset ($_SESSION['itemId']);
             </div>
 			
 			<h3>Kontaktuppgifter</h3>
-			<p><small>Skickas med bokningarna i denna kategori, så att användarna kan vända sig till någon vid problem. Du kan antingen sätta namn, telefon och epost själv, eller välja en medlem som kontaktperson.</small></p>
             <div class="ui-field-contain">
                 <label for="cat-contactName">Namn:</label>
                 <input name="contactName" class="ajax-input" id="cat-contactName" placeholder="Namn" value="<?= htmlspecialchars($cat->contactName) ?>">
@@ -351,7 +390,6 @@ unset ($_SESSION['itemId']);
 
 		<div data-role="collapsible" class="ui-filterable" data-collapsed="<?= $_REQUEST['expand']=="access" ? "false" : "true" ?>">
 			<h2>Bokningsfrågor</h2>
-		    <p class='ui-body ui-body-a'><small>Här ställer du in särskilda frågor som ska visas vid bokning av resurser i denna kategorin. Aktivera/avaktivera och byt mellan valfritt och obligatoriskt genom att klicka på frågorna. Valda frågor visas även vid bokning i underordnade kategorier.</small></p>
 			<?php
 			if ($questions = showQuestions($cat, $section)) {
 			    echo "<ul data-role='listview' data-inset='true' id='cat-questions'>$questions</ul>";

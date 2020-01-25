@@ -77,7 +77,18 @@ switch ($_REQUEST['action']) {
     case "help":
         // TODO: write help text for booking summary page
         echo <<<EOF
-Det finnt inte ännu någon hjälp till denna sida.
+<h3>Resurslistan</h3>
+<p>Här ser du alla resurser som ingår i din bokning. Du kan ändra tiden på valda resurser genom att klicka på dem, och ta bort dem genom att klicka på krysset i högerkanten. Du kan även lägga till fler resurser med knappen under resurslistan. Vid varje resurs visas om den är slutgiltigt bokad eller måste bekräftas.</p>
+<p>Om du är bokningsansvarig kan du här bekräfta resurser och sätta pris på dem.</p>
+<h3>Pris</h3>
+<p>Under resurslistan visas en sammanfattning av kostnaderna om bokningsansvarig har satt ett pris på någon av resurserna. Om du är bokningsansvarig kan du mata in beloppet som har betalats.</p>
+<h3>Bokningsfrågor</h3>
+<p>Beroende på vad du håller på att boka kan det finnas ett avsnitt med frågor som ska besvaras. Frågor märkta med <span class="required"></span> måste du svara på för att kunna boka, övriga frågor är frivilliga.</p>
+<h3>Kontaktuppgifter</h3>
+<p>Om du är inloggad så visas kontaktuppgifterna som tillhör ditt konto. Du kan när som helst ändra dem (även efter att du avslutat bokningen) genom att gå till <a href="userdata.php">Min Sida</a>.</p>
+<p>Om du bokar som gäst ska du här skriva in ditt namn och dina kontaktuppgifter så vi kan nå dig vid frågor. I bokningsbekräftelsen kommer du att få en länk till bokningen så att du kan komma tillbaka och uppdatera den.</p>
+<h3>Meddelande</h3>
+<p>Längst ner på sidan kan du även lämna ett valfritt meddelande som kommer att vara tillgänglig för bokningsansvarig.</p>  
 EOF;
         die();
     case "ajaxFreebusyItem":
@@ -403,7 +414,7 @@ EOF;
 		<?php if ($booking->userId) { 
             $bookUser = new User($booking->userId); ?>
 			<p class='ui-body ui-body-a'>
-				Bokningen görs för <?= $bookUser->contactData() ?> 
+				Bokningen görs för <?= $bookUser->contactData() ?><br>
 				Medlemsnummer: <?= $bookUser->id ?><br>
 			</p>
 		<?php } else { ?>

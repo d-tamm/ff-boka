@@ -9,9 +9,8 @@ global $cfg;
 
 switch ($_REQUEST['action']) {
     case "help":
-        // TODO: write help text for item details page
         echo <<<EOF
-Det finnt inte ännu någon hjälp till denna sida.
+Här visas detaljer till resursen.
 EOF;
         die();
 }

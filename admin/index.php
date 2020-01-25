@@ -75,10 +75,28 @@ if ($userAccess >= FFBoka::ACCESS_CATADMIN) {
 
 switch ($_REQUEST['action']) {
     case "help":
-        // TODO: write help text for admin start page
-        echo <<<EOF
-Det finnt inte ännu någon hjälp till denna sida.
-EOF;
+        $allAss = $cfg['sectionAdmins'];
+        $oneAss = array_pop($allAss);
+        echo "
+<p>Den här sidan är navet för att administrera din lokalavdelnings bokningssystem. Beroende på din behörighetsnivå kommer du att se några eller alla av följande avsnitt.</p>
+<p>Om du har behörighet att bekräfta bokningarna i någon kategori så visas knappen \"Öppna bokningsadmin\" längst upp på sidan. Bokningsadmin ger dig en överblick över alla bokningar.</p>
+<h3>Kategorier</h3>
+<p>Alla resurser är organiserade i kategorier. Du kan skapa så många kategorier som du behöver. De första kategorierna du skapar ligger som huvudkategori och ligger på översta nivå. Beroende på hur komplex verksamhet din lokalavdelning har kan du även skapa underordnade kategorier, men det gör du inte här, utan för det går du till den kategori där du vill skapa underkategorin. Det är upp till dig att bestämma hur många sådana nivåer du vill skapa.</p>
+<h3>Bokningsfrågor</h3> 
+<p>Ibland vill man hämta in kompletterande information när folk bokar resurser. Om man t.ex. hyr ut kanoter vill man kanske veta var kunden ska hämta dem. Eller så vill man att kunden bekräftar att hen har tagit del av uthyrningsreglerna. Det är här bokningsfrågorna kommer in. De definieras här på lokalavdelningsnivå och kan sedan aktiveras i valfri kategori. Det är också på kategorinivå du ställer in ifall en fråga är frivillig eller måste besvaras.</p>
+<p>Det finns 4 olika frågetyper:</p>
+<dl>
+    <dt>Flera optioner, ett svar</dt><dd>Används för att visa en fråga med flera möjliga svar, där kunden ska välja exakt ett svar. Frågan skriver du in i fältet längst upp i dialogen, och svarsalternativen i rutan längst ner. Börja en ny rad för varje alternativ.</dd>
+    <dt>Flera optioner, flera svar</dt><dd>Som ovan, men kunden kan kryssa i flera alternativ.</dd>
+    <dt>Fritext</dt><dd>För att ge användaren möjlighet att lämna valfri text. Om du vill begränsa längden på texten skriver du in maxlängden i avsedd ruta.</dd>
+    <dt>Numerisk</dt><dd>För att hämta in ett numeriskt svar. Här kan du även begränsa svarsmöjligheterna till ett intervall, t.ex. bara tillåta svar mellan 3 och 5.</dd>
+</dl>
+<p>Tipps: Om du vill att användaren bekräftar något (t.ex. bokningsreglerna) så kan du använda typen \"Flera optioner, flera svar\" och bara skriva in själva frågan (t.ex. \"Jag godkänner bokningsreglerna\"). Lämna rutan för svarsalternativen tom. Aktivera sedan svaret om obligatoriskt på kategorinivå.</p> 
+<p>Glöm inte att spara dina ändringar.</p>
+<h3>Administratörer</h3>
+<p>Här ställer du in vilka medlemmar som ska ha behörighet att administrera resursbokningen i lokalavdelningen. Du kan alltid lägga till en ny admin genom att ange dess medlemsnummer. Om personen tidigare har loggat in i resursbokningen och lagt in sina kontaktuppgifter kan du även hitta hen genom att leta efter namnet istället.</p>
+<p>" .($allAss ? implode(", ", $allAss) . " och " : "") . $oneAss . " har automatiskt administratörsbehörighet.</p>
+<p>Om du bara vill tilldela behörigheter för att någon ska hantera enskilda kategorier eller bokningar gör du det under respektive kategori.</p>";
         die();
     case "ajaxFindUser":
         // This is also called from category.php
@@ -269,18 +287,7 @@ unset($_SESSION['catId']);
 		<div data-role="collapsible" data-collapsed="<?= $_REQUEST['expand']=="admins" ? "false" : "true" ?>">
 			<h2>Administratörer</h2>
 
-			<p>Lägg till ny administratör på LA-nivå: (skriv medlemsnummer eller namn)
-				<a href="#popup-help-admin-access" data-rel="popup" class="tooltip ui-btn ui-alt-icon ui-nodisc-icon ui-btn-inline ui-icon-info ui-btn-icon-notext">Tipps</a>
-			</p>
-			<div data-role="popup" id="popup-help-admin-access" class="ui-content" data-overlay-theme="b">
-				<p>Här ställer du in vilka medlemmar som ska ha behörighet att administrera resursbokningen i lokalavdelningen <?= $section->name ?>. Du kan alltid lägga till en ny admin genom att ange dess medlemsnummer. Om personen tidigare har loggat in i resursbokningen och lagt in sina kontaktuppgifter kan du även hitta hen genom att leta efter namnet istället.</p>
-				<p><?php
-                $allAss = $cfg['sectionAdmins'];
-                $oneAss = array_pop($allAss);
-                echo implode(", ", $allAss) . " och " . $oneAss; ?>
-            	har automatiskt administratörsbehörighet.</p>
-            	<p>Om du bara vill tilldela behörigheter för att någon ska hantera enskilda kategorier gör du det under respektive kategori.</p>
-			</div>
+			<p>Lägg till ny administratör på LA-nivå: (skriv medlemsnummer eller namn)</p>
 
 			<form class="ui-filterable">
 				<input id="sec-adm-autocomplete-input" data-type="search" placeholder="Lägg till admin...">
