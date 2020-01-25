@@ -124,6 +124,14 @@ EOF;
 		    // remember contact data for item
 		    $itemContact = $cat->contactData();
 		    if ($itemContact) $rawContData[$itemContact][] = htmlspecialchars($cat->caption);
+		    // Collect functional email addresses to notify
+		    $alerts = $cat->sendAlertTo;
+		    if ($alerts) {
+		        foreach (explode(",", $alerts) as $alert) {
+		            $alert = trim($alert);
+		            $adminsToNotify[$alert][] = $item->bookedItemId;
+		        }
+		    }
 		    // Remember postbook messages and build string of reference numbers (e.g. (1), (2))
 		    $msgRef = "";
 		    foreach ($cat->postbookMsgs() as $msg) {
@@ -188,19 +196,26 @@ EOF;
 	    }
 	    // Send notifications to admins
 	    foreach ($adminsToNotify as $id=>$itemIds) {
-	        $adm = new User($id);
-	        if ($adm->mail) { // can only send if admin has email address
+	        if (is_numeric($id)) {
+    	        $adm = new User($id);
+    	        $mail = $adm->mail;
+    	        $name = $adm->name;
+	        } else {
+	            $mail = $id;
+	            $name = "";
+	        }
+	        if ($mail) { // can only send if admin has email address
     	        $mailItems = "";
     	        foreach ($itemIds as $itemId) {
     	            $item = new Item($itemId, TRUE);
     	            $mailItems .= "<li><b>" . htmlspecialchars($item->caption) . "</b> " . strftime("%a %F kl %k:00", $item->start) . " till " . strftime("%a %F kl %k:00", $item->end) . "</li>";
     	        }
         	    sendmail(
-        	        $adm->mail, // to
+        	        $mail, // to
         	        "Ny bokning att bekräfta", // subject
         	        "booking_alert",
         	        array(
-                        "{{name}}"=>htmlspecialchars($adm->name),
+                        "{{name}}"=>htmlspecialchars($name),
         	            "{{items}}"=>$mailItems,
         	            "{{bookingLink}}" => "{$cfg['url']}book-sum.php?bookingId={$booking->id}",
         	        )

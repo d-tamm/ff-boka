@@ -47,7 +47,7 @@ $cfg = array(
 	    FFBoka::ACCESS_READASK  => "Kan göra förfrågningar men inte se upptaget-information",
 	    FFBoka::ACCESS_PREBOOK  => "Kan se upptaget-information och preliminärboka",
 	    FFBoka::ACCESS_BOOK     => "Kan boka själv",
-	    FFBoka::ACCESS_CONFIRM  => "Bokningsansvarig: kan bekräfta ändra bokningar",
+	    FFBoka::ACCESS_CONFIRM  => "Bokningsansvarig: kan bekräfta och ändra bokningar",
         FFBoka::ACCESS_CATADMIN => "Kategoriadmin: Full behörighet"
     ),
 

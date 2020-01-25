@@ -108,6 +108,7 @@ switch ($_REQUEST['action']) {
     <dt>Text vid bokning</dt><dd>Denna text kommer att visas i samband med kategorin medans man bokar resurser. Det är alltså information som gäller för alla resurser i den här kategorin, samt för underordnade kategorier, och som du vill att den visas i bokningsflödet även om användaren inte öppnar detaljsidan för resurserna. Det kan t.ex. vara särskilda bokningsregler som gäller, eller en påminnelse om att även boka relaterad utrustning som inte ingår per automatik.</dd>
     <dt>Text i bokningsbekräftelse</dt><dd>Som ovan, men visas istället i meddelandet som användaren får som bokningsbekräftelse. Det är ett bra ställe för att nämna var nyckeln ska hämtas, regler kring slutstädning mm.</dd>
     <dt>Bufferttid</dt><dd>Ibland behöver man lite tid mellan bokningarna, t.ex. för städning av stugor eller översyn av utrustning. Här kan du ställa in antalet timmar före/efter befintliga bokningar som är spärrade för nya bokningar. <b>OBS: Denna inställning gäller bara för resurser i den här kategorin och ärvs inte till underordnade kategorier!</b></dd>
+    <dt>Bokningsmeddelanden</dt><dd>När nya bokningar görs i kategorin skickas normalt ett meddelande till bokningsansvariga (se nedan), som dock kan välja att stänga av dessa meddelanden i sina personliga inställningar. Om du vill att bokningsmeddelanden dessutom ska skickas till en eller flera funktionella epostadresser kan du lägga in dem här. Separera flera adresser med ett kommatecken.</dd>  
     <dt>Kontaktuppgifter</dt><dd>Skickas med bokningarna i denna kategori, så att användarna kan vända sig till någon vid problem. Du kan antingen sätta namn, telefon och epost själv, eller välja en medlem som kontaktperson. Om du väljer en medlem så används  kontaktuppgifterna till denne när bokningen görs, dvs ändringar som medlemmen gör i sina kontaktuppgifter tillämpas även här.</dd> 
 </dl>
 
@@ -153,6 +154,7 @@ switch ($_REQUEST['action']) {
     case "ajaxSetCatProp":
         if ($cat->getAccess($currentUser) >= FFBoka::ACCESS_CATADMIN) {
             switch ($_REQUEST['name']) {
+                case "sendAlertTo":
                 case "contactUserId":
                 case "contactName":
                 case "contactPhone":
@@ -174,7 +176,8 @@ switch ($_REQUEST['action']) {
                         "contactMail" => $cat->contactMail
                     ]));
             }
-        } else die();
+        }
+        die();
         
     case "ajaxSetImage":
         if ($cat->getAccess($currentUser) >= FFBoka::ACCESS_CATADMIN) {
@@ -320,6 +323,10 @@ unset ($_SESSION['itemId']);
                 <input name="bufferAfterBooking" type="number" min="0" class="ajax-input" id="cat-bufferAfterBooking" placeholder="Buffertid mellan bokingnar" value="<?= $cat->bufferAfterBooking ?>">
             </div>
 			
+			<label for="cat-sendAlertTo">Förutom till bokningsansvariga, skicka meddelande om nya bokningar till:</label>
+				<input name="sendAlertTo" class="ajax-input" id="cat-sendAlertTo" placeholder="kanoter@gmail.com, emil@yahoo.com" value="<?= htmlspecialchars($cat->sendAlertTo) ?>">
+			<hr>
+
 			<h3>Kontaktuppgifter</h3>
             <div class="ui-field-contain">
                 <label for="cat-contactName">Namn:</label>

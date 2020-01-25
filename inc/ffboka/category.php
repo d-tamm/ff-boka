@@ -53,6 +53,7 @@ class Category extends FFBoka {
             case "prebookMsg":
             case "postbookMsg":
             case "bufferAfterBooking":
+            case "sendAlertTo":
             case "contactName":
             case "contactPhone":
             case "contactMail":
@@ -119,6 +120,7 @@ class Category extends FFBoka {
             case "prebookMsg":
             case "postbookMsg":
             case "bufferAfterBooking":
+            case "sendAlertTo":
             case "contactName":
             case "contactPhone":
             case "contactMail":

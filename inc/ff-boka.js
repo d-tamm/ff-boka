@@ -784,6 +784,14 @@ $(document).on('pagecreate', "#page-admin-category", function() {
     });
 
     /**
+     * Set send-alert-to
+     */
+    $(document).off('input', "#cat-sendAlertTo").on('input', "#cat-sendAlertTo", function() {
+        clearTimeout(toutSetValue);
+        toutSetValue = setTimeout(setCatProp, 1000, "sendAlertTo", this.value);
+    });
+
+    /**
      * Set contact name
      */
     $(document).off('input', "#cat-contactName").on('input', "#cat-contactName", function() {
@@ -971,7 +979,6 @@ function unsetAccess(userId) {
  * @param val Value of the property
  */
 function setCatProp(name, val) {
-	console.log(name, val);
     $.mobile.loading("show", {});
     $.getJSON("category.php", {action: "ajaxSetCatProp", name: name, value: val}, function(data, status) {
         $.mobile.loading("hide", {});

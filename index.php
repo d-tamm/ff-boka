@@ -145,7 +145,7 @@ if ($_SESSION['authenticatedUser']) {
 }
 
 if (isset($_REQUEST['message'])) $message = ($message ? "$message<br>" : "") . $_REQUEST['message'];
-elseif ($_SESSION['welcomeMessageShown']!==TRUE) {
+elseif ($_SESSION['welcomeMessageShown']!==TRUE && !$message) {
 	$message = "<b>Hej och välkommen till resursbokningen!</b><br>Ett litet tipps till dig som snabbt vill få en överblick: Kolla på Mölndals lokalavdelning! Där finns det en del resurser upplagda som du kan testa att boka. När du har loggat in kan du även göra dig till admin i någon lokalavdelning - testa även här med Mölndal om du inte vill börja från scratch. Övriga lokalavdelningar är sannolikt tomma än så länge, men du är välkommen att ändra på det!";
 	$_SESSION['welcomeMessageShown'] = TRUE;
 }
