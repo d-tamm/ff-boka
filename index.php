@@ -7,6 +7,7 @@ session_start();
 require(__DIR__."/inc/common.php");
 global $db, $cfg, $FF;
 $message = "";
+if (strpos($_SERVER['HTTP_USER_AGENT'], 'MSIE') || strpos($_SERVER['HTTP_USER_AGENT'], 'Trident/7')) $message = "Du använder Internet Explorer, en föråldrad webbläsare som struntar i webbstandarder. Vi har valt att inte lägga tid på att stödja den, så bokningen kommer inte att fungera. Vänligen använd en annan webbläsare. Vi rekommenderar Firefox eller Chrome.";
 
 if (isset($_REQUEST['action'])) {
     switch ($_REQUEST['action']) {
