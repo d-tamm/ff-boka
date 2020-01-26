@@ -17,6 +17,7 @@ Ett system som ska göra det enklare att boka utrustningen som lokalavdelningarn
   * FontAwesome: ladda ner från deras hemsida (host yourself), packa upp, skapa en mapp `fontawesome` i mappen `vendor`, och flytta dit mapparna `css` och `webfonts` från arkivet.
 * Säkerställ att webbservern har läsrättigheter på alla mappar, och att du har skrivrättigheter.
 * Kopiera filen `inc/credentials.sample.php` till `inc/credentials.php` och anpassa innehållet.
+* Se även över filen `inc/config.php`. Du vill nog åtminstone ändra "mailFrom", "mailReplyTo" och "url".
 
 # Engagera dig
 All hjälp är välkommen! Vi behöver folk som ger inspel till önskad funktion, programmering, layout, tester...
