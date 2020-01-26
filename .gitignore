@@ -1,6 +1,6 @@
 /vendor/
 debug.log
-credentials.php
+config.local.php
 /.buildpath
 /.directory
 /.project

@@ -7,10 +7,14 @@ $cfg = array(
 	"dbhost" => "127.0.0.1",
 	"dbname" => "ff-boka",
 	"dbuser" => "ff-boka",
-	"dbpass" => "", // see credentials.php
+    "dbpass" => "", // see config.local.php
 
-	// API connection
-	"ff-api" => array(), // see credentials.php
+    // API connection (see config.local.php)
+    "ff-api" => array(
+        "authUrl"=>"", // URL for authentication
+        "authKey"=>"", // Key for authentication
+        "assUrl"=>"",  // URL to get user's assignments
+    ),
 	
 	// Logging
 	"logMaxSize" => 1*1024*1024, // in bytes
@@ -20,16 +24,16 @@ $cfg = array(
     "mailFromName" => "Friluftsfrämjandets resursbokning",
 	// SMTP settings for sending emails
 	"SMTP" => array(
-	    "host" => '', // see credentials.php
-	    "port" => '', // see credentials.php
-	    "user" => '', // see credentials.php
-    	"pass" => '', // see credentials.php
+	    "host" => '', // see config.local.php
+	    "port" => '', // see config.local.php
+	    "user" => '', // see config.local.php
+	    "pass" => '', // see config.local.php
     ),
 	// ReplyTo address of auto-generated emails
 	"mailReplyTo" => "resursbokning@friluftsframjandet.se",
 
 	// Base URL of this platform, with trailing slash
-	"url"    => "https://boka.tamm-tamm.de/",
+	"url"    => "", // see config.local.php
 
 	// Max size of images in pixels (longer side). If larger images are submitted, they will be downscaled.
 	"maxImgSize" => 1024,
@@ -59,5 +63,5 @@ $cfg = array(
 	"TtlPersistentLogin" => 60*60*24*365,
 );
 
-// Include secret settings, too (those not to be synchronized to Github).
-include __DIR__."/credentials.php";
+// Include local/secret settings, too (those not to be synchronized to Github).
+include __DIR__."/config.local.php";
