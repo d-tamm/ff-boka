@@ -108,7 +108,9 @@ function head(string $caption, string $baseUrl, $currentUser=NULL) {
 				<button onClick="var d=new Date(); d.setTime(d.getTime()+365*24*60*60*1000); document.cookie='cookiesOK=1; expires='+d.toUTCString()+'; Path=/'; $('#divCookieConsent').hide(); $('#div-remember-me').show();">Tillåt kakor</button>
 				<button onClick="document.cookie='cookiesOK=0; path=/'; $('#divCookieConsent').hide();$('#div-remember-me').hide();">Avböj kakor</button>
 			</div>
-		<?php } ?>
+		<?php } 
+		if (strpos($_SERVER['HTTP_USER_AGENT'], 'MSIE') || strpos($_SERVER['HTTP_USER_AGENT'], 'Trident/7')) echo "<div class='ui-bar ui-bar-b' style='font-weight:normal;'><b>Dags att uppgradera din webbläsare.</b> Du använder Internet Explorer, en föråldrad webbläsare som aldrig har följt några webbstandarder. Vi har valt att inte lägga vår tid på att stödja den, och bokningen kommer inte att fungera med den. Vänligen använd en annan webbläsare. Vi rekommenderar Firefox eller Chrome.</div>";
+		?>
 	</div>
 	
 	<div data-role="popup" id="popup-help" class="ui-content" data-overlay-theme="b">
