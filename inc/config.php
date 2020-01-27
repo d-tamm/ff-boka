@@ -1,4 +1,9 @@
 <?php
+/**
+ * This file is synchronized to GitHub. Therefore, do not change this file
+ * for adjustments to you local installation. Instead, put your local configuration
+ * into the file config.local.php.
+ */
 
 use FFBoka\FFBoka;
 
