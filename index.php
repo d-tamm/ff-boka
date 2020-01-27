@@ -159,7 +159,7 @@ elseif ($_SESSION['welcomeMessageShown']!==TRUE && !$message) {
 
 <body>
 <div data-role="page" id="page-start">
-	<?= head("Resursbokning", $cfg['url'], $currentUser) ?>
+	<?= head("Resursbokning".$_SERVER['HTTP_USER_AGENT'], $cfg['url'], $currentUser) ?>
 	<div role="main" class="ui-content">
 
 	<div data-role="popup" data-overlay-theme="b" id="popup-msg-page-start" class="ui-content">
