@@ -96,6 +96,8 @@ class FFBoka {
      * @return array(bool authenticated, string section) 
      */
     public function authenticateUser($userId, $password) {
+		// Fake test user with id=999999
+		if ($userId=="999999" && $password=="kollikok") return array("authenticated"=>TRUE, "section"=>"52");
         $options = array(
             'http' => array(
                 'header'  => "Content-Type: application/json\r\n" .

@@ -88,7 +88,7 @@ EOF;
     	if ($_POST['name'] && $_POST['mail'] && $_POST['phone']) {
     	    $currentUser->name = $_POST['name'];
     	    $currentUser->phone = $_POST['phone'];
-    	    if ($_POST['mail'] != $currentUser->mail) {
+    	    if ($_POST['mail'] !== $currentUser->mail) {
     	        $token = $currentUser->setUnverifiedMail($_POST['mail']);
     	        sendmail(
     	            $_POST['mail'], // to
@@ -100,11 +100,11 @@ EOF;
     	                "{{link}}" => "{$cfg['url']}index.php?t=$token",
     	            )
 	            );
-    	        header("Location: index.php?message=" . urlencode("Dina kontaktuppgifter har sparats. Ett meddelande har skickats till adressen {$_POST['mail']}. Använd länken i mejlet för att aktivera den nya adressen."));
-    	        die();
-    	    }
-    		header("Location: index.php?message=" . urlencode("Dina kontaktuppgifter har sparats."));
-    		die();
+    	        $message = "Dina kontaktuppgifter har sparats. Ett meddelande har skickats till adressen {$_POST['mail']}. Använd länken i mejlet för att aktivera den nya adressen.";
+    	    } else {
+				header("Location: index.php?message=" . urlencode("Dina kontaktuppgifter har sparats."));
+				die();
+			}
     	} else {
     		$message = "Fyll i namn, epostadress och mobilnummer, tack.";
     	}
@@ -149,7 +149,7 @@ if ($_GET['first_login']) $message = "Välkommen till resursbokningen! Innan du 
 
 	<div data-role='collapsibleset' data-inset='false'>
 		
-		<div data-role='collapsible' data-collapsed='false'>
+		<div data-role='collapsible' data-collapsed='<?= $_GET['first_login'] ? "true" : "false" ?>'>
 			<h3>Mina bokningar</h3>
 			<?php
 			$bookingIds = $currentUser->bookingIds();
@@ -205,10 +205,10 @@ if ($_GET['first_login']) $message = "Välkommen till resursbokningen! Innan du 
 			</ul>
 		</div>
 
-		<div data-role='collapsible'>
+		<div data-role='collapsible' data-collapsed='<?= $_GET['first_login'] ? "false" : "true" ?>'>
 			<h3>Kontaktuppgifter</h3>
 			
-			<form action="" method="post" data-ajax="false">
+			<form action="userdata.php" method="post" data-ajax="false">
 				<p>Uppgifter om dig så andra vet vem du är och hur de kan får tag i dig.</p>
 				<input type="hidden" name="action" value="save user data">
 				<p>Medlemsnummer: <?= $currentUser->id ?></p>
