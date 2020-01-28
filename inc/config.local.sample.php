@@ -17,4 +17,7 @@ $cfg["SMTP"]['port'] = 587;
 $cfg["SMTP"]['user'] = 'someone@somewhere.com';
 $cfg["SMTP"]['pass'] = 'your very secret SMTP password';
 
+// The URL of this installation, with trailing slash
+$cfg["url"] = "http://localhost/";
+
 // You may also overwrite other settings from config.php

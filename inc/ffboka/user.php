@@ -53,7 +53,7 @@ class User extends FFBoka {
             } else { // Got an answer
                 $data = json_decode($data);
                 foreach ($data->results as $ass) {
-                    if ($ass->cint_assignment_party_type->value == FFBoka::TYPE_SECTION) {
+                    if ($ass->uppdragstyp__cint_assignment_party_type->value == FFBoka::TYPE_SECTION) {
                         // This will sort the assignments on section ID
                         $this->assignments[$ass->section__cint_nummer][] = $ass->cint_assignment_type_id->name;
                     }
@@ -114,7 +114,8 @@ class User extends FFBoka {
      * @return boolean TRUE on success, FALSE otherwise
      */
     public function delete() {
-        return self::$db->exec("DELETE FROM users WHERE userID={$this->id}");
+        if (self::$db->exec("DELETE FROM users WHERE userID={$this->id}") !== FALSE) return TRUE;
+		return FALSE;
     }
     
     /**
@@ -122,7 +123,8 @@ class User extends FFBoka {
      * @return bool
      */
     public function updateLastLogin() {
-        return self::$db->exec("UPDATE users SET lastLogin=NULL WHERE userId='{$this->id}'");
+        if (self::$db->exec("UPDATE users SET lastLogin=NULL WHERE userId='{$this->id}'") !== FALSE) return TRUE;
+		return FALSE;
     }
     
     /**

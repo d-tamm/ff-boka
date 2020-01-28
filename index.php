@@ -7,7 +7,6 @@ session_start();
 require(__DIR__."/inc/common.php");
 global $db, $cfg, $FF;
 $message = "";
-if (strpos($_SERVER['HTTP_USER_AGENT'], 'MSIE') || strpos($_SERVER['HTTP_USER_AGENT'], 'Trident/7')) $message = "Du använder Internet Explorer, en föråldrad webbläsare som struntar i webbstandarder. Vi har valt att inte lägga tid på att stödja den, så bokningen kommer inte att fungera. Vänligen använd en annan webbläsare. Vi rekommenderar Firefox eller Chrome.";
 
 if (isset($_REQUEST['action'])) {
     switch ($_REQUEST['action']) {
@@ -145,10 +144,6 @@ if ($_SESSION['authenticatedUser']) {
 }
 
 if (isset($_REQUEST['message'])) $message = ($message ? "$message<br>" : "") . $_REQUEST['message'];
-elseif ($_SESSION['welcomeMessageShown']!==TRUE && !$message) {
-	$message = "<b>Hej och välkommen till resursbokningen!</b><br>Ett litet tipps till dig som snabbt vill få en överblick: Kolla på Mölndals lokalavdelning! Där finns det en del resurser upplagda som du kan testa att boka. När du har loggat in kan du även göra dig till admin i någon lokalavdelning - testa även här med Mölndal om du inte vill börja från scratch. Övriga lokalavdelningar är sannolikt tomma än så länge, men du är välkommen att ändra på det!";
-	$_SESSION['welcomeMessageShown'] = TRUE;
-}
 
 ?><!DOCTYPE html>
 <html>
@@ -169,8 +164,12 @@ elseif ($_SESSION['welcomeMessageShown']!==TRUE && !$message) {
 
 	<img src="resources/liggande-bla.png" style="width:100%; max-width:600px; display:block; margin-left:auto; margin-right:auto;">
 
-	<p class="ui-body ui-body-b">Välkommen till testplattformen för FFs framtida resursbokningssystem! Här kan du följa utvecklingen av projektet och testa. Var inte rädd för att förstöra något, utan försök gärna att utmana funktionerna och hitta svaga punkter!<br>Kom ihåg att detta är bara testplattformen. Allt som läggs upp kommer att försvinna vid övergången till produktionsplattformen.<br>Mer information hittar du på <a style="color:white;" target="_blank" href="https://github.com/d-tamm/ff-boka">GitHub</a></p>
-
+	<p class="ui-body ui-body-b">
+	<?= $_SESSION['authenticatedUser'] ? "" : "Välkommen till testplattformen för FFs nya resursbokningssystem! Här kan du följa utvecklingen av projektet och testa." ?> Var inte rädd för att förstöra något, utan försök gärna att utmana funktionerna och hitta svaga punkter!<br>
+	Kom ihåg att detta bara är testplattformen. Allt som läggs upp kommer att försvinna vid övergången till produktionsplattformen.<br>
+	<?= $_SESSION['authenticatedUser'] ? "" : "Ett litet tipps till dig som snabbt vill få en överblick: Kolla på Mölndals lokalavdelning! Där finns det en del resurser upplagda som du kan testa att boka.<br>Om du inte kan logga in med ditt medlemsnummer och vanliga lösenord så beror det kanske på testmiljön. Då kan du istället använda ett testkonto med medlemsnummer 999999. Lösenordet är det som vi ropar när Mulle kommer: Hej ___!
+	<br>" ?>
+	Mer information hittar du på <a style="color:white;" target="_blank" href="https://github.com/d-tamm/ff-boka">GitHub</a> där du bl.a. kan anmäla buggar. För att ta kontakt med utvecklarna, kolla på <a style="color:white;" href="https://ff-boka.slack.com" target="_blank">Slack</a>.</p>
 	<?php
 	if ($_SESSION['authenticatedUser']) {
     	if ($ub = $currentUser->unfinishedBookings()) {

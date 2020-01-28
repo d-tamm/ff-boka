@@ -16,8 +16,7 @@ Ett system som ska göra det enklare att boka utrustningen som lokalavdelningarn
   * JQueryUI (ladda ner från deras hemsida, packa upp arkivet och flytta mappen så att t.ex. jquery-ui.css ligger på inc/jquery-ui-1.12.1/jquery-ui.css)
   * FontAwesome: ladda ner från deras hemsida (host yourself), packa upp, skapa en mapp `fontawesome` i mappen `vendor`, och flytta dit mapparna `css` och `webfonts` från arkivet.
 * Säkerställ att webbservern har läsrättigheter på alla mappar, och att du har skrivrättigheter.
-* Kopiera filen `inc/credentials.sample.php` till `inc/credentials.php` och anpassa innehållet.
-* Se även över filen `inc/config.php`. Du vill nog åtminstone ändra "mailFrom", "mailReplyTo" och "url".
+* Kopiera filen `inc/config.local.sample.php` till `inc/config.local.php` och anpassa innehållet.
 
 # Engagera dig
 All hjälp är välkommen! Vi behöver folk som ger inspel till önskad funktion, programmering, layout, tester...

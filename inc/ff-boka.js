@@ -15,7 +15,7 @@ function showHelp() {
 
 function openBookingAdmin(baseUrl, sectionId) {
 	if (screen.width < 800) {
-		if(confirm("Bokningsadmin för mobila enheter är inte klar än. Vill du gå till desktop-versionen?")) location.href= baseUrl + "admin/bookings-d.php?sectionId=" + sectionId;
+		location.href= baseUrl + "admin/bookings-m.php?sectionId=" + sectionId;
 	} else {
 		location.href= baseUrl + "admin/bookings-d.php?sectionId=" + sectionId;
 	}
@@ -34,6 +34,69 @@ $(document).on('pageshow', "#page-start", function() {
         }, 500); // We need some delay here to make this work on Chrome.
     }
 });
+
+
+// ========== bookings-m.php ==========
+var startDate;
+
+$(document).on('pagecreate', "#page-bookings", function() {
+    // bind events
+	$(document).on('click', ".freebusy-busy, .link-unconfirmed", function() {
+		window.open("../book-sum.php?bookingId=" + this.dataset.bookingId, "booking"+this.dataset.bookingId);
+	});
+});
+
+$(document).on('pageshow', "#page-bookings", function() {
+    startDate = new Date();
+    startDate.setHours(0,0,0,0); // Midnight
+    wday = startDate.getDay() ? startDate.getDay()-1 : 6; // Weekday, where Monday=0 ... Sunday=6
+    startDate.setDate(startDate.getDate() - wday); // Should now be last Monday
+	scrollDateBookings(0);
+});
+
+
+// Show details for an item
+function showItemDetails(itemId) {
+	window.open("../item-details.php?itemId=" + itemId, "itemDetails" + itemId);
+}
+
+// Scroll by x months, and get updated booking information
+// @param int offset Number of days to scroll
+function scrollDateBookings(offset) {
+    $.mobile.loading("show", {});
+    // Calculate start and end of week
+    startDate.setDate(startDate.getDate() + offset);
+    var endDate = new Date(startDate.valueOf());
+    endDate.setDate(endDate.getDate() + 6);
+    var readableRange = "må " + startDate.getDate() + "/" + (startDate.getMonth()+1);
+    if (startDate.getFullYear() != endDate.getFullYear()) readableRange += " '"+startDate.getFullYear().toString().substr(-2);
+    readableRange += " &ndash; sö " + endDate.getDate() + "/" + (endDate.getMonth()+1) + " '"+endDate.getFullYear().toString().substr(-2);
+    // Get updated freebusy information for new time span
+    $.getJSON("bookings-m.php", {
+    	action: "ajaxGetFreebusy",
+    	start: startDate.valueOf()/1000
+	}, function(data, status) {
+        $("#bookings-current-range-readable").html( readableRange );
+        $.each(data.freebusy, function(key, value) { // key will be "item-nn"
+            $("#freebusy-"+key).html(value);
+        });
+        $.mobile.loading("hide", {});
+    });
+}
+
+// Add a new booking on behalf of another user	
+function addBooking(userId) {
+	$.getJSON("bookings-m.php", {
+		action: "ajaxAddBookingOnBehalf",
+		userId: userId
+	}, function(data) {
+	    if (data.status=="OK") {
+	        openSidePanelOrWindow("../book-part.php");
+	    }
+	    else alert("Något har gått fel. Kontakta systemadmin.");
+	    $('#popup-add-booking').dialog('close');
+	});
+}
 
 
 
