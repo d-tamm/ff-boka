@@ -6,3 +6,4 @@ config.local.php
 /.project
 /.settings
 /inc/jquery-ui-1.12.1/
+/cron.last

@@ -84,6 +84,13 @@ li.selected {
     background: var(--FF-blue) !important;
 }
 
+table.alternate-rows tr {
+	border-top: 1px solid var(--FF-cyan);
+}
+table.alternate-rows tr:nth-child(even) {
+	background-color:var(--FF-lightblue-transp);
+}
+
 #cat-img-preview {
     width: 100%;
     max-width:400px;
