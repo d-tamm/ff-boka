@@ -51,6 +51,11 @@ $cfg = array(
     
 	// Section bound assignments always giving admin access to section
 	"sectionAdmins" => array('Ordförande', 'Vice ordförande'),
+    
+    // UserIDs of users with superAdmin access (will display a superAdmin section on Admin page)
+    "superAdmins" => array(),
+    
+    // Textual representations of access levels
 	"catAccessLevels" => array(
 	    FFBoka::ACCESS_NONE     => "Ingen behörighet",
 	    FFBoka::ACCESS_READASK  => "Kan göra förfrågningar men inte se upptaget-information",
