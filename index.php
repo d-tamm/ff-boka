@@ -90,7 +90,7 @@ if (isset($_POST['login'])) {
 	        $_SESSION['authenticatedUser'] = $_POST['id'];
 			$u = new User($_SESSION['authenticatedUser'], $result['section']);
 			if (!$u->updateLastLogin()) die("Cannot update user.");
-	        $db->exec("INSERT INTO logins (ip, success) VALUES (INET_ATON('{$_SERVER['REMOTE_ADDR']}'), 1)");
+	        $db->exec("INSERT INTO logins (ip, userId, success, userAgent) VALUES (INET_ATON('{$_SERVER['REMOTE_ADDR']}'), '{$_POST['id']}', 1, '{$_SERVER['HTTP_USER_AGENT']}')");
             // If requested, set persistent login cookie
             if (isset($_POST['rememberMe'])) $u->createPersistentLogin($cfg['TtlPersistentLogin']);
             // Redirect if requested by login form
@@ -101,7 +101,7 @@ if (isset($_POST['login'])) {
         } else {
 	        // Password wrong.
 	        $message = "Fel medlemsnummer eller lösenord.";
-	        $db->exec("INSERT INTO logins (ip, success) VALUES (INET_ATON('{$_SERVER['REMOTE_ADDR']}'), 0)");
+	        $db->exec("INSERT INTO logins (ip, userId, success, userAgent) VALUES (INET_ATON('{$_SERVER['REMOTE_ADDR']}'), '{$_POST['id']}', 0, '{$_SERVER['HTTP_USER_AGENT']}')");
 		}
 	}
 }
@@ -164,7 +164,7 @@ if (isset($_REQUEST['message'])) $message = ($message ? "$message<br>" : "") . $
 
 	<img src="resources/liggande-bla.png" style="width:100%; max-width:600px; display:block; margin-left:auto; margin-right:auto;">
 
-	<p class="ui-body ui-body-b">
+	<p class="ui-body ui-body-b"><?= $_SERVER['REMOTE_ADDR'] ?>
 	<?= $_SESSION['authenticatedUser'] ? "" : "Välkommen till testplattformen för FFs nya resursbokningssystem! Här kan du följa utvecklingen av projektet och testa." ?> Var inte rädd för att förstöra något, utan försök gärna att utmana funktionerna och hitta svaga punkter!<br>
 	Kom ihåg att detta bara är testplattformen. Allt som läggs upp kommer att försvinna vid övergången till produktionsplattformen.<br>
 	<?= $_SESSION['authenticatedUser'] ? "" : "Ett litet tipps till dig som snabbt vill få en överblick: Kolla på Mölndals lokalavdelning! Där finns det en del resurser upplagda som du kan testa att boka.<br>Om du inte kan logga in med ditt medlemsnummer och vanliga lösenord så beror det kanske på testmiljön. Då kan du istället använda ett testkonto med medlemsnummer 999999. Lösenordet är det som vi ropar när Mulle kommer: Hej ___!
