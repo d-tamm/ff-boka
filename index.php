@@ -164,7 +164,7 @@ if (isset($_REQUEST['message'])) $message = ($message ? "$message<br>" : "") . $
 
 	<img src="resources/liggande-bla.png" style="width:100%; max-width:600px; display:block; margin-left:auto; margin-right:auto;">
 
-	<p class="ui-body ui-body-b"><?= $_SERVER['REMOTE_ADDR'] ?>
+	<p class="ui-body ui-body-b">
 	<?= $_SESSION['authenticatedUser'] ? "" : "Välkommen till testplattformen för FFs nya resursbokningssystem! Här kan du följa utvecklingen av projektet och testa." ?> Var inte rädd för att förstöra något, utan försök gärna att utmana funktionerna och hitta svaga punkter!<br>
 	Kom ihåg att detta bara är testplattformen. Allt som läggs upp kommer att försvinna vid övergången till produktionsplattformen.<br>
 	<?= $_SESSION['authenticatedUser'] ? "" : "Ett litet tipps till dig som snabbt vill få en överblick: Kolla på Mölndals lokalavdelning! Där finns det en del resurser upplagda som du kan testa att boka.<br>Om du inte kan logga in med ditt medlemsnummer och vanliga lösenord så beror det kanske på testmiljön. Då kan du istället använda ett testkonto med medlemsnummer 999999. Lösenordet är det som vi ropar när Mulle kommer: Hej ___!
