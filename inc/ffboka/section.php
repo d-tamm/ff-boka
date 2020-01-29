@@ -127,15 +127,8 @@ class Section extends FFBoka {
      * @return int Bitfield of access levels for user in this section
      */
     public function getAccess(User $user) {
-        // Check if user has an admin assignment stated in config
-        if ($user->assignments[$this->id]) {
-            if (array_intersect($user->assignments[$this->id], self::$sectionAdmins)) {
-                return FFBoka::ACCESS_SECTIONADMIN;
-            }
-        }
-        // Check for admin assignments by member ID
         if (in_array($user->id, $this->getAdmins())) return FFBoka::ACCESS_SECTIONADMIN;
-        else return 0;
+        else return FFBoka::ACCESS_NONE;
     }
     
     /**

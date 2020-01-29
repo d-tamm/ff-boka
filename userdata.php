@@ -242,22 +242,6 @@ if ($_GET['first_login']) $message = "Välkommen till resursbokningen! Innan du 
 			<p>Visas för teständamål. Tas bort i produktion.</p>
 			<p>$_SESSION:</p>
 			<pre><?php print_r($_SESSION); ?></pre>
-
-			<p>Uppdrag enligt aktivitetshanteraren:</p>
-			<ul><?php
-			if ($currentUser->assignments) {
-				foreach ($currentUser->assignments as $sectionId=>$assInSec) {
-				    if ($sectionId===0) {
-				        echo $assInSec[0];
-				    } else {
-						$section = new Section($sectionId);
-						foreach ($assInSec as $ass) {
-							echo "<li>$ass ({$section->name})</li>";
-						}
-				    }
-				} ?>
-			<?php }	else echo "<li>Inga uppdrag hittades</li>"; ?>
-			</ul>
 		</div>
 
 	</div><!--/collapsibleset-->

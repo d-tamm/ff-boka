@@ -50,7 +50,7 @@ $cfg = array(
     "timezone" => "Europe/Stockholm",
     
 	// Section bound assignments always giving admin access to section
-	"sectionAdmins" => array('Ordförande', 'Vice ordförande'),
+	"sectionAdmins" => array('Ordförande', 'Vice ordförande', 'Webbredaktör'),
     
     // UserIDs of users with superAdmin access (will display a superAdmin section on Admin page)
     "superAdmins" => array(),
