@@ -90,7 +90,7 @@ if (isset($_POST['login'])) {
 	        $_SESSION['authenticatedUser'] = $_POST['id'];
 			$u = new User($_SESSION['authenticatedUser'], $result['section']);
 			if (!$u->updateLastLogin()) die("Cannot update user.");
-	        $db->exec("INSERT INTO logins (ip, success) VALUES (INET_ATON('{$_SERVER['REMOTE_ADDR']}'), 1)");
+	        $db->exec("INSERT INTO logins (ip, userId, success, userAgent) VALUES (INET_ATON('{$_SERVER['REMOTE_ADDR']}'), '{$_POST['id']}', 1, '{$_SERVER['HTTP_USER_AGENT']}')");
             // If requested, set persistent login cookie
             if (isset($_POST['rememberMe'])) $u->createPersistentLogin($cfg['TtlPersistentLogin']);
             // Redirect if requested by login form
@@ -101,7 +101,7 @@ if (isset($_POST['login'])) {
         } else {
 	        // Password wrong.
 	        $message = "Fel medlemsnummer eller lösenord.";
-	        $db->exec("INSERT INTO logins (ip, success) VALUES (INET_ATON('{$_SERVER['REMOTE_ADDR']}'), 0)");
+	        $db->exec("INSERT INTO logins (ip, userId, success, userAgent) VALUES (INET_ATON('{$_SERVER['REMOTE_ADDR']}'), '{$_POST['id']}', 0, '{$_SERVER['HTTP_USER_AGENT']}')");
 		}
 	}
 }
