@@ -769,7 +769,8 @@ function showQuestion(id) {
  */
 function addAdmin(userId) {
     $.getJSON("index.php", {action: "ajaxAddSectionAdmin", id: userId}, function(data, status) {
-        if (data['html']) {
+    	if (data['currentUserId']==userId) location.reload();
+    	else if (data['html']) {
             $("#ul-sec-admins").html(data['html']).listview("refresh");
             $("#sec-adm-autocomplete-input").val("");
             $("#sec-adm-autocomplete").html("");

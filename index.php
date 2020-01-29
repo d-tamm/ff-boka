@@ -89,6 +89,7 @@ if (isset($_POST['login'])) {
 	    if ($result['authenticated']) {
 	        $_SESSION['authenticatedUser'] = $_POST['id'];
 			$u = new User($_SESSION['authenticatedUser'], $result['section']);
+			$u->getAssignments();
 			if (!$u->updateLastLogin()) die("Cannot update user.");
 	        $db->exec("INSERT INTO logins (ip, userId, success, userAgent) VALUES (INET_ATON('{$_SERVER['REMOTE_ADDR']}'), '{$_POST['id']}', 1, '{$_SERVER['HTTP_USER_AGENT']}')");
             // If requested, set persistent login cookie
@@ -162,7 +163,7 @@ if (isset($_REQUEST['message'])) $message = ($message ? "$message<br>" : "") . $
 		<a href='#' data-rel='back' class='ui-btn ui-btn-icon-left ui-btn-inline ui-corner-all ui-icon-check'>OK</a>
 	</div>
 
-	<img src="resources/liggande-bla.png" style="width:100%; max-width:600px; display:block; margin-left:auto; margin-right:auto;">
+	<img src="<?= $cfg['url'] ?>resources/liggande-bla.png" style="width:100%; max-width:600px; display:block; margin-left:auto; margin-right:auto;">
 
 	<p class="ui-body ui-body-b">
 	<?= $_SESSION['authenticatedUser'] ? "" : "Välkommen till testplattformen för FFs nya resursbokningssystem! Här kan du följa utvecklingen av projektet och testa." ?> Var inte rädd för att förstöra något, utan försök gärna att utmana funktionerna och hitta svaga punkter!<br>
@@ -199,7 +200,8 @@ if (isset($_REQUEST['message'])) $message = ($message ? "$message<br>" : "") . $
 		// Show a list of all sections where user has admin role
 		$sectionList = "";
 		foreach ($FF->getAllSections() as $section) {
-			if ($section->showFor($currentUser, FFBoka::ACCESS_CATADMIN)) {
+		    if ($section->showFor($currentUser, FFBoka::ACCESS_CATADMIN) ||
+		        array_intersect($_SESSION['assignments'][$section->id], $cfg['sectionAdmins'])) {
 				$sectionList .= "<a href='admin/?sectionId={$section->id}' class='ui-btn' data-transition='slideup'>" . htmlspecialchars($section->name) . "</a>";
 			}
 		}

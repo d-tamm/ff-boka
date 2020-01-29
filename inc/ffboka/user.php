@@ -43,23 +43,6 @@ class User extends FFBoka {
                 ":userId"   => $this->id
             ));
         }
-        // Get user's assignments from the FF API as an array[sectionId][names] (only assignments on section level)
-        $this->assignments = array();
-        $data = (object)array("results"=>array());
-        if (self::$apiAssUrl) { // API URL for assignments is set. Try to get user's assignments
-            $data = @file_get_contents(self::$apiAssUrl . "?MNoSocnr={$this->id}");
-            if ($data === FALSE) { // no answer
-                $this->assignments[0][] = "Kunde inte läsa in uppdrag från API.";
-            } else { // Got an answer
-                $data = json_decode($data);
-                foreach ($data->results as $ass) {
-                    if ($ass->uppdragstyp__cint_assignment_party_type->value == FFBoka::TYPE_SECTION) {
-                        // This will sort the assignments on section ID
-                        $this->assignments[$ass->section__cint_nummer][] = $ass->cint_assignment_type_id->name;
-                    }
-                }
-            }
-        }
     }
     
     /**
@@ -81,8 +64,6 @@ class User extends FFBoka {
                 $stmt = self::$db->query("SELECT $name FROM users WHERE userId={$this->id}");
                 $row = $stmt->fetch(PDO::FETCH_OBJ);
                 return $row->$name;
-            case "assignments":
-                return $this->assignments;
             default:
                 throw new \Exception("Use of undefined User property $name");
         }
@@ -107,6 +88,31 @@ class User extends FFBoka {
                 throw new \Exception("Use of undefined category property $name");
         }
         return false;
+    }
+
+    /**
+     * Get user's assignments on section level from the FF API.
+     * Fills $_SESSION['assignments'] with array['sectionId']['names']
+     * @return bool Success or failure
+     */
+    public function getAssignments() {
+        $_SESSION['assignments'] = array();
+        if (self::$apiAssUrl) { // API URL for assignments is set. Try to get user's assignments
+            $data = @file_get_contents(self::$apiAssUrl . "?MNoSocnr={$this->id}");
+            if ($data === FALSE) { // no answer
+                $_SESSION['assignments'][0][] = "Kunde inte läsa in uppdrag från API.";
+            } else { // Got an answer
+                $data = json_decode($data);
+                foreach ($data->results as $ass) {
+                    if ($ass->uppdragstyp__cint_assignment_party_type->value == FFBoka::TYPE_SECTION) {
+                        // This will sort the assignments on section ID
+                        $_SESSION['assignments'][$ass->section__cint_nummer][] = $ass->cint_assignment_type_id->name;
+                    }
+                }
+                return TRUE;
+            }
+        }
+        return FALSE;
     }
     
     /**
@@ -141,6 +147,8 @@ class User extends FFBoka {
             if (hash_equals($row->authenticator, hash('sha256', base64_decode($authenticator)))) {
                 // User authenticated. Set as logged in
                 $_SESSION['authenticatedUser'] = $row->userId;
+                // Fetch assignments
+                $this->getAssignments();
                 // Regenerate login token
                 $u = new User($row->userId);
                 $u->createPersistentLogin($ttl);

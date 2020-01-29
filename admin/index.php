@@ -39,11 +39,12 @@ if (!$_SESSION['authenticatedUser']) {
 }
 // Only allow users which have at least some admin role in this section
 $currentUser = new User($_SESSION['authenticatedUser']);
-if (!$section->showFor($currentUser, FFBoka::ACCESS_CATADMIN)) {
+if (!$section->showFor($currentUser, FFBoka::ACCESS_CATADMIN) && !array_intersect($_SESSION['assignments'][$section->id], $cfg['sectionAdmins'])) {
     header("Location: {$cfg['url']}?action=accessDenied&to=" . urlencode("administrationssidan för {$section->name}"));
     die();
 }
 $userAccess = $section->getAccess($currentUser);
+if (array_intersect($_SESSION['assignments'][$section->id], $cfg['sectionAdmins'])) $userAccess=FFBoka::ACCESS_SECTIONADMIN;
 
 if ($_REQUEST['message']) $message = $_REQUEST['message'];
 
@@ -119,13 +120,14 @@ switch ($_REQUEST['action']) {
     	                "{{name}}"=>$adm->name,
     	                "{{role}}"=>"lokalavdelnings-admin",
     	                "{{link}}"=>$cfg['url'],
+    	                "{{sectionName}}"=>$section->name,
     	                "{{superadmin-name}}"=>$currentUser->name,
     	                "{{superadmin-mail}}"=>$currentUser->mail,
     	                "{{superadmin-phone}}"=>$currentUser->phone
     	            )
                 );
 	        }
-	        die(json_encode(["html"=>adminList($section, $currentUser->id)]));
+	        die(json_encode([ "html"=>adminList($section, $currentUser->id), "currentUserId"=>$currentUser->id ]));
 		} else {
 		    die(json_encode(["error"=>"Kunde inte lägga till administratören. Är den kanske redan med i listan?"]));
 		}
@@ -231,7 +233,7 @@ unset($_SESSION['catId']);
     				echo "<span class='ui-li-count'>{$cat->itemCount}</span></a></li>";
 			    }
 			}
-			if ($userAccess & FFBoka::ACCESS_SECTIONADMIN) echo "<li><a href='category.php?action=new'>Skapa ny kategori</a></li>"; ?>
+			if ($section->getAccess($currentUser) & FFBoka::ACCESS_SECTIONADMIN) echo "<li><a href='category.php?action=new'>Skapa ny kategori</a></li>"; ?>
 			</ul>
 			<br>
 		</div>
@@ -298,8 +300,8 @@ unset($_SESSION['catId']);
 			<ul id="ul-sec-admins" data-role="listview" data-split-icon="delete" data-split-theme="c" data-inset="true">
 				<?= adminList($section, $currentUser->id) ?>
 			</ul>
-		<?php } ?>
 		</div>
+		<?php } ?>
 		
 		<?php if (in_array($_SESSION['authenticatedUser'], $cfg['superAdmins'])) { ?>
 		<div data-role="collapsible">
@@ -325,6 +327,7 @@ unset($_SESSION['catId']);
 			}
 			?></table>
 		<?php } ?>
+		</div>
 
 	</div><!--/collapsibleset-->
 
