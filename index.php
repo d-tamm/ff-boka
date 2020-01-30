@@ -86,7 +86,10 @@ if (isset($_POST['login'])) {
 		$message = "För många inloggningsförsök. Försök igen om " . (int)($cfg['DoSDelay']/60) . " minuter.";
 	} else {
 	    $result = $FF->authenticateUser($_POST['id'], $_POST['password']);
-	    if ($result['authenticated']) {
+	    if ($result === FALSE) {
+	        $message = "Kan inte få kontakt med inloggningsservern. Vänligen försök igen senare. Om problemet kvarstår, kontakta systemadmin.";
+	    }
+	    elseif ($result['authenticated']) {
 	        $_SESSION['authenticatedUser'] = $_POST['id'];
 			$u = new User($_SESSION['authenticatedUser'], $result['section']);
 			$u->getAssignments();

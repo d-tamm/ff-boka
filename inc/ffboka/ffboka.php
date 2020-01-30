@@ -93,7 +93,9 @@ class FFBoka {
      * Authenticate the given user data by querying the API
      * @param string $userId
      * @param string $password
-     * @return array(bool authenticated, string section) 
+     * @return bool|array(bool authenticated, string section) Returns FALSE if API does not respond.
+     * Otherwise, authenticated contains whether the credentials were accepted. If accepted, section
+     * will contain the section name.  
      */
     public function authenticateUser($userId, $password) {
 		// Fake test user with id=999999
