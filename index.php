@@ -202,7 +202,7 @@ if (isset($_REQUEST['message'])) $message = ($message ? "$message<br>" : "") . $
 		// Show a list of all sections where user has admin role
 		foreach ($FF->getAllSections() as $section) {
 		    if ($section->showFor($currentUser, FFBoka::ACCESS_CATADMIN) ||
-		        array_intersect($_SESSION['assignments'][$section->id], $cfg['sectionAdmins'])) {
+		        @array_intersect($_SESSION['assignments'][$section->id], $cfg['sectionAdmins'])) {
 				echo "<a href='admin/?sectionId={$section->id}' class='ui-btn ui-btn-icon-right ui-icon-gear' data-transition='slideup'>Admin " . htmlspecialchars($section->name) . "</a>";
 			}
 		}
