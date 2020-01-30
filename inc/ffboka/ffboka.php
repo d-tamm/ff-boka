@@ -78,7 +78,7 @@ class FFBoka {
      * @param int $showFirst If set, this section will be returned as the first element
      * @return Section[] Array of sections in alphabetical order
      */
-    public function getAllSections($showFirst=0) {
+    public function getAllSections(int $showFirst=0) {
         $stmt = self::$db->prepare("SELECT sectionId FROM sections ORDER BY sectionId!=?, name");
         $stmt->execute(array($showFirst));
         $sections = array();

@@ -181,31 +181,28 @@ if (isset($_REQUEST['message'])) $message = ($message ? "$message<br>" : "") . $
 	?>
 
 	<div data-role='collapsibleset' data-inset='false'>
-		<?php if ($_SESSION['authenticatedUser']) { ?>
-		<div data-role='collapsible' data-collapsed='false'>
-			<h3>Boka som medlem</h3>
-			<?php
+		<?php if ($_SESSION['authenticatedUser']) {
+		    // Show link for booking in user's home section
+			$section = new Section($currentUser->sectionId);
+			if ($section->showFor($currentUser)) echo "<a href='book-part.php?sectionId={$section->id}' class='ui-btn ui-btn-icon-right ui-icon-home' style='white-space:normal;'>Boka resurser i " . htmlspecialchars($section->name) . "</a>";
 			// Show a list of all sections with categories where user may book resources
-			$sectionList = "";
-			foreach ($FF->getAllSections($currentUser->sectionId) as $section) {
+			echo "<select onChange=\"location.href='book-part.php?sectionId='+this.value;\"><option>Boka i annan lokalavdelning</option>";
+			foreach ($FF->getAllSections() as $section) {
 			    if ($section->showFor($currentUser) && count($section->getMainCategories())) {
-					$sectionList .= "<a href='book-part.php?sectionId={$section->id}' class='ui-btn'>" . htmlspecialchars($section->name) . "</a>";
+					echo "<option value='{$section->id}'>" . htmlspecialchars($section->name) . "</option>";
 				}
 			}
-			if ($sectionList) echo $sectionList;
-			else echo "<p>Det finns inga resurser du kan boka som medlem i din lokalavdelning.</p>"; ?>
+			echo "</select>"; ?>
 		</div>
 
 		<?php
 		// Show a list of all sections where user has admin role
-		$sectionList = "";
 		foreach ($FF->getAllSections() as $section) {
 		    if ($section->showFor($currentUser, FFBoka::ACCESS_CATADMIN) ||
 		        array_intersect($_SESSION['assignments'][$section->id], $cfg['sectionAdmins'])) {
-				$sectionList .= "<a href='admin/?sectionId={$section->id}' class='ui-btn' data-transition='slideup'>" . htmlspecialchars($section->name) . "</a>";
+				echo "<a href='admin/?sectionId={$section->id}' class='ui-btn ui-btn-icon-right ui-icon-gear' data-transition='slideup'>Admin " . htmlspecialchars($section->name) . "</a>";
 			}
 		}
-		if ($sectionList) echo "<div data-role='collapsible' data-collapsed='true'><h3>Administrera</h3>$sectionList";
 
 		// TODO: This is for testing only. Remove before switching to production! ?><br>
 		<form class="ui-body ui-body-a">
@@ -221,7 +218,6 @@ if (isset($_REQUEST['message'])) $message = ($message ? "$message<br>" : "") . $
 			<input data-theme="b" type="submit" data-corners="false" value="Gör mig till admin">
 		</form><?php
 
-		if ($sectionList) echo "</div>";
         } ?>
 		
 	</div><!-- /collapsibleset -->
