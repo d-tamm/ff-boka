@@ -97,8 +97,8 @@ class User extends FFBoka {
      */
     public function getAssignments() {
         $_SESSION['assignments'] = array();
-        if (self::$apiAssUrl) { // API URL for assignments is set. Try to get user's assignments
-            $data = @file_get_contents(self::$apiAssUrl . "?MNoSocnr={$this->id}");
+        if (self::$apiFeedUrl) { // API URL for assignments is set. Try to get user's assignments
+            $data = @file_get_contents(self::$apiFeedUrl . self::$apiFeedUserAss . $this->id);
             if ($data === FALSE) { // no answer
                 $_SESSION['assignments'][0][] = "Kunde inte läsa in uppdrag från API.";
             } else { // Got an answer

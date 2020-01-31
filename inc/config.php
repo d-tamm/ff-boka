@@ -16,9 +16,12 @@ $cfg = array(
 
     // API connection (see config.local.php)
     "ff-api" => array(
-        "authUrl"=>"", // URL for authentication
-        "authKey"=>"", // Key for authentication
-        "assUrl"=>"",  // URL to get user's assignments
+        'authUrl' => "", // URL for authentication
+        'authKey' => "", // Key for authentication
+        'feedUrl' => "", // Base URL to get user's assignments and sections, with trailing slash
+        'feedAss' => "", // Feed to get all existing assignments
+        'feedUserAss' => "", // Feed to get a user's assignments
+        'feedSec' => "", // Feed to get all existing sections
     ),
 	
 	// Logging

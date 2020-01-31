@@ -41,7 +41,10 @@ class FFBoka {
     /** URL and key to Friluftsfrämjandet's API */
     protected static $apiAuthUrl;
     protected static $apiAuthKey;
-    protected static $apiAssUrl;
+    protected static $apiFeedUrl;
+    protected static $apiFeedAss;
+    protected static $apiFeedUserAss;
+    protected static $apiFeedSec;
     
     /** GUID in API indicating sections */
     const TYPE_SECTION = 478880001;
@@ -58,7 +61,8 @@ class FFBoka {
     /**
      * Initialize framework with API address and database connection.
      * These will also be used in the inherited classes
-     * @param array(string) $api Array with connection details to FF's API, with members authUrl, authKey, assUrl
+     * @param array(string) $api Array with connection details to FF's API,
+     *   with members authUrl, authKey, feedUrl, feedAss, feedUserAss, feedSec
      * @param PDO::Database $db
      * @param array(string) $sectionAdmins Section level assignments giving sections admin access
      * @param string $timezone Timezone for e.g. freebusy display (Europe/Stockholm)
@@ -66,8 +70,12 @@ class FFBoka {
     function __construct($api, $db, $sectionAdmins, $timezone) {
         self::$apiAuthUrl = $api['authUrl'];
         self::$apiAuthKey = $api['authKey'];
-        self::$apiAssUrl = $api['assUrl'];
-    	self::$db = $db;
+        self::$apiFeedUrl = $api['feedUrl'];
+        self::$apiFeedAss = $api['feedAss'];
+        self::$apiFeedUserAss = $api['feedUserAss'];
+        self::$apiFeedSec = $api['feedSec'];
+        
+        self::$db = $db;
     	self::$sectionAdmins = $sectionAdmins;
     	self::$timezone = $timezone;
     }
