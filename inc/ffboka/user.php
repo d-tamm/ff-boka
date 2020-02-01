@@ -139,7 +139,7 @@ class User extends FFBoka {
      * @param string $cookie String in the format selector:authenticator where authenticator is base64 encoded
      * @param int $ttl TTL for the new cookie
      */
-    static function restorePersistentLogin(string $cookie, int $ttl) {
+    public function restorePersistentLogin(string $cookie, int $ttl) {
         list($selector, $authenticator) = explode(':', $cookie);
         $stmt = self::$db->prepare("SELECT * FROM persistent_logins WHERE selector=? AND expires>NOW()");
         $stmt->execute(array($selector));
