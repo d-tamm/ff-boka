@@ -51,7 +51,7 @@ function connectDb(string $host, string $dbname, string $user, string $pass, int
     try {
         $db = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $user, $pass);
     } catch (PDOException $e) {
-        die("<html><body><h1>Can't Connect to Database</h1><p>If this is a fresh installation, create a database named <tt>$dbname</tt> on host <tt>$host</tt>, and create a user named <tt>$user</tt> with complete access to that database. Set the user's password in <tt>config.local.php</tt>. You can also change the database and user name there.</p><p>When done, <a href='javascript:location.reload();'>reload this page</a> to continue installation.</p></body></html>");
+        die("<html><body><h1>Can't Connect to Database</h1><p>If this is a fresh installation, create a database named <tt>$dbname</tt> on host <tt>$host</tt>, and create a user named <tt>$user</tt> with complete access to that database. Set the user's password in <tt>config.php</tt>. You can also change the database and user name there.</p><p>When done, <a href='javascript:location.reload();'>reload this page</a> to continue installation.</p></body></html>");
     }
     $stmt = $db->query("SELECT value FROM config WHERE name='db-version'");
     if ($stmt === FALSE) {
