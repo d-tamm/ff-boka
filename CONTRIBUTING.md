@@ -78,7 +78,7 @@ Här kommer några tipps för att komma igång:
 ### Javascript
 
 ### HTML
-* Skriv tags med små bokstäver (<p>, <html>).
+* Skriv tags med små bokstäver (`<p>`, `<html>`).
   * Vid långa block, kommentera gärna den avslutande taggen (`</div><!-- /main -->`)
 
 ### CSS
