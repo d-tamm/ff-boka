@@ -54,9 +54,37 @@ Här kommer några tipps för att komma igång:
 * Skriv vad ändringen gör ("Implementerar xyz"), inte vad du har gjort ("Har implementerat xyz").
 * Använd inte mer än 72 tecken på första raden.
 
+### Kommentarer allmänt
+* Använd alltid engelska i alla kommentarer.
+
 ### PHP
+* Använd 4 mellanslag eller 1 tabb för indragningar.
+* Skriv kod som är självförklarande - hellre några fler rader som går att förstå än en kompakt rad som gör allt samtidigt.
+* Använd $camelCase för variabler och funktioner.
+* Använd även camelCase i arrays och objektegenskaper (`$some['userPassword']`, `$objekt->gulBakgrund`).
+* Använd självförklarande namn för variabler och funktioner.
+* Försök använda objekt istället för procedurer.
+* Skriv in kommentarer i koden om den inte är tillräckligt självförklarande.
+* Använd Type hinting i funktionsdeklarationer (dvs skriv int|string|bool... framför parametrarna) om möjligt.
+  Det underlättar göra rätt vid anrop av funktionerna, och visas oftast i din IDE.
+* Använd alltid `Doc Blocks` inför funktioner för att ge information om ingångsparametrar, returvärden mm.
+  Det kan vara till stor hjälp vid kodningen och används av de flesta IDE för att ge dig stöd.
+  Kan även användas i klasser inför deklarationen av variabler och konstanter.
+* Använd inte `global` om det går att undvika. Koden blir renare och mer återanvändbar
+  när du istället använder Dependency Injection, dvs vid anrop av funktioner skicka med
+  den information som behövs i form av parametrar.
+* Det är OK att använda förkortade php-taggar (`<?= kod ?>`)
 
 ### Javascript
+
+### HTML
+* Skriv tags med små bokstäver (<p>, <html>).
+  * Vid långa block, kommentera gärna den avslutande taggen (`</div><!-- /main -->`)
+
+### CSS
+* Klassnamn skrivs alltid med bara små bokstäver och bindestreck (`div-med-svart-bakgrund`)
+
+### SQL, databas
 
 ## Installera lokalt
 ff-boka baseras på en så kallad LAMP stack (Linux Apache MariaDB PHP). För att installera systemet, följ stegen nedan.
