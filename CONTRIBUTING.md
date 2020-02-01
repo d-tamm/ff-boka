@@ -1,5 +1,21 @@
 # Bidra till resursbokningssystemet
 
+## Innehåll
+* [Hur kan jag bidra?](#hur-kan-jag-bidra)
+  * [Rapportera buggar](#rapportera-buggar)
+  * [Föreslå förbättringar](#föreslå-förbättringar)
+  * [Ditt första bidrag](#ditt-första-bidrag)
+* [Riktlinjer](#riktlinjer)
+  * [Commit-meddelanden](#commit-meddelanden)
+  * [Kommentarer](#kommentarer)
+  * [PHP](#php)
+  * [Javascript](#javascript)
+  * [HTML](#html)
+  * [CSS](#css)
+  * [SQL, databas](#sql-databas)
+* [Installera lokalt](#installera-lokalt)
+* [Engagera dig](#engagera-dig)
+
 ## Jag vill inte läsa mycket, jag har bara en fråga
 Om du bara har en fråga, skicka inte in en buggrapport. Du kan istället ställa den på våra följande kanaler:
 
@@ -54,7 +70,7 @@ Här kommer några tipps för att komma igång:
 * Skriv vad ändringen gör ("Implementerar xyz"), inte vad du har gjort ("Har implementerat xyz").
 * Använd inte mer än 72 tecken på första raden.
 
-### Kommentarer allmänt
+### Kommentarer
 * Använd alltid engelska i alla kommentarer.
 
 ### PHP
@@ -73,18 +89,25 @@ Här kommer några tipps för att komma igång:
 * Använd inte `global` om det går att undvika. Koden blir renare och mer återanvändbar
   när du istället använder Dependency Injection, dvs vid anrop av funktioner skicka med
   den information som behövs i form av parametrar.
-* Det är OK att använda förkortade php-taggar (`<?= kod ?>`)
+* Det är OK att använda förkortade php-taggar (`<?= kod ?>`).
+* Innehåll från användarna skall alltid gå genom `html_specialchars()` innan visning på skärmen.
 
 ### Javascript
 
 ### HTML
 * Skriv tags med små bokstäver (`<p>`, `<html>`).
 * Vid långa block, kommentera gärna den avslutande taggen (`</div><!-- /main -->`)
+* Klassnamn och id:n skrivs alltid med bara små bokstäver och bindestreck (`<div class='svart-bakgrund'>`)
 
 ### CSS
-* Klassnamn skrivs alltid med bara små bokstäver och bindestreck (`div-med-svart-bakgrund`)
+* Klassnamn och id:n skrivs alltid med bara små bokstäver och bindestreck (`div.svart-bakgrund`)
+* Undvik användning av `!important`. Använd om möjligt högre specificitet.
 
 ### SQL, databas
+* Tabellnamn skrivs med understreck (`cat_admins`).
+* Fältnamn skrivs med camelCase (`adminId`).
+* Primärindex bör användas och namnges `xxxId`, inte bara `ID`.
+* Använd beroenden med cascading mellan tabeller så att vi slipper hålla koll på databas-integriteten manuellt.
 
 ## Installera lokalt
 ff-boka baseras på en så kallad LAMP stack (Linux Apache MariaDB PHP). För att installera systemet, följ stegen nedan.
