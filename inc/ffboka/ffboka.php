@@ -38,22 +38,19 @@ class FFBoka {
     /** Booking has been placed and is confirmed */
     const STATUS_CONFIRMED=3;
     
-    /** URL and key to Friluftsfrämjandet's API */
+    /** API URL for authentication */
     protected static $apiAuthUrl;
+    /** API key for authentication */
     protected static $apiAuthKey;
-    protected static $apiFeedUrl;
-    protected static $apiFeedAss;
+    /** URL and file path to feed for getting user's assignments */
     protected static $apiFeedUserAss;
-    protected static $apiFeedSec;
-    
     /** GUID in API indicating sections */
     const TYPE_SECTION = 478880001;
+    /** string[] Assignment names from API giving section admin access. */
+    protected static $sectionAdmins;
     
     /** Database connection */
     protected static $db;
-
-    /** string[] Assignments from API giving section admin access. */
-    protected static $sectionAdmins;
     
     /** string Timezone to use for bookings */
     protected static $timezone;
@@ -62,7 +59,7 @@ class FFBoka {
      * Initialize framework with API address and database connection.
      * These will also be used in the inherited classes
      * @param array(string) $api Array with connection details to FF's API,
-     *   with members authUrl, authKey, feedUrl, feedAss, feedUserAss, feedSec
+     *   with members authUrl, authKey, feedUrl, feedUserAss
      * @param PDO::Database $db
      * @param array(string) $sectionAdmins Section level assignments giving sections admin access
      * @param string $timezone Timezone for e.g. freebusy display (Europe/Stockholm)
@@ -70,11 +67,7 @@ class FFBoka {
     function __construct($api, $db, $sectionAdmins, $timezone) {
         self::$apiAuthUrl = $api['authUrl'];
         self::$apiAuthKey = $api['authKey'];
-        self::$apiFeedUrl = $api['feedUrl'];
-        self::$apiFeedAss = $api['feedAss'];
-        self::$apiFeedUserAss = $api['feedUserAss'];
-        self::$apiFeedSec = $api['feedSec'];
-        
+        self::$apiFeedUserAss = $api['feedUrl'] . $api['feedUserAss'];
         self::$db = $db;
     	self::$sectionAdmins = $sectionAdmins;
     	self::$timezone = $timezone;

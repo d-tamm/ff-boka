@@ -1,49 +1,49 @@
 <?php
 /**
- * This file is synchronized to GitHub. Therefore, do not change this file
- * for adjustments to you local installation. Instead, put your local configuration
- * into the file config.local.php.
+ * This is a sample configuration for the resource booking system.
+ * Copy it to config.php (in the same folder) and make adjustments
+ * in that file. Do not write in your local configuration in this
+ * sample file since it may be synchronized back to Github.
  */
 
 use FFBoka\FFBoka;
 
 $cfg = array(
 	// Database connection settings
-	"dbhost" => "127.0.0.1",
-	"dbname" => "ff-boka",
-	"dbuser" => "ff-boka",
-    "dbpass" => "1zpR0B4g9hYHZIM4",
+	"dbhost" => "127.0.0.1", // The host of the mariaDb server
+	"dbname" => "ff-boka",   // The name of the database
+    "dbuser" => "ff-boka",   // Username for connecting to mariaDb
+    "dbpass" => "your secret password", // Password for that user
 
     // Connection details to Friluftsfrämjandet's API
-    // Managed on https://ffapimanagement.developer.azure-api.net/
     "ff-api" => array(
-        'authUrl' => "https://ffapimanagement.azure-api.net/VerifyMemberBooking/VerifyMemberBooking", // API URL for authentication and home section
-        'authKey' => "4e69a664bf7f4920b28e726fc3f71359",
-        'feedUrl' => "https://panoramacwp.azurewebsites.net/",
-        'feedAss'     => "api/feed/Pan_ExtBokning_GetAllAssignmenttypes", // Feed to get all existing assignments
-        'feedUserAss' => "api/feed/Pan_ExtBokning_GetAssignmentByMemberNoOrSocSecNo?MNoSocnr=", // Feed to get a user's assignments. Append member number or personnummer.
-        'feedSec'     => "api/feed/PAN_ExtBokning_GetSections", // Feed to get all existing sections
+        'authUrl' => "", // URL for authentication
+        'authKey' => "", // Key for authentication
+        'feedUrl' => "", // Base URL to get user's assignments and sections, with trailing slash
+        'feedAss' => "", // Feed to get all existing assignments
+        'feedUserAss' => "", // Feed to get a user's assignments. Append member number or personnummer.
+        'feedSec' => "", // Feed to get all existing sections
     ),
 	
 	// Logging
 	"logMaxSize" => 1*1024*1024, // in bytes
 
-	// Sender address, readable name and reply-to address for auto-generated emails
-	"mailFrom" => "resursbokning@friluftsframjandet.se",
-    "mailFromName" => "Friluftsfrämjandets resursbokning",
-    "mailReplyTo" => "resursbokning@friluftsframjandet.se",
+	// Sender address, readable name and Reply-to address for auto-generated emails
+	"mailFrom"     => "someone@somewhere.com",
+    "mailFromName" => "Resursbokning",
+    "mailReplyTo"  => "someone@somewhere.com",
     
-	// SMTP settings for sending emails
+    // SMTP settings for sending emails
 	"SMTP" => array(
-	    "host" => 'smtp.office365.com',
+	    "host" => 'smtp.mymaildomain.com',
 	    "port" => '587',
-	    "user" => 'resursbokning@friluftsframjandet.se',
-	    "pass" => 'l59vwJp8bX5kP8v2',
+	    "user" => 'someone@somewhere.com',
+	    "pass" => 'my smtp password',
     ),
-    
-	// The URL of this installation, with trailing slash
-    "url" => "http://localhost/",
 
+    // The URL of this installation, with trailing slash
+    "url" => "http://localhost/",
+    
 	// Max size of images in pixels (longer side). If larger images are submitted, they will be downscaled.
 	"maxImgSize" => 1024,
 	// Max file size for images in byte
@@ -57,7 +57,7 @@ $cfg = array(
 	"sectionAdmins" => array('Ordförande', 'Vice ordförande'),
     
     // UserIDs of users with superAdmin access (will display a superAdmin section on Admin page)
-    "superAdmins" => array(864015),
+    "superAdmins" => array(),
     
     // Textual representations of access levels
 	"catAccessLevels" => array(
@@ -79,3 +79,6 @@ $cfg = array(
     // Current db version
     "db-version" => 0,
 );
+
+// Include local/secret settings, too (those not to be synchronized to Github).
+include __DIR__."/config.local.php";

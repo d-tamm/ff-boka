@@ -22,7 +22,7 @@ use FFBoka\FFBoka;
 use FFBoka\User;
 
 // Connect to database
-$db = new PDO("mysql:host={$cfg['dbhost']};dbname={$cfg['dbname']};charset=utf8", $cfg['dbuser'], $cfg['dbpass']);
+$db = connectDb($cfg['dbhost'], $cfg['dbname'], $cfg['dbuser'], $cfg['dbpass'], $cfg['db-version']);
 
 // Create FF object
 $FF = new FFBoka($cfg['ff-api'], $db, $cfg['sectionAdmins'], $cfg['timezone']);
@@ -33,6 +33,56 @@ if (!$_SESSION['authenticatedUser'] && !empty($_COOKIE['remember'])) {
     User::restorePersistentLogin($_COOKIE['remember'], $cfg['TtlPersistentLogin']);
 }
 
+/**
+ * Connect to database.
+ * If the db does not exist, dies with an error describing what to do.
+ * If the db is empty, tries to install all tables and static content. 
+ * Checks that the db is on the required version. If not, tries to upgrade it.
+ * @param string $host Database host name
+ * @param string $dbname Database name
+ * @param string $user Database user name
+ * @param string $pass Password of that user
+ * @param int $reqVer The required DB version
+ * @param PDO $db Connection to the database 
+ */
+function connectDb(string $host, string $dbname, string $user, string $pass, int $reqVer) {
+    $output = array();
+    // Try to connect to the database
+    try {
+        $db = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $user, $pass);
+    } catch (PDOException $e) {
+        die("<html><body><h1>Can't Connect to Database</h1><p>If this is a fresh installation, create a database named <tt>$dbname</tt> on host <tt>$host</tt>, and create a user named <tt>$user</tt> with complete access to that database. Set the user's password in <tt>config.local.php</tt>. You can also change the database and user name there.</p><p>When done, <a href='javascript:location.reload();'>reload this page</a> to continue installation.</p></body></html>");
+    }
+    $stmt = $db->query("SELECT value FROM config WHERE name='db-version'");
+    if ($stmt === FALSE) {
+        // No tables? Try to install base skeleton
+        echo(str_pad("<html><body><h1>Empty Database Found</h1><p>The database seems to be empty. Trying to install base skeleton. Please wait...</p>",4096)); flush();
+        exec("mysql -u $user --password=$pass $dbname < \"" . __DIR__ . "/../resources/db/skeleton.sql\" 2>&1", $output);
+        echo implode("<br>", $output);
+        die("<p>Finished.</p><p>If you do not see any error messages, you may <a href='javascript:location.reload();'>reload this page</a> to continue.</p></body></html>");
+    }
+    // Continue checking the db version
+    $row = $stmt->fetch(PDO::FETCH_OBJ);
+    $curVer = (int)$row->value;
+    if ($curVer > $reqVer) {
+        die("<html><body><h1>Wrong Database Version</h1><p>The current database version (v $curVer) is higher than the expected one (v $reqVer). I cannot downgrade the database.</p></body></html>");
+    } elseif ($curVer < $reqVer) {
+        echo(str_pad("<html><body><h1>Database Upgrade</h1><p>The current database version (v $curVer) is lower than the expected one (v $reqVer). I will now try to upgrade the database to v $reqVer. Please wait...</p>", 4096)); flush();
+        while ($curVer < $reqVer) {
+            // Check that upgrade sql file exists
+            $curVer++;
+            if (!is_readable(__DIR__ . "/../resources/db/$curVer.sql")) die("<p><b>Oops... Cannot find database upgrade file to v $curVer.</b> Please take contact with the maintainers of the repository who should have supplied the file /resources/db/$curVer.sql.</p><p><a href='javascript:location.reload();'>Retry</a></p></body></html>");
+            echo(str_pad("<h3>Upgrading from v " . ($curVer-1) . " to v $curVer...</h3>", 4096)); flush();
+            // Apply upgrade
+            exec("mysql -u $user --password=$pass $dbname < \"" . __DIR__ . "/../resources/db/$curVer.sql\" 2>&1", $output);
+            echo implode("<br>", $output);
+            // Write new version to db
+            $db->exec("UPDATE config SET value=$curVer WHERE name='db-version'");
+        }
+        die("<p>Finished.</p><p>If you do not see any error messages, you may <a href='javascript:location.reload();'>reload this page</a> to continue.</p></body></html>");
+    }
+    return $db;
+}
 
 /**
  * Output the file headers for HTML pages (title, meta tags, common stylesheets, jquery)
