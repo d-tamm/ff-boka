@@ -1,6 +1,6 @@
 /vendor/
 debug.log
-config.local.php
+config.php
 /.buildpath
 /.directory
 /.project
