@@ -44,12 +44,19 @@ Här kommer några tipps för att komma igång:
   * Klona förrådet.
   * Gör en egen gren (branch) för den aktuella ändringen.
   * Knacka kod i den nya grenen.
-  * `Commit` ändringarna.
+  * [`Commit` ändringarna](#commit-meddelanden).
   * `Push` för att skicka ändringarna till GitHub.
   * Gör en Pull Request.
   * Seden kommer en av utvecklarna titta på ditt förslag och antingen acceptera det eller föreslå justeringar.
 
 ## Riktlinjer
+### Commit-meddelanden
+* Skriv vad ändringen gör ("Implementerar xyz"), inte vad du har gjort ("Har implementerat xyz").
+* Använd inte mer än 72 tecken på första raden.
+
+### PHP
+
+### Javascript
 
 ## Installera lokalt
 ff-boka baseras på en så kallad LAMP stack (Linux Apache MariaDB PHP). För att installera systemet, följ stegen nedan.
