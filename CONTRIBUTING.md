@@ -79,7 +79,7 @@ Här kommer några tipps för att komma igång:
 
 ### HTML
 * Skriv tags med små bokstäver (`<p>`, `<html>`).
-  * Vid långa block, kommentera gärna den avslutande taggen (`</div><!-- /main -->`)
+* Vid långa block, kommentera gärna den avslutande taggen (`</div><!-- /main -->`)
 
 ### CSS
 * Klassnamn skrivs alltid med bara små bokstäver och bindestreck (`div-med-svart-bakgrund`)
