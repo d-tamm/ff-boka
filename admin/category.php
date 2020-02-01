@@ -83,15 +83,15 @@ function showQuestions(Category $cat, Section $section) {
  * @return string Formatted HTML <li> list
  */
 function displayCatAccess($cat, $accLevels) {
-	$ret = "";
-	if ($cat->accessExternal) $ret .= "<li><a href='#' class='ajax-input'>Icke-medlemmar<p>{$accLevels[$cat->accessExternal]}</p></a><a href='#' onclick=\"unsetAccess('accessExternal');\">Återkalla behörighet</a></li>";
-	if ($cat->accessMember) $ret .= "<li><a href='#' class='ajax-input'>Medlem i valfri lokalavdelning<p>{$accLevels[$cat->accessMember]}</p></a><a href='#' onclick=\"unsetAccess('accessMember');\">Återkalla behörighet</a></li>";
-	if ($cat->accessLocal) $ret .= "<li><a href='#' class='ajax-input'>Lokal medlem<p>{$accLevels[$cat->accessLocal]}</p></a><a href='#' onclick=\"unsetAccess('accessLocal');\">Återkalla behörighet</a></li>";
-	foreach ($cat->admins() as $adm) {
-	    $ret .= "<li><a href='#' class='ajax-input'>{$adm['userId']} " . ($adm['name'] ? htmlspecialchars($adm['name']) : "(ingen persondata tillgänglig)") . "<p>{$accLevels[$adm['access']]}</p></a><a href='#' onclick=\"unsetAccess('{$adm['userId']}');\">Återkalla behörighet</a></li>";
-	}
-	if ($ret) return "<ul data-role='listview' data-inset='true' data-split-icon='delete' data-split-theme='c'>$ret</ul>";
-	else return "<p><i>Inga behörigheter har tilldelats än. Använd alternativen nedan för att tilldela behörigheter.</i></p>";
+    $ret = "";
+    if ($cat->accessExternal) $ret .= "<li><a href='#' class='ajax-input'>Icke-medlemmar<p>{$accLevels[$cat->accessExternal]}</p></a><a href='#' onclick=\"unsetAccess('accessExternal');\">Återkalla behörighet</a></li>";
+    if ($cat->accessMember) $ret .= "<li><a href='#' class='ajax-input'>Medlem i valfri lokalavdelning<p>{$accLevels[$cat->accessMember]}</p></a><a href='#' onclick=\"unsetAccess('accessMember');\">Återkalla behörighet</a></li>";
+    if ($cat->accessLocal) $ret .= "<li><a href='#' class='ajax-input'>Lokal medlem<p>{$accLevels[$cat->accessLocal]}</p></a><a href='#' onclick=\"unsetAccess('accessLocal');\">Återkalla behörighet</a></li>";
+    foreach ($cat->admins() as $adm) {
+        $ret .= "<li><a href='#' class='ajax-input'>{$adm['userId']} " . ($adm['name'] ? htmlspecialchars($adm['name']) : "(ingen persondata tillgänglig)") . "<p>{$accLevels[$adm['access']]}</p></a><a href='#' onclick=\"unsetAccess('{$adm['userId']}');\">Återkalla behörighet</a></li>";
+    }
+    if ($ret) return "<ul data-role='listview' data-inset='true' data-split-icon='delete' data-split-theme='c'>$ret</ul>";
+    else return "<p><i>Inga behörigheter har tilldelats än. Använd alternativen nedan för att tilldela behörigheter.</i></p>";
 }
 
 
@@ -189,38 +189,38 @@ switch ($_REQUEST['action']) {
         
     case "ajaxSetAccess":
         if ($cat->getAccess($currentUser) >= FFBoka::ACCESS_CATADMIN) {
-        	switch ($_GET['id']) {
-            	case "accessExternal":
-            	case "accessMember":
-            	case "accessLocal":
-            	    $cat->{$_GET['id']} = $_GET['access'];
-            	    break;
-            	default:
-            	    $cat->setAccess($_GET['id'], $_GET['access']);
-            	    if ($_GET['access'] >= FFBoka::ACCESS_CONFIRM) {
-            	        // New admin added. Send notification if not current user
-            	        $adm = new User($_GET['id']);
-            	        if ($_GET['id'] != $currentUser->id && $adm->mail) {
-            	            sendmail(
-            	                $adm->mail,
-            	                "Du är nu bokningsansvarig",
-            	                "notify_new_admin",
-            	                array(
-            	                    "{{name}}"=>$adm->name,
-            	                    "{{role}}"=>"bokningsansvarig för kategorin {$cat->caption}",
-            	                    "{{link}}"=>$cfg['url'],
-            	                    "{{superadmin-name}}"=>$currentUser->name,
-            	                    "{{superadmin-mail}}"=>$currentUser->mail,
-            	                    "{{superadmin-phone}}"=>$currentUser->phone
-            	                )
-        	                );
-            	        } else $message = "OBS! Vi har inte någon epostadress till denna användare och kan inte meddela hen om den nya rollen. Därför ska du informera hen på annat sätt. Se gärna också till att hen loggar in och lägger upp sin epostadress för att kunna få meddelanden om nya bokningar.";
-            	    }
-        	}
-        	die(json_encode([ "html"=>displayCatAccess($cat, $cfg['catAccessLevels']), "message"=>$message ]));
+            switch ($_GET['id']) {
+                case "accessExternal":
+                case "accessMember":
+                case "accessLocal":
+                    $cat->{$_GET['id']} = $_GET['access'];
+                    break;
+                default:
+                    $cat->setAccess($_GET['id'], $_GET['access']);
+                    if ($_GET['access'] >= FFBoka::ACCESS_CONFIRM) {
+                        // New admin added. Send notification if not current user
+                        $adm = new User($_GET['id']);
+                        if ($_GET['id'] != $currentUser->id && $adm->mail) {
+                            sendmail(
+                                $adm->mail,
+                                "Du är nu bokningsansvarig",
+                                "notify_new_admin",
+                                array(
+                                    "{{name}}"=>$adm->name,
+                                    "{{role}}"=>"bokningsansvarig för kategorin {$cat->caption}",
+                                    "{{link}}"=>$cfg['url'],
+                                    "{{superadmin-name}}"=>$currentUser->name,
+                                    "{{superadmin-mail}}"=>$currentUser->mail,
+                                    "{{superadmin-phone}}"=>$currentUser->phone
+                                )
+                            );
+                        } else $message = "OBS! Vi har inte någon epostadress till denna användare och kan inte meddela hen om den nya rollen. Därför ska du informera hen på annat sätt. Se gärna också till att hen loggar in och lägger upp sin epostadress för att kunna få meddelanden om nya bokningar.";
+                    }
+            }
+            die(json_encode([ "html"=>displayCatAccess($cat, $cfg['catAccessLevels']), "message"=>$message ]));
         }
-    	break;
-    	
+        break;
+        
     case "ajaxToggleQuestion":
         // empty -> show -> show+required -> empty
         // inherited -> show+required -> inherited
@@ -258,76 +258,76 @@ unset ($_SESSION['itemId']);
 ?><!DOCTYPE html>
 <html>
 <head>
-	<?php htmlHeaders("Friluftsfrämjandets resursbokning - Kategori " . htmlspecialchars($cat->caption), $cfg['url']) ?>
+    <?php htmlHeaders("Friluftsfrämjandets resursbokning - Kategori " . htmlspecialchars($cat->caption), $cfg['url']) ?>
 </head>
 
 
 <body>
 <div data-role="page" id="page-admin-category">
-	<?= head(htmlspecialchars($cat->caption), $cfg['url'], $currentUser) ?>
-	<div role="main" class="ui-content">
+    <?= head(htmlspecialchars($cat->caption), $cfg['url'], $currentUser) ?>
+    <div role="main" class="ui-content">
 
-	<div data-role="popup" data-overlay-theme="b" id="popup-msg-page-admin-category" class="ui-content">
-		<p id="msg-page-admin-category"><?= $message ?></p>
-		<a href='#' data-rel='back' class='ui-btn ui-btn-icon-left ui-btn-inline ui-corner-all ui-icon-check'>OK</a>
-	</div>
-	
-	<div class="saved-indicator" id="cat-saved-indicator">Sparad</div>
+    <div data-role="popup" data-overlay-theme="b" id="popup-msg-page-admin-category" class="ui-content">
+        <p id="msg-page-admin-category"><?= $message ?></p>
+        <a href='#' data-rel='back' class='ui-btn ui-btn-icon-left ui-btn-inline ui-corner-all ui-icon-check'>OK</a>
+    </div>
+    
+    <div class="saved-indicator" id="cat-saved-indicator">Sparad</div>
 
-	<div data-role="collapsibleset" data-inset="false">
-		<?php if ($cat->getAccess($currentUser) >= FFBoka::ACCESS_CATADMIN) { ?>
-		<div data-role="collapsible">
-			<h2>Allmänt</h2>
+    <div data-role="collapsibleset" data-inset="false">
+        <?php if ($cat->getAccess($currentUser) >= FFBoka::ACCESS_CATADMIN) { ?>
+        <div data-role="collapsible">
+            <h2>Allmänt</h2>
 
-    		<p><?php
-    		foreach ($cat->getPath() as $p) {
-    		    if ($p['id']) echo " &rarr; ";
-    		    echo "<a data-transition='slide' data-direction='reverse' href='" . ($p['id'] ? "category.php?catId={$p['id']}" : "index.php") . "'>" . htmlspecialchars($p['caption']) . "</a>";
-    		}?></p>
+            <p><?php
+            foreach ($cat->getPath() as $p) {
+                if ($p['id']) echo " &rarr; ";
+                echo "<a data-transition='slide' data-direction='reverse' href='" . ($p['id'] ? "category.php?catId={$p['id']}" : "index.php") . "'>" . htmlspecialchars($p['caption']) . "</a>";
+            }?></p>
 
-			<div class="ui-field-contain">
-				<label for="cat-caption" class="required">Rubrik:</label>
-				<input name="caption" class="ajax-input" id="cat-caption" placeholder="Namn till kategorin" value="<?= htmlspecialchars($cat->caption) ?>">
-			</div>
+            <div class="ui-field-contain">
+                <label for="cat-caption" class="required">Rubrik:</label>
+                <input name="caption" class="ajax-input" id="cat-caption" placeholder="Namn till kategorin" value="<?= htmlspecialchars($cat->caption) ?>">
+            </div>
 
-			<div class="ui-field-contain">
-				<label for="cat-parentID">Överordnad kategori:</label>
-				<select id="cat-parentId" name="parentID">
-					<?php
-					echo "<option value='NULL'" . ((($section->getAccess($currentUser) & FFBoka::ACCESS_SECTIONADMIN) || is_null($cat->parentId)) ? : " disabled='true'") . ">- ingen -</option>";
-					foreach ($section->getMainCategories() as $child) {
-					    if ($child->id != $cat->id) showCatTree($child, $cat, $currentUser);
-					}
-					?>
-				</select>
-			</div>
+            <div class="ui-field-contain">
+                <label for="cat-parentID">Överordnad kategori:</label>
+                <select id="cat-parentId" name="parentID">
+                    <?php
+                    echo "<option value='NULL'" . ((($section->getAccess($currentUser) & FFBoka::ACCESS_SECTIONADMIN) || is_null($cat->parentId)) ? : " disabled='true'") . ">- ingen -</option>";
+                    foreach ($section->getMainCategories() as $child) {
+                        if ($child->id != $cat->id) showCatTree($child, $cat, $currentUser);
+                    }
+                    ?>
+                </select>
+            </div>
 
-			<p>Bild att visa med kategorin:</p>
-			<img src="../image.php?type=category&id=<?= $cat->id ?>" id="cat-img-preview"<?= $cat->thumb ? "" : " style='display:none;'" ?>>
-			<div class="ui-field-contain">
-				<label for="file-cat-img">Ladda upp ny bild:</label>
-				<input type="file" name="image" id="file-cat-img">
-			</div>
-			<hr>
-			
-			<label for="cat-prebookMsg">Text som ska visas när användare vill boka resurser från denna kategori:</label>
-				<textarea name="prebookMsg" class="ajax-input" id="cat-prebookMsg" placeholder="Exempel: Kom ihåg att ta höjd för torkningstiden efter användningen!"><?= htmlspecialchars($cat->prebookMsg) ?></textarea>
-			<hr>
+            <p>Bild att visa med kategorin:</p>
+            <img src="../image.php?type=category&id=<?= $cat->id ?>" id="cat-img-preview"<?= $cat->thumb ? "" : " style='display:none;'" ?>>
+            <div class="ui-field-contain">
+                <label for="file-cat-img">Ladda upp ny bild:</label>
+                <input type="file" name="image" id="file-cat-img">
+            </div>
+            <hr>
+            
+            <label for="cat-prebookMsg">Text som ska visas när användare vill boka resurser från denna kategori:</label>
+                <textarea name="prebookMsg" class="ajax-input" id="cat-prebookMsg" placeholder="Exempel: Kom ihåg att ta höjd för torkningstiden efter användningen!"><?= htmlspecialchars($cat->prebookMsg) ?></textarea>
+            <hr>
 
-			<label for="cat-postbookMsg">Text som ska skickas med bokningsbekräftelsen:</label>
-				<textarea name="postbookMsg" class="ajax-input" id="cat-postbookMsg" placeholder="Exempel: Uthämtning lör-sön mellan 11 och 16."><?= htmlspecialchars($cat->postbookMsg) ?></textarea>
-			<hr>
+            <label for="cat-postbookMsg">Text som ska skickas med bokningsbekräftelsen:</label>
+                <textarea name="postbookMsg" class="ajax-input" id="cat-postbookMsg" placeholder="Exempel: Uthämtning lör-sön mellan 11 och 16."><?= htmlspecialchars($cat->postbookMsg) ?></textarea>
+            <hr>
             
             <div class="ui-field-contain">
                 <label for="cat-bufferAfterBooking">Buffertid i timmar mellan bokningar (ärvs inte av överordnad kategori):</label>
                 <input name="bufferAfterBooking" type="number" min="0" class="ajax-input" id="cat-bufferAfterBooking" placeholder="Buffertid mellan bokingnar" value="<?= $cat->bufferAfterBooking ?>">
             </div>
-			
-			<label for="cat-sendAlertTo">Förutom till bokningsansvariga, skicka meddelande om nya bokningar till:</label>
-				<input name="sendAlertTo" class="ajax-input" id="cat-sendAlertTo" placeholder="kanoter@gmail.com, emil@yahoo.com" value="<?= htmlspecialchars($cat->sendAlertTo) ?>">
-			<hr>
+            
+            <label for="cat-sendAlertTo">Förutom till bokningsansvariga, skicka meddelande om nya bokningar till:</label>
+                <input name="sendAlertTo" class="ajax-input" id="cat-sendAlertTo" placeholder="kanoter@gmail.com, emil@yahoo.com" value="<?= htmlspecialchars($cat->sendAlertTo) ?>">
+            <hr>
 
-			<h3>Kontaktuppgifter</h3>
+            <h3>Kontaktuppgifter</h3>
             <div class="ui-field-contain">
                 <label for="cat-contactName">Namn:</label>
                 <input name="contactName" class="ajax-input" id="cat-contactName" placeholder="Namn" value="<?= htmlspecialchars($cat->contactName) ?>">
@@ -341,117 +341,117 @@ unset ($_SESSION['itemId']);
                 <input name="contactMail" class="ajax-input" id="cat-contactMail" placeholder="Epost" value="<?= htmlspecialchars($cat->contactMail) ?>">
             </div>
 
-			<button id='btn-unset-contact-user' title='Ta bort kontaktperson' onClick="setCatProp('contactUserId', 'NULL');" style='position:absolute; right:1em; display:<?= is_null($cat->contactUserId) ? "none" : "block" ?>;' class='ui-btn ui-icon-delete ui-btn-icon-notext'>Ta bort</button>
-			<div id="cat-contact-data"><?= $cat->contactData() ?></div>
-				<input id="cat-contact-autocomplete-input" data-type="search" placeholder="Välj medlem som kontaktperson...">
-				<ul id="cat-contact-autocomplete" data-role="listview" data-filter="true" data-input="#cat-contact-autocomplete-input" data-inset="true"></ul>
+            <button id='btn-unset-contact-user' title='Ta bort kontaktperson' onClick="setCatProp('contactUserId', 'NULL');" style='position:absolute; right:1em; display:<?= is_null($cat->contactUserId) ? "none" : "block" ?>;' class='ui-btn ui-icon-delete ui-btn-icon-notext'>Ta bort</button>
+            <div id="cat-contact-data"><?= $cat->contactData() ?></div>
+                <input id="cat-contact-autocomplete-input" data-type="search" placeholder="Välj medlem som kontaktperson...">
+                <ul id="cat-contact-autocomplete" data-role="listview" data-filter="true" data-input="#cat-contact-autocomplete-input" data-inset="true"></ul>
 
-			<button class="ui-btn ui-btn-c" id="delete-cat">Radera kategorin</button>
+            <button class="ui-btn ui-btn-c" id="delete-cat">Radera kategorin</button>
 
-			<br>
-		</div>
-		<?php } ?>
+            <br>
+        </div>
+        <?php } ?>
 
-		<?php if ($cat->getAccess($currentUser) >= FFBoka::ACCESS_CATADMIN) { ?>
-		<div data-role="collapsible" class="ui-filterable" data-collapsed="<?= $_REQUEST['expand']=="access" ? "false" : "true" ?>">
-			<h2>Behörigheter</h2>
-			<fieldset data-role="controlgroup" id="cat-access-ids" data-mini="true">
-				<p>1. Välj grupp eller enskild medlem:</p>
-				<label><input type="radio" class="cat-access-id" name="id" value="accessExternal">Icke-medlemmar </label>
-				<label><input type="radio" class="cat-access-id" name="id" value="accessMember">Medlem i valfri lokalavdelning</label>
-				<label><input type="radio" class="cat-access-id" name="id" value="accessLocal">Lokal medlem</label>
-				<input id="cat-adm-autocomplete-input" data-type="search" placeholder="Välj enskild medlem...">
-				<ul id="cat-adm-autocomplete" data-role="listview" data-filter="true" data-input="#cat-adm-autocomplete-input" data-inset="true"></ul>
-			</fieldset>
-			
-			<fieldset data-role="controlgroup" data-mini="true" id="cat-access-levels" style="display:none;">
-				<p>2. Välj behörighetsnivå här:</p>
-				<label>
-					<input type="radio" class="cat-access-level" name="cat-access" value="<?= FFBoka::ACCESS_READASK ?>">
-					<?= $cfg['catAccessLevels'][FFBoka::ACCESS_READASK] ?>
-				</label>
-				<label>
-					<input type="radio" class="cat-access-level" name="cat-access" value="<?= FFBoka::ACCESS_PREBOOK ?>">
-					<?= $cfg['catAccessLevels'][FFBoka::ACCESS_PREBOOK] ?>
-				</label>
-				<label>
-					<input type="radio" class="cat-access-level" name="cat-access" value="<?= FFBoka::ACCESS_BOOK ?>">
-					<?= $cfg['catAccessLevels'][FFBoka::ACCESS_BOOK] ?>
-				</label>
-				<label>
-					<input type="radio" class="cat-access-level cat-access-level-adm" name="cat-access" value="<?= FFBoka::ACCESS_CONFIRM ?>">
-					<?= $cfg['catAccessLevels'][FFBoka::ACCESS_CONFIRM] ?>
-				</label>
-				<label>
-					<input type="radio" class="cat-access-level cat-access-level-adm" name="cat-access" value="<?= FFBoka::ACCESS_CATADMIN ?>">
-					<?= $cfg['catAccessLevels'][FFBoka::ACCESS_CATADMIN] ?>
-				</label>
-			</fieldset>
+        <?php if ($cat->getAccess($currentUser) >= FFBoka::ACCESS_CATADMIN) { ?>
+        <div data-role="collapsible" class="ui-filterable" data-collapsed="<?= $_REQUEST['expand']=="access" ? "false" : "true" ?>">
+            <h2>Behörigheter</h2>
+            <fieldset data-role="controlgroup" id="cat-access-ids" data-mini="true">
+                <p>1. Välj grupp eller enskild medlem:</p>
+                <label><input type="radio" class="cat-access-id" name="id" value="accessExternal">Icke-medlemmar </label>
+                <label><input type="radio" class="cat-access-id" name="id" value="accessMember">Medlem i valfri lokalavdelning</label>
+                <label><input type="radio" class="cat-access-id" name="id" value="accessLocal">Lokal medlem</label>
+                <input id="cat-adm-autocomplete-input" data-type="search" placeholder="Välj enskild medlem...">
+                <ul id="cat-adm-autocomplete" data-role="listview" data-filter="true" data-input="#cat-adm-autocomplete-input" data-inset="true"></ul>
+            </fieldset>
+            
+            <fieldset data-role="controlgroup" data-mini="true" id="cat-access-levels" style="display:none;">
+                <p>2. Välj behörighetsnivå här:</p>
+                <label>
+                    <input type="radio" class="cat-access-level" name="cat-access" value="<?= FFBoka::ACCESS_READASK ?>">
+                    <?= $cfg['catAccessLevels'][FFBoka::ACCESS_READASK] ?>
+                </label>
+                <label>
+                    <input type="radio" class="cat-access-level" name="cat-access" value="<?= FFBoka::ACCESS_PREBOOK ?>">
+                    <?= $cfg['catAccessLevels'][FFBoka::ACCESS_PREBOOK] ?>
+                </label>
+                <label>
+                    <input type="radio" class="cat-access-level" name="cat-access" value="<?= FFBoka::ACCESS_BOOK ?>">
+                    <?= $cfg['catAccessLevels'][FFBoka::ACCESS_BOOK] ?>
+                </label>
+                <label>
+                    <input type="radio" class="cat-access-level cat-access-level-adm" name="cat-access" value="<?= FFBoka::ACCESS_CONFIRM ?>">
+                    <?= $cfg['catAccessLevels'][FFBoka::ACCESS_CONFIRM] ?>
+                </label>
+                <label>
+                    <input type="radio" class="cat-access-level cat-access-level-adm" name="cat-access" value="<?= FFBoka::ACCESS_CATADMIN ?>">
+                    <?= $cfg['catAccessLevels'][FFBoka::ACCESS_CATADMIN] ?>
+                </label>
+            </fieldset>
 
-			<p>Tilldelade behörigheter:</p>
-			<div id="assigned-cat-access"><?= displayCatAccess($cat, $cfg['catAccessLevels']) ?></div>
+            <p>Tilldelade behörigheter:</p>
+            <div id="assigned-cat-access"><?= displayCatAccess($cat, $cfg['catAccessLevels']) ?></div>
 
-			<br>
-		</div>
-		
+            <br>
+        </div>
+        
 
-		<div data-role="collapsible" class="ui-filterable" data-collapsed="<?= $_REQUEST['expand']=="access" ? "false" : "true" ?>">
-			<h2>Bokningsfrågor</h2>
-			<?php
-			if ($questions = showQuestions($cat, $section)) {
-			    echo "<ul data-role='listview' data-inset='true' id='cat-questions'>$questions</ul>";
-			} else {
-			    echo "<p class='ui-body ui-body-a'>Inga frågor har lagts upp i din lokalavdelning än. Om du vill att någon fråga ska visas vid bokning i denna kategori, be LA-administratören att lägga upp frågan.</p>";
-			}
-			?>
-		</div>
-		<?php } ?>
-		
+        <div data-role="collapsible" class="ui-filterable" data-collapsed="<?= $_REQUEST['expand']=="access" ? "false" : "true" ?>">
+            <h2>Bokningsfrågor</h2>
+            <?php
+            if ($questions = showQuestions($cat, $section)) {
+                echo "<ul data-role='listview' data-inset='true' id='cat-questions'>$questions</ul>";
+            } else {
+                echo "<p class='ui-body ui-body-a'>Inga frågor har lagts upp i din lokalavdelning än. Om du vill att någon fråga ska visas vid bokning i denna kategori, be LA-administratören att lägga upp frågan.</p>";
+            }
+            ?>
+        </div>
+        <?php } ?>
+        
 
-		<?php
-		$children = $cat->children(); ?>
-		<div data-role="collapsible" data-collapsed="<?= $cat->getAccess($currentUser) >= FFBoka::ACCESS_CATADMIN ? "true" : "false" ?>">
-			<h2>Underkategorier</h2>
-			<ul data-role="listview"><?php
-				foreach ($children as $child) {
-				    if ($child->showFor($currentUser, FFBoka::ACCESS_CATADMIN)) {
-    					echo "<li><a data-transition='slide' href='category.php?catId={$child->id}'>" .
-    						embedImage($child->thumb) .
-    						"<h3>" . htmlspecialchars($child->caption) . "</h3>";
-    					$subcats = array();
-    					foreach ($child->children() as $grandchild) $subcats[] = htmlspecialchars($grandchild->caption);
-    					if ($subcats) echo "<p>" . implode(", ", $subcats) . "</p>";
-    					echo "<span class='ui-li-count'>{$child->itemCount}</span></a></li>\n";
-				    }
-				}
-				if ($cat->getAccess($currentUser) >= FFBoka::ACCESS_CATADMIN) echo "<li><a data-transition='slide' href='category.php?action=new'>Lägg till underkategori</a></li>";
-				?>
-			</ul>
-			<br>
-		</div>
+        <?php
+        $children = $cat->children(); ?>
+        <div data-role="collapsible" data-collapsed="<?= $cat->getAccess($currentUser) >= FFBoka::ACCESS_CATADMIN ? "true" : "false" ?>">
+            <h2>Underkategorier</h2>
+            <ul data-role="listview"><?php
+                foreach ($children as $child) {
+                    if ($child->showFor($currentUser, FFBoka::ACCESS_CATADMIN)) {
+                        echo "<li><a data-transition='slide' href='category.php?catId={$child->id}'>" .
+                            embedImage($child->thumb) .
+                            "<h3>" . htmlspecialchars($child->caption) . "</h3>";
+                        $subcats = array();
+                        foreach ($child->children() as $grandchild) $subcats[] = htmlspecialchars($grandchild->caption);
+                        if ($subcats) echo "<p>" . implode(", ", $subcats) . "</p>";
+                        echo "<span class='ui-li-count'>{$child->itemCount}</span></a></li>\n";
+                    }
+                }
+                if ($cat->getAccess($currentUser) >= FFBoka::ACCESS_CATADMIN) echo "<li><a data-transition='slide' href='category.php?action=new'>Lägg till underkategori</a></li>";
+                ?>
+            </ul>
+            <br>
+        </div>
 
-		<?php
-		if ($cat->getAccess($currentUser) >= FFBoka::ACCESS_CATADMIN) {
-		$items = $cat->items(); ?>
-		<div data-role="collapsible" data-collapsed="<?= $_REQUEST['expand']!="items" ? "true" : "false" ?>">
-			<h2>Resurser (<?= count($items) ?>)</h2>
-			<ul data-role="listview">
-				<?php
-				foreach ($items as $item) {
-					echo "<li" . ($item->active ? "" : " class='inactive'") . "><a data-transition='slide' href='item.php?itemId={$item->id}'>" .
-						embedImage($item->getFeaturedImage()->thumb) .
-						"<h3>" . htmlspecialchars($item->caption) . "</h3>" .
-						"<p>" . ($item->active ? htmlspecialchars($item->description) : "(inaktiv)") . "</p>" .
-						"</a></li>\n";
-				}
-				if ($cat->getAccess($currentUser) >= FFBoka::ACCESS_CATADMIN) echo "<li><a data-transition='slide' href='item.php?action=newItem'>Lägg till resurs</a></li>"; ?>
-			</ul>
-			<br>
-		</div>
-		<?php } ?>
-		
-	</div><!--/collapsibleset-->
-	</div><!--/main-->
+        <?php
+        if ($cat->getAccess($currentUser) >= FFBoka::ACCESS_CATADMIN) {
+        $items = $cat->items(); ?>
+        <div data-role="collapsible" data-collapsed="<?= $_REQUEST['expand']!="items" ? "true" : "false" ?>">
+            <h2>Resurser (<?= count($items) ?>)</h2>
+            <ul data-role="listview">
+                <?php
+                foreach ($items as $item) {
+                    echo "<li" . ($item->active ? "" : " class='inactive'") . "><a data-transition='slide' href='item.php?itemId={$item->id}'>" .
+                        embedImage($item->getFeaturedImage()->thumb) .
+                        "<h3>" . htmlspecialchars($item->caption) . "</h3>" .
+                        "<p>" . ($item->active ? htmlspecialchars($item->description) : "(inaktiv)") . "</p>" .
+                        "</a></li>\n";
+                }
+                if ($cat->getAccess($currentUser) >= FFBoka::ACCESS_CATADMIN) echo "<li><a data-transition='slide' href='item.php?action=newItem'>Lägg till resurs</a></li>"; ?>
+            </ul>
+            <br>
+        </div>
+        <?php } ?>
+        
+    </div><!--/collapsibleset-->
+    </div><!--/main-->
 
 </div><!--/page-->
 </body>

@@ -17,30 +17,30 @@ require("inc/common.php");
  * @return string Header with cat caption, and list of items in category. Steps down into child categories.
  */
 function displayCat(Category $cat, $user, $fbStart) {
-	if ($cat->showFor($user)) {
-		$access = $cat->getAccess($user);
-		echo "<div data-role='collapsible' data-inset='false'>";
-		echo "<h3><div class='cat-list-img'>" . embedImage($cat->thumb) . "</div>" . htmlspecialchars($cat->caption) . "</h3>";
-		echo $cat->prebookMsg ? "<p>" . str_replace("\n", "<br>", htmlspecialchars($cat->prebookMsg)) . "</p>" : "";
-		if ($access) {
-			echo "<ul data-role='listview' data-split-icon='info' data-split-theme='a'>";
-			foreach ($cat->items() as $item) {
-				if ($item->active) {
-					echo "<li class='book-item' id='book-item-{$item->id}'><a href=\"javascript:toggleItem({$item->id});\">";
-					echo embedImage($item->getFeaturedImage()->thumb);
-					echo "<h4>" . htmlspecialchars($item->caption) . "</h4>";
-					if ($cat->getAccess($user)>=FFBoka::ACCESS_PREBOOK) echo "<div class='freebusy-bar'><div id='freebusy-item-{$item->id}'></div>" . Item::freebusyScale() . "</div>";
-					echo "</a><a href='javascript:popupItemDetails({$item->id})'></a>";
-					echo "</li>";
-				}
-			}
-			echo "<br></ul>";
-		}
-		foreach ($cat->children() as $child) {
-			displayCat($child, $user, $fbStart);
-		}
-		echo "</div>";
-	}
+    if ($cat->showFor($user)) {
+        $access = $cat->getAccess($user);
+        echo "<div data-role='collapsible' data-inset='false'>";
+        echo "<h3><div class='cat-list-img'>" . embedImage($cat->thumb) . "</div>" . htmlspecialchars($cat->caption) . "</h3>";
+        echo $cat->prebookMsg ? "<p>" . str_replace("\n", "<br>", htmlspecialchars($cat->prebookMsg)) . "</p>" : "";
+        if ($access) {
+            echo "<ul data-role='listview' data-split-icon='info' data-split-theme='a'>";
+            foreach ($cat->items() as $item) {
+                if ($item->active) {
+                    echo "<li class='book-item' id='book-item-{$item->id}'><a href=\"javascript:toggleItem({$item->id});\">";
+                    echo embedImage($item->getFeaturedImage()->thumb);
+                    echo "<h4>" . htmlspecialchars($item->caption) . "</h4>";
+                    if ($cat->getAccess($user)>=FFBoka::ACCESS_PREBOOK) echo "<div class='freebusy-bar'><div id='freebusy-item-{$item->id}'></div>" . Item::freebusyScale() . "</div>";
+                    echo "</a><a href='javascript:popupItemDetails({$item->id})'></a>";
+                    echo "</li>";
+                }
+            }
+            echo "<br></ul>";
+        }
+        foreach ($cat->children() as $child) {
+            displayCat($child, $user, $fbStart);
+        }
+        echo "</div>";
+    }
 }
 
 /**
@@ -55,15 +55,15 @@ function getFreebusy(&$fbList, Category $cat, $user, $start) {
     foreach ($cat->items() as $item) {
         if ($item->active) {
             if ($acc >= FFBoka::ACCESS_PREBOOK) {
-				$fbList["item-".$item->id] = $item->freebusyBar(['start'=>$start]);
+                $fbList["item-".$item->id] = $item->freebusyBar(['start'=>$start]);
             } else {
                 $fbList["item-".$item->id] = Item::freebusyUnknown();
             }
-		}
-	}
-	foreach ($cat->children() as $child) {
-		getFreebusy($fbList, $child, $user, $start);
-	}
+        }
+    }
+    foreach ($cat->children() as $child) {
+        getFreebusy($fbList, $child, $user, $start);
+    }
 }
 
 /**
@@ -146,78 +146,78 @@ END;
         $html .= "<a href='#' data-rel='back' class='ui-btn ui-icon-delete ui-btn-icon-left'>Stäng inforutan</a>";
         die(json_encode([ "caption"=>htmlspecialchars($item->caption), "html"=>$html, "start"=>$start, "end"=>$end, "price"=>$price ]));
 
-	case "ajaxFreebusy":
+    case "ajaxFreebusy":
         // Get freebusy bars for all items in section
-	    // Also include combined freebusy bar for current selection.
-	    $freebusyBars = array();
-		foreach ($section->getMainCategories() as $cat) {
-			getFreebusy($freebusyBars, $cat, $currentUser, $_REQUEST['start']);
-		}
-		$ids = isset($_REQUEST['ids']) ? array_keys($_REQUEST['ids']) : array();
-		header("Content-Type: application/json");
-		die(json_encode([
-		    "freebusyBars"=>$freebusyBars,
-		    "freebusyCombined"=>getFreebusyCombined($ids, $currentUser, $_REQUEST['start']),
-		]));
+        // Also include combined freebusy bar for current selection.
+        $freebusyBars = array();
+        foreach ($section->getMainCategories() as $cat) {
+            getFreebusy($freebusyBars, $cat, $currentUser, $_REQUEST['start']);
+        }
+        $ids = isset($_REQUEST['ids']) ? array_keys($_REQUEST['ids']) : array();
+        header("Content-Type: application/json");
+        die(json_encode([
+            "freebusyBars"=>$freebusyBars,
+            "freebusyCombined"=>getFreebusyCombined($ids, $currentUser, $_REQUEST['start']),
+        ]));
 
-	case "ajaxCombinedAccess":
-	    // Return least common access rights for item selection.
-	    // Also include freebusy bar for same selection.
-	    $access = FFBoka::ACCESS_SECTIONADMIN-1; // bit field of ones
-	    foreach (array_keys($_REQUEST['ids']) as $id) {
-	        $item = new Item($id);
-			$access = ($access & $item->category()->getAccess($currentUser));
-	    }
-	    header("Content-Type: application/json");
-	    die(json_encode([
-	        "access"=>$access,
-	        "freebusyCombined"=>getFreebusyCombined(array_keys($_REQUEST['ids']), $currentUser, $_REQUEST['start']),
-	    ]));
+    case "ajaxCombinedAccess":
+        // Return least common access rights for item selection.
+        // Also include freebusy bar for same selection.
+        $access = FFBoka::ACCESS_SECTIONADMIN-1; // bit field of ones
+        foreach (array_keys($_REQUEST['ids']) as $id) {
+            $item = new Item($id);
+            $access = ($access & $item->category()->getAccess($currentUser));
+        }
+        header("Content-Type: application/json");
+        die(json_encode([
+            "access"=>$access,
+            "freebusyCombined"=>getFreebusyCombined(array_keys($_REQUEST['ids']), $currentUser, $_REQUEST['start']),
+        ]));
 
-	case "ajaxCheckTimes":
-	case "ajaxSave":
-	    // Check that chosen start and end time are OK
-	    // If everything is OK and "save", create a booking if necessary and save item.
-	    header("Content-Type: application/json");
-	    $unavail = array();
-	    $minAccess = FFBoka::ACCESS_CATADMIN;
-	    foreach (array_keys($_REQUEST['ids']) as $id) {
-	        // For every item with visible freebusy information, check availability
-	        $item = new Item($id, $_REQUEST['bookingStep']==2);
-	        $acc = $item->category()->getAccess($currentUser);
-	        $minAccess = ($minAccess & $acc);
-	        if ($acc >= FFBoka::ACCESS_PREBOOK) {
-	            if (!$item->isAvailable($_REQUEST['start'], $_REQUEST['end'])) $unavail[] = htmlspecialchars($item->caption);
-	        }
-	    }
-	    if (count($unavail)===0 && $_REQUEST['action']==="ajaxSave") {
-	        // Times are OK. Create or change booking
-	        if ($_REQUEST['bookingStep']==2) {
-	            // In step 2, only single items are modified
-	            $item = new Item(array_keys($_REQUEST['ids'])[0], TRUE);
-	            $item->start = $_REQUEST['start'];
-	            $item->end = $_REQUEST['end'];
-	        } else {
-	            // Step 1: Several items to save
-    	        if (isset($_SESSION['bookingId'])) {
-    	            $booking = new Booking($_SESSION['bookingId']);
-    	        } else {
-    	            $booking = $currentUser->addBooking($section->id);
-    	            $_SESSION['bookingId'] = $booking->id;
-    	            $_SESSION['token'] = $booking->token;
-    	        }
-    			// Add items to booking
-    	        foreach (array_keys($_REQUEST['ids']) as $id) {
-    	            $item = $booking->addItem($id);
-    	            $item->start = $_REQUEST['start'];
-    	            $item->end = $_REQUEST['end'];
-    	        }
-	        }
-	    }
-	    die(json_encode([
-	        "timesOK" => (count($unavail) === 0),
+    case "ajaxCheckTimes":
+    case "ajaxSave":
+        // Check that chosen start and end time are OK
+        // If everything is OK and "save", create a booking if necessary and save item.
+        header("Content-Type: application/json");
+        $unavail = array();
+        $minAccess = FFBoka::ACCESS_CATADMIN;
+        foreach (array_keys($_REQUEST['ids']) as $id) {
+            // For every item with visible freebusy information, check availability
+            $item = new Item($id, $_REQUEST['bookingStep']==2);
+            $acc = $item->category()->getAccess($currentUser);
+            $minAccess = ($minAccess & $acc);
+            if ($acc >= FFBoka::ACCESS_PREBOOK) {
+                if (!$item->isAvailable($_REQUEST['start'], $_REQUEST['end'])) $unavail[] = htmlspecialchars($item->caption);
+            }
+        }
+        if (count($unavail)===0 && $_REQUEST['action']==="ajaxSave") {
+            // Times are OK. Create or change booking
+            if ($_REQUEST['bookingStep']==2) {
+                // In step 2, only single items are modified
+                $item = new Item(array_keys($_REQUEST['ids'])[0], TRUE);
+                $item->start = $_REQUEST['start'];
+                $item->end = $_REQUEST['end'];
+            } else {
+                // Step 1: Several items to save
+                if (isset($_SESSION['bookingId'])) {
+                    $booking = new Booking($_SESSION['bookingId']);
+                } else {
+                    $booking = $currentUser->addBooking($section->id);
+                    $_SESSION['bookingId'] = $booking->id;
+                    $_SESSION['token'] = $booking->token;
+                }
+                // Add items to booking
+                foreach (array_keys($_REQUEST['ids']) as $id) {
+                    $item = $booking->addItem($id);
+                    $item->start = $_REQUEST['start'];
+                    $item->end = $_REQUEST['end'];
+                }
+            }
+        }
+        die(json_encode([
+            "timesOK" => (count($unavail) === 0),
             "unavail" => $unavail,
-	    ]));
+        ]));
 }
 
 ?><!DOCTYPE html>
@@ -239,14 +239,14 @@ END;
 
     <h4>Lokalavdelning: <?= htmlspecialchars($section->name) ?></h4>
 
-	<?php
-	if (isset($_SESSION['bookingId'])) echo "<p class='ui-body ui-body-a'>Du har en påbörjad bokning. Resurserna du väljer nedan kommer att läggas till bokningen.<a data-transition='slide' class='ui-btn' href='book-sum.php'>Visa bokningen</a></p>";
-	?>
+    <?php
+    if (isset($_SESSION['bookingId'])) echo "<p class='ui-body ui-body-a'>Du har en påbörjad bokning. Resurserna du väljer nedan kommer att läggas till bokningen.<a data-transition='slide' class='ui-btn' href='book-sum.php'>Visa bokningen</a></p>";
+    ?>
 
     <h3 class="ui-bar ui-bar-a">Steg 1. Välj resurser</h3>
     <?php
     foreach ($section->getMainCategories() as $cat) {
-		displayCat($cat, $currentUser, strtotime("last sunday +1 day"));
+        displayCat($cat, $currentUser, strtotime("last sunday +1 day"));
     } ?>
 
 
@@ -256,28 +256,28 @@ END;
         <div id='book-access-msg'></div>
 
         <div class='freebusy-bar' style='height:50px;'>
-        	<div id='book-combined-freebusy-bar'></div>
-        	<div id='book-chosen-timeframe'></div>
-        	<?= Item::freebusyScale(true) ?>
-    	</div>
-    	<div id='book-warning-conflict'>Den valda tiden krockar med befintliga bokningar.</div>
+            <div id='book-combined-freebusy-bar'></div>
+            <div id='book-chosen-timeframe'></div>
+            <?= Item::freebusyScale(true) ?>
+        </div>
+        <div id='book-warning-conflict'>Den valda tiden krockar med befintliga bokningar.</div>
         <div id='book-date-chooser-next-click'>Klicka på önskat startdatum.</div>
 
-		<div class='ui-field-contain'>
-			<label for='book-time-start'>Vald bokningstid från:</label>
-			<div data-role='controlgroup' data-type='horizontal'>
-				<input type='date' id='book-date-start' data-wrapper-class='controlgroup-textinput ui-btn'>
-	        	<select name='book-time-start' id='book-time-start'><?php for ($h=0;$h<24;$h++) echo "<option value='$h'>$h:00</option>"; ?></select>
-			</div>
-		</div>
-		<div class='ui-field-contain'>
-			<label for='book-time-end'>Till:</label>
-			<div data-role='controlgroup' data-type='horizontal'>
-				<input type='date' id='book-date-end' data-wrapper-class='controlgroup-textinput ui-btn'>
-	        	<select name='book-time-end' id='book-time-end'><?php for ($h=0;$h<24;$h++) echo "<option value='$h'>$h:00</option>"; ?></select>
-			</div>
-		</div>
-		
+        <div class='ui-field-contain'>
+            <label for='book-time-start'>Vald bokningstid från:</label>
+            <div data-role='controlgroup' data-type='horizontal'>
+                <input type='date' id='book-date-start' data-wrapper-class='controlgroup-textinput ui-btn'>
+                <select name='book-time-start' id='book-time-start'><?php for ($h=0;$h<24;$h++) echo "<option value='$h'>$h:00</option>"; ?></select>
+            </div>
+        </div>
+        <div class='ui-field-contain'>
+            <label for='book-time-end'>Till:</label>
+            <div data-role='controlgroup' data-type='horizontal'>
+                <input type='date' id='book-date-end' data-wrapper-class='controlgroup-textinput ui-btn'>
+                <select name='book-time-end' id='book-time-end'><?php for ($h=0;$h<24;$h++) echo "<option value='$h'>$h:00</option>"; ?></select>
+            </div>
+        </div>
+        
         <button id="book-btn-save-part" disabled="disabled" onClick="checkTimes(true);">Gå vidare</button>
     </div><!-- /#book-step2 -->
     
@@ -295,18 +295,18 @@ END;
             <a href="javascript:scrollDate(28);" class="ui-btn ui-corner-all ui-btn-icon-notext ui-icon-rightright ui-nodisc-icon ui-alt-icon">+10 veckor</a>
         </div>
     </div><!--/footer-->
-	
-	<div data-role="popup" id="popup-item-details" class="ui-content" data-overlay-theme="b">
-		<h3 id='item-caption'></h3>
-		<div id='item-details'></div>
-	</div>
-	
-	<div data-role="popup" id="popup-items-unavail" class="ui-content" data-overlay-theme="b">
-		<h3>Kan inte boka</h3>
-		<p>Tiden du har valt är inte tillgänglig. Följande resurser har redan bokningar som krockar med dina valda tider:</p>
-		<ul id='ul-items-unavail'></ul>
-		<a href="#" data-rel="back" class="ui-btn">OK</a>
-	</div>
+    
+    <div data-role="popup" id="popup-item-details" class="ui-content" data-overlay-theme="b">
+        <h3 id='item-caption'></h3>
+        <div id='item-details'></div>
+    </div>
+    
+    <div data-role="popup" id="popup-items-unavail" class="ui-content" data-overlay-theme="b">
+        <h3>Kan inte boka</h3>
+        <p>Tiden du har valt är inte tillgänglig. Följande resurser har redan bokningar som krockar med dina valda tider:</p>
+        <ul id='ul-items-unavail'></ul>
+        <a href="#" data-rel="back" class="ui-btn">OK</a>
+    </div>
 
 </div><!-- /page -->
 

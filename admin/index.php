@@ -103,57 +103,57 @@ switch ($_REQUEST['action']) {
         // This is also called from category.php
         header("Content-Type: application/json");
         die(json_encode($FF->findUser($_REQUEST['q'])));
-		
+        
     case "ajaxAddSectionAdmin":
         if ($userAccess < FFBoka::ACCESS_SECTIONADMIN) die("Ajja bajja!");
         header("Content-Type: application/json");
-	    if (!is_numeric($_REQUEST['id'])) {
-	        die(json_encode(["error"=>"Ogiltigt medlemsnummer {$_REQUEST['id']}."]));
-	    } elseif ($section->addAdmin($_REQUEST['id'])) {
-	        $adm = new User($_REQUEST['id']);
-	        if ($_REQUEST['id'] != $currentUser->id && $adm->mail) {
-    	        sendmail(
-    	            $adm->mail,
-    	            "Du är nu administratör",
-    	            "notify_new_admin",
-    	            array(
-    	                "{{name}}"=>$adm->name,
-    	                "{{role}}"=>"lokalavdelnings-admin",
-    	                "{{link}}"=>$cfg['url'],
-    	                "{{sectionName}}"=>$section->name,
-    	                "{{superadmin-name}}"=>$currentUser->name,
-    	                "{{superadmin-mail}}"=>$currentUser->mail,
-    	                "{{superadmin-phone}}"=>$currentUser->phone
-    	            )
+        if (!is_numeric($_REQUEST['id'])) {
+            die(json_encode(["error"=>"Ogiltigt medlemsnummer {$_REQUEST['id']}."]));
+        } elseif ($section->addAdmin($_REQUEST['id'])) {
+            $adm = new User($_REQUEST['id']);
+            if ($_REQUEST['id'] != $currentUser->id && $adm->mail) {
+                sendmail(
+                    $adm->mail,
+                    "Du är nu administratör",
+                    "notify_new_admin",
+                    array(
+                        "{{name}}"=>$adm->name,
+                        "{{role}}"=>"lokalavdelnings-admin",
+                        "{{link}}"=>$cfg['url'],
+                        "{{sectionName}}"=>$section->name,
+                        "{{superadmin-name}}"=>$currentUser->name,
+                        "{{superadmin-mail}}"=>$currentUser->mail,
+                        "{{superadmin-phone}}"=>$currentUser->phone
+                    )
                 );
-	        }
-	        die(json_encode([ "html"=>adminList($section, $currentUser->id), "currentUserId"=>$currentUser->id ]));
-		} else {
-		    die(json_encode(["error"=>"Kunde inte lägga till administratören. Är den kanske redan med i listan?"]));
-		}
-		
+            }
+            die(json_encode([ "html"=>adminList($section, $currentUser->id), "currentUserId"=>$currentUser->id ]));
+        } else {
+            die(json_encode(["error"=>"Kunde inte lägga till administratören. Är den kanske redan med i listan?"]));
+        }
+        
     case "ajaxRemoveSectionAdmin":
         if ($userAccess < FFBoka::ACCESS_SECTIONADMIN) die("Ajja bajja!");
-	    header("Content-Type: application/json");
-	    if ($section->removeAdmin($_REQUEST['id'])) die(json_encode(["html"=>adminList($section, $currentUser->id)]));
-	    else die(json_encode(["error"=>"Kan inte ta bort LA-administratören."]));
-		
-	case "ajaxGetQuestion":
+        header("Content-Type: application/json");
+        if ($section->removeAdmin($_REQUEST['id'])) die(json_encode(["html"=>adminList($section, $currentUser->id)]));
+        else die(json_encode(["error"=>"Kan inte ta bort LA-administratören."]));
+        
+    case "ajaxGetQuestion":
         header("Content-Type: text/plain");
-		$question = new Question($_REQUEST['id']);
-		die(json_encode([
-			"id"=>$question->id,
-			"caption"=>$question->caption,
-			"type"=>$question->type,
-			"options"=>$question->options,
-		]));
-		
+        $question = new Question($_REQUEST['id']);
+        die(json_encode([
+            "id"=>$question->id,
+            "caption"=>$question->caption,
+            "type"=>$question->type,
+            "options"=>$question->options,
+        ]));
+        
     case "ajaxGetQuestions":
         header("Content-Type: text/plain");
         foreach ($section->questions() as $question) {
             echo "<li><a href='#' onClick='showQuestion({$question->id})'><span style='white-space:normal;'>" . htmlspecialchars($question->caption) . "</span><p style='white-space:normal;'>";
             echo $question->optionsReadable();
-			echo "</p></a><a href='#' onClick='deleteQuestion({$question->id});'>Ta bort frågan</a></li>";
+            echo "</p></a><a href='#' onClick='deleteQuestion({$question->id});'>Ta bort frågan</a></li>";
         }
         die();
         
@@ -190,148 +190,148 @@ unset($_SESSION['catId']);
 ?><!DOCTYPE html>
 <html>
 <head>
-	<?php htmlHeaders("Friluftsfrämjandets resursbokning - Admin ".$section->name, $cfg['url']) ?>
+    <?php htmlHeaders("Friluftsfrämjandets resursbokning - Admin ".$section->name, $cfg['url']) ?>
 </head>
 
 
 <body>
 <div data-role="page" id="page-admin-section">
-	<?= head("LA " . htmlspecialchars($section->name), $cfg['url'], $currentUser) ?>
-	<div role="main" class="ui-content">
+    <?= head("LA " . htmlspecialchars($section->name), $cfg['url'], $currentUser) ?>
+    <div role="main" class="ui-content">
 
-	<div data-role="popup" data-overlay-theme="b" id="popup-msg-page-admin-section" class="ui-content">
-		<p id="msg-page-admin-section"><?= $message ?></p>
-		<a href='#' data-rel='back' class='ui-btn ui-btn-icon-left ui-btn-inline ui-corner-all ui-icon-check'>OK</a>
-	</div>
+    <div data-role="popup" data-overlay-theme="b" id="popup-msg-page-admin-section" class="ui-content">
+        <p id="msg-page-admin-section"><?= $message ?></p>
+        <a href='#' data-rel='back' class='ui-btn ui-btn-icon-left ui-btn-inline ui-corner-all ui-icon-check'>OK</a>
+    </div>
 
-	<?php
-	if ($userAccess >= FFBoka::ACCESS_CATADMIN && count($catsWithoutAdmin)>0) {
-	    echo "<div class='ui-body ui-body-a'><p>Följande kategorier innehåller resurser men saknar administratör. Lägg till minst en administratör med behörighet att bekräfta bokningar.</p><ul data-role='listview' data-inset='true'>";
-	    foreach ($catsWithoutAdmin as $id=>$caption) {
-	        echo "<li><a href='category.php?catId=$id'>" . htmlspecialchars($caption) . "</a></li>";
-	    }
+    <?php
+    if ($userAccess >= FFBoka::ACCESS_CATADMIN && count($catsWithoutAdmin)>0) {
+        echo "<div class='ui-body ui-body-a'><p>Följande kategorier innehåller resurser men saknar administratör. Lägg till minst en administratör med behörighet att bekräfta bokningar.</p><ul data-role='listview' data-inset='true'>";
+        foreach ($catsWithoutAdmin as $id=>$caption) {
+            echo "<li><a href='category.php?catId=$id'>" . htmlspecialchars($caption) . "</a></li>";
+        }
         echo "</ul></div>";
-	}
-	?>
+    }
+    ?>
 
     <a class='ui-btn ui-btn-b ui-icon-calendar ui-btn-icon-left' href='#' onClick="openBookingAdmin('<?= $cfg['url'] ?>', <?= $section->id ?>);" data-ajax='false'>Öppna bokningsadmin</a>
 
-	<div data-role="collapsibleset" data-inset="false">
+    <div data-role="collapsibleset" data-inset="false">
 
-		<div data-role="collapsible" data-collapsed="<?= isset($_REQUEST['expand']) ? "true" : "false" ?>">
-			<h2>Kategorier</h2>
-			<ul data-role="listview">
-			<?php
-			foreach ($section->getMainCategories() as $cat) {
-			    if ($cat->showFor($currentUser, FFBoka::ACCESS_CATADMIN)) {
-    				echo "<li><a data-transition='slide' href='category.php?catId={$cat->id}'>" .
-    					htmlspecialchars($cat->caption) .
-    					embedImage($cat->thumb);
-    				$children = array();
-    				foreach ($cat->children(TRUE) as $child) $children[] = htmlspecialchars($child->caption);
-    				if ($children) echo "<p>" . implode(", ", $children) . "</p>";
-    				echo "<span class='ui-li-count'>{$cat->itemCount}</span></a></li>";
-			    }
-			}
-			if ($section->getAccess($currentUser) & FFBoka::ACCESS_SECTIONADMIN) echo "<li><a href='category.php?action=new'>Skapa ny kategori</a></li>"; ?>
-			</ul>
-			<br>
-		</div>
+        <div data-role="collapsible" data-collapsed="<?= isset($_REQUEST['expand']) ? "true" : "false" ?>">
+            <h2>Kategorier</h2>
+            <ul data-role="listview">
+            <?php
+            foreach ($section->getMainCategories() as $cat) {
+                if ($cat->showFor($currentUser, FFBoka::ACCESS_CATADMIN)) {
+                    echo "<li><a data-transition='slide' href='category.php?catId={$cat->id}'>" .
+                        htmlspecialchars($cat->caption) .
+                        embedImage($cat->thumb);
+                    $children = array();
+                    foreach ($cat->children(TRUE) as $child) $children[] = htmlspecialchars($child->caption);
+                    if ($children) echo "<p>" . implode(", ", $children) . "</p>";
+                    echo "<span class='ui-li-count'>{$cat->itemCount}</span></a></li>";
+                }
+            }
+            if ($section->getAccess($currentUser) & FFBoka::ACCESS_SECTIONADMIN) echo "<li><a href='category.php?action=new'>Skapa ny kategori</a></li>"; ?>
+            </ul>
+            <br>
+        </div>
 
-		<?php if ($userAccess & FFBoka::ACCESS_SECTIONADMIN) { ?>
-		
-		<div data-role="collapsible" data-collapsed="<?= $_REQUEST['expand']=="admins" ? "false" : "true" ?>">
-			<h2>Bokningsfrågor</h2>
-			<p>Här kan du skapa frågor som sedan kan visas när folk bokar resurser.</p>
-			
-			<a href="#" onClick="showQuestion(0);" class="ui-btn">Lägg till bokningsfråga</a>
-			
-			<div data-role="popup" id="popup-section-question" data-overlay-theme="b" class="ui-content">
-				<div class="ui-field-contain">
-					<label for="sec-question-caption">Fråga att visa:</label>
-					<input id="sec-question-caption">
-				</div>
-				<div class="ui-field-contain">
-					<label for="sec-question-types">Typ av fråga:</label>
-    				<div data-role="controlgroup" data-mini="true" id="sec-question-types">
-        				<label><input type="radio" id="sec-question-type-radio" name="sec-question-type" value="radio">Flera optioner, ett svar</label>
-        				<label><input type="radio" id="sec-question-type-checkbox" name="sec-question-type" value="checkbox">Flera optioner, flera svar</label>
-        				<label><input type="radio" id="sec-question-type-text" name="sec-question-type" value="text">Fritext</label>
-        				<label><input type="radio" id="sec-question-type-number" name="sec-question-type" value="number">Numerisk</label>
-    				</div>
-				</div>
-				
-				<div class="ui-content" id="sec-question-opts-checkboxradio">
-					Svarsalternativ (1 svar per rad):
-					<textarea id="sec-question-choices"></textarea>
-				</div>
-				<div class="ui-content" id="sec-question-opts-text">
-					<div class="ui-field-contain">
-						<label for="sec-question-opts-length">Max längd:</label>
-						<input type="number" id="sec-question-length" placeholder="Längd">
-					</div>
-				</div>
-				<div class="ui-content" id="sec-question-opts-number">
-					<div class="ui-grid-a">
-						<div class="ui-block-a">Min:</div>
-						<div class="ui-block-b">Max:</div>
-						<div class="ui-block-a"><input type="number" id="sec-question-min" placeholder="min"></div>
-						<div class="ui-block-b"><input type="number" id="sec-question-max" placeholder="max"></div>
-					</div>
-				</div>
-				<input type="button" onClick="saveQuestion()" data-theme="b" data-corners="false" value="Spara">
-			</div>
-			
-			<ul data-role="listview" id="sec-questions" data-inset="true" data-split-icon="delete"></ul>
+        <?php if ($userAccess & FFBoka::ACCESS_SECTIONADMIN) { ?>
+        
+        <div data-role="collapsible" data-collapsed="<?= $_REQUEST['expand']=="admins" ? "false" : "true" ?>">
+            <h2>Bokningsfrågor</h2>
+            <p>Här kan du skapa frågor som sedan kan visas när folk bokar resurser.</p>
+            
+            <a href="#" onClick="showQuestion(0);" class="ui-btn">Lägg till bokningsfråga</a>
+            
+            <div data-role="popup" id="popup-section-question" data-overlay-theme="b" class="ui-content">
+                <div class="ui-field-contain">
+                    <label for="sec-question-caption">Fråga att visa:</label>
+                    <input id="sec-question-caption">
+                </div>
+                <div class="ui-field-contain">
+                    <label for="sec-question-types">Typ av fråga:</label>
+                    <div data-role="controlgroup" data-mini="true" id="sec-question-types">
+                        <label><input type="radio" id="sec-question-type-radio" name="sec-question-type" value="radio">Flera optioner, ett svar</label>
+                        <label><input type="radio" id="sec-question-type-checkbox" name="sec-question-type" value="checkbox">Flera optioner, flera svar</label>
+                        <label><input type="radio" id="sec-question-type-text" name="sec-question-type" value="text">Fritext</label>
+                        <label><input type="radio" id="sec-question-type-number" name="sec-question-type" value="number">Numerisk</label>
+                    </div>
+                </div>
+                
+                <div class="ui-content" id="sec-question-opts-checkboxradio">
+                    Svarsalternativ (1 svar per rad):
+                    <textarea id="sec-question-choices"></textarea>
+                </div>
+                <div class="ui-content" id="sec-question-opts-text">
+                    <div class="ui-field-contain">
+                        <label for="sec-question-opts-length">Max längd:</label>
+                        <input type="number" id="sec-question-length" placeholder="Längd">
+                    </div>
+                </div>
+                <div class="ui-content" id="sec-question-opts-number">
+                    <div class="ui-grid-a">
+                        <div class="ui-block-a">Min:</div>
+                        <div class="ui-block-b">Max:</div>
+                        <div class="ui-block-a"><input type="number" id="sec-question-min" placeholder="min"></div>
+                        <div class="ui-block-b"><input type="number" id="sec-question-max" placeholder="max"></div>
+                    </div>
+                </div>
+                <input type="button" onClick="saveQuestion()" data-theme="b" data-corners="false" value="Spara">
+            </div>
+            
+            <ul data-role="listview" id="sec-questions" data-inset="true" data-split-icon="delete"></ul>
 
-		</div>
-		
-		<div data-role="collapsible" data-collapsed="<?= $_REQUEST['expand']=="admins" ? "false" : "true" ?>">
-			<h2>Administratörer</h2>
+        </div>
+        
+        <div data-role="collapsible" data-collapsed="<?= $_REQUEST['expand']=="admins" ? "false" : "true" ?>">
+            <h2>Administratörer</h2>
 
-			<p>Lägg till ny administratör på LA-nivå: (skriv medlemsnummer eller namn)</p>
+            <p>Lägg till ny administratör på LA-nivå: (skriv medlemsnummer eller namn)</p>
 
-			<form class="ui-filterable">
-				<input id="sec-adm-autocomplete-input" data-type="search" placeholder="Lägg till admin...">
-			</form>
-			<ul id="sec-adm-autocomplete" data-role="listview" data-filter="true" data-input="#sec-adm-autocomplete-input" data-inset="true"></ul>
-				
-			<p>Användare med admin-behörighet:</p>
-			<ul id="ul-sec-admins" data-role="listview" data-split-icon="delete" data-split-theme="c" data-inset="true">
-				<?= adminList($section, $currentUser->id) ?>
-			</ul>
-		</div>
-		<?php } ?>
-		
-		<?php if (in_array($_SESSION['authenticatedUser'], $cfg['superAdmins'])) { ?>
-		<div data-role="collapsible">
-			<h2>Systeminfo</h2>
-			<h3>Cron <?php
-			$last = filemtime("../cron.last");
-			if ($last===FALSE || $last < time()-3600) echo "<span style='color:var(--FF-orange);'>■</span>";
-			else echo "<span style='color:var(--FF-green);'>■</span>"; ?></h3>
-			<p><?= $last===FALSE ? "Cron har aldrig utförts" : "Cron utfördes senast för " . (int)((time()-$last)/60) . " minuter sedan" ?>.</p>
-			<h3>Konfiguration</h3>
-			<pre><?= print_r($cfg, TRUE) ?></pre>
-			<h3>Senaste inloggningar</h3>
-			<table class="alternate-rows">
-			<tr><th>timestamp</th><th>ip</th><th>userId</th><th>succ</th><th>userAgent</th></tr>
-			<?php
-			$stmt = $db->query("SELECT timestamp, INET_NTOA(ip) ip, userId, success, userAgent FROM logins ORDER BY timestamp DESC LIMIT 50");
-			while ($row = $stmt->fetch(PDO::FETCH_OBJ)) {
-			    echo "<tr><td>{$row->timestamp}</td>
+            <form class="ui-filterable">
+                <input id="sec-adm-autocomplete-input" data-type="search" placeholder="Lägg till admin...">
+            </form>
+            <ul id="sec-adm-autocomplete" data-role="listview" data-filter="true" data-input="#sec-adm-autocomplete-input" data-inset="true"></ul>
+                
+            <p>Användare med admin-behörighet:</p>
+            <ul id="ul-sec-admins" data-role="listview" data-split-icon="delete" data-split-theme="c" data-inset="true">
+                <?= adminList($section, $currentUser->id) ?>
+            </ul>
+        </div>
+        <?php } ?>
+        
+        <?php if (in_array($_SESSION['authenticatedUser'], $cfg['superAdmins'])) { ?>
+        <div data-role="collapsible">
+            <h2>Systeminfo</h2>
+            <h3>Cron <?php
+            $last = filemtime("../cron.last");
+            if ($last===FALSE || $last < time()-3600) echo "<span style='color:var(--FF-orange);'>■</span>";
+            else echo "<span style='color:var(--FF-green);'>■</span>"; ?></h3>
+            <p><?= $last===FALSE ? "Cron har aldrig utförts" : "Cron utfördes senast för " . (int)((time()-$last)/60) . " minuter sedan" ?>.</p>
+            <h3>Konfiguration</h3>
+            <pre><?= print_r($cfg, TRUE) ?></pre>
+            <h3>Senaste inloggningar</h3>
+            <table class="alternate-rows">
+            <tr><th>timestamp</th><th>ip</th><th>userId</th><th>succ</th><th>userAgent</th></tr>
+            <?php
+            $stmt = $db->query("SELECT timestamp, INET_NTOA(ip) ip, userId, success, userAgent FROM logins ORDER BY timestamp DESC LIMIT 50");
+            while ($row = $stmt->fetch(PDO::FETCH_OBJ)) {
+                echo "<tr><td>{$row->timestamp}</td>
                     <td>{$row->ip}</td>
                     <td>{$row->userId}</td>
                     <td>{$row->success}</td>
                     <td>{$row->userAgent}</td></tr>";
-			}
-			?></table>
-		<?php } ?>
-		</div>
+            }
+            ?></table>
+        <?php } ?>
+        </div>
 
-	</div><!--/collapsibleset-->
+    </div><!--/collapsibleset-->
 
-	</div><!--/main-->
+    </div><!--/main-->
 
 </div><!--/page-->
 </body>

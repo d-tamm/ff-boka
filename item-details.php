@@ -8,11 +8,11 @@ require("inc/common.php");
 global $cfg;
 
 switch ($_REQUEST['action']) {
-    case "help":
-        echo <<<EOF
+case "help":
+    echo <<<EOF
 Här visas detaljer till resursen.
 EOF;
-        die();
+    die();
 }
 
 if ($_SESSION['authenticatedUser']) $currentUser = new User($_SESSION['authenticatedUser']);
@@ -58,7 +58,7 @@ if ($access < FFBoka::ACCESS_READASK) {
         echo "<a class='ui-btn' href='{$cfg['url']}admin/item.php?catId={$cat->id}&itemId={$item->id}'>Bearbeta resursen</a>";
     } ?>
 
-	</div>
+    </div>
 </div><!-- /page -->
 
 </body>

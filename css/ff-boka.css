@@ -85,10 +85,10 @@ li.selected {
 }
 
 table.alternate-rows tr {
-	border-top: 1px solid var(--FF-cyan);
+    border-top: 1px solid var(--FF-cyan);
 }
 table.alternate-rows tr:nth-child(even) {
-	background-color:var(--FF-lightblue-transp);
+    background-color:var(--FF-lightblue-transp);
 }
 
 #cat-img-preview {
@@ -134,23 +134,23 @@ table.alternate-rows tr:nth-child(even) {
 /* User defined icons */
 .ui-icon-left:after {
     background-image: url("/resources/left.svg");
-	background-size: 18px 18px;
+    background-size: 18px 18px;
 }
 .ui-icon-right:after {
     background-image: url("/resources/right.svg");
-	background-size: 18px 18px;
+    background-size: 18px 18px;
 }
 .ui-icon-leftleft:after {
     background-image: url("/resources/leftleft.svg");
-	background-size: 18px 18px;
+    background-size: 18px 18px;
 }
 .ui-icon-rightright:after {
     background-image: url("/resources/rightright.svg");
-	background-size: 18px 18px;
+    background-size: 18px 18px;
 }
 .ui-icon-help:after {
-	background-image: url("/resources/help.svg");
-	background-size: 18px 18px;
+    background-image: url("/resources/help.svg");
+    background-size: 18px 18px;
 }
 
 .freebusy-bar {
@@ -185,9 +185,9 @@ table.alternate-rows tr:nth-child(even) {
     z-index: 4;
 }
 .freebusy-busy.has-price::after {
-	position: absolute;
-	top: 1px;
-	content:"💰";
+    position: absolute;
+    top: 1px;
+    content:"💰";
 }
 .freebusy-blocked {
     background: var(--FF-blocked);
@@ -204,51 +204,51 @@ table.alternate-rows tr:nth-child(even) {
     z-index: 6;
 }
 #book-combined-freebusy-bar ~ .freebusy-tic {
-	cursor: pointer;
+    cursor: pointer;
 }
 #book-combined-freebusy-bar ~ .freebusy-tic:hover {
-	background: var(--FF-lightblue-transp);
+    background: var(--FF-lightblue-transp);
 }
 #book-combined-freebusy-bar ~ .freebusy-tic:active {
-	background: var(--FF-blue-transp);
+    background: var(--FF-blue-transp);
 }
 .freebusy-tic span {
     background-color: #ffffff50;
     box-shadow: 0px 0px 4px #ffffff;
 }
 .freebusy-weekend {
-	background-color: var(--FF-weekend);
+    background-color: var(--FF-weekend);
 }
 #book-chosen-timeframe {
-	position: absolute;
-	bottom: 0;
+    position: absolute;
+    bottom: 0;
     left: -10px;
-	height: 50%;
+    height: 50%;
     min-width: 3px;
-	background-color: var(--FF-blue);
-	z-index: 5;
+    background-color: var(--FF-blue);
+    z-index: 5;
 }
 #book-warning-conflict {
-	color:var(--FF-orange);
-	font-weight:bold;
-	display:none;
+    color:var(--FF-orange);
+    font-weight:bold;
+    display:none;
 }
 
 #page-book-sum .has-edit-buttons {
-	padding-bottom:40px;
+    padding-bottom:40px;
 }
 .item-edit-buttons {
-	position: absolute;
-	bottom: 0px;
-	left: 100px;
-	font-size: 0.6em;
-	z-index: 1;
+    position: absolute;
+    bottom: 0px;
+    left: 100px;
+    font-size: 0.6em;
+    z-index: 1;
 }
 
 /* ===== Booking admin ===== */
 
 #booking-admin {
-	transition: padding-right 1s;	
+    transition: padding-right 1s;    
 }
 
 .desktop h1,
@@ -258,92 +258,92 @@ table.alternate-rows tr:nth-child(even) {
 .desktop div,
 .desktop td,
 .desktop th {
-	font-family: Arial, Helvetica, sans-serif;
+    font-family: Arial, Helvetica, sans-serif;
 }
 
 .desktop #head {
-	position: sticky;
-	top:0px;
-	background-color:white;
-	z-index:10;
+    position: sticky;
+    top:0px;
+    background-color:white;
+    z-index:10;
 }
 
 .desktop h1 {
-	margin: 0px;
-	margin-bottom:10px;
-	padding: 10px 200px 10px 20px;
-	background: url("/resources/liggande-bla.png") no-repeat right;
-	background-size: 200px;
-	background-color: var(--FF-blue);
-	color: white;
+    margin: 0px;
+    margin-bottom:10px;
+    padding: 10px 200px 10px 20px;
+    background: url("/resources/liggande-bla.png") no-repeat right;
+    background-size: 200px;
+    background-color: var(--FF-blue);
+    color: white;
 }
 
 .desktop h2, #booking-admin h3 {
-	color: var(--FF-blue);
+    color: var(--FF-blue);
 }
 
 .desktop #indicator-new-bookings {
-	position: absolute;
-	top: 0px;
-	right: 220px;
-	width: 4em;
-	height:1.2em;
-	padding: 5px;
-	background: white;
-	border-left: 10px solid var(--FF-yellow);
-	box-shadow:0 0 4px;
-	overflow:hidden;
-	transition: height 1s, width 1s, right 1s;
-	z-index:100;
+    position: absolute;
+    top: 0px;
+    right: 220px;
+    width: 4em;
+    height:1.2em;
+    padding: 5px;
+    background: white;
+    border-left: 10px solid var(--FF-yellow);
+    box-shadow:0 0 4px;
+    overflow:hidden;
+    transition: height 1s, width 1s, right 1s;
+    z-index:100;
 }
 .desktop #indicator-new-bookings:hover {
-	right: 100px;
-	height:8em;
-	width:300px;
+    right: 100px;
+    height:8em;
+    width:300px;
 }
 .desktop #indicator-new-bookings div {
-	display:none;
-	overflow:scroll;
-	white-space: nowrap;
-	height:100%;
+    display:none;
+    overflow:scroll;
+    white-space: nowrap;
+    height:100%;
 }
 .desktop #indicator-new-bookings:hover div {
-	display:block;
+    display:block;
 }
 .desktop #indicator-unconfirmed-count-label,
 .desktop #indicator-conflicts-count-label {
-	display: none;
+    display: none;
 }
 .desktop #indicator-new-bookings:hover #indicator-unconfirmed-count-label,
 .desktop #indicator-new-bookings:hover #indicator-conflicts-count-label {
-	display: inline;
+    display: inline;
 }
 
 .desktop table {
-	width:100%;
-	table-layout:fixed;
+    width:100%;
+    table-layout:fixed;
 }
 .desktop .col-caption {
-	width:20%;
-	white-space:nowrap;
-	overflow:hidden;
-	text-overflow:ellipsis;
+    width:20%;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
 }
 .desktop .col-caption span {
-	cursor: pointer;
+    cursor: pointer;
 }
 .desktop td.navbuttons a {
-	font-size:150%;
-	padding:5px;
-	color:var(--FF-blue);
+    font-size:150%;
+    padding:5px;
+    color:var(--FF-blue);
 }
 .desktop td.navbuttons a:hover {
-	color:white;
-	background-color:var(--FF-blue);
+    color:white;
+    background-color:var(--FF-blue);
 }
 
 .desktop .freebusy-busy {
-	cursor: pointer;
+    cursor: pointer;
 }
 
 .desktop .freebusy-busy.unconfirmed, #booking-admin .freebusy-busy.conflict {
@@ -356,40 +356,40 @@ table.alternate-rows tr:nth-child(even) {
 }
 
 .desktop #legend {
-	box-shadow: 1px 1px 5px gray;
-	margin-top:20px;
-	padding: 10px; 
+    box-shadow: 1px 1px 5px gray;
+    margin-top:20px;
+    padding: 10px; 
 }
 .desktop #legend h3 {
-	margin-top:5px;
+    margin-top:5px;
 }
 
 .desktop #iframe-booking, .desktop #panel-item-details {
-	position: absolute;
-	right: 0;
-	top: 0;
-	height: 100%;
-	width: 0;
-	border: none;
-	box-shadow: 0 0 10px;
-	background-color: white;
-	z-index: 100;
-	transition: width 1s;	
+    position: absolute;
+    right: 0;
+    top: 0;
+    height: 100%;
+    width: 0;
+    border: none;
+    box-shadow: 0 0 10px;
+    background-color: white;
+    z-index: 100;
+    transition: width 1s;    
 }
 .desktop #close-iframe-booking {
-	position: absolute;
-	top: 20px;
-	right: 33%;
-	transition: right 1s;	
-	display: none;
-	z-index: 11;
+    position: absolute;
+    top: 20px;
+    right: 33%;
+    transition: right 1s;    
+    display: none;
+    z-index: 11;
 }
 .desktop #close-iframe-booking a {
-	box-shadow: 0 0 10px white;
-	color: white;
-	background: var(--FF-blue);
-	padding:8px;
-	border-radius: 5px 0 0 5px;
+    box-shadow: 0 0 10px white;
+    color: white;
+    background: var(--FF-blue);
+    padding:8px;
+    border-radius: 5px 0 0 5px;
 }
 
 /* ==== Loading indicator ==== */

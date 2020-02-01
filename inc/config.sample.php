@@ -9,9 +9,9 @@
 use FFBoka\FFBoka;
 
 $cfg = array(
-	// Database connection settings
-	"dbhost" => "127.0.0.1", // The host of the mariaDb server
-	"dbname" => "ff-boka",   // The name of the database
+    // Database connection settings
+    "dbhost" => "127.0.0.1", // The host of the mariaDb server
+    "dbname" => "ff-boka",   // The name of the database
     "dbuser" => "ff-boka",   // Username for connecting to mariaDb
     "dbpass" => "your secret password", // Password for that user
 
@@ -24,57 +24,57 @@ $cfg = array(
         'feedUserAss' => "", // Feed to get a user's assignments. Append member number or personnummer.
         'feedSec' => "", // Feed to get all existing sections
     ),
-	
-	// Logging
-	"logMaxSize" => 1*1024*1024, // in bytes
+    
+    // Logging
+    "logMaxSize" => 1*1024*1024, // in bytes
 
-	// Sender address, readable name and Reply-to address for auto-generated emails
-	"mailFrom"     => "someone@somewhere.com",
+    // Sender address, readable name and Reply-to address for auto-generated emails
+    "mailFrom"     => "someone@somewhere.com",
     "mailFromName" => "Resursbokning",
     "mailReplyTo"  => "someone@somewhere.com",
     
     // SMTP settings for sending emails
-	"SMTP" => array(
-	    "host" => 'smtp.mymaildomain.com',
-	    "port" => '587',
-	    "user" => 'someone@somewhere.com',
-	    "pass" => 'my smtp password',
+    "SMTP" => array(
+        "host" => 'smtp.mymaildomain.com',
+        "port" => '587',
+        "user" => 'someone@somewhere.com',
+        "pass" => 'my smtp password',
     ),
 
     // The URL of this installation, with trailing slash
     "url" => "http://localhost/",
     
-	// Max size of images in pixels (longer side). If larger images are submitted, they will be downscaled.
-	"maxImgSize" => 1024,
-	// Max file size for images in byte
-	"uploadMaxFileSize" => 10 * 1024 * 1024,
+    // Max size of images in pixels (longer side). If larger images are submitted, they will be downscaled.
+    "maxImgSize" => 1024,
+    // Max file size for images in byte
+    "uploadMaxFileSize" => 10 * 1024 * 1024,
 
-	// Locale to use
-	"locale" => "sv_SE.UTF-8",
+    // Locale to use
+    "locale" => "sv_SE.UTF-8",
     "timezone" => "Europe/Stockholm",
     
-	// Section bound assignments always giving admin access to section
-	"sectionAdmins" => array('Ordförande', 'Vice ordförande'),
+    // Section bound assignments always giving admin access to section
+    "sectionAdmins" => array('Ordförande', 'Vice ordförande'),
     
     // UserIDs of users with superAdmin access (will display a superAdmin section on Admin page)
     "superAdmins" => array(),
     
     // Textual representations of access levels
-	"catAccessLevels" => array(
-	    FFBoka::ACCESS_NONE     => "Ingen behörighet",
-	    FFBoka::ACCESS_READASK  => "Kan göra förfrågningar men inte se upptaget-information",
-	    FFBoka::ACCESS_PREBOOK  => "Kan se upptaget-information och preliminärboka",
-	    FFBoka::ACCESS_BOOK     => "Kan boka själv",
-	    FFBoka::ACCESS_CONFIRM  => "Bokningsansvarig: kan bekräfta och ändra bokningar",
+    "catAccessLevels" => array(
+        FFBoka::ACCESS_NONE     => "Ingen behörighet",
+        FFBoka::ACCESS_READASK  => "Kan göra förfrågningar men inte se upptaget-information",
+        FFBoka::ACCESS_PREBOOK  => "Kan se upptaget-information och preliminärboka",
+        FFBoka::ACCESS_BOOK     => "Kan boka själv",
+        FFBoka::ACCESS_CONFIRM  => "Bokningsansvarig: kan bekräfta och ändra bokningar",
         FFBoka::ACCESS_CATADMIN => "Kategoriadmin: Full behörighet"
     ),
 
-	// DoS prevention, throttling
-	"DoSCount" => 3,		// How many login attempts are allowed within DoSDelay seconds
-	"DoSDelay" => 300,   // delay in seconds after DoSCount unsuccessful logins
-	
-	// How long shall persistent login ("remember me") be valid? (seconds)
-	"TtlPersistentLogin" => 60*60*24*365,
+    // DoS prevention, throttling
+    "DoSCount" => 3,        // How many login attempts are allowed within DoSDelay seconds
+    "DoSDelay" => 300,   // delay in seconds after DoSCount unsuccessful logins
+    
+    // How long shall persistent login ("remember me") be valid? (seconds)
+    "TtlPersistentLogin" => 60*60*24*365,
     
     // Current db version
     "db-version" => 0,

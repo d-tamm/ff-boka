@@ -11,10 +11,10 @@ switch ($_GET['type']) {
 case "category":
     $cat = new Category($_GET['id']);
     echo $cat->image;
-	break;
+    break;
 
 case "itemImage":
     $image= new Image($_GET['id']);
     echo $image->image;
-	break;
+    break;
 }

@@ -44,8 +44,8 @@ class Item extends FFBoka {
         } else { // Return an empty object without link to database
             $this->id = 0;
         }
-    }	
-	
+    }    
+    
     /**
      * Setter function for item properties
      * @param string $name
@@ -270,11 +270,11 @@ class Item extends FFBoka {
         $includeTokens = FALSE;
         $showPrice = FALSE;
         extract($params, EXTR_IF_EXISTS);
-		// Store start date as user defined variable because it is used multiple times
-		$secs = $days * 24 * 60 * 60;
-		$stmt = self::$db->prepare("SET @start = :start");
-		$stmt->execute(array(":start"=>$start));
-		// Get freebusy information.
+        // Store start date as user defined variable because it is used multiple times
+        $secs = $days * 24 * 60 * 60;
+        $stmt = self::$db->prepare("SET @start = :start");
+        $stmt->execute(array(":start"=>$start));
+        // Get freebusy information.
         $stmt = self::$db->query("
             SELECT bookingId, bookedItemId, status, price, token, bufferAfterBooking, DATE_SUB(start, INTERVAL bufferAfterBooking HOUR) start, UNIX_TIMESTAMP(start) unixStart, DATE_ADD(end, INTERVAL bufferAfterBooking HOUR) end, UNIX_TIMESTAMP(end) unixEnd 
             FROM booked_items 

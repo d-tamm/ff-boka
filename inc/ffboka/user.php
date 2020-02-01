@@ -121,7 +121,7 @@ class User extends FFBoka {
      */
     public function delete() {
         if (self::$db->exec("DELETE FROM users WHERE userID={$this->id}") !== FALSE) return TRUE;
-		return FALSE;
+        return FALSE;
     }
     
     /**
@@ -130,7 +130,7 @@ class User extends FFBoka {
      */
     public function updateLastLogin() {
         if (self::$db->exec("UPDATE users SET lastLogin=NULL WHERE userId='{$this->id}'") !== FALSE) return TRUE;
-		return FALSE;
+        return FALSE;
     }
     
     /**
@@ -139,7 +139,7 @@ class User extends FFBoka {
      * @param string $cookie String in the format selector:authenticator where authenticator is base64 encoded
      * @param int $ttl TTL for the new cookie
      */
-    public function restorePersistentLogin(string $cookie, int $ttl) {
+    static function restorePersistentLogin(string $cookie, int $ttl) {
         list($selector, $authenticator) = explode(':', $cookie);
         $stmt = self::$db->prepare("SELECT * FROM persistent_logins WHERE selector=? AND expires>NOW()");
         $stmt->execute(array($selector));
@@ -147,10 +147,10 @@ class User extends FFBoka {
             if (hash_equals($row->authenticator, hash('sha256', base64_decode($authenticator)))) {
                 // User authenticated. Set as logged in
                 $_SESSION['authenticatedUser'] = $row->userId;
-                // Fetch assignments
-                $this->getAssignments();
-                // Regenerate login token
                 $u = new User($row->userId);
+                // Fetch assignments
+                $u->getAssignments();
+                // Regenerate login token
                 $u->createPersistentLogin($ttl);
             }
         }

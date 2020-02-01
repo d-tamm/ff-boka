@@ -69,8 +69,8 @@ class FFBoka {
         self::$apiAuthKey = $api['authKey'];
         self::$apiFeedUserAss = $api['feedUrl'] . $api['feedUserAss'];
         self::$db = $db;
-    	self::$sectionAdmins = $sectionAdmins;
-    	self::$timezone = $timezone;
+        self::$sectionAdmins = $sectionAdmins;
+        self::$timezone = $timezone;
     }
     
 
@@ -99,9 +99,9 @@ class FFBoka {
      * will contain the section name.  
      */
     public function authenticateUser($userId, $password) {
-		// Fake test user with id=999999
-		if ($userId=="999999" && $password=="kollikok") return array("authenticated"=>TRUE, "section"=>"52");
-		// Check password via API and get home section
+        // Fake test user with id=999999
+        if ($userId=="999999" && $password=="kollikok") return array("authenticated"=>TRUE, "section"=>"52");
+        // Check password via API and get home section
         $options = array(
             'http' => array(
                 'header'  => "Content-Type: application/json\r\n" .
@@ -120,20 +120,20 @@ class FFBoka {
     
 
     /**
-	 * Get a list of all users without creating User objects.
-	 * This avoids sending many queries to the API
-	 * @return array[[int id, string name], ...]
-	 */
-	public function getAllUsers() {
-		$stmt = self::$db->query("SELECT userId, name FROM users ORDER BY name");
-		return $stmt->fetchAll(PDO::FETCH_ASSOC);
-	}
-	
-	
+     * Get a list of all users without creating User objects.
+     * This avoids sending many queries to the API
+     * @return array[[int id, string name], ...]
+     */
+    public function getAllUsers() {
+        $stmt = self::$db->query("SELECT userId, name FROM users ORDER BY name");
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+    
+    
     /**
      * Get all users complying to a search term. Name and member ID will be searched.
      * @param string|int $q Search term
-	 * @return array[[int id, string name], ...] Returns an array with IDs and names rather than User objects, avoiding many API requests
+     * @return array[[int id, string name], ...] Returns an array with IDs and names rather than User objects, avoiding many API requests
      */
     public function findUser($q) {
         $stmt = self::$db->prepare("SELECT userId, name FROM users WHERE userId LIKE ? OR name LIKE ?");

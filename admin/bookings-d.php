@@ -119,24 +119,24 @@ switch ($_REQUEST['action']) {
 ?><!DOCTYPE html>
 <html>
 <head>
-	<?php htmlHeaders("Friluftsfrämjandets resursbokning - Bokningsadmin ".$section->name, $cfg['url'], "desktop") ?>
-	<script>
-	var startDate,
-		maxBookedItemId=0;
-	const dateOptions = { year: 'numeric', month: 'long' };
-	
+    <?php htmlHeaders("Friluftsfrämjandets resursbokning - Bokningsadmin ".$section->name, $cfg['url'], "desktop") ?>
+    <script>
+    var startDate,
+        maxBookedItemId=0;
+    const dateOptions = { year: 'numeric', month: 'long' };
+    
     startDate = new Date(new Date().setHours(0,0,0,0)); // Midnight
 
     setInterval(function() { // update view every 2 minutes
         scrollDate(0);
     }, 120000);
     
-	$( function() {
+    $( function() {
         // Initialise date chooser
         scrollDate(0);
 
         $("#popup-add-booking").dialog({
-			autoOpen: false
+            autoOpen: false
         });
 
         $("#search-member").autocomplete({
@@ -149,7 +149,7 @@ switch ($_REQUEST['action']) {
                 if (ui.content.length == 0) ui.content.push({ label:"Ingen träff. Boka som gäst?", value:0 });
             },
             select: function( event, ui ) {
-            	$("#search-member").val("");
+                $("#search-member").val("");
                 addBooking(ui.item.userId);
             }
         });
@@ -166,17 +166,17 @@ switch ($_REQUEST['action']) {
         });
         
         $(document).on('click', ".freebusy-busy, .link-unconfirmed", function() {
-        	openSidePanelOrWindow("../book-sum.php?bookingId=" + this.dataset.bookingId, "booking"+this.dataset.bookingId);
+            openSidePanelOrWindow("../book-sum.php?bookingId=" + this.dataset.bookingId, "booking"+this.dataset.bookingId);
         });
     });
 
-	// Show details for an item in side panel
-	function showItemDetails(itemId) {
-    	openSidePanelOrWindow("../item-details.php?itemId=" + itemId, "itemDetails" + itemId);
-	}
-	
-	// Scroll by x months, and get updated booking information
-	// @param int offset Number of days to scroll
+    // Show details for an item in side panel
+    function showItemDetails(itemId) {
+        openSidePanelOrWindow("../item-details.php?itemId=" + itemId, "itemDetails" + itemId);
+    }
+    
+    // Scroll by x months, and get updated booking information
+    // @param int offset Number of days to scroll
     function scrollDate(offset) {
         startDate.setMonth(startDate.getMonth() + offset, 1); // 1st of month
         var endDate = new Date(startDate.valueOf());
@@ -201,20 +201,20 @@ switch ($_REQUEST['action']) {
             $("#indicator-conflicts-count").text(Object.keys(data.conflicts).length);
             $("#indicator-new-bookings-list").html("");
             $.each(data.conflicts, function( index, value ) {
-	            $("#indicator-new-bookings-list").append(value);
+                $("#indicator-new-bookings-list").append(value);
             });
             $.each(data.unconfirmed, function( index, value ) {
-	            $("#indicator-new-bookings-list").append(value);
+                $("#indicator-new-bookings-list").append(value);
             });
             if (maxBookedItemId < data.maxBookedItemId) {
-	            maxBookedItemId = data.maxBookedItemId;
-	            var audio = new Audio("../resources/bell.mp3");
-            	audio.play();
+                maxBookedItemId = data.maxBookedItemId;
+                var audio = new Audio("../resources/bell.mp3");
+                audio.play();
             }
         });
     }
 
-	// Add a new booking on behalf of another user	
+    // Add a new booking on behalf of another user    
     function addBooking(userId) {
         $.getJSON("<?= basename(__FILE__) ?>", { action: "ajaxAddBookingOnBehalf", userId: userId }, function(data) {
             if (data.status=="OK") {
@@ -225,24 +225,24 @@ switch ($_REQUEST['action']) {
         });
     }
 
-	function openSidePanelOrWindow(url, windowId="_blank") {
-		if (screen.width < 800) {
-			var newtab = window.open(url, windowId);
-			newtab.focus();
-		} else {
-			$("#iframe-booking").attr("src", url).css('width','33%');
-			$("#booking-admin").css("padding-right", "35%");
-			$("#close-iframe-booking").show();
-		}
-	}
-	
-	// Close the side panel
-	function closeSidePanel() {
-		$("#close-iframe-booking").hide();
-		$('#booking-admin').css('padding-right', '0');
-		$('#iframe-booking').css('width','0').attr('src','');
-	}
-	</script>
+    function openSidePanelOrWindow(url, windowId="_blank") {
+        if (screen.width < 800) {
+            var newtab = window.open(url, windowId);
+            newtab.focus();
+        } else {
+            $("#iframe-booking").attr("src", url).css('width','33%');
+            $("#booking-admin").css("padding-right", "35%");
+            $("#close-iframe-booking").show();
+        }
+    }
+    
+    // Close the side panel
+    function closeSidePanel() {
+        $("#close-iframe-booking").hide();
+        $('#booking-admin').css('padding-right', '0');
+        $('#iframe-booking').css('width','0').attr('src','');
+    }
+    </script>
 </head>
 
 
@@ -252,34 +252,34 @@ switch ($_REQUEST['action']) {
 <div id="close-iframe-booking"><a href="#" title="Stäng sidpanel" onClick="closeSidePanel();"><i class="fas fa-times"></i></a></div>
 
 <div id='popup-add-booking' title="Lägg till bokning">
-	<div class="ui-widget">
-		<label for="search-member">Leta efter medlem:</label>
-		<input id="search-member">
-	</div>
-	<div>
-		eller:
-		<button onClick="addBooking(0);">Boka som gäst</button>
-	</div>
+    <div class="ui-widget">
+        <label for="search-member">Leta efter medlem:</label>
+        <input id="search-member">
+    </div>
+    <div>
+        eller:
+        <button onClick="addBooking(0);">Boka som gäst</button>
+    </div>
 </div>
 
 <div id='booking-admin'>
-	<div id="head">
-		<div id="indicator-new-bookings"><span id="indicator-unconfirmed-count">?</span><span id="indicator-unconfirmed-count-label"> bokningar att bekräfta</span> (<span id="indicator-conflicts-count">?</span>⚠<span id="indicator-conflicts-count-label"> konflikt</span>)
-			<div id="indicator-new-bookings-list"></div>
-		</div>
+    <div id="head">
+        <div id="indicator-new-bookings"><span id="indicator-unconfirmed-count">?</span><span id="indicator-unconfirmed-count-label"> bokningar att bekräfta</span> (<span id="indicator-conflicts-count">?</span>⚠<span id="indicator-conflicts-count-label"> konflikt</span>)
+            <div id="indicator-new-bookings-list"></div>
+        </div>
         <h1><a href="index.php" title="Till startsidan"><i class='fas fa-home' style='color:white; margin-right:20px;'></i></a> Bokningar i <?= $section->name ?>, <span id='booking-adm-date'></span></h1>
         <table>
-        	<tr><td class='col-caption navbuttons'>
-        		<a title="1 månad bakåt (vänsterpil)" href="#" onClick="scrollDate(-1);"><i class='fas fa-chevron-left'></i></a>
-        		<a title="Gå till idag" href="#" onClick="startDate = new Date(new Date().setHours(0,0,0,0));scrollDate(0);"><i class='fas fa-calendar-day'></i></a>
-        		<a title="1 månad framåt (högerpil)" href="#" onClick="scrollDate(1);"><i class='fas fa-chevron-right'></i></a>
-        		<a title="Uppdatera" href="#" onClick="scrollDate(0);"><i class='fas fa-sync'></i></a>
-        		<a title="Lägg in ny bokning" href="#" onClick="$('#popup-add-booking').dialog('open');"><i class='fas fa-plus'></i></a>
-        	</td>
-        	<td><div class='freebusy-bar' id='booking-adm-scale'></div></td></tr>
+            <tr><td class='col-caption navbuttons'>
+                <a title="1 månad bakåt (vänsterpil)" href="#" onClick="scrollDate(-1);"><i class='fas fa-chevron-left'></i></a>
+                <a title="Gå till idag" href="#" onClick="startDate = new Date(new Date().setHours(0,0,0,0));scrollDate(0);"><i class='fas fa-calendar-day'></i></a>
+                <a title="1 månad framåt (högerpil)" href="#" onClick="scrollDate(1);"><i class='fas fa-chevron-right'></i></a>
+                <a title="Uppdatera" href="#" onClick="scrollDate(0);"><i class='fas fa-sync'></i></a>
+                <a title="Lägg in ny bokning" href="#" onClick="$('#popup-add-booking').dialog('open');"><i class='fas fa-plus'></i></a>
+            </td>
+            <td><div class='freebusy-bar' id='booking-adm-scale'></div></td></tr>
         </table>
-	</div>
-	
+    </div>
+    
     <?php 
     $_SESSION['itemIds'] = array();
     foreach ($section->getMainCategories() as $cat) {
@@ -288,9 +288,9 @@ switch ($_REQUEST['action']) {
     ?>
     
     <div id='legend'>
-    	<h3>Teckenförklaring</h3>
-		<p>
-			<span class='freebusy-free' style='display:inline-block; width:2em;'>&nbsp;</span> tillgänglig tid<br>
+        <h3>Teckenförklaring</h3>
+        <p>
+            <span class='freebusy-free' style='display:inline-block; width:2em;'>&nbsp;</span> tillgänglig tid<br>
             <span class='freebusy-busy' style='display:inline-block; width:2em;'>&nbsp;</span> bokad tid<br>
             <span class='freebusy-busy unconfirmed' style='display:inline-block; width:2em;'>&nbsp;</span> obekräftad bokning<br>
             <span class='freebusy-busy conflict' style='display:inline-block; width:2em;'>&nbsp;</span> obekräftad bokning som krockar med annan befintlig bokning<br>

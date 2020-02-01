@@ -28,12 +28,12 @@ function showNotificationOptout(User $user, Category $cat) {
         $notify = $user->getNotifyAdminOnNewBooking($cat);
         ?>
         <div class='ui-field-contain'>
-        	<label><?= htmlspecialchars($cat->caption) ?></label>
-        	<fieldset data-role="controlgroup" data-type="horizontal" data-mini="true">
-            	<label><input type="radio" name="optout-cat-<?= $cat->id ?>" value="0"<?= $notify=="no" ? " checked='checked'" : "" ?> onClick="setNotificationOptout(<?= $cat->id ?>, 'no');">Av</label>
-            	<label><input type="radio" name="optout-cat-<?= $cat->id ?>" value="1"<?= $notify=="confirmOnly" ? " checked='checked'" : "" ?> onClick="setNotificationOptout(<?= $cat->id ?>, 'confirmOnly');">Bekräfta</label>
-            	<label><input type="radio" name="optout-cat-<?= $cat->id ?>" value="2"<?= $notify=="yes" ? " checked='checked'" : "" ?> onClick="setNotificationOptout(<?= $cat->id ?>, 'yes');">Alla</label>
-        	</fieldset>
+            <label><?= htmlspecialchars($cat->caption) ?></label>
+            <fieldset data-role="controlgroup" data-type="horizontal" data-mini="true">
+                <label><input type="radio" name="optout-cat-<?= $cat->id ?>" value="0"<?= $notify=="no" ? " checked='checked'" : "" ?> onClick="setNotificationOptout(<?= $cat->id ?>, 'no');">Av</label>
+                <label><input type="radio" name="optout-cat-<?= $cat->id ?>" value="1"<?= $notify=="confirmOnly" ? " checked='checked'" : "" ?> onClick="setNotificationOptout(<?= $cat->id ?>, 'confirmOnly');">Bekräfta</label>
+                <label><input type="radio" name="optout-cat-<?= $cat->id ?>" value="2"<?= $notify=="yes" ? " checked='checked'" : "" ?> onClick="setNotificationOptout(<?= $cat->id ?>, 'yes');">Alla</label>
+            </fieldset>
         </div><?php
     }
     foreach ($cat->children() as $child) {
@@ -76,40 +76,40 @@ EOF;
         break;
     case "deleteAccount":
         if ($currentUser->delete()) {
-        	header("Location: index.php?logout&action=accountDeleted");
+            header("Location: index.php?logout&action=accountDeleted");
             break;
         } else {
             $message = "Något gick fel. Kontakta webmaster tack.";
         }
         break;
-    	
+        
     case "save user data":
-    	// User shall supply name, mail and phone
-    	if ($_POST['name'] && $_POST['mail'] && $_POST['phone']) {
-    	    $currentUser->name = $_POST['name'];
-    	    $currentUser->phone = $_POST['phone'];
-    	    if ($_POST['mail'] !== $currentUser->mail) {
-    	        $token = $currentUser->setUnverifiedMail($_POST['mail']);
-    	        sendmail(
-    	            $_POST['mail'], // to
-    	            "Bekräfta din epostadress", // subject
-    	            "confirm_mail_address", // template name
-    	            array( // replace.
-    	                "{{name}}" => $currentUser->name,
-    	                "{{new_mail}}" => $_POST['mail'],
-    	                "{{link}}" => "{$cfg['url']}index.php?t=$token",
-    	            )
-	            );
-    	        $message = "Dina kontaktuppgifter har sparats. Ett meddelande har skickats till adressen {$_POST['mail']}. Använd länken i mejlet för att aktivera den nya adressen.";
-    	    } else {
-				header("Location: index.php?message=" . urlencode("Dina kontaktuppgifter har sparats."));
-				die();
-			}
-    	} else {
-    		$message = "Fyll i namn, epostadress och mobilnummer, tack.";
-    	}
-    	break;
-    	
+        // User shall supply name, mail and phone
+        if ($_POST['name'] && $_POST['mail'] && $_POST['phone']) {
+            $currentUser->name = $_POST['name'];
+            $currentUser->phone = $_POST['phone'];
+            if ($_POST['mail'] !== $currentUser->mail) {
+                $token = $currentUser->setUnverifiedMail($_POST['mail']);
+                sendmail(
+                    $_POST['mail'], // to
+                    "Bekräfta din epostadress", // subject
+                    "confirm_mail_address", // template name
+                    array( // replace.
+                        "{{name}}" => $currentUser->name,
+                        "{{new_mail}}" => $_POST['mail'],
+                        "{{link}}" => "{$cfg['url']}index.php?t=$token",
+                    )
+                );
+                $message = "Dina kontaktuppgifter har sparats. Ett meddelande har skickats till adressen {$_POST['mail']}. Använd länken i mejlet för att aktivera den nya adressen.";
+            } else {
+                header("Location: index.php?message=" . urlencode("Dina kontaktuppgifter har sparats."));
+                die();
+            }
+        } else {
+            $message = "Fyll i namn, epostadress och mobilnummer, tack.";
+        }
+        break;
+        
     case "ajaxSetNotificationOptout":
         header("Content-Type: application/json");
         $ret = $currentUser->setNotifyAdminOnNewBooking($_REQUEST['catId'], $_REQUEST['notify']);
@@ -126,127 +126,127 @@ EOF;
         $currentUser->removePersistentLogin($_REQUEST['userAgent']);
         die(json_encode([ "status"=>"OK" ]));
 }
-	
+    
 
 if ($_GET['first_login']) $message = "Välkommen till resursbokningen! Innan du sätter igång med din bokning vill vi att du berättar vem du är, så att andra (t.ex. administratörer) kan komma i kontakt med dig vid frågor. Du kan läsa om hur vi hanterar dina uppgifter i <a href='help.php'>Hjälpen</a>.";
 
 ?><!DOCTYPE html>
 <html>
 <head>
-	<?php htmlHeaders("Friluftsfrämjandets resursbokning", $cfg['url']) ?>
+    <?php htmlHeaders("Friluftsfrämjandets resursbokning", $cfg['url']) ?>
 </head>
 
 
 <body>
 <div data-role="page" id="page-userdata">
-	<?= head("Min sida", $cfg['url'], $currentUser) ?>
-	<div role="main" class="ui-content">
+    <?= head("Min sida", $cfg['url'], $currentUser) ?>
+    <div role="main" class="ui-content">
 
     <div data-role="popup" data-overlay-theme="b" id="popup-msg-page-userdata" class="ui-content">
         <p id="msg-page-userdata"><?= $message ?></p>
         <a href='#' data-rel='back' class='ui-btn ui-btn-icon-left ui-btn-inline ui-corner-all ui-icon-check'>OK</a>
     </div>
 
-	<div data-role='collapsibleset' data-inset='false'>
-		
-		<div data-role='collapsible' data-collapsed='<?= $_GET['first_login'] ? "true" : "false" ?>'>
-			<h3>Mina bokningar</h3>
-			<?php
-			$bookingIds = $currentUser->bookingIds();
-			if (count($bookingIds)) {
-			    // Sort the bookings in unconfirmed, upcoming and completed
-			    $unconfirmed = "";
-			    $upcoming = "";
-			    $completed = "";
-			    foreach ($bookingIds as $id) {
-    			    $b = new Booking($id);
-    			    $latestEnd = time();
-    			    $html = "<li><a href='book-sum.php?bookingId={$b->id}'><p>Bokat {$b->timestamp} i LA {$b->section()->name}:</p>";
-    			    foreach ($b->items() as $item) {
-    			        $html .= "<p><b>" . htmlspecialchars($item->caption) . "</b> (" . strftime("%F kl %k:00", $item->start) . " &mdash; " . strftime("%F kl %k:00", $item->end) . ($item->status<FFBoka::STATUS_CONFIRMED ? ", <b>obekräftat</b>" : "") . ")</p>";
-    			        $latestEnd = min($latestEnd, $item->end);
-    			    }
-    			    $html .= "</a></li>";
-    			    if ($b->status() < FFBoka::STATUS_CONFIRMED) $unconfirmed .= $html;
-    			    elseif ($latestEnd<time()) $completed .= $html;
-    			    else $upcoming .= $html;
-			    }
-			    if ($unconfirmed) echo "<h4>Obekräftade bokningar</h4><ul data-role='listview'>$unconfirmed</ul>";
-			    if ($upcoming) echo "<h4>Kommande bokningar</h4><ul data-role='listview'>$upcoming</ul>";
-			    if ($completed) echo "<h4>Avslutade bokningar</h4><ul data-role='listview'>$completed</ul>";
-			} else {
-			    echo "<ul data-role='listview'><li>Du har inga bokningar.</li></ul>";
-			} ?>
+    <div data-role='collapsibleset' data-inset='false'>
+        
+        <div data-role='collapsible' data-collapsed='<?= $_GET['first_login'] ? "true" : "false" ?>'>
+            <h3>Mina bokningar</h3>
+            <?php
+            $bookingIds = $currentUser->bookingIds();
+            if (count($bookingIds)) {
+                // Sort the bookings in unconfirmed, upcoming and completed
+                $unconfirmed = "";
+                $upcoming = "";
+                $completed = "";
+                foreach ($bookingIds as $id) {
+                    $b = new Booking($id);
+                    $latestEnd = time();
+                    $html = "<li><a href='book-sum.php?bookingId={$b->id}'><p>Bokat {$b->timestamp} i LA {$b->section()->name}:</p>";
+                    foreach ($b->items() as $item) {
+                        $html .= "<p><b>" . htmlspecialchars($item->caption) . "</b> (" . strftime("%F kl %k:00", $item->start) . " &mdash; " . strftime("%F kl %k:00", $item->end) . ($item->status<FFBoka::STATUS_CONFIRMED ? ", <b>obekräftat</b>" : "") . ")</p>";
+                        $latestEnd = min($latestEnd, $item->end);
+                    }
+                    $html .= "</a></li>";
+                    if ($b->status() < FFBoka::STATUS_CONFIRMED) $unconfirmed .= $html;
+                    elseif ($latestEnd<time()) $completed .= $html;
+                    else $upcoming .= $html;
+                }
+                if ($unconfirmed) echo "<h4>Obekräftade bokningar</h4><ul data-role='listview'>$unconfirmed</ul>";
+                if ($upcoming) echo "<h4>Kommande bokningar</h4><ul data-role='listview'>$upcoming</ul>";
+                if ($completed) echo "<h4>Avslutade bokningar</h4><ul data-role='listview'>$completed</ul>";
+            } else {
+                echo "<ul data-role='listview'><li>Du har inga bokningar.</li></ul>";
+            } ?>
         </div>
-		
-		<?php
-		$sections = $currentUser->bookingAdminSections();
-		if (count($sections)) { ?>
-		<div data-role='collapsible'>
-			<h3>Avisering vid nya bokningar</h3>
-			<?php 
-    		foreach ($sections as $sec) {
-    		    echo "<p><b>" . htmlspecialchars($sec->name) . "</b></p>";
-    		    foreach ($sec->getMainCategories() as $cat) {
-    		        if ($cat->showFor($currentUser, FFBoka::ACCESS_CONFIRM)) showNotificationOptout($currentUser, $cat);
-    		    }
-    		} ?>
+        
+        <?php
+        $sections = $currentUser->bookingAdminSections();
+        if (count($sections)) { ?>
+        <div data-role='collapsible'>
+            <h3>Avisering vid nya bokningar</h3>
+            <?php 
+            foreach ($sections as $sec) {
+                echo "<p><b>" . htmlspecialchars($sec->name) . "</b></p>";
+                foreach ($sec->getMainCategories() as $cat) {
+                    if ($cat->showFor($currentUser, FFBoka::ACCESS_CONFIRM)) showNotificationOptout($currentUser, $cat);
+                }
+            } ?>
         </div><?php
-		} ?>
-		
-		<div data-role='collapsible'>
-			<h3>Inloggningar</h3>
-			<ul data-role="listview" data-split-icon="delete">
-			<?php
-			foreach ($currentUser->persistentLogins() as $login) {
-			    echo "<li class='wrap'><a href='#' style='white-space:normal; font-weight:normal;'>" . htmlspecialchars($login->userAgent) . ($login->userAgent == $_SERVER['HTTP_USER_AGENT'] ? " <i>(den här inloggningen)</i>" : "") . "</a><a href='#' onClick=\"removePersistentLogin(this.parentElement, '" . htmlspecialchars($login->userAgent) . "');\" title='ta bort inloggningen'></a></li>";
-			}
-			?>
-			</ul>
-		</div>
+        } ?>
+        
+        <div data-role='collapsible'>
+            <h3>Inloggningar</h3>
+            <ul data-role="listview" data-split-icon="delete">
+            <?php
+            foreach ($currentUser->persistentLogins() as $login) {
+                echo "<li class='wrap'><a href='#' style='white-space:normal; font-weight:normal;'>" . htmlspecialchars($login->userAgent) . ($login->userAgent == $_SERVER['HTTP_USER_AGENT'] ? " <i>(den här inloggningen)</i>" : "") . "</a><a href='#' onClick=\"removePersistentLogin(this.parentElement, '" . htmlspecialchars($login->userAgent) . "');\" title='ta bort inloggningen'></a></li>";
+            }
+            ?>
+            </ul>
+        </div>
 
-		<div data-role='collapsible' data-collapsed='<?= $_GET['first_login'] ? "false" : "true" ?>'>
-			<h3>Kontaktuppgifter</h3>
-			
-			<form action="userdata.php" method="post" data-ajax="false">
-				<p>Uppgifter om dig så andra vet vem du är och hur de kan får tag i dig.</p>
-				<input type="hidden" name="action" value="save user data">
-				<p>Medlemsnummer: <?= $currentUser->id ?></p>
-				<p>Lokalavdelning: <?= $currentUser->section->name ?></p>
-				<div class="ui-field-contain">
-					<label for="userdata-name" class="required">Namn:</label>
-					<input type="text" name="name" id="userdata-name" required placeholder="Namn" value="<?= htmlspecialchars($_POST['name'] ? $_POST['name'] : $currentUser->name) ?>">
-				</div>
-				<div class="ui-field-contain">
-					<label for="userdata-mail" class="required">Epost:</label>
-					<input type="email" name="mail" id="userdata-mail" required placeholder="Epost" value="<?= htmlspecialchars($_POST['mail'] ? $_POST['mail'] : $currentUser->mail) ?>">
-				</div>
-				<div class="ui-field-contain">
-					<label for="userdata-phone" class="required">Telefon:</label>
-					<input type="tel" name="phone" id="userdata-phone" required placeholder="Mobilnummer" value="<?= htmlspecialchars($_POST['phone'] ? $_POST['phone'] : $currentUser->phone) ?>">
-				</div>
-				<input type="submit" value="Spara" data-icon="check">
-			</form>
-		</div>
-	
-		<div data-role='collapsible'>
-			<h3>Radera kontot</h3>
-			<p>Om du inte längre vill använda resursbokningen kan du radera alla dina personuppgifter i systemet. Om du gör det loggas du ut, och ditt konto med alla relaterade uppgifter raderas. Om du åter vill använda tjänsten loggar du in igen med ditt medlemsnummer och måste då ange dina personuppgifter på nytt.</p>
-			<p>Att radera ditt konto här påverkar inte ditt konto i aktivitetshanteraren.</p>
-			<button class="ui-btn ui-btn-c" onClick="deleteAccount();" data-ajax='false'>Radera mina uppgifter</button>
-		</div>
-	
-	
-		<div data-role='collapsible'>
-			<h3>Debug-info</h3><!-- TODO ta bort efter testfasen -->
-			<p>Visas för teständamål. Tas bort i produktion.</p>
-			<p>$_SESSION:</p>
-			<pre><?php print_r($_SESSION); ?></pre>
-		</div>
+        <div data-role='collapsible' data-collapsed='<?= $_GET['first_login'] ? "false" : "true" ?>'>
+            <h3>Kontaktuppgifter</h3>
+            
+            <form action="userdata.php" method="post" data-ajax="false">
+                <p>Uppgifter om dig så andra vet vem du är och hur de kan får tag i dig.</p>
+                <input type="hidden" name="action" value="save user data">
+                <p>Medlemsnummer: <?= $currentUser->id ?></p>
+                <p>Lokalavdelning: <?= $currentUser->section->name ?></p>
+                <div class="ui-field-contain">
+                    <label for="userdata-name" class="required">Namn:</label>
+                    <input type="text" name="name" id="userdata-name" required placeholder="Namn" value="<?= htmlspecialchars($_POST['name'] ? $_POST['name'] : $currentUser->name) ?>">
+                </div>
+                <div class="ui-field-contain">
+                    <label for="userdata-mail" class="required">Epost:</label>
+                    <input type="email" name="mail" id="userdata-mail" required placeholder="Epost" value="<?= htmlspecialchars($_POST['mail'] ? $_POST['mail'] : $currentUser->mail) ?>">
+                </div>
+                <div class="ui-field-contain">
+                    <label for="userdata-phone" class="required">Telefon:</label>
+                    <input type="tel" name="phone" id="userdata-phone" required placeholder="Mobilnummer" value="<?= htmlspecialchars($_POST['phone'] ? $_POST['phone'] : $currentUser->phone) ?>">
+                </div>
+                <input type="submit" value="Spara" data-icon="check">
+            </form>
+        </div>
+    
+        <div data-role='collapsible'>
+            <h3>Radera kontot</h3>
+            <p>Om du inte längre vill använda resursbokningen kan du radera alla dina personuppgifter i systemet. Om du gör det loggas du ut, och ditt konto med alla relaterade uppgifter raderas. Om du åter vill använda tjänsten loggar du in igen med ditt medlemsnummer och måste då ange dina personuppgifter på nytt.</p>
+            <p>Att radera ditt konto här påverkar inte ditt konto i aktivitetshanteraren.</p>
+            <button class="ui-btn ui-btn-c" onClick="deleteAccount();" data-ajax='false'>Radera mina uppgifter</button>
+        </div>
+    
+    
+        <div data-role='collapsible'>
+            <h3>Debug-info</h3><!-- TODO ta bort efter testfasen -->
+            <p>Visas för teständamål. Tas bort i produktion.</p>
+            <p>$_SESSION:</p>
+            <pre><?php print_r($_SESSION); ?></pre>
+        </div>
 
-	</div><!--/collapsibleset-->
-	
-	</div><!--/main-->
+    </div><!--/collapsibleset-->
+    
+    </div><!--/main-->
 
 </div><!--/page-->
 </body>

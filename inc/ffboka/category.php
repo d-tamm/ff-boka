@@ -392,30 +392,30 @@ class Category extends FFBoka {
         return $ret;
     }
 
-	/**
-	 * Get all items in the current category
-	 * @return array|\FFBoka\Item[]
-	 */
-	public function items() {
-		if (!$this->id) return array();
-		$stmt = self::$db->query("SELECT itemId FROM items WHERE catId={$this->id} ORDER BY caption");
-		$items = array();
-		while ($item = $stmt->fetch(PDO::FETCH_OBJ)) {
-			$items[] = new Item($item->itemId);
-		}
-		return $items;
-	}
-	
-	/**
-	 * Add new resource to category
-	 * @throws \Exception
-	 * @return \FFBoka\Item
-	 */
-	public function addItem() {
-	    if (self::$db->exec("INSERT INTO items SET catId={$this->id}, caption='Ny resurs'")) {
-	        return new Item(self::$db->lastInsertId());
-	    } else {
-	        throw new \Exception("Failed to create item.");
-	    }
-	}
+    /**
+     * Get all items in the current category
+     * @return array|\FFBoka\Item[]
+     */
+    public function items() {
+        if (!$this->id) return array();
+        $stmt = self::$db->query("SELECT itemId FROM items WHERE catId={$this->id} ORDER BY caption");
+        $items = array();
+        while ($item = $stmt->fetch(PDO::FETCH_OBJ)) {
+            $items[] = new Item($item->itemId);
+        }
+        return $items;
+    }
+    
+    /**
+     * Add new resource to category
+     * @throws \Exception
+     * @return \FFBoka\Item
+     */
+    public function addItem() {
+        if (self::$db->exec("INSERT INTO items SET catId={$this->id}, caption='Ny resurs'")) {
+            return new Item(self::$db->lastInsertId());
+        } else {
+            throw new \Exception("Failed to create item.");
+        }
+    }
 }
