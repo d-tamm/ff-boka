@@ -4,6 +4,7 @@ use FFBoka\Category;
 use FFBoka\FFBoka;
 use FFBoka\Item;
 use FFBoka\Image;
+use FFBoka\Section;
 global $cfg, $message;
 
 session_start();
@@ -19,10 +20,11 @@ if (!isset($_SESSION['sectionId']) || !isset($_SESSION['authenticatedUser']) || 
 if (isset($_REQUEST['itemId'])) $_SESSION['itemId'] = $_REQUEST['itemId'];
 $item = new Item($_SESSION['itemId']);
 $currentUser = new User($_SESSION['authenticatedUser']);
+$section = new Section($_SESSION['sectionId']);
 $cat = new Category($_SESSION['catId']);
 
 // Check access permissions.
-if (!$cat->showFor($currentUser, FFBoka::ACCESS_CATADMIN)) {
+if ($cat->getAccess($currentUser) < FFBoka::ACCESS_CATADMIN) {
     header("Location: {$cfg['url']}?action=accessDenied&to=" . urlencode("administrationssidan för " . htmlspecialchars($item->caption)));
     die();
 }
@@ -45,6 +47,25 @@ function imageHtml(Item $item) {
         $ret .= "</div></div><br>";
     }
     return $ret;
+}
+
+
+/**
+ * Echoes a category tree as "select" options
+ * @param Category $startAt Output the tree from here downwards
+ * @param Category $selected Preselect option for this category
+ * @param User $user Only categories where this user is at least CATADMIN will be shown.
+ * @param number $indent Indentation for visual arrangement.
+ */
+function showCatTree(Category $startAt, Category $selected, User $user, $indent=0) {
+    if ($startAt->getAccess($user) >= FFBoka::ACCESS_CATADMIN || $startAt->id == $selected->id) {
+        echo "<option value='{$startAt->id}'" . ($startAt->id==$selected->id ? " selected='true'" : "") . ">" . str_repeat("&mdash;", $indent) . " " . htmlspecialchars($startAt->caption) . "</option>";
+    } else {
+        echo "<option disabled>" . str_repeat("&mdash;", $indent) . " " . htmlspecialchars($startAt->caption) . "</option>";
+    }
+    foreach ($startAt->children() as $child) {
+        showCatTree($child, $selected, $user, $indent+1);
+    }
 }
 
 
@@ -71,6 +92,10 @@ EOF;
     case "copyItem":
         $item = $item->copy();
         $_SESSION['itemId'] = $item->id;
+        break;
+        
+    case "moveItem":
+        $item->moveToCat($cat);
         break;
         
     case "setItemProp":
@@ -137,6 +162,22 @@ EOF;
             <p id="msg-page-admin-item"><?= $message ?></p>
             <a href='#' data-rel='back' class='ui-btn ui-btn-icon-left ui-btn-inline ui-corner-all ui-icon-check'>OK</a>
         </div>
+        
+        <div data-role="popup" data-overlay-theme="b" id="popup-move-item" class="ui-content">
+            <h3>Flytta resursen</h3>
+            <form data-ajax="false">
+                <p>Flytta den här resursen till en annan kategori:</p>
+                <select name="catId" id="move-item-cat-id"><?php
+                foreach ($section->getMainCategories() as $c) {
+                    showCatTree($c, $cat, $currentUser);
+                }
+                ?></select>
+                <p style="text-align:center;">
+                    <a href="#" data-rel="back" class="ui-btn ui-btn-inline">Avbryt</a>
+                    <h href="#" onClick="location.href='?action=moveItem&catId='+$('#move-item-cat-id').val();" class="ui-btn ui-btn-b ui-btn-inline">Spara</a>
+                </p>
+            </form>
+        </div>
 
         <div class="saved-indicator" id="item-saved-indicator">Sparad</div>
 
@@ -144,7 +185,8 @@ EOF;
         foreach ($cat->getPath() as $p) {
             if ($p['id']) echo " &rarr; ";
             echo "<a data-transition='slide' data-direction='reverse' href='" . ($p['id'] ? "category.php?catId={$p['id']}&expand=items" : "index.php") . "'>" . htmlspecialchars($p['caption']) . "</a>";
-        }?></p>
+        }?>&emsp;<a href="#popup-move-item" data-rel="popup" data-position-to="window" data-transition="pop" class="ui-btn ui-btn-inline ui-icon-edit ui-btn-icon-notext">Flytta</a>
+        </p>
         
         <div class="ui-field-contain">
             <label for="item-caption">Rubrik:</label>

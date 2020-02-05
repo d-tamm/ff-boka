@@ -140,6 +140,17 @@ class Item extends FFBoka {
     public function category() {
         return new Category($this->catId);
     }
+    
+    /**
+     * Move the item to another category
+     * @param Category $cat Category to move the item to.
+     */
+    public function moveToCat(Category $cat) {
+        $stmt = self::$db->prepare("UPDATE items SET catId=:catId WHERE itemId={$this->id}");
+        $stmt->execute(array(
+            ":catId" => $cat->id
+        ));
+    }
 
     /**
      * Get the booking the item belongs to (only applicable for bookedItems)

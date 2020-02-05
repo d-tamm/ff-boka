@@ -342,8 +342,9 @@ class Category extends FFBoka {
     /**
      * Check whether category or some subordinate item shall be shown to user
      * @param \FFBoka\User $user
-     * @param int $minAccess Ignore access settings lower than this level. Set to ACCESS_CONFIRM to check for visibility for admins.
-     * @return boolean
+     * @param int $minAccess Ignore access settings lower than this level.
+     * Set to ACCESS_CONFIRM to check for visibility for admins.
+     * @return boolean Returns TRUE for fake categories, and if the user has access to this or any subordinate category.
      */
     public function showFor(User $user, int $minAccess=FFBoka::ACCESS_READASK) {
         if (!$this->id) return TRUE;
