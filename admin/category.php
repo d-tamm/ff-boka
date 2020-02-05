@@ -26,7 +26,7 @@ if (!$cat->showFor($currentUser, FFBoka::ACCESS_CATADMIN)) {
 }
 
 /**
- * Echoes a category tree as <select> options
+ * Echoes a category tree as "select" options
  * @param Category $parent Output the tree from here downwards
  * @param Category $currentCat Do not include this category, but preselect option for this category's parent
  * @param User $user Only categories where this user is at least CATADMIN will be shown.
@@ -214,7 +214,7 @@ switch ($_REQUEST['action']) {
                                     "{{superadmin-phone}}"=>$currentUser->phone
                                 )
                             );
-                        } else $message = "OBS! Vi har inte någon epostadress till denna användare och kan inte meddela hen om den nya rollen. Därför ska du informera hen på annat sätt. Se gärna också till att hen loggar in och lägger upp sin epostadress för att kunna få meddelanden om nya bokningar.";
+                        } elseif ($_GET['id'] != $currentUser->id) $message = "OBS! Vi har inte någon epostadress till denna användare och kan inte meddela hen om den nya rollen. Därför ska du informera hen på annat sätt. Se gärna också till att hen loggar in och lägger upp sin epostadress för att kunna få meddelanden om nya bokningar.";
                     }
             }
             die(json_encode([ "html"=>displayCatAccess($cat, $cfg['catAccessLevels']), "message"=>$message ]));
