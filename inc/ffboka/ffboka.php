@@ -42,8 +42,10 @@ class FFBoka {
     protected static $apiAuthUrl;
     /** API key for authentication */
     protected static $apiAuthKey;
-    /** URL and file path to feed for getting user's assignments */
+    /** URL and file path to API feed for getting user's assignments */
     protected static $apiFeedUserAss;
+    /** URL and file path to API feed for getting all valid sections */
+    protected static $apiFeedSec;
     /** GUID in API indicating sections */
     const TYPE_SECTION = 478880001;
     /** string[] Assignment names from API giving section admin access. */
@@ -68,12 +70,38 @@ class FFBoka {
         self::$apiAuthUrl = $api['authUrl'];
         self::$apiAuthKey = $api['authKey'];
         self::$apiFeedUserAss = $api['feedUrl'] . $api['feedUserAss'];
+        self::$apiFeedSec = $api['feedUrl'] . $api['feedSec'];
         self::$db = $db;
         self::$sectionAdmins = $sectionAdmins;
         self::$timezone = $timezone;
     }
     
 
+    /**
+     * Get an updated list of all sections from API.
+     * @param bool $verbose If TRUE, outputs some diagnostic text.
+     */
+    public function updateSectionList(bool $verbose=FALSE) {
+        if ($verbose) echo "Getting updated section list from API...";
+        $data = json_decode(file_get_contents(self::$apiFeedSec));
+        $stmt = self::$db->prepare("INSERT INTO sections SET sectionID=:sectionID, name=:name1, timestamp=NULL ON DUPLICATE KEY UPDATE name=:name2, timestamp=NULL");
+        foreach ($data->results as $section) {
+            if ($section->cint_nummer && $section->cint_name) {
+                if ($verbose) echo "Updating section {$section->cint_nummer} {$section->cint_name}\n";
+                $stmt->execute(array(
+                    ":sectionID" => $section->cint_nummer,
+                    ":name1" => $section->cint_name,
+                    ":name2" => $section->cint_name,
+                ));
+            }
+        }
+        if ($verbose) echo "All sections updated.\n";
+        if ($verbose) echo "Deleting outdated records...";
+        $numDeleted = self::$db->exec("DELETE FROM sections WHERE TIMESTAMPDIFF(SECOND, `timestamp`, NOW())>100");
+        if ($verbose) echo " $numDeleted records deleted.\n";
+    }
+    
+    
     /**
      * Get a list of all sections in FF
      * @param int $showFirst If set, this section will be returned as the first element
