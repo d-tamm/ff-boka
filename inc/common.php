@@ -6,6 +6,8 @@ spl_autoload_register(function($class) {
 
 require_once __DIR__ . "/config.php";
 global $cfg;
+// DB version used by this code
+$dbVersion = 1;
 
 // Set locale
 setlocale(LC_ALL, $cfg['locale']);
@@ -22,7 +24,7 @@ use FFBoka\FFBoka;
 use FFBoka\User;
 
 // Connect to database
-$db = connectDb($cfg['dbhost'], $cfg['dbname'], $cfg['dbuser'], $cfg['dbpass'], $cfg['db-version']);
+$db = connectDb($cfg['dbhost'], $cfg['dbname'], $cfg['dbuser'], $cfg['dbpass'], $dbVersion);
 
 // Create FF object
 $FF = new FFBoka($cfg['ff-api'], $db, $cfg['sectionAdmins'], $cfg['timezone']);

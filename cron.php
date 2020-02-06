@@ -1,41 +1,81 @@
 <?php
-// To be called once every 60 minutes via cron or webcron
-require("common.php");
-global $db, $cfg;
+use FFBoka\Category;
+use FFBoka\User;
+use FFBoka\FFBoka;
 
-// Update sections from API once a day TODO adapt to new urls
-$data = json_decode(file_get_contents($cfg['apiUrl']."/api/feed/PAN_ExtBokning_GetSections"));
-$stmt = $db->prepare("INSERT INTO sections SET sectionID=:sectionID, name=:name1, timestamp=NULL ON DUPLICATE KEY UPDATE name=:name2, timestamp=NULL");
-foreach ($data->results as $section) {
-    if ($section->cint_nummer && $section->cint_name) {
-        echo "Add section ".$section->cint_nummer . " " . $section->cint_name."<br>";
-        $stmt->execute(array(
-            ":sectionID" => $section->cint_nummer,
-            ":name1" => $section->cint_name,
-            ":name2" => $section->cint_name,
-        ));
-    }
+/**
+ * Cron tasks for resource booking system
+ * To be called once every 60 minutes via cron or webcron
+ */
+
+require("inc/common.php");
+global $db, $cfg, $FF;
+
+/**
+ * Hourly cron jobs
+ */
+echo "Executing hourly jobs...\n";
+// e.g. booking reminders?
+// Record last execution time
+$db->exec("UPDATE config SET value=UNIX_TIMESTAMP() WHERE name='last hourly cron run'");
+echo "Hourly jobs finished.\n\n";
+
+/**
+ * Daily cron jobs
+ */
+$stmt = $db->query("SELECT value FROM config WHERE name='last daily cron run'");
+$row = $stmt->fetch(PDO::FETCH_OBJ);
+$midnight = new DateTime("midnight");
+if ((int)$row->value < $midnight->getTimestamp() && date("G") >= $cfg['cronDaily']) {
+    echo "Time to execute daily jobs...\n";
+    // ...
+    // Record last execution time
+    $db->exec("UPDATE config SET value=UNIX_TIMESTAMP() WHERE name='last daily cron run'");
+    echo "Daily jobs finished.\n\n";
 }
-// Delete all records not affected by the update
-$db->exec("DELETE FROM sections WHERE TIMESTAMPDIFF(SECOND, `timestamp`, NOW())>10");
 
-// Update assignments from API once a day TODO adapt to new urls
-$data = json_decode(file_get_contents($cfg['apiUrl']."/api/feed/Pan_ExtBokning_GetAllAssignmenttypes"));
-$stmt = $db->prepare("INSERT INTO assignments SET ass_name=:name, typeID=:typeID, type_name=:type_name, timestamp=NULL ON DUPLICATE KEY UPDATE timestamp=NULL");
-foreach ($data->results as $ass) {
-    if ($ass->cint_name && $ass->cint_assignment_party_type->value) {
-        echo "Add assignment ".$ass->cint_name." ".$ass->cint_assignment_party_type->name."<br>";
-        $stmt->execute(array(
-            ":name"   => $ass->cint_name,
-            ":typeID" => $ass->cint_assignment_party_type->value,
-            ":type_name" => $ass->cint_assignment_party_type->name,
-        ));
-    }
+/**
+ * Weekly cron jobs
+ */
+$stmt = $db->query("SELECT value FROM config WHERE name='last weekly cron run'");
+$row = $stmt->fetch(PDO::FETCH_OBJ);
+$monday = new DateTime("monday this week");
+if ((int)$row->value < $monday->getTimestamp() && date("N") >= $cfg['cronWeekly']) {
+    echo "Time to execute weekly jobs...\n";
+    
+    $FF->updateSectionList(TRUE);
+    
+    // Record last execution time
+    $db->exec("UPDATE config SET value=UNIX_TIMESTAMP() WHERE name='last weekly cron run'");
+    echo "Weekly jobs finished.\n\n";
 }
-// Delete all records not affected by the update
-$db->exec("DELETE FROM assignments WHERE TIMESTAMPDIFF(SECOND, timestamp, NOW())>10");
 
-// Delete records from cat_admin_noalert which do not any more belong to a user with admin rights 
+/**
+ * Monthly cron jobs
+ */
+$stmt = $db->query("SELECT value FROM config WHERE name='last monthly cron run'");
+$row = $stmt->fetch(PDO::FETCH_OBJ);
+$first = new DateTime("first day of");
+if ((int)$row->value < $first->getTimestamp() && date("j") >= $cfg['cronMonthly']) {
+    echo "Time to execute monthly jobs...\n";
 
+    echo "Deleting expired persistent login tokens... ";
+    $numDeleted = $db->exec("DELETE FROM persistent_logins WHERE expires < NOW()");
+    echo "$numDeleted tokens deleted.\n";
+    
+    echo "Deleting records from cat_admin_noalert which do not any more belong to a user with admin rights...\n";
+    $stmt = $db->query("SELECT * FROM cat_admin_noalert");
+    while ($row = $stmt->fetch(PDO::FETCH_OBJ)) {
+        $cat = new Category($row->catId);
+        $user = new User($row->userId);
+        if ($cat->getAccess($user, FALSE) < FFBoka::ACCESS_CONFIRM) {
+            echo "Removing record for user {$row->userId}, cat {$row->catId}\n";
+            $db->exec("DELETE FROM cat_admin_noalert WHERE userId={$row->userId} AND catId={$row->catId}");
+        }
+        echo "Done.\n";
+    }
 
-touch ("cron.last");
+    // Record last execution time
+    $db->exec("UPDATE config SET value=UNIX_TIMESTAMP() WHERE name='last monthly cron run'");
+    echo "Monthly jobs finished.\n\n";
+}

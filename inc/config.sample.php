@@ -76,8 +76,10 @@ $cfg = array(
     // How long shall persistent login ("remember me") be valid? (seconds)
     "TtlPersistentLogin" => 60*60*24*365,
     
-    // Current db version
-    "db-version" => 0,
+    // When to do recurring jobs
+    "cronDaily" => 2, // Hour of day 0...23
+    "cronWeekly" => 1, // Day of week, Monday=1, Sunday=7
+    "cronMonthly" => 1, // Day of month, 1...31
 );
 
 // Include local/secret settings, too (those not to be synchronized to Github).

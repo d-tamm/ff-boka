@@ -22,7 +22,7 @@ function adminList($section, $currentUserId) {
 
 session_start();
 require(__DIR__."/../inc/common.php");
-global $cfg, $FF;
+global $cfg, $FF, $db;
 
 // Set current section and user
 if ($_GET['sectionId']) $_SESSION['sectionId'] = $_GET['sectionId'];
@@ -307,10 +307,12 @@ unset($_SESSION['catId']);
         <div data-role="collapsible">
             <h2>Systeminfo</h2>
             <h3>Cron <?php
-            $last = filemtime("../cron.last");
-            if ($last===FALSE || $last < time()-3600) echo "<span style='color:var(--FF-orange);'>■</span>";
+            $stmt = $db->query("SELECT value FROM config WHERE name='last hourly cron run'");
+            $row = $stmt->fetch(PDO::FETCH_OBJ);
+            $last = (int)$row->value;
+            if ($last==0 || $last < time()-3600) echo "<span style='color:var(--FF-orange);'>■</span>";
             else echo "<span style='color:var(--FF-green);'>■</span>"; ?></h3>
-            <p><?= $last===FALSE ? "Cron har aldrig utförts" : "Cron utfördes senast för " . (int)((time()-$last)/60) . " minuter sedan" ?>.</p>
+            <p><?= $last==0 ? "Cron har aldrig utförts" : "Cron utfördes senast för " . (int)((time()-$last)/60) . " minuter sedan" ?>.</p>
             <h3>Konfiguration</h3>
             <pre><?= print_r($cfg, TRUE) ?></pre>
             <h3>Senaste inloggningar</h3>
