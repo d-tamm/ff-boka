@@ -14,11 +14,24 @@ if (isset($_REQUEST['action'])) {
             $allAss = $cfg['sectionAdmins'];
             $oneAss = array_pop($allAss);
             echo "
+<h3>Få hjälp</h3>
+<p>Grattis! Du har redan hittat frågetecknet <img src='resources/help.svg' style='height:1em;'> uppe i högra hörnet. Det finns på alla sidor och visar olika innehåll beroende på vilken sida du är på.</p>
+<p>Du kan stänga hjälp-rutan med tillbaka-knappen (på mobilen) eller ESC-tangenten (på datorn).</p>
+
 <h3>Inloggning</h3>
 <p>Resursbokningen använder samma inloggning som Friluftsfrämjandets aktivitetshanterare. Har du problem med inloggningen, vänd dig i första hand till dem som har hand om inloggningen på friluftsframjandet.se.</p>
 
-<h3>Komma igång med din lokalavdelning</h3>
-<p>Uppdragen " . ($allAss ? implode(", ", $allAss) . " och " : "") . $oneAss . " har alltid administratörsbehörighet i varje lokalavdelning. För att komma igång med att använda resursbokningen i din lokalavdelning måste alltså någon med ett sådant uppdrag logga in och göra de första inställningarna, t.ex. lägga till behörighet för andra att ta över administrationen.</p>
+<h3>Kom igång med din lokalavdelning</h3>
+<ul>
+    <li>Uppdragen <b>" . ($allAss ? implode("</b>, <b>", $allAss) . "</b> och <b>" : "") . $oneAss . "</b> från aktivitetshanteraren har alltid administratörsbehörighet i tillhörande lokalavdelning. För att komma igång med att använda resursbokningen i din lokalavdelning måste någon av dessa logga in först.</li>
+    <li>När du har loggat in ska du se en knapp \"Admin [din LA]\". Klicka på den.</li>
+    <li>På adminsidan, öppna avsnittet Administratörer och lägg till de personer som framöver ska ta hand om resursbokningen i lokalavdelningen (LA-administratör). Detta är den högsta behörighetsnivån och används för att skapa grundstrukturen och administrera behörigheten i kategorierna.</li>
+    <li>Från den här punkten kan du som är " . ($allAss ? implode(", ", $allAss) . " eller " : "") . $oneAss . " lämna över ansvaret till dina LA-administratörer.</li>
+    <li>LA-administratören kan nu fortsätta med att lägga upp kategorier. Beroende på hur omfattande verksamhet ni har kan ni välja att lägga alla kategorier direkt på huvudnivån, eller skapa underkategorier. Ni kan använda så många nivåer som ni vill.</li>
+    <li>För varje kategori kan behörigheter ställas in för att styra dels vem som ska kunna boka utrustningen, och dels vem som ska ta hand om resurserna (kategoriansvarig) och inkomna bokningar (bokningsansvarig). Inställningar som görs i en överordnad kategori gäller även dess underkategorier.</li>
+    <li>Kategoriansvarig eller LA-administratör kan slutligen lägga upp resurserna.</li>
+</ul>
+<p>Läs gärna även hjälptexten på admin-sidan!</p>
 
 <h3>Säkerhet och integritet</h3>
 <p>Vi jobbar aktivt med säkerheten och integriteten på sajten:</p>
