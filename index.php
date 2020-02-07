@@ -14,27 +14,41 @@ if (isset($_REQUEST['action'])) {
             $allAss = $cfg['sectionAdmins'];
             $oneAss = array_pop($allAss);
             echo "
+<h3>Få hjälp</h3>
+<p>Grattis! Du har redan hittat frågetecknet <img src='resources/help.svg' style='height:1em;'> uppe i högra hörnet. Det finns på alla sidor och visar olika innehåll beroende på vilken sida du är på.</p>
+<p>Du kan stänga hjälp-rutan med tillbaka-knappen (på mobilen) eller ESC-tangenten (på datorn).</p>
+
 <h3>Inloggning</h3>
 <p>Resursbokningen använder samma inloggning som Friluftsfrämjandets aktivitetshanterare. Har du problem med inloggningen, vänd dig i första hand till dem som har hand om inloggningen på friluftsframjandet.se.</p>
 
-<h3>Komma igång med din lokalavdelning</h3>
-<p>Uppdragen " . ($allAss ? implode(", ", $allAss) . " och " : "") . $oneAss . " har alltid administratörsbehörighet i varje lokalavdelning. För att komma igång med att använda resursbokningen i din lokalavdelning måste alltså någon med ett sådant uppdrag logga in och göra de första inställningarna, t.ex. lägga till behörighet för andra att ta över administrationen.</p>
+<h3>Kom igång med din lokalavdelning</h3>
+<ul>
+    <li>Uppdragen <b>" . ($allAss ? implode("</b>, <b>", $allAss) . "</b> och <b>" : "") . $oneAss . "</b> från aktivitetshanteraren har alltid administratörsbehörighet i tillhörande lokalavdelning. För att komma igång med att använda resursbokningen i din lokalavdelning måste någon av dessa logga in först.</li>
+    <li>När du har loggat in ska du se en knapp \"Admin [din LA]\". Klicka på den.</li>
+    <li>På adminsidan, öppna avsnittet Administratörer och lägg till de personer som framöver ska ta hand om resursbokningen i lokalavdelningen (LA-administratör). Detta är den högsta behörighetsnivån och används för att skapa grundstrukturen och administrera behörigheten i kategorierna.</li>
+    <li>Från den här punkten kan du som är " . ($allAss ? implode(", ", $allAss) . " eller " : "") . $oneAss . " lämna över ansvaret till dina LA-administratörer.</li>
+    <li>LA-administratören kan nu fortsätta med att lägga upp kategorier. Beroende på hur omfattande verksamhet ni har kan ni välja att lägga alla kategorier direkt på huvudnivån, eller skapa underkategorier. Ni kan använda så många nivåer som ni vill.</li>
+    <li>För varje kategori kan behörigheter ställas in för att styra dels vem som ska kunna boka utrustningen, och dels vem som ska ta hand om resurserna (kategoriansvarig) och inkomna bokningar (bokningsansvarig). Inställningar som görs i en överordnad kategori gäller även dess underkategorier.</li>
+    <li>Kategoriansvarig eller LA-administratör kan slutligen lägga upp resurserna.</li>
+</ul>
+<p>Läs gärna även hjälptexten på admin-sidan!</p>
 
 <h3>Säkerhet och integritet</h3>
 <p>Vi jobbar aktivt med säkerheten och integriteten på sajten:</p>
 <ul>
-    <li>Vi sparar inte ditt lösenord, varken i klartext eller krypterat.</li>
+    <li>Vi sparar aldrig ditt lösenord, varken i klartext eller krypterat.</li>
     <li>När vi visar epostadresser här på hemsidan gör vi det på ett sätt som gör det praktiskt omöjligt för automatiserade system att läsa ut adressen i syfte att missbruka den för att skicka spam.</li>
-    <li>Vi delar aldrig dina uppgifter med tredje part. All data ligger på en server som finns i Sverige.</li>
-    <li>Det går att ansluta med en krypterad uppkoppling. Skriv \"https://\" i webbläsarens adressfält." . ($_SERVER['HTTPS'] ? " - Grattis! Du är ansluten med en säker, krypterad förbindelse." : "<strong>Du använder just nu en osäker anslutning.</strong> <a href='https://{$_SERVER['SERVER_NAME']}{$_SERVER['PHP_SELF']}'>Klicka här</a> för att byta till krypterad uppkoppling.") . "</li>
+    <li>Det går att ansluta med en krypterad uppkoppling. Skriv \"https://\" i webbläsarens adressfält. " . ($_SERVER['HTTPS'] ? " - Grattis! Du är ansluten med en säker, krypterad förbindelse." : "<br><strong style='color:red;'>Du använder just nu en osäker anslutning.</strong> <a href='https://{$_SERVER['SERVER_NAME']}{$_SERVER['PHP_SELF']}'>Klicka här</a> för att byta till krypterad uppkoppling.") . "</li>
 </ul>
 
 <h3>Personuppgifter och GDPR</h3>
-<p>Det ligger i sakens natur att vi måste bearbeta personuppgifter för att kunna bedriva bokningssystemet. De uppgifter som sparas om dig i systemet är:</p>
+<p>Det ligger i sakens natur att vi måste hantera vissa personuppgifter för att kunna bedriva bokningssystemet. De uppgifter som sparas om dig i systemet är:</p>
 <ul>
-    <li>De userkontaktuppgifter som du själv har angett vid registreringen. De behövs för att plattformen ska kunna fungera. T.ex. används din epost-adress för att kunna skicka bekräftelser och påminnelser om bokningar. Kontaktuppgifterna kan även användas om det uppstår frågor om någon bokning.</li>
-    <li>Om du gör en bokning kommer all data som du lämnar med bokningen vara tillgänglig för respektive materialansvarig/administratör. Informationen visas inte för andra användare.</li>
-    <li>Om du tilldelas en administratörsroll behöver vi spara information om detta för att kunna ge dig tillgång till de funktioner som du behöver i rollen. Är du materialansvarig/administratör för en kategori kommer dina kontaktuppgifter att visas för användare som vill boka utrustningen.</li>
+    <li>De <a href='userdata.php'>kontaktuppgifter</a> som du själv har angett vid registreringen (namn, telefon och mejl). De behövs för att plattformen ska kunna fungera. T.ex. används din epost-adress för att kunna skicka bekräftelser och påminnelser om bokningar. Kontaktuppgifterna kan även användas om det uppstår frågor om någon bokning.</li>
+    <li>Om du gör en bokning kommer all data som du lämnar med bokningen vara tillgänglig för respektive materialansvarig/bokningsadmin. Informationen visas inte för andra användare.</li>
+    <li>Informationen om dina bokningar sparas i två år. Om du raderar ditt konto tas all information om dig bort omedelbart.</li>
+    <li>Vi delar aldrig dina uppgifter med tredje part. De används enbart inom resursbokningssystemet.</li>
+    <li>Om du är kontaktperson för en kategori kommer dina kontaktuppgifter att visas för användare som vill boka utrustningen.</li>
 </ul>
 <p>Du kan alltid höra av dig till oss för att ta reda på vad som är sparat om just dig.</p>
 

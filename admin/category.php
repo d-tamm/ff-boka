@@ -324,7 +324,7 @@ unset ($_SESSION['itemId']);
             </div>
             
             <label for="cat-sendAlertTo">Förutom till bokningsansvariga, skicka meddelande om nya bokningar till:</label>
-                <input name="sendAlertTo" class="ajax-input" id="cat-sendAlertTo" placeholder="kanoter@gmail.com, emil@yahoo.com" value="<?= htmlspecialchars($cat->sendAlertTo) ?>">
+                <input name="sendAlertTo" class="ajax-input" id="cat-sendAlertTo" placeholder="t.ex. kanoter@gmail.com, emil@yahoo.com" value="<?= htmlspecialchars($cat->sendAlertTo) ?>">
             <hr>
 
             <h3>Kontaktuppgifter</h3>
