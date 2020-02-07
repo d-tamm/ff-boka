@@ -23,18 +23,19 @@ if (isset($_REQUEST['action'])) {
 <h3>Säkerhet och integritet</h3>
 <p>Vi jobbar aktivt med säkerheten och integriteten på sajten:</p>
 <ul>
-    <li>Vi sparar inte ditt lösenord, varken i klartext eller krypterat.</li>
+    <li>Vi sparar aldrig ditt lösenord, varken i klartext eller krypterat.</li>
     <li>När vi visar epostadresser här på hemsidan gör vi det på ett sätt som gör det praktiskt omöjligt för automatiserade system att läsa ut adressen i syfte att missbruka den för att skicka spam.</li>
-    <li>Vi delar aldrig dina uppgifter med tredje part. All data ligger på en server som finns i Sverige.</li>
-    <li>Det går att ansluta med en krypterad uppkoppling. Skriv \"https://\" i webbläsarens adressfält." . ($_SERVER['HTTPS'] ? " - Grattis! Du är ansluten med en säker, krypterad förbindelse." : "<strong>Du använder just nu en osäker anslutning.</strong> <a href='https://{$_SERVER['SERVER_NAME']}{$_SERVER['PHP_SELF']}'>Klicka här</a> för att byta till krypterad uppkoppling.") . "</li>
+    <li>Det går att ansluta med en krypterad uppkoppling. Skriv \"https://\" i webbläsarens adressfält. " . ($_SERVER['HTTPS'] ? " - Grattis! Du är ansluten med en säker, krypterad förbindelse." : "<br><strong style='color:red;'>Du använder just nu en osäker anslutning.</strong> <a href='https://{$_SERVER['SERVER_NAME']}{$_SERVER['PHP_SELF']}'>Klicka här</a> för att byta till krypterad uppkoppling.") . "</li>
 </ul>
 
 <h3>Personuppgifter och GDPR</h3>
-<p>Det ligger i sakens natur att vi måste bearbeta personuppgifter för att kunna bedriva bokningssystemet. De uppgifter som sparas om dig i systemet är:</p>
+<p>Det ligger i sakens natur att vi måste hantera vissa personuppgifter för att kunna bedriva bokningssystemet. De uppgifter som sparas om dig i systemet är:</p>
 <ul>
-    <li>De userkontaktuppgifter som du själv har angett vid registreringen. De behövs för att plattformen ska kunna fungera. T.ex. används din epost-adress för att kunna skicka bekräftelser och påminnelser om bokningar. Kontaktuppgifterna kan även användas om det uppstår frågor om någon bokning.</li>
-    <li>Om du gör en bokning kommer all data som du lämnar med bokningen vara tillgänglig för respektive materialansvarig/administratör. Informationen visas inte för andra användare.</li>
-    <li>Om du tilldelas en administratörsroll behöver vi spara information om detta för att kunna ge dig tillgång till de funktioner som du behöver i rollen. Är du materialansvarig/administratör för en kategori kommer dina kontaktuppgifter att visas för användare som vill boka utrustningen.</li>
+    <li>De <a href='userdata.php'>kontaktuppgifter</a> som du själv har angett vid registreringen (namn, telefon och mejl). De behövs för att plattformen ska kunna fungera. T.ex. används din epost-adress för att kunna skicka bekräftelser och påminnelser om bokningar. Kontaktuppgifterna kan även användas om det uppstår frågor om någon bokning.</li>
+    <li>Om du gör en bokning kommer all data som du lämnar med bokningen vara tillgänglig för respektive materialansvarig/bokningsadmin. Informationen visas inte för andra användare.</li>
+    <li>Informationen om dina bokningar sparas i två år. Om du raderar ditt konto tas all information om dig bort omedelbart.</li>
+    <li>Vi delar aldrig dina uppgifter med tredje part. De används enbart inom resursbokningssystemet.</li>
+    <li>Om du är kontaktperson för en kategori kommer dina kontaktuppgifter att visas för användare som vill boka utrustningen.</li>
 </ul>
 <p>Du kan alltid höra av dig till oss för att ta reda på vad som är sparat om just dig.</p>
 
