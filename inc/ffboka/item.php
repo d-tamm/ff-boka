@@ -214,17 +214,25 @@ class Item extends FFBoka {
     }
     
     /**
-     * Make a copy of the item.
-     * The copy will be inactive, and the featured image will not be set.
+     * Make a copy of the item. The copy will be inactive.
+     * If the caption ends on "(n)", the copy will end on (n+1).
+     * Otherwise, "(kopia)" will be appended to the caption of the copy.
      * @return \FFBoka\Item The newly created item
      */
     public function copy() {
-        self::$db->exec("INSERT INTO items (catId, caption, description) SELECT catID, caption, description FROM items WHERE itemID={$this->id}");
-        $newItemId = self::$db->lastInsertId();
+        $newItem = $this->category()->addItem();
+        // If old caption ends on "(nn)", increase nn. Otherwise, add (kopia) to the caption.
+        if (preg_match('/(.*)\(([0-9]+)\)$/', $this->caption, $matches)) $newItem->caption = $matches[1] . "(" . ($matches[2]+1) . ")";
+        else $newItem->caption = $this->caption . " (kopia)";
+        $newItem->description = $this->description;
         // copy the associated item images
-        self::$db->exec("INSERT INTO item_images (itemId, image, thumb, caption) SELECT $newItemId, image, thumb, caption FROM item_images WHERE itemId={$this->id}");
-        $newItem = new Item($newItemId);
-        $newItem->caption = $newItem->caption . " (kopia)";
+        foreach ($this->images() as $image) {
+            self::$db->exec("INSERT INTO item_images (itemId, image, thumb, caption) SELECT {$newItem->id}, image, thumb, caption FROM item_images WHERE imageId={$image->id}");
+            $newImageId = self::$db->lastInsertId();
+            if ($image->id == $this->imageId) { // set featured image
+                self::$db->exec("UPDATE items SET imageId=$newImageId WHERE itemId={$newItem->id}");
+            }
+        }
         return $newItem;
     }
     
