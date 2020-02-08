@@ -72,16 +72,27 @@ function showCatTree(Category $startAt, Category $selected, User $user, $indent=
 switch ($_REQUEST['action']) {
     case "help":
         echo <<<EOF
-<p>På den här sidan bearbetar du de enskilda resurserna.</p>
 <h3>Allmänt</h3>
-<p>Inställningarna här sparas direkt. Du behöver inte trycka på någon spara-knapp. Längst upp ser du var i strukturen resursen är placerad, med klickbara överordnade element. Det är användbart för att snabbt navigera upp i hirarkin.</p>
-<p><b>Rubriken</b> visas i listor och bör hållas kort och tydlig. Har du flera resurser av samma typ kan det vara bra att lägga till ett löpnummer eller dylikt  som hjälper dig att identifiera resurserna.</p>
-<p><b>Beskrivningen</b> kan vara en längre text. Här kan du samla all information om resursen som kan vara användbar för användaren. Texten visas i resursens detailjvy.</p>
-<p><b>Aktiv</b> (kan bokas) använder du för att (normalt tillfälligt) avaktivera resursen. Bara aktiva resurser visas för bokning. Det kan vara användbart under tiden du lägger upp resursen tills all information är på plats, eller när en resurs inte är tillgänglig på grund av skada mm. Vid tillfällig otillgänglighet kan du alternativt lägga in en blockerad tid i <a href='bookings-d.php'>bokningsadmin</a>.</p>
-<p>Sedan finns det knappar för att radera resursen och duplicera den, vilket skapar en avaktiverad kopia.</p>
+<p>Inställningarna här sparas direkt. Du behöver inte trycka på någon spara-knapp. Längst
+upp ser du var i strukturen resursen är placerad, med klickbara överordnade element. Det 
+är användbart för att snabbt navigera upp i hirarkin.</p>
+<p><b>Rubriken</b> visas i listor och bör hållas kort och tydlig. Har du flera resurser av
+samma typ kan det vara bra att lägga till ett löpnummer eller dylikt  som hjälper dig att 
+identifiera resurserna.</p>
+<p><b>Beskrivningen</b> kan vara en längre text. Här kan du samla all information om 
+resursen som kan vara användbar för användaren. Texten visas i resursens detailjvy.</p>
+<p>Med <b>Aktiv (kan bokas)</b> bestämmer du om resursen ska visas för bokning. Det kan 
+vara användbart under tiden du lägger upp resursen tills all information är på plats, eller 
+när en resurs inte är tillgänglig på grund av skada, förlust mm.</p>
+<p>Knappen <b>Duplicera resursen</b> skapar en kopia. Om rubriken i din resurs slutar på
+<tt>(n)</tt> (där n är ett löpnummer) så får kopian nästa löpnummer. Om du t.ex. kopierar 
+<tt>Kanadensare (1)</tt> så heter kopian <tt>Kanadensare (2)</tt>. Annars får kopians 
+rubrik tillägget <tt>(kopia)</tt>. <b>OBS</b>, du måste själv aktivera kopian!</p>
 
 <h3>Bilder</h3>
-<p>Du kan lägga in ett valfritt antal bilder på din resurs. En av bilderna blir huvudbilden, vilket innebär att den visas i listor vid t.ex. bokning. Till varje bild kan du även lägga in en bildtext som visas under bilden.</p>
+<p>Du kan lägga in ett valfritt antal bilder på din resurs. En av bilderna blir huvudbilden, 
+vilket innebär att den visas i listor vid t.ex. bokning. Till varje bild kan du även lägga 
+in en bildtext som visas under bilden.</p>
 EOF;
         die();
     case "newItem":
