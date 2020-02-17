@@ -19,7 +19,7 @@ if (isset($_REQUEST['action'])) {
 <p>Du kan stänga hjälp-rutan med tillbaka-knappen (på mobilen) eller ESC-tangenten (på datorn).</p>
 
 <h3>Inloggning</h3>
-<p>Resursbokningen använder samma inloggning som Friluftsfrämjandets aktivitetshanterare. Har du problem med inloggningen, vänd dig i första hand till dem som har hand om inloggningen på friluftsframjandet.se.</p>
+<p>Resursbokningen använder samma inloggning som Friluftsfrämjandets aktivitetshanterare. Det innebär att du kan använda både medlemsnummer och personnummer, och att du använder samma lösenord som i aktivitetshanteraren. Har du problem med inloggningen, vänd dig i första hand till dem som har hand om inloggningen på friluftsframjandet.se.</p>
 
 <h3>Kom igång med din lokalavdelning</h3>
 <ul>
@@ -104,7 +104,7 @@ if (isset($_POST['login'])) {
             $message = "Kan inte få kontakt med inloggningsservern. Vänligen försök igen senare. Om problemet kvarstår, kontakta systemadmin.";
         }
         elseif ($result['authenticated']) {
-            $_SESSION['authenticatedUser'] = $_POST['id'];
+            $_SESSION['authenticatedUser'] = $result['userId'];
             $u = new User($_SESSION['authenticatedUser'], $result['section']);
             $u->getAssignments();
             if (!$u->updateLastLogin()) die("Cannot update user.");
@@ -185,8 +185,7 @@ if (isset($_REQUEST['message'])) $message = ($message ? "$message<br>" : "") . $
     <p class="ui-body ui-body-b">
     <?= $_SESSION['authenticatedUser'] ? "" : "Välkommen till testplattformen för FFs nya resursbokningssystem! Här kan du följa utvecklingen av projektet och testa." ?> Var inte rädd för att förstöra något, utan försök gärna att utmana funktionerna och hitta svaga punkter!<br>
     Kom ihåg att detta bara är testplattformen. Allt som läggs upp kommer att försvinna vid övergången till produktionsplattformen.<br>
-    <?= $_SESSION['authenticatedUser'] ? "" : "Ett litet tipps till dig som snabbt vill få en överblick: Kolla på Mölndals lokalavdelning! Där finns det en del resurser upplagda som du kan testa att boka.<br>Om du inte kan logga in med ditt medlemsnummer och vanliga lösenord så beror det kanske på testmiljön. Då kan du istället använda ett testkonto med medlemsnummer 999999. Lösenordet är det som vi ropar när Mulle kommer: Hej ___!
-    <br>" ?>
+    <?= $_SESSION['authenticatedUser'] ? "" : "Ett litet tipps till dig som snabbt vill få en överblick: Kolla på Mölndals lokalavdelning! Där finns det en del resurser upplagda som du kan testa att boka.<br>" ?>
     Mer information hittar du på <a style="color:white;" target="_blank" href="https://github.com/d-tamm/ff-boka">GitHub</a> där du bl.a. kan anmäla buggar. För att ta kontakt med utvecklarna, kolla på <a style="color:white;" href="https://ff-boka.slack.com" target="_blank">Slack</a>.</p>
     <?php
     if ($_SESSION['authenticatedUser']) {
@@ -253,7 +252,7 @@ if (isset($_REQUEST['message'])) $message = ($message ? "$message<br>" : "") . $
         <form id="formLogin" style="padding:10px 20px;" action="index.php" method="post" data-ajax="false">
             <h3>Inloggning</h3>
             <input type="hidden" name="redirect" id="loginRedirect" value="<?= $_REQUEST['redirect'] ?>">
-            <input name="id" value="" placeholder="Medlemsnummer" required>
+            <input name="id" value="" placeholder="Medlemsnummer eller personnummer" required>
             <input name="password" value="" placeholder="Lösenord" type="password">
             <div id="div-remember-me" style="<?= empty($_COOKIE['cookiesOK']) ? "display:none;" : "" ?>"><label><input data-mini='true' name='rememberMe' value='1' type='checkbox'> Kom ihåg mig</label></div>
             <button name="login" value="login" class="ui-btn ui-shadow ui-btn-b ui-btn-icon-right ui-icon-user">Logga in</button>
