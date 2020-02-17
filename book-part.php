@@ -117,6 +117,7 @@ switch ($_REQUEST['action']) {
 <p>Om du vill göra en bokning där olika resurser behövs olika länge delar du upp bokningen. Börja med att boka alla resurser som ska ha samma tid. Sedan får du möjlighet att lägga till fler delbokningar med andra tider och/eller resurser.</p>
 END;
         die();
+        
     case "ajaxItemDetails":
         header("Content-Type: application/json");
         $item = new Item($_REQUEST['id'], $_REQUEST['bookingStep']==2);
@@ -181,13 +182,15 @@ END;
         header("Content-Type: application/json");
         $unavail = array();
         $minAccess = FFBoka::ACCESS_CATADMIN;
-        foreach (array_keys($_REQUEST['ids']) as $id) {
-            // For every item with visible freebusy information, check availability
-            $item = new Item($id, $_REQUEST['bookingStep']==2);
-            $acc = $item->category()->getAccess($currentUser);
-            $minAccess = ($minAccess & $acc);
-            if ($acc >= FFBoka::ACCESS_PREBOOK) {
-                if (!$item->isAvailable($_REQUEST['start'], $_REQUEST['end'])) $unavail[] = htmlspecialchars($item->caption);
+        if ($_REQUEST['ids']) {
+            foreach (array_keys($_REQUEST['ids']) as $id) {
+                // For every item with visible freebusy information, check availability
+                $item = new Item($id, $_REQUEST['bookingStep']==2);
+                $acc = $item->category()->getAccess($currentUser);
+                $minAccess = ($minAccess & $acc);
+                if ($acc >= FFBoka::ACCESS_PREBOOK) {
+                    if (!$item->isAvailable($_REQUEST['start'], $_REQUEST['end'])) $unavail[] = htmlspecialchars($item->caption);
+                }
             }
         }
         if (count($unavail)===0 && $_REQUEST['action']==="ajaxSave") {

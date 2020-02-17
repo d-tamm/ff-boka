@@ -181,7 +181,8 @@ function head(string $caption, string $baseUrl, $currentUser=NULL) {
  * be used as non-HTML body if it exists. Otherwise, the function will try to strip off the tags from the html file.
  * If no html file exists, $template will be used as message body.
  * @param array $replace [ search=>replace ] Array of strings to be replaced
- * @return boolean|string TRUE on success, error message on failure
+ * @throws Exception if sending fails
+ * @return bool True on success
  */
 function sendmail(string $to, string $subject, $template, $replace=NULL) {
     global $cfg;
@@ -226,7 +227,7 @@ function sendmail(string $to, string $subject, $template, $replace=NULL) {
         $mail->Subject = $subject;
         $mail->Body = $body;
         if (isset($altBody)) $mail->AltBody = $altBody;
-        $mail->send();
+        if (!$mail->send()) throw new Exception($mail->ErrorInfo);
         return true;
     } catch (Exception $e) {
         throw new \Exception("Mailer Error: ".$mail->ErrorInfo);
