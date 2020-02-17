@@ -91,7 +91,7 @@ function displayCatAccess($cat, $accLevels) {
         $ret .= "<li><a href='#' class='ajax-input'>{$adm['userId']} " . ($adm['name'] ? htmlspecialchars($adm['name']) : "(ingen persondata tillgänglig)") . "<p>{$accLevels[$adm['access']]}</p></a><a href='#' onclick=\"unsetAccess('{$adm['userId']}');\">Återkalla behörighet</a></li>";
     }
     if ($ret) return "<ul data-role='listview' data-inset='true' data-split-icon='delete' data-split-theme='c'>$ret</ul>";
-    else return "<p><i>Inga behörigheter har tilldelats än. Använd alternativen nedan för att tilldela behörigheter.</i></p>";
+    else return "<p><i>Inga behörigheter har tilldelats än. Använd alternativen ovan för att tilldela behörigheter.</i></p>";
 }
 
 
