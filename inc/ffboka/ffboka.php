@@ -46,6 +46,8 @@ class FFBoka {
     protected static $apiFeedUserAss;
     /** URL and file path to API feed for getting all valid sections */
     protected static $apiFeedSec;
+    /** URL and file path to API feed to convert personnummer to member number */
+    protected static $apiFeedSocnr;
     /** GUID in API indicating sections */
     const TYPE_SECTION = 478880001;
     /** string[] Assignment names from API giving section admin access. */
@@ -71,6 +73,7 @@ class FFBoka {
         self::$apiAuthKey = $api['authKey'];
         self::$apiFeedUserAss = $api['feedUrl'] . $api['feedUserAss'];
         self::$apiFeedSec = $api['feedUrl'] . $api['feedSec'];
+        self::$apiFeedSocnr = $api['feedUrl'] . $api['feedSocnr'];
         self::$db = $db;
         self::$sectionAdmins = $sectionAdmins;
         self::$timezone = $timezone;
@@ -120,15 +123,25 @@ class FFBoka {
 
     /**
      * Authenticate the given user data by querying the API
-     * @param string $userId
+     * @param string $userId Member number or personnummer
      * @param string $password
-     * @return bool|array(bool authenticated, string section) Returns FALSE if API does not respond.
-     * Otherwise, authenticated contains whether the credentials were accepted. If accepted, section
-     * will contain the section name.  
+     * @return bool|array(bool authenticated, int userId, string section) Returns FALSE if API does not respond.
+     * Otherwise, authenticated contains whether the credentials were accepted. If accepted, userId
+     * will contain the member ID and section will contain the section name.  
      */
     public function authenticateUser($userId, $password) {
-        // Fake test user with id=999999
-        if ($userId=="999999" && $password=="kollikok") return array("authenticated"=>TRUE, "section"=>"52");
+        if (preg_match("/^(19|20)?\d{6}-?\d{4}$/", $userId)) {
+            // $userId is given as personnummer. Convert to member number via API
+            $data = json_decode(@file_get_contents(self::$apiFeedSocnr . $userId));
+            //die("Personnummer: $userId, svar:".print_r($data, true));
+            if ($data === FALSE) {
+                return FALSE;
+            } elseif ($data->results) {
+                $userId = $data->results[0]->cint_username;
+            } else {
+                return array("authenticated" => FALSE, "section" => NULL);
+            }
+        }
         // Check password via API and get home section
         $options = array(
             'http' => array(
@@ -143,7 +156,11 @@ class FFBoka {
         $result = file_get_contents(self::$apiAuthUrl, false, $context);
         if ($result === FALSE) return FALSE;
         $result = json_decode($result);
-        return array("authenticated" => $result->isMember, "section" => $result->isMemberOfLokalavdelning);
+        return array(
+            "authenticated"=>$result->isMember,
+            "userId"=>$userId,
+            "section"=>$result->isMemberOfLokalavdelning
+        );
     }
     
 
