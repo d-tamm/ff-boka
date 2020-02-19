@@ -170,6 +170,24 @@ switch ($_REQUEST['action']) {
         });
     });
 
+    // Some functions to enable audio playback even if user has not allowed it specifically.
+    // see http://blog.foolip.org/2014/02/10/media-playback-restrictions-in-blink/
+    function mediaPlaybackRequiresUserGesture() {
+        // test if play() is ignored when not called from an input event handler
+        var audio = document.createElement('audio');
+        audio.play();
+        return audio.paused;
+	}
+
+    function removeBehaviorsRestrictions() {
+        // Called on first user interaction
+        var audio = document.querySelector('#au-notify');
+        audio.load(); // This will remove the normal restriction
+        window.removeEventListener('keydown', removeBehaviorsRestrictions);
+        window.removeEventListener('mousedown', removeBehaviorsRestrictions);
+        window.removeEventListener('touchstart', removeBehaviorsRestrictions);
+    }
+    	    
     // Show details for an item in side panel
     function showItemDetails(itemId) {
         openSidePanelOrWindow("../item-details.php?itemId=" + itemId, "itemDetails" + itemId);
@@ -208,7 +226,8 @@ switch ($_REQUEST['action']) {
             });
             if (maxBookedItemId < data.maxBookedItemId) {
                 maxBookedItemId = data.maxBookedItemId;
-                var audio = new Audio("../resources/bell.mp3");
+                //var audio = new Audio("../resources/bell.mp3");
+                var audio = document.querySelector('#au-notify');
                 audio.play();
             }
         });
@@ -242,6 +261,16 @@ switch ($_REQUEST['action']) {
         $('#booking-admin').css('padding-right', '0');
         $('#iframe-booking').css('width','0').attr('src','');
     }
+
+    // Try to remove audio playback restrictions by reacting on first user interaction
+    if (mediaPlaybackRequiresUserGesture()) {
+        // wait for input event
+        window.addEventListener('keydown', removeBehaviorsRestrictions);
+        window.addEventListener('mousedown', removeBehaviorsRestrictions);
+        window.addEventListener('touchstart', removeBehaviorsRestrictions);
+    } else {
+        // no user gesture required
+    }    
     </script>
 </head>
 
@@ -278,6 +307,7 @@ switch ($_REQUEST['action']) {
             </td>
             <td><div class='freebusy-bar' id='booking-adm-scale'></div></td></tr>
         </table>
+        <audio id="au-notify" src="../resources/bell.mp3" autoplay></audio>
     </div>
     
     <?php 
