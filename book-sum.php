@@ -208,11 +208,17 @@ EOF;
                 $mailItems = "";
                 foreach ($itemIds as $itemId) {
                     $item = new Item($itemId, TRUE);
-                    $mailItems .= "<li><b>" . htmlspecialchars($item->caption) . "</b> " . strftime("%a %F kl %k:00", $item->start) . " till " . strftime("%a %F kl %k:00", $item->end) . "</li>";
+                    $mailItems .= "<li><b>" . htmlspecialchars($item->caption) . "</b> " . strftime("%a %F kl %k:00", $item->start) . " till " . strftime("%a %F kl %k:00", $item->end);
+                    switch ($item->status) {
+                        case FFBoka::STATUS_CONFIRMED: $mailItems .= " (bekräftat)"; break;
+                        case FFBoka::STATUS_PREBOOKED: $mailItems .= " <b>(obekräftat)</b>"; break;
+                        case FFBoka::STATUS_CONFLICT: $mailItems .= " <b style='color:red'>(krockar med befintlig bokning)</b>"; break;
+                    }
+                    $mailItems .= "</li>";
                 }
                 sendmail(
                     $mail, // to
-                    "Ny bokning att bekräfta", // subject
+                    "FF Ny bokning #{$booking->id}", // subject
                     "booking_alert",
                     array(
                         "{{name}}"=>htmlspecialchars($name),
