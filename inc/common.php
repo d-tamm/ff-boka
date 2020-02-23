@@ -53,6 +53,7 @@ if (!$_SESSION['authenticatedUser'] && !empty($_COOKIE['remember'])) {
  */
 function connectDb(string $host, string $dbname, string $user, string $pass, int $reqVer) {
     $output = array();
+    $return_var = 0;
     // Try to connect to the database
     try {
         $db = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $user, $pass);
@@ -63,7 +64,7 @@ function connectDb(string $host, string $dbname, string $user, string $pass, int
     if ($stmt === FALSE) {
         // No tables? Try to install base skeleton
         echo(str_pad("<html><body><h1>Empty Database Found</h1><p>The database seems to be empty. Trying to install base skeleton. Please wait...</p>",4096)); flush();
-        exec("mysql -u $user --password=$pass $dbname < \"" . __DIR__ . "/../resources/db/skeleton.sql\" 2>&1", $output);
+        exec("mysql -u $user --password=$pass $dbname < \"" . __DIR__ . "/../resources/db/skeleton.sql\" 2>&1", $output, $return_var);
         echo implode("<br>", $output);
         die("<p>Finished.</p><p>If you do not see any error messages, you may <a href='javascript:location.reload();'>reload this page</a> to continue.</p></body></html>");
     }
@@ -80,10 +81,12 @@ function connectDb(string $host, string $dbname, string $user, string $pass, int
             if (!is_readable(__DIR__ . "/../resources/db/$curVer.sql")) die("<p><b>Oops... Cannot find database upgrade file to v $curVer.</b> Please take contact with the maintainers of the repository who should have supplied the file /resources/db/$curVer.sql.</p><p><a href='javascript:location.reload();'>Retry</a></p></body></html>");
             echo(str_pad("<h3>Upgrading from v " . ($curVer-1) . " to v $curVer...</h3>", 4096)); flush();
             // Apply upgrade
-            exec("mysql -u $user --password=$pass $dbname < \"" . __DIR__ . "/../resources/db/$curVer.sql\" 2>&1", $output);
+            exec("mysql -u $user --password=$pass $dbname < \"" . __DIR__ . "/../resources/db/$curVer.sql\" 2>&1", $output, $return_var);
             echo implode("<br>", $output);
-            // Write new version to db
-            $db->exec("UPDATE config SET value=$curVer WHERE name='db-version'");
+            if ($return_var) {
+                // Write new version to db
+                $db->exec("UPDATE config SET value=$curVer WHERE name='db-version'");
+            }
         }
         die("<p>Finished.</p><p>If you do not see any error messages, you may <a href='javascript:location.reload();'>reload this page</a> to continue.</p></body></html>");
     }
