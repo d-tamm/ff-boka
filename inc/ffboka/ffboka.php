@@ -120,7 +120,20 @@ class FFBoka {
         return $sections;
     }
     
+    
+    /**
+     * Get the section ID for a clear text section name
+     * @param string $sectionName
+     * @return int|boolean The sectionId of the section, or FALSE if no match is found.
+     */
+    public function getSectionIdByName(string $sectionName) {
+        $stmt = self::$db->prepare("SELECT sectionId FROM sections WHERE name=?");
+        $stmt->execute(array($sectionName));
+        if ($row = $stmt->fetch(\PDO::FETCH_OBJ)) return $row->sectionId;
+        else return FALSE;
+    }
 
+    
     /**
      * Authenticate the given user data by querying the API
      * @param string $userId Member number or personnummer

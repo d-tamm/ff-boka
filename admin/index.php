@@ -301,6 +301,13 @@ unset($_SESSION['catId']);
                 <?= adminList($section, $currentUser->id) ?>
             </ul>
         </div>
+
+        <div data-role="collapsible">
+            <h2>Övrigt</h2>
+            <h3>Direktlänk</h3>
+            <p>Om du vill länka direkt till lokalavdelningens bokningssida kan du använda följande länk:</p>
+            <p><a href="<?= $cfg['url'] . "boka-" . urlencode($section->name) ?>"><?= $cfg['url'] . "boka-" . $section->name ?></a></p>
+        </div>
         <?php } ?>
         
         <?php if (in_array($_SESSION['authenticatedUser'], $cfg['superAdmins'])) { ?>

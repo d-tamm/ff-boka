@@ -5,7 +5,7 @@ use FFBoka\Category;
 use FFBoka\FFBoka;
 use FFBoka\Item;
 use FFBoka\Booking;
-global $cfg, $message;
+global $cfg, $message, $FF;
 session_start();
 require("inc/common.php");
 
@@ -85,7 +85,16 @@ function getFreebusyCombined($ids, $user, $start) {
     }
     return $freebusyCombined;
 }
-    
+
+if (isset($_GET['sectionName'])) {
+    // Page was called via direct link with clear text section name and a rewrite rule.
+    // Find the corresponding section
+    $_REQUEST['sectionId'] = $FF->getSectionIdByName($_GET['sectionName']);
+    if ($_REQUEST['sectionId'] === FALSE) {
+        header("Location: {$cfg['url']}index.php?message=" . urlencode("Adressen du änvände är ogiltig."));
+        die();
+    }
+}
 
 if (isset($_REQUEST['sectionId'])) {
     $_SESSION['sectionId'] = $_REQUEST['sectionId'];
@@ -243,6 +252,8 @@ END;
     <h4>Lokalavdelning: <?= htmlspecialchars($section->name) ?></h4>
 
     <?php
+    if (!$_SESSION['authenticatedUser']) echo "<p class='ui-body ui-body-a'>Du bokar som gäst. Om du är medlem i Friluftsfrämjandet och vill boka som medlem så behöver du <a href='index.php?redirect=" . urlencode($_SERVER['REQUEST_URI']) . "'>logga in först</a>.</p>";
+    
     if (isset($_SESSION['bookingId'])) echo "<p class='ui-body ui-body-a'>Du har en påbörjad bokning. Resurserna du väljer nedan kommer att läggas till bokningen.<a data-transition='slide' class='ui-btn' href='book-sum.php'>Visa bokningen</a></p>";
     ?>
 
