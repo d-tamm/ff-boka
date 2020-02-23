@@ -83,7 +83,7 @@ function connectDb(string $host, string $dbname, string $user, string $pass, int
             // Apply upgrade
             exec("mysql -u $user --password=$pass $dbname < \"" . __DIR__ . "/../resources/db/$curVer.sql\" 2>&1", $output, $return_var);
             echo implode("<br>", $output);
-            if ($return_var) {
+            if ($return_var==0) {
                 // Write new version to db
                 $db->exec("UPDATE config SET value=$curVer WHERE name='db-version'");
             }
