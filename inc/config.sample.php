@@ -11,6 +11,7 @@ use FFBoka\FFBoka;
 $cfg = array(
     // Database connection settings
     "dbhost" => "127.0.0.1", // The host of the mariaDb server
+    "dbport" => 3306,        // The DB port
     "dbname" => "ff-boka",   // The name of the database
     "dbuser" => "ff-boka",   // Username for connecting to mariaDb
     "dbpass" => "your secret password", // Password for that user

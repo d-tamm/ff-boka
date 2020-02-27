@@ -28,7 +28,7 @@ use FFBoka\FFBoka;
 use FFBoka\User;
 
 // Connect to database
-$db = connectDb($cfg['dbhost'], $cfg['dbname'], $cfg['dbuser'], $cfg['dbpass'], $dbVersion);
+$db = connectDb($cfg['dbhost'], $cfg['dbname'], $cfg['dbuser'], $cfg['dbpass'], $dbVersion, $cfg['dbport']);
 
 // Create FF object
 $FF = new FFBoka($cfg['ff-api'], $db, $cfg['sectionAdmins'], $cfg['timezone']);
@@ -49,14 +49,15 @@ if (!$_SESSION['authenticatedUser'] && !empty($_COOKIE['remember'])) {
  * @param string $user Database user name
  * @param string $pass Password of that user
  * @param int $reqVer The required DB version
- * @param PDO $db Connection to the database 
+ * @param int $port Database port
+ * @return PDO $db Connection to the database 
  */
-function connectDb(string $host, string $dbname, string $user, string $pass, int $reqVer) {
+function connectDb(string $host, string $dbname, string $user, string $pass, int $reqVer, int $port=3306) {
     $output = array();
     $return_var = 0;
     // Try to connect to the database
     try {
-        $db = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $user, $pass);
+        $db = new PDO("mysql:host=$host;port=$port;dbname=$dbname;charset=utf8", $user, $pass);
     } catch (PDOException $e) {
         die("<html><body><h1>Can't Connect to Database</h1><p>If this is a fresh installation, create a database named <tt>$dbname</tt> on host <tt>$host</tt>, and create a user named <tt>$user</tt> with complete access to that database. Set the user's password in <tt>config.php</tt>. You can also change the database and user name there.</p><p>When done, <a href='javascript:location.reload();'>reload this page</a> to continue installation.</p></body></html>");
     }
