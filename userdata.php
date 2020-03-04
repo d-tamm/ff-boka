@@ -1,10 +1,9 @@
 <?php
-use FFBoka\User;
-use FFBoka\Section;
 use FFBoka\Booking;
 use FFBoka\Category;
 use FFBoka\FFBoka;
-global $cfg;
+use FFBoka\User;
+global $cfg, $FF;
 
 session_start();
 require(__DIR__."/inc/common.php");
@@ -86,6 +85,15 @@ EOF;
     case "save user data":
         // User shall supply name, mail and phone
         if ($_POST['name'] && $_POST['mail'] && $_POST['phone']) {
+            $result = $FF->authenticateUser($currentUser->id, $_POST['password']);
+            if ($result===FALSE) {
+                $message = "Kan inte verifiera lösenordet just nu. Vänligen försök igen senare.";
+                break;
+            }
+            if ($result['authenticated']===FALSE) {
+                $message = "Fel lösenord. Vänligen försök igen. Lösenordet du ska ange är samma som du använder på Friluftsfrämjandets hemsida.";
+                break;
+            }
             $currentUser->name = $_POST['name'];
             $currentUser->phone = $_POST['phone'];
             if ($_POST['mail'] !== $currentUser->mail) {
@@ -212,7 +220,7 @@ if ($_GET['first_login']) $message = "Välkommen till resursbokningen! Innan du 
             <h3>Kontaktuppgifter</h3>
             
             <form action="userdata.php" method="post" data-ajax="false">
-                <p>Uppgifter om dig så andra vet vem du är och hur de kan får tag i dig.</p>
+                <p>Uppgifter om dig så andra vet vem du är och hur de kan få tag i dig. För att ändra uppgifterna måste du ange ditt aktuella lösenord.</p>
                 <input type="hidden" name="action" value="save user data">
                 <p>Medlemsnummer: <?= $currentUser->id ?></p>
                 <p>Lokalavdelning: <?= $currentUser->section->name ?></p>
@@ -227,6 +235,10 @@ if ($_GET['first_login']) $message = "Välkommen till resursbokningen! Innan du 
                 <div class="ui-field-contain">
                     <label for="userdata-phone" class="required">Telefon:</label>
                     <input type="tel" name="phone" id="userdata-phone" required placeholder="Mobilnummer" value="<?= htmlspecialchars($_POST['phone'] ? $_POST['phone'] : $currentUser->phone) ?>">
+                </div>
+                <div class="ui-field-contain">
+                    <label for="userdata-password" class="required">Lösenord:</label>
+                    <input type="password" name="password" id="userdata-password" required placeholder="Ange ditt FF-lösenord" autocomplete="off">
                 </div>
                 <input type="submit" value="Spara" data-icon="check">
             </form>
