@@ -60,9 +60,10 @@ switch ($_REQUEST['action']) {
 <p>Här ser du alla enheter/webbläsare där du har loggat in med "Kom ihåg mig"-funktionen. Funktionen gör att du inte behöver logga in varje gång du använder resursbokningen. Du kan ta bort enskilda poster genom att klicka på knappen längst till höger. På det viset kan du t.ex. logga ut en enhet som du inte längre har kontroll över.</p>
 
 <h3>Kontaktuppgifter</h3>
-<p>Resursbokningen kan inte fungera utan att användarna kan ta kontakt med varandra. Därför måste man lägga in några grundläggande uppgifter om sig själv. Även om vi skulle kunna hämta dessa uppgifter från Friluftsfrämjandets centrala register gör vi det inte för att undvika krångel med GDPR. Uppgifterna som du matar in här (namn, epost och telefon) sparas lokalt i databasen och delas inte med något annat system.</p>
+<p>Resursbokningen kan inte fungera utan att bokningsansvariga vid behov kan ta kontakt med dig. Därför måste du lägga in några grundläggande uppgifter om dig själv. Även om vi skulle kunna hämta dessa uppgifter från Friluftsfrämjandets centrala register gör vi det inte för att undvika krångel med GDPR. Uppgifterna som du matar in här (namn, epost och telefon) sparas lokalt i databasen och delas inte med något annat system.</p>
 <p>När du ändrar epostadressen kommer systemet att skicka en aktiveringskod till den nya adressen som du måste bekräfta. Det gör vi för att säkerställa att du kan nås på adressen och utesluta stavningsfel.</p>
-<p>Lösenordet kan du inte ändra här eftersom vi använder samma inloggning som Friluftsfrämjandets hemsida. Om du vill ändra ditt lösenord måste du därför logga in på <a target="_blank" href="https://www.friluftsframjandet.se">Friluftsfrämjandets hemsida</a>.</p>
+<p>Av säkerhetsskäl behöver du knappa in ditt lösenord för att bekräfta ändringar av dina kontaktuppgifter.</p>
+<p><b>OBS:</b> Lösenordet kan du inte ändra här eftersom vi använder samma inloggning som Friluftsfrämjandets hemsida. Om du vill ändra ditt lösenord måste du därför logga in på <a target="_blank" href="https://www.friluftsframjandet.se">Friluftsfrämjandets hemsida</a>.</p>
 
 <h3>Radera kontot</h3>
 <p>Om du inte längre vill använda resursbokningen kan du radera alla dina personuppgifter i systemet. Om du gör det loggas du ut, och ditt konto med alla relaterade uppgifter <b>inklusive alla bokningar (både kommande och avslutade)</b> raderas.</p>
@@ -220,7 +221,7 @@ if ($_GET['first_login']) $message = "Välkommen till resursbokningen! Innan du 
             <h3>Kontaktuppgifter</h3>
             
             <form action="userdata.php" method="post" data-ajax="false">
-                <p>Uppgifter om dig så andra vet vem du är och hur de kan få tag i dig. För att ändra uppgifterna måste du ange ditt aktuella lösenord.</p>
+                <p>Uppgifter om dig så andra vet vem du är och hur de kan få tag i dig.</p>
                 <input type="hidden" name="action" value="save user data">
                 <p>Medlemsnummer: <?= $currentUser->id ?></p>
                 <p>Lokalavdelning: <?= $currentUser->section->name ?></p>
@@ -236,6 +237,7 @@ if ($_GET['first_login']) $message = "Välkommen till resursbokningen! Innan du 
                     <label for="userdata-phone" class="required">Telefon:</label>
                     <input type="tel" name="phone" id="userdata-phone" required placeholder="Mobilnummer" value="<?= htmlspecialchars($_POST['phone'] ? $_POST['phone'] : $currentUser->phone) ?>">
                 </div>
+                Ange ditt aktuella lösenord nedan för att bekräfta att du vill ändra dina kontaktuppgifter.
                 <div class="ui-field-contain">
                     <label for="userdata-password" class="required">Lösenord:</label>
                     <input type="password" name="password" id="userdata-password" required placeholder="Ange ditt FF-lösenord" autocomplete="off">
