@@ -179,16 +179,16 @@ class User extends FFBoka {
             $_SERVER['SERVER_NAME'],
             true, // TLS-only
             true  // http-only
-            )) return FALSE;
-            // Save token to database
-            $stmt = self::$db->prepare("INSERT INTO persistent_logins SET userId=:userId, userAgent=:userAgent, selector=:selector, authenticator=:authenticator, expires=DATE_ADD(NOW(), INTERVAL $ttl SECOND)");
-            if (!$stmt->execute(array(
-                "userId"=>$this->id,
-                "userAgent"=>$_SERVER['HTTP_USER_AGENT'],
-                ":selector"=>$selector,
-                ":authenticator"=>hash('sha256', $authenticator),
-            ))) throw new \Exception($stmt->errorInfo()[2]);
-            return TRUE;
+        )) return FALSE;
+        // Save token to database
+        $stmt = self::$db->prepare("INSERT INTO persistent_logins SET userId=:userId, userAgent=:userAgent, selector=:selector, authenticator=:authenticator, expires=DATE_ADD(NOW(), INTERVAL $ttl SECOND)");
+        if (!$stmt->execute(array(
+            "userId"=>$this->id,
+            "userAgent"=>$_SERVER['HTTP_USER_AGENT'],
+            ":selector"=>$selector,
+            ":authenticator"=>hash('sha256', $authenticator),
+        ))) throw new \Exception($stmt->errorInfo()[2]);
+        return TRUE;
     }
     
     /**
@@ -221,10 +221,10 @@ class User extends FFBoka {
     
     /**
      * Get all persistent logins for user
-     * @return array of objects { string userAgent }
+     * @return array of objects { string userAgent, string selector, int expires } Expires is returned as Unix timestamp
      */
     public function persistentLogins() {
-        $stmt = self::$db->query("SELECT userAgent FROM persistent_logins WHERE userId={$this->id}");
+        $stmt = self::$db->query("SELECT userAgent, selector, UNIX_TIMESTAMP(expires) expires FROM persistent_logins WHERE userId={$this->id}");
         return $stmt->fetchall(\PDO::FETCH_OBJ);
     }
     

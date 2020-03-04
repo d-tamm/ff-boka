@@ -198,9 +198,12 @@ if ($_GET['first_login']) $message = "Välkommen till resursbokningen! Innan du 
             <h3>Inloggningar</h3>
             <ul data-role="listview" data-split-icon="delete">
             <?php
-            foreach ($currentUser->persistentLogins() as $login) {
-                echo "<li class='wrap'><a href='#' style='white-space:normal; font-weight:normal;'>" . htmlspecialchars($login->userAgent) . ($login->userAgent == $_SERVER['HTTP_USER_AGENT'] ? " <i>(den här inloggningen)</i>" : "") . "</a><a href='#' onClick=\"removePersistentLogin(this.parentElement, '" . htmlspecialchars($login->userAgent) . "');\" title='ta bort inloggningen'></a></li>";
-            }
+            $logins = $currentUser->persistentLogins();
+            if ($logins) {
+                foreach ($logins as $login) {
+                    echo "<li class='wrap'><a href='#' style='white-space:normal; font-weight:normal;'>" . htmlspecialchars($login->userAgent) . ($login->selector == explode(":", $_COOKIE['remember'])[0] ? " <i>(den här inloggningen)</i>" : "") . "<br>Förfaller " . strftime("%F", $login->expires) . "</a><a href='#' onClick=\"removePersistentLogin(this.parentElement, '" . htmlspecialchars($login->userAgent) . "');\" title='ta bort inloggningen'></a></li>";
+                }
+            } else echo "<li style='white-space:normal'>Här kommer du se dina inloggningar där du har valt alternativet \"Kom ihåg mig\". Just nu har du inte några sådana permanenta inloggningar.</li>";
             ?>
             </ul>
         </div>

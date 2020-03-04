@@ -110,7 +110,9 @@ if (isset($_POST['login'])) {
             if (!$u->updateLastLogin()) die("Cannot update user.");
             $db->exec("INSERT INTO logins (ip, userId, success, userAgent) VALUES (INET_ATON('{$_SERVER['REMOTE_ADDR']}'), '{$_POST['id']}', 1, '{$_SERVER['HTTP_USER_AGENT']}')");
             // If requested, set persistent login cookie
-            if (isset($_POST['rememberMe'])) $u->createPersistentLogin($cfg['TtlPersistentLogin']);
+            if (isset($_POST['rememberMe'])) {
+                if ($u->createPersistentLogin($cfg['TtlPersistentLogin'])===FALSE) die("Kan inte skapa permanent inloggning.");
+            }
             // Redirect if requested by login form
             if ($_POST['redirect']) {
                 header("Location: {$_POST['redirect']}");
@@ -254,7 +256,7 @@ if (isset($_REQUEST['message'])) $message = ($message ? "$message<br>" : "") . $
             <input type="hidden" name="redirect" id="loginRedirect" value="<?= $_REQUEST['redirect'] ?>">
             <input name="id" value="" placeholder="Medlemsnummer eller personnummer" required>
             <input name="password" value="" placeholder="Lösenord" type="password">
-            <div id="div-remember-me" style="<?= empty($_COOKIE['cookiesOK']) ? "display:none;" : "" ?>"><label><input data-mini='true' name='rememberMe' value='1' type='checkbox'> Kom ihåg mig</label></div>
+            <div id="div-remember-me" style="<?= empty($_COOKIE['cookiesOK']) || !$_SERVER['HTTPS'] ? "display:none;" : "" ?>"><label><input data-mini='true' name='rememberMe' value='1' type='checkbox'> Kom ihåg mig</label></div>
             <button name="login" value="login" class="ui-btn ui-shadow ui-btn-b ui-btn-icon-right ui-icon-user">Logga in</button>
         </form>
     <?php } ?>
