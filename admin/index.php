@@ -44,7 +44,9 @@ if (!$section->showFor($currentUser, FFBoka::ACCESS_CATADMIN) && !array_intersec
     die();
 }
 $userAccess = $section->getAccess($currentUser);
-if (array_intersect($_SESSION['assignments'][$section->id], $cfg['sectionAdmins'])) $userAccess=FFBoka::ACCESS_SECTIONADMIN;
+if (is_array($_SESSION['assignments'][$section->id])) {
+    if (array_intersect($_SESSION['assignments'][$section->id], $cfg['sectionAdmins'])) $userAccess=FFBoka::ACCESS_SECTIONADMIN;
+}
 
 if ($_REQUEST['message']) $message = $_REQUEST['message'];
 
