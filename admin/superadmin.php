@@ -61,13 +61,13 @@ case "ajaxUpgrade":
         else $ret[] = "Har skapat säkerhetskopia av config.php i huvudmappen.";
         foreach (scandir("update/ff-boka-master/") as $filename) {
             if ($filename=="." || $filename=="..") continue;
-            if (!deleteDirectory($filename)) $ret[] = "Kan inte ta bort gamla versionen av $filename.";
+            if (!deleteDirectory($filename)) $ret[] = "<b>Kunde inte ta bort gamla versionen av $filename.</b>";
             else $ret[] = "Har tagit bort gamla versionen av $filename.";
-            if (!rename("update/ff-boka-master/$filename", $filename)) $ret[] = "Kan inte flytta nya versionen på $filename på plats.";
+            if (!rename("update/ff-boka-master/$filename", $filename)) $ret[] = "<b>Kunde inte flytta nya versionen på $filename på plats.</b>";
             else $ret[] = "Har ersatt $filename med ny version.";
         }
         // restore local config
-        if (!rename("config.php", "inc/config.php")) $ret[] = "Kan inte flytta tillbaka config.php från huvudmappen till inc-mappen.";
+        if (!rename("config.php", "inc/config.php")) $ret[] = "<b>Kunde inte flytta tillbaka config.php från huvudmappen till inc-mappen.</b>";
         else $ret[] = "Har flyttat tillbaka config.php till inc-mappen.";
         // remove all update files
         if (!deleteDirectory("update")) die(json_encode([ "error"=>"FEL: Kan inte ta bort gamla filer." ]));
