@@ -264,7 +264,7 @@ unset ($_SESSION['itemId']);
 
 <body>
 <div data-role="page" id="page-admin-category">
-    <?= head(htmlspecialchars($cat->caption), $cfg['url'], $currentUser) ?>
+    <?= head(htmlspecialchars($cat->caption), $cfg['url'], $currentUser, $cfg['superAdmins']) ?>
     <div role="main" class="ui-content">
 
     <div data-role="popup" data-overlay-theme="b" id="popup-msg-page-admin-category" class="ui-content">

@@ -87,7 +87,7 @@ END;
 
 <body>
 <div data-role="page" id="page-bookings">
-    <?= head("Bokningar " . htmlspecialchars($section->name), $cfg['url'], $currentUser) ?>
+    <?= head("Bokningar " . htmlspecialchars($section->name), $cfg['url'], $currentUser, $cfg['superAdmins']) ?>
     <div role="main" class="ui-content">
 
     <?php 

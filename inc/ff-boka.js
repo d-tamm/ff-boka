@@ -1207,6 +1207,60 @@ function deleteImage(id) {
 }
 
 
+//========== superadmin.php ==========
+
+$(document).on('pageshow', "#page-super-admin", function() {
+    // Show message if there is any
+    if ($("#msg-page-super-admin").html()) {
+        setTimeout(function() {
+            $("#popup-msg-page-super-admin").popup('open');
+        }, 500); // We need some delay here to make this work on Chrome.
+    }
+});
+
+/**
+ * Perform a system upgrade by fetching the latest version from Github
+ */
+function systemUpgrade(step) {
+	switch(step) {
+	case 1:
+	    if (confirm("Det här kommer att försöka hämta senaste versionen från Github och installera den. De gamla filerna kommer att skrivas över. Har du gjort en backup? Redo att fortsätta?")) {
+	    	$("#upgrade-progress").html("");
+	    	$("#upgrade-progress").append("<li>Hämtar senaste versionen från master-grenen på Github...</li>");
+	        $.getJSON("?action=ajaxUpgrade&step=1", function(data, status) {
+	            if (data.error) {
+	            	$("#upgrade-progress").append("<li>"+data.error+"</li>");
+	            } else {
+	            	$("#upgrade-progress").append("<li>Har hämtat senaste versionen.</li>");
+	            	systemUpgrade(2);
+	            }
+	        });
+	    }
+	    break;
+	case 2:
+    	$("#upgrade-progress").append("<li>Packar upp arkivet...</li>");
+        $.getJSON("?action=ajaxUpgrade&step=2", function(data, status) {
+            if (data.error) {
+            	$("#upgrade-progress").append("<li>"+data.error+"</li>");
+            } else {
+            	$("#upgrade-progress").append("<li>Har packat upp arkivet.</li>");
+            	systemUpgrade(3);
+            }
+        });
+        break;
+	case 3:
+		$("#upgrade-progress").append("<li>Ersätter filerna...</li>");
+        $.getJSON("?action=ajaxUpgrade&step=3", function(data, status) {
+            if (data.error) {
+            	$("#upgrade-progress").append("<li>"+data.error+"</li>");
+            } else {
+            	$("#upgrade-progress").append("<li>"+data.status+"</li>");
+            	$("#upgrade-progress").append("<li>Lyckades att ersätta filerna. <a href='javascript:location.reload();'>Ladda om sidan</a> för att slutföra uppgraderingen.</li>");
+            }
+        });
+        break;
+	}
+}
 
 
 // ========== userdata.php ==========

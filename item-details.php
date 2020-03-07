@@ -39,7 +39,7 @@ if ($access < FFBoka::ACCESS_READASK) {
 
 <body>
 <div data-role="page" id="page-book-part">
-    <?= head($item->caption, $cfg['url'], $currentUser) ?>
+    <?= head($item->caption, $cfg['url'], $currentUser, $cfg['superAdmins']) ?>
     <div role="main" class="ui-content">
     
     <?php echo str_replace("\n", "<br>", htmlspecialchars($item->description));
