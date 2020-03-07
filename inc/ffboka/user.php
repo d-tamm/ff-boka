@@ -13,7 +13,6 @@ use PDO;
  */
 class User extends FFBoka {
     private $id;
-    private $assignments;
     
     /**
      * On user instatiation, get some static properties.
