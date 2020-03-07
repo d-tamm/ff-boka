@@ -96,9 +96,15 @@ case "ajaxUpgrade":
             if ($last==0 || $last < time()-3600) echo "<span style='color:var(--FF-orange);'>■</span>";
             else echo "<span style='color:var(--FF-green);'>■</span>"; ?></h3>
             <p><?= $last==0 ? "Cron har aldrig utförts" : "Cron utfördes senast för " . (int)((time()-$last)/60) . " minuter sedan" ?>.</p>
-            <h3>Konfiguration</h3>
+        </div>
+
+        <div data-role="collapsible">
+            <h2>Konfiguration</h2>
             <pre><?= print_r($cfg, TRUE) ?></pre>
-            <h3>Senaste inloggningar</h3>
+        </div>
+
+        <div data-role="collapsible">
+            <h2>Senaste inloggningar</h2>
             <table class="alternate-rows">
             <tr><th>timestamp</th><th>ip</th><th>userId</th><th>succ</th><th>userAgent</th></tr>
             <?php
