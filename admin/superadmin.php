@@ -55,18 +55,23 @@ case "ajaxUpgrade":
         if (!unlink('../update/ff-boka-master.zip')) die(json_encode([ "error"=>"Kan inte ta bort arkivfilen." ]));
         die(json_encode([ "status"=>"ok" ]));
     case "3":
+        chdir("..") || die(json_encode([ "error"=>"Kan inte gå till huvudmappen." ]));
         // save local config
-        if (!copy("../inc/config.php", "../config.php")) die(json_encode([ "error"=>"Kan inte skapa säkerhetskopia på config.php i huvudmappen." ]));
+        if (!copy("inc/config.php", "config.php")) die(json_encode([ "error"=>"Kan inte skapa säkerhetskopia på config.php i huvudmappen." ]));
         else $ret[] = "Har skapat säkerhetskopia av config.php i huvudmappen.";
-        foreach (scandir("../update/ff-boka-master/") as $filename) {
+        foreach (scandir("update/ff-boka-master/") as $filename) {
             if ($filename=="." || $filename=="..") continue;
-            if (!deleteDirectory("../$filename")) $ret[] = "Kan inte ta bort gamla versionen av $filename.";
+            if (!deleteDirectory($filename)) $ret[] = "Kan inte ta bort gamla versionen av $filename.";
             else $ret[] = "Har tagit bort gamla versionen av $filename.";
-            if (!rename("../update/ff-boka-master/$filename", "../$filename")) $ret[] = "Kan inte flytta nya versionen på $filename på plats.";
+            if (!rename("update/ff-boka-master/$filename", $filename)) $ret[] = "Kan inte flytta nya versionen på $filename på plats.";
             else $ret[] = "Har ersatt $filename med ny version.";
         }
         // restore local config
-        if (!rename("../config.php", "../inc/config.php")) $ret[] = "Kan inte flytta tillbaka config.php från huvudmappen till inc-mappen.";
+        if (!rename("config.php", "inc/config.php")) $ret[] = "Kan inte flytta tillbaka config.php från huvudmappen till inc-mappen.";
+        else $ret[] = "Har flyttat tillbaka config.php till inc-mappen.";
+        // remove all update files
+        if (!deleteDirectory("update")) die(json_encode([ "error"=>"FEL: Kan inte ta bort gamla filer." ]));
+        else $ret[] = "Har rensat tillfälliga update-filer.";
         die(json_encode([ "status"=>implode("</li><li>", $ret) ]));
     }
 }
