@@ -61,8 +61,9 @@ case "ajaxUpgrade":
         foreach (scandir("../update/ff-boka-master/") as $filename) {
             if ($filename=="." || $filename=="..") continue;
             if (!deleteDirectory("../$filename")) $ret[] = "Kan inte ta bort gamla versionen av $filename.";
+            else $ret[] = "Har tagit bort gamla versionen av $filename.";
             if (!rename("../update/ff-boka-master/$filename", "../$filename")) $ret[] = "Kan inte flytta nya versionen på $filename på plats.";
-            else $ret[] = "Har ersatt fil/mapp $filename med ny version";
+            else $ret[] = "Har ersatt $filename med ny version.";
         }
         // restore local config
         if (!rename("../config.php", "../inc/config.php")) $ret[] = "Kan inte flytta tillbaka config.php från huvudmappen till inc-mappen.";
