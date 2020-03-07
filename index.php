@@ -56,12 +56,14 @@ if (isset($_REQUEST['action'])) {
 <p>Om du har frågor kan du skicka ett mejl till " . obfuscatedMaillink($cfg['mailReplyTo'], "Fråga om resursbokningen") . " eller ringa Daniel (076-105 69 75).</p>";
             die();
         case "make me admin":
-            if (is_numeric($_REQUEST['sectionId'])) {
-                $section = new Section($_REQUEST['sectionId']);
-                if ($section->addAdmin($_SESSION['authenticatedUser'])) {
-                    $message = "Bra jobbat! Du har nu administratörsrollen i {$section->name}. Titta gärna runt och återkoppla till Daniel med dina erfarenheter!";
-                } else {
-                    $message = "Något har gått fel.";
+            if ($cfg['testSystem']===TRUE) {
+                if (is_numeric($_REQUEST['sectionId'])) {
+                    $section = new Section($_REQUEST['sectionId']);
+                    if ($section->addAdmin($_SESSION['authenticatedUser'])) {
+                        $message = "Bra jobbat! Du har nu administratörsrollen i {$section->name}. Titta gärna runt och återkoppla till Daniel med dina erfarenheter!";
+                    } else {
+                        $message = "Något har gått fel.";
+                    }
                 }
             }
             break;
@@ -219,7 +221,7 @@ if (isset($_REQUEST['message'])) $message = ($message ? "$message<br>" : "") . $
             }
         }
 
-        // TODO: This is for testing only. Remove before switching to production! ?><br>
+        if ($cfg['testSystem']===TRUE) { ?><br>
         <form class="ui-body ui-body-a">
             <p>Under testfasen kan du ge dig själv administratörs-behörighet i valfri lokalavdelning för att testa alla funktioner.</p>
             <input type="hidden" name="action" value="make me admin">
@@ -232,7 +234,8 @@ if (isset($_REQUEST['message'])) $message = ($message ? "$message<br>" : "") . $
             </select>
             <input data-theme="b" type="submit" data-corners="false" value="Gör mig till admin">
         </form><?php
-
+        }
+        
         } ?>
         
     </div><!-- /collapsibleset -->

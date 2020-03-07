@@ -16,6 +16,8 @@ $cfg = array(
     "dbuser" => "ff-boka",   // Username for connecting to mariaDb
     "dbpass" => "your secret password", // Password for that user
 
+    "testSystem" => FALSE,
+    
     // Connection details to Friluftsfrämjandet's API
     "ff-api" => array(
         'authUrl' => "", // URL for authentication
