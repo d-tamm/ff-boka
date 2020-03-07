@@ -56,14 +56,16 @@ case "ajaxUpgrade":
         die(json_encode([ "status"=>"ok" ]));
     case "3":
         // save local config
-        if (!rename("../inc/config.php", "../config.php")) die(json_encode([ "error"=>"Kan inte flytta config.php till huvudmappen." ]));
+        if (!copy("../inc/config.php", "../config.php")) die(json_encode([ "error"=>"Kan inte skapa säkerhetskopia på config.php i huvudmappen." ]));
+        else $ret[] = "Har skapat säkerhetskopia av config.php i huvudmappen.";
         foreach (scandir("../update/ff-boka-master/") as $filename) {
             if ($filename=="." || $filename=="..") continue;
-            if (!rename("../update/ff-boka-master/$filename", "../$filename")) die(json_encode([ "error"=>"Kan inte ersätta ".basename($filename) ]));
-            $ret[] = $filename;
+            if (!deleteDirectory("../$filename")) $ret[] = "Kan inte ta bort gamla versionen av $filename.";
+            if (!rename("../update/ff-boka-master/$filename", "../$filename")) $ret[] = "Kan inte flytta nya versionen på $filename på plats.";
+            else $ret[] = "Har ersatt fil/mapp $filename med ny version";
         }
         // restore local config
-        if (!rename("../config.php", "../inc/config.php")) die(json_encode([ "error"=>"Kan inte flytta tillbaka config.php till inc." ]));
+        if (!rename("../config.php", "../inc/config.php")) $ret[] = "Kan inte flytta tillbaka config.php från huvudmappen till inc-mappen.";
         die(json_encode([ "status"=>implode("</li><li>", $ret) ]));
     }
 }
