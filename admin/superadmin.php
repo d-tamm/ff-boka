@@ -62,7 +62,7 @@ case "ajaxUpgrade":
             if (!rename("../update/ff-boka-master/$filename", "../$filename")) die(json_encode([ "error"=>"Kan inte ersätta ".basename($filename) ]));
             $ret[] = $filename;
         }
-        // save local config
+        // restore local config
         if (!rename("../config.php", "../inc/config.php")) die(json_encode([ "error"=>"Kan inte flytta tillbaka config.php till inc." ]));
         die(json_encode([ "status"=>implode("</li><li>", $ret) ]));
     }

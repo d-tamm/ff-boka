@@ -184,11 +184,8 @@ if (isset($_REQUEST['message'])) $message = ($message ? "$message<br>" : "") . $
 
     <img src="<?= $cfg['url'] ?>resources/liggande-bla.png" style="width:100%; max-width:600px; display:block; margin-left:auto; margin-right:auto;">
 
-    <p class="ui-body ui-body-b">
-    <?= $_SESSION['authenticatedUser'] ? "" : "Välkommen till testplattformen för FFs nya resursbokningssystem! Här kan du följa utvecklingen av projektet och testa." ?> Var inte rädd för att förstöra något, utan försök gärna att utmana funktionerna och hitta svaga punkter!<br>
-    Kom ihåg att detta bara är testplattformen. Allt som läggs upp kommer att försvinna vid övergången till produktionsplattformen.<br>
-    <?= $_SESSION['authenticatedUser'] ? "" : "Ett litet tipps till dig som snabbt vill få en överblick: Kolla på Mölndals lokalavdelning! Där finns det en del resurser upplagda som du kan testa att boka.<br>" ?>
-    Mer information hittar du på <a style="color:white;" target="_blank" href="https://github.com/d-tamm/ff-boka">GitHub</a> där du bl.a. kan anmäla buggar. För att ta kontakt med utvecklarna, kolla på <a style="color:white;" href="https://ff-boka.slack.com" target="_blank">Slack</a>.</p>
+    <?= $_SESSION['authenticatedUser'] ? $cfg['welcomeMsgLoggedIn'] : $cfg['welcomeMsg'] ?>
+    
     <?php
     if ($_SESSION['authenticatedUser']) {
         if ($ub = $currentUser->unfinishedBookings()) {

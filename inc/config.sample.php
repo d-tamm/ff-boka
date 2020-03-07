@@ -80,7 +80,8 @@ $cfg = array(
     "cronDaily" => 2, // Hour of day 0...23
     "cronWeekly" => 1, // Day of week, Monday=1, Sunday=7
     "cronMonthly" => 1, // Day of month, 1...31
-);
 
-// Include local/secret settings, too (those not to be synchronized to Github).
-include __DIR__."/config.local.php";
+    // Welcome messages on landing page
+    "welcomeMsg" => "<p class='ui-body ui-body-b'>Välkommen till Friluftsfrämjandets nya resursbokningssystem! Om du behöver hjälp, klicka på <b>?</b> uppe till höger.</p>",
+    "welcomeMsgLoggedIn" => "<p class='ui-body ui-body-b'>Återkoppla gärna till utvecklarna med synpunkter och önskemål! Bara på det viset kan vi möta lokalavdelningarnas behov på bästa sätt.</p>",
+);
