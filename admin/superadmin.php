@@ -8,7 +8,7 @@ global $cfg, $db;
 
 // This page may only be accessed by superadmins
 if (!in_array($_SESSION['authenticatedUser'], $cfg['superAdmins'])) {
-    die();
+    die("Försök inte!");
 }
 $currentUser = new User($_SESSION['authenticatedUser']);
 
