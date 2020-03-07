@@ -142,8 +142,9 @@ function htmlHeaders(string $title, string $baseUrl, string $mode="mobile") {
  * @param string $caption
  * @param string $baseUrl Base URL of the installation
  * @param User $currentUser The currently logged in user
+ * @param array[int] $superAdmins Member IDs giving superadmin access 
  */
-function head(string $caption, string $baseUrl, $currentUser=NULL) {
+function head(string $caption, string $baseUrl, $currentUser=NULL, $superAdmins=array()) {
     // Declare side panel
     ?>
     <div data-role="panel" data-theme="b" data-position-fixed="true" data-display="push" id="navpanel">
@@ -152,6 +153,9 @@ function head(string $caption, string $baseUrl, $currentUser=NULL) {
             if ($_SESSION['authenticatedUser']) { ?>
                 <li data-icon="user"><a href="<?= $baseUrl ?>userdata.php" data-transition='slide' data-rel="close">Min sida</a></li>
                 <li data-icon="power"><a href="<?= $baseUrl ?>index.php?logout" data-rel="close">Logga ut</a></li><?php
+            }
+            if (in_array($_SESSION['authenticatedUser'], $superAdmins)) {
+                echo "<li data-icon='alert'><a href='{$baseUrl}admin/superadmin.php' data-transition='slide' data-rel='close'>Super-Admin</a></li>";
             } ?>
             <li data-icon="info"><a href="<?= $baseUrl ?>cookies.php" data-transition='slide' data-rel="close">Om kakor (cookies)</a></li>
         </ul>

@@ -22,7 +22,7 @@ switch ($_REQUEST['action']) {
 
 <body>
 <div data-role="page" id="page-cookies">
-    <?= head("Om kakor", $cfg['url'], $currentUser) ?>
+    <?= head("Om kakor", $cfg['url'], $currentUser, $cfg['superAdmins']) ?>
     <div role="main" class="ui-content">
 
     <p>För att få den här webbplatsen att fungera ordentligt skickar vi ibland små filer till din dator. Dessa filer kallas kakor eller ”cookies”. De flesta större webbplatser gör på samma sätt.</p>

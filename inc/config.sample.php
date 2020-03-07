@@ -25,9 +25,6 @@ $cfg = array(
         'feedUserAss' => "", // Feed to get a user's assignments. Append member number or personnummer.
         'feedSec' => "", // Feed to get all existing sections
     ),
-    
-    // Logging
-    "logMaxSize" => 1*1024*1024, // in bytes
 
     // Sender address, readable name and Reply-to address for auto-generated emails
     "mailFrom"     => "someone@somewhere.com",
@@ -59,6 +56,8 @@ $cfg = array(
     
     // UserIDs of users with superAdmin access (will display a superAdmin section on Admin page)
     "superAdmins" => array(),
+    // URL to zip file on Github containing the latest version
+    "upgradeUrl" => "https://github.com/d-tamm/ff-boka/archive/master.zip",
     
     // Textual representations of access levels
     "catAccessLevels" => array(
