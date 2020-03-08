@@ -127,11 +127,11 @@ case "ajaxUpgrade":
             <table class="alternate-rows">
             <tr><th>timestamp</th><th>ip</th><th>userId</th><th>succ</th><th>userAgent</th></tr>
             <?php
-            $stmt = $db->query("SELECT timestamp, INET_NTOA(ip) ip, userId, success, userAgent FROM logins ORDER BY timestamp DESC LIMIT 50");
+            $stmt = $db->query("SELECT timestamp, INET_NTOA(ip) ip, userId, name, success, userAgent FROM logins LEFT JOIN users USING (userId) ORDER BY timestamp DESC LIMIT 50");
             while ($row = $stmt->fetch(PDO::FETCH_OBJ)) {
                 echo "<tr><td>{$row->timestamp}</td>
                     <td>{$row->ip}</td>
-                    <td>{$row->userId}</td>
+                    <td title='" . htmlspecialchars($row->name) . "'>{$row->userId}</td>
                     <td>{$row->success}</td>
                     <td>{$row->userAgent}</td></tr>";
             }
