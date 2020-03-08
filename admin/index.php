@@ -312,32 +312,6 @@ unset($_SESSION['catId']);
         </div>
         <?php } ?>
         
-        <?php if (in_array($_SESSION['authenticatedUser'], $cfg['superAdmins'])) { ?>
-        <div data-role="collapsible">
-            <h2>Systeminfo</h2>
-            <h3>Cron <?php
-            $stmt = $db->query("SELECT value FROM config WHERE name='last hourly cron run'");
-            $row = $stmt->fetch(PDO::FETCH_OBJ);
-            $last = (int)$row->value;
-            if ($last==0 || $last < time()-3600) echo "<span style='color:var(--FF-orange);'>■</span>";
-            else echo "<span style='color:var(--FF-green);'>■</span>"; ?></h3>
-            <p><?= $last==0 ? "Cron har aldrig utförts" : "Cron utfördes senast för " . (int)((time()-$last)/60) . " minuter sedan" ?>.</p>
-            <h3>Konfiguration</h3>
-            <pre><?= print_r($cfg, TRUE) ?></pre>
-            <h3>Senaste inloggningar</h3>
-            <table class="alternate-rows">
-            <tr><th>timestamp</th><th>ip</th><th>userId</th><th>succ</th><th>userAgent</th></tr>
-            <?php
-            $stmt = $db->query("SELECT timestamp, INET_NTOA(ip) ip, userId, success, userAgent FROM logins ORDER BY timestamp DESC LIMIT 50");
-            while ($row = $stmt->fetch(PDO::FETCH_OBJ)) {
-                echo "<tr><td>{$row->timestamp}</td>
-                    <td>{$row->ip}</td>
-                    <td>{$row->userId}</td>
-                    <td>{$row->success}</td>
-                    <td>{$row->userAgent}</td></tr>";
-            }
-            ?></table>
-        <?php } ?>
         </div>
 
     </div><!--/collapsibleset-->
