@@ -208,7 +208,7 @@ unset($_SESSION['catId']);
 
     <?php
     if ($section->getAccess($currentUser) < FFBoka::ACCESS_CATADMIN && array_intersect($_SESSION['assignments'][$section->id], $cfg['sectionAdmins'])) {
-        echo "<p class='ui-body ui-body-c'>Du har just nu tillgång till den här administrationssidan genom din roll som " . htmlspecialchars(array_intersect($_SESSION['assignments'][$section->id], $cfg['sectionAdmins'])) . ". Detta ger dig möjlighet att tilldela dig själv och andra administratörsrollen för lokalavdelningen. Det är bara administratörer som kan lägga upp t.ex. kategorier, så om du själv vill lägga upp saker så måste du först tilldela dig själv administratörsrollen i avsnittet <b>Administratörer</b> nedan.</p>";
+        echo "<p class='ui-body ui-body-c'>Du har just nu tillgång till den här administrationssidan genom din roll som " . htmlspecialchars(array_intersect($_SESSION['assignments'][$section->id], $cfg['sectionAdmins'])[0]) . ". Detta ger dig möjlighet att tilldela dig själv och andra administratörsrollen för lokalavdelningen. Det är bara administratörer som kan lägga upp t.ex. kategorier, så om du själv vill lägga upp saker så måste du först tilldela dig själv administratörsrollen i avsnittet <b>Administratörer</b> nedan.</p>";
     }
         
     if ($userAccess >= FFBoka::ACCESS_CATADMIN && count($catsWithoutAdmin)>0) {
