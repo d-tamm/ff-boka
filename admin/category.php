@@ -401,7 +401,7 @@ unset ($_SESSION['itemId']);
             if ($questions = showQuestions($cat, $section)) {
                 echo "<ul data-role='listview' data-inset='true' id='cat-questions'>$questions</ul>";
             } else {
-                echo "<p class='ui-body ui-body-a'>Inga frågor har lagts upp i din lokalavdelning än. Om du vill att någon fråga ska visas vid bokning i denna kategori, be LA-administratören att lägga upp frågan.</p>";
+                echo "<p><i>Inga frågor har lagts upp i din lokalavdelning än. Om du vill att någon fråga ska visas vid bokning i denna kategori, be LA-administratören att lägga upp frågan. Detta ska göras på LA-nivå. När detta har gjorts kommer upplagda frågor att dyka upp här så du kan välja ut de frågor som ska visas med din kategori.</i></p>";
             }
             ?>
         </div>
