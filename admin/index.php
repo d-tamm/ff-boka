@@ -207,6 +207,10 @@ unset($_SESSION['catId']);
     </div>
 
     <?php
+    if ($section->getAccess($currentUser) < FFBoka::ACCESS_CATADMIN && array_intersect($_SESSION['assignments'][$section->id], $cfg['sectionAdmins'])) {
+        echo "<p class='ui-body ui-body-c'>Du har just nu tillgång till den här administrationssidan genom din roll som " . htmlspecialchars(array_intersect($_SESSION['assignments'][$section->id], $cfg['sectionAdmins'])) . ". Detta ger dig möjlighet att tilldela dig själv och andra administratörsrollen för lokalavdelningen. Det är bara administratörer som kan lägga upp t.ex. kategorier, så om du själv vill lägga upp saker så måste du först tilldela dig själv administratörsrollen i avsnittet <b>Administratörer</b> nedan.</p>";
+    }
+        
     if ($userAccess >= FFBoka::ACCESS_CATADMIN && count($catsWithoutAdmin)>0) {
         echo "<div class='ui-body ui-body-a'><p>Följande kategorier innehåller resurser men saknar administratör. Lägg till minst en administratör med behörighet att bekräfta bokningar.</p><ul data-role='listview' data-inset='true'>";
         foreach ($catsWithoutAdmin as $id=>$caption) {
