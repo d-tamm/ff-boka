@@ -252,14 +252,6 @@ if ($_GET['first_login']) $message = "Välkommen till resursbokningen! Innan du 
             <p>Att radera ditt konto här påverkar inte ditt konto i aktivitetshanteraren.</p>
             <button class="ui-btn ui-btn-c" onClick="deleteAccount();" data-ajax='false'>Radera mina uppgifter</button>
         </div>
-    
-    
-        <div data-role='collapsible'>
-            <h3>Debug-info</h3><!-- TODO ta bort efter testfasen -->
-            <p>Visas för teständamål. Tas bort i produktion.</p>
-            <p>$_SESSION:</p>
-            <pre><?php print_r($_SESSION); ?></pre>
-        </div>
 
     </div><!--/collapsibleset-->
     

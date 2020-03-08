@@ -127,6 +127,11 @@ case "ajaxUpgrade":
             ?></table>
         </div>
 
+        <div data-role='collapsible'>
+            <h3>Session data</h3>
+            <pre><?php print_r($_SESSION); ?></pre>
+        </div>
+
         <div data-role="collapsible">
             <h2>Uppgradering</h2>
             <p>Med knappen nedan kan du hämta senaste versionen från master-grenen på Github och installera den.</p>
