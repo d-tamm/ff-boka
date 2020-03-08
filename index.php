@@ -244,11 +244,15 @@ if (isset($_REQUEST['message'])) $message = ($message ? "$message<br>" : "") . $
         <div data-role='collapsible' data-collapsed='true'>
             <h3>Boka som gäst</h3>
             <?php // List of sections with categories open for guests
+            $numCats = 0;
             foreach ($FF->getAllSections() as $section) {
                 if ($section->showFor(new User(0)) && count($section->getMainCategories())) {
                     echo "<a href='book-part.php?sectionId={$section->id}&guest' class='ui-btn'>" . htmlspecialchars($section->name) . "</a>";
+                    $numCats++;
                 }
-            } ?>
+            }
+            if ($numCats==0) echo "<p><i>Det finns för närvarande inte några resurser du kan boka som gäst.</i></p>";
+            ?>
         </div>
 
         <form id="formLogin" style="padding:10px 20px;" action="index.php" method="post" data-ajax="false">
