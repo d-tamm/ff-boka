@@ -30,6 +30,8 @@ function deleteDirectory($dir) {
 
 
 switch ($_REQUEST['action']) {
+case "help":
+    die("Finns ingen hjälp till denna sida.");
 case "ajaxUpgrade":
     header("Content-Type: application/json");
     switch ($_REQUEST['step']) {
