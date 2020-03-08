@@ -1,6 +1,6 @@
 <?php
-use FFBoka\FFBoka;
 use FFBoka\User;
+use FFBoka\Section;
 
 session_start();
 require(__DIR__."/../inc/common.php");
@@ -32,6 +32,15 @@ function deleteDirectory($dir) {
 switch ($_REQUEST['action']) {
 case "help":
     die("Finns ingen hjälp till denna sida.");
+case "make me admin":
+    if (is_numeric($_REQUEST['sectionId'])) {
+        $section = new Section($_REQUEST['sectionId']);
+        if ($section->addAdmin($_SESSION['authenticatedUser'])) {
+            header("Location: index.php?sectionId={$section->id}");
+        } else {
+            $message = "Något har gått fel.";
+        }
+    }
 case "ajaxUpgrade":
     header("Content-Type: application/json");
     switch ($_REQUEST['step']) {
@@ -139,6 +148,22 @@ case "ajaxUpgrade":
             <p>Med knappen nedan kan du hämta senaste versionen från master-grenen på Github och installera den.</p>
             <button class='ui-btn ui-btn-c' onClick="systemUpgrade(1);">Uppgradera systemet</button>
             <ul id="upgrade-progress"></ul>
+        </div>
+
+        <div data-role="collapsible">
+            <h2>Gör mig till LA-admin</h2>
+            <form>
+                <p>Här kan du ge dig själv administratörs-behörighet i valfri lokalavdelning.</p>
+                <input type="hidden" name="action" value="make me admin">
+                <select name="sectionId">
+                    <option>Välj lokalavdelning</option><?php
+                    $stmt = $db->query("SELECT * FROM sections ORDER BY name");
+                    while ($row = $stmt->fetch(PDO::FETCH_OBJ)) {
+                        echo "<option value='{$row->sectionId}'>{$row->name}</option>";
+                    } ?>
+                </select>
+                <input data-theme="b" type="submit" data-corners="false" value="Gör mig till admin">
+            </form>
         </div>
 
     </div><!--/collapsibleset-->
