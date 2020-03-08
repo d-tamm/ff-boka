@@ -163,8 +163,8 @@ function head(string $caption, string $baseUrl, $currentUser=NULL, $superAdmins=
     
     <div data-role="header">
         <H1><?= $caption ?></H1>
-        <a href='#navpanel' data-rel='popup' data-transition='pop' data-role='button' data-icon='bars' data-iconpos='notext' class='ui-btn-left ui-nodisc-icon ui-alt-icon'>Menu</a>
-        <a href='javascript:showHelp();' data-transition='slide' data-rel='popup' data-role='button' data-icon='help' data-iconpos='notext' class='ui-btn-right ui-nodisc-icon ui-alt-icon'></a>
+        <a href='#navpanel' data-rel='popup' data-transition='pop' data-role='button' data-icon='bars' data-iconpos='notext' class='ui-btn-left ui-nodisc-icon ui-alt-icon'>Meny</a>
+        <a href='javascript:showHelp();' data-transition='slide' data-rel='popup' data-role='button' data-icon='help' data-iconpos='notext' class='ui-btn-right ui-nodisc-icon ui-alt-icon'>Hjälp</a>
         <?php
         if (!isset($_COOKIE['cookiesOK'])) { // Display cookie chooser ?>
             <div id="divCookieConsent" data-theme='b' class='ui-bar ui-bar-b' style='font-weight:normal;'>
