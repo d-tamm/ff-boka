@@ -130,7 +130,7 @@ case "ajaxUpgrade":
         </div>
 
         <div data-role='collapsible'>
-            <h3>Session data</h3>
+            <h2>Session data</h2>
             <pre><?php print_r($_SESSION); ?></pre>
         </div>
 
