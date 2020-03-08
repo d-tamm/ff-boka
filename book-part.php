@@ -10,13 +10,14 @@ session_start();
 require("inc/common.php");
 
 /**
- * Displays a nested view of categories with their items
+ * Displays a nested view of categories with their items. Steps down into child categories.
  * @param Category $cat Starting category
  * @param User $user User whose access rights shall be used
  * @param int $fbStart Timestamp for date from which to start showing freebusy information
- * @return string Header with cat caption, and list of items in category. Steps down into child categories.
+ * @return int Number of items displayed, including those of child categories. 
  */
 function displayCat(Category $cat, $user, $fbStart) {
+    $numItems = 0;
     if ($cat->showFor($user)) {
         $access = $cat->getAccess($user);
         echo "<div data-role='collapsible' data-inset='false'>";
@@ -26,6 +27,7 @@ function displayCat(Category $cat, $user, $fbStart) {
             echo "<ul data-role='listview' data-split-icon='info' data-split-theme='a'>";
             foreach ($cat->items() as $item) {
                 if ($item->active) {
+                    $numItems++;
                     echo "<li class='book-item' id='book-item-{$item->id}'><a href=\"javascript:toggleItem({$item->id});\">";
                     echo embedImage($item->getFeaturedImage()->thumb);
                     echo "<h4>" . htmlspecialchars($item->caption) . "</h4>";
@@ -37,10 +39,11 @@ function displayCat(Category $cat, $user, $fbStart) {
             echo "<br></ul>";
         }
         foreach ($cat->children() as $child) {
-            displayCat($child, $user, $fbStart);
+            $numItems += displayCat($child, $user, $fbStart);
         }
         echo "</div>";
     }
+    return $numItems;
 }
 
 /**
@@ -250,6 +253,7 @@ END;
     </div>
 
     <h4>Lokalavdelning: <?= htmlspecialchars($section->name) ?></h4>
+    <p><i>Välj de resurser du vill boka genom att klicka på dem. Längst ner på skärmen finns det kontroller där du kan bläddra bak och fram i tiden för att se tillgängligheten. Start- och sluttid på din bokning väljer du i steg 2.</i></p>
 
     <?php
     if (!$_SESSION['authenticatedUser']) echo "<p class='ui-body ui-body-a'>Du bokar som gäst. Om du är medlem i Friluftsfrämjandet och vill boka som medlem så behöver du <a href='index.php?redirect=" . urlencode($_SERVER['REQUEST_URI']) . "'>logga in först</a>.</p>";
@@ -259,9 +263,14 @@ END;
 
     <h3 class="ui-bar ui-bar-a">Steg 1. Välj resurser</h3>
     <?php
+    $numItems = 0;
     foreach ($section->getMainCategories() as $cat) {
-        displayCat($cat, $currentUser, strtotime("last sunday +1 day"));
-    } ?>
+        $numItems += displayCat($cat, $currentUser, strtotime("last sunday +1 day"));
+    }
+    if ($numItems==0) {
+        echo "<p><i>I den här lokalavdelningen finns det inte några resurser som du kan boka. Det kan bero på att lokalavdelningen inte (ännu) använder systemet, eller att du inte har behörighet att boka de resurser som har lagts upp.</i></p>";
+    }
+    ?>
 
 
     <div id="book-step2" style="display:none">
