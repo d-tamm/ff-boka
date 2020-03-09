@@ -222,7 +222,7 @@ class Item extends FFBoka {
     public function copy() {
         $newItem = $this->category()->addItem();
         // If old caption ends on "(nn)", increase nn. Otherwise, add (kopia) to the caption.
-        if (preg_match('/(.*)\(([0-9]+)\)$/', $this->caption, $matches)) $newItem->caption = $matches[1] . "(" . ($matches[2]+1) . ")";
+        if (preg_match('/(.*\(?)([0-9]+)(\)?)$/', $this->caption, $matches)) $newItem->caption = $matches[1] . ($matches[2]+1) . $matches[3];
         else $newItem->caption = $this->caption . " (kopia)";
         $newItem->description = $this->description;
         // copy the associated item images
