@@ -210,7 +210,6 @@ if (isset($_REQUEST['message'])) $message = ($message ? "$message<br>" : "") . $
                 }
             }
             echo "</select>"; ?>
-        </div>
 
         <?php
         // Show a list of all sections where user has admin role
