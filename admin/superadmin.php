@@ -115,6 +115,21 @@ case "ajaxUpgrade":
             if ($last==0 || $last < time()-3600) echo "<span style='color:var(--FF-orange);'>■</span>";
             else echo "<span style='color:var(--FF-green);'>■</span>"; ?></h3>
             <p><?= $last==0 ? "Cron har aldrig utförts" : "Cron utfördes senast för " . (int)((time()-$last)/60) . " minuter sedan" ?>.</p>
+            
+            <h3>Statistik</h3>
+			<?php
+			// Show some statistics
+			$stmt = $db->query("SELECT COUNT(*) users FROM users");
+			$row = $stmt->fetch(PDO::FETCH_OBJ);
+			echo "<ul><li>{$row->users} registrerade användare</li>";
+			
+			$stmt = $db->query("SELECT COUNT(DISTINCT sectionId) sections FROM sections JOIN categories USING (sectionId) JOIN items USING (catId)");
+			$row = $stmt->fetch(PDO::FETCH_OBJ);
+			echo "<li>{$row->sections} aktiva lokalavdelningar</li>";
+
+			$stmt = $db->query("SELECT COUNT(*) items FROM items");
+			$row = $stmt->fetch(PDO::FETCH_OBJ);
+			echo "<li>{$row->items} resurser upplagda</li></ul>"; ?>
         </div>
 
         <div data-role="collapsible">
