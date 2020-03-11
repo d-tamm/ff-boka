@@ -187,6 +187,11 @@ switch ($_REQUEST['action']) {
         die(json_encode($question->delete()));
 }
 
+// First admin login from a section? Give some hints on how to get started.
+if (count(array_intersect($_SESSION['assignments'][$section->id], $cfg['sectionAdmins']))>0 && count($section->getAdmins())==0) {
+    $message = "Hej!<br><br>Vill du komma igång med din lokalavdelning? Första steget är att lägga till LA-administratörer.<br><br>Tipps: Använd medlemsnumret i sökrutan!";
+}
+
 unset($_SESSION['catId']);
 
 ?><!DOCTYPE html>
