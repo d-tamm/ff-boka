@@ -120,6 +120,11 @@ if (isset($_POST['login'])) {
                 header("Location: {$_POST['redirect']}");
                 die();
             }
+			// Redirect Ordförande etc on first login
+			if (count(array_intersect($_SESSION['assignments'][$u->section->id], $cfg['sectionAdmins']))>0 && count($u->section->getAdmins())==0) {
+				header("Location: admin/index.php?sectionId=" . $u->section->id . "&expand=admins&message=" . urlencode("Hej!<br>Vill du komma igång med din lokalavdelning? Första steget är att skapa administratörer."));
+				die();
+			}
         } else {
             // Password wrong.
             $message = "Fel medlemsnummer eller lösenord.";
