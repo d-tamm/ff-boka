@@ -109,7 +109,7 @@ EOF;
                         "{{link}}" => "{$cfg['url']}index.php?t=$token",
                     )
                 );
-                $message = "Dina kontaktuppgifter har sparats. Ett meddelande har skickats till adressen {$_POST['mail']}. Använd länken i mejlet för att aktivera den nya adressen.";
+                $message = "Dina kontaktuppgifter har sparats. Ett meddelande har skickats till adressen {$_POST['mail']}. Använd länken i mejlet för att aktivera den nya adressen.<br><br>Hittar du inte mejlet? Kolla i skräpkorgen!";
             } else {
                 header("Location: index.php?message=" . urlencode("Dina kontaktuppgifter har sparats."));
                 die();
