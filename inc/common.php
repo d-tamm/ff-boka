@@ -86,8 +86,7 @@ function connectDb(string $host, string $dbname, string $user, string $pass, int
             if ($db->exec(file_get_contents(__DIR__ . "/../resources/db/$curVer.sql"))===FALSE) {
                 die("<p>It seems that this did not work. :(</p>");
             }
-            echo "<p>Upgrade to version $curVer seems to be finished successfully.</p>"; 
-            $db->exec("UPDATE config SET value=$curVer WHERE name='db-version'");
+            echo "<p>Upgrade to version $curVer seems to have been successful.</p>"; 
         }
         die("<p>Finished.</p><p>If you do not see any error messages, you may <a href='javascript:location.reload();'>reload this page</a> to continue.</p></body></html>");
     }
