@@ -133,7 +133,7 @@ och [composer](https://getcomposer.org).
 * Kör `composer install` för att installera några beroenden (dependencies).
 * Installera följande i undermappen inc:
   * JQueryUI (ladda ner från deras hemsida, packa upp arkivet och flytta mappen så att
-    t.ex. jquery-ui.css ligger på inc/jquery-ui-1.12.1/jquery-ui.css)
+    t.ex. jquery-ui.css ligger på vendor/jquery-ui-1.12.1/jquery-ui.css)
   * FontAwesome: ladda ner från deras hemsida (host yourself), packa upp, skapa en mapp
     `fontawesome` i mappen `vendor`, och flytta dit mapparna `css` och `webfonts` från arkivet.
 * Säkerställ att webbservern har läsrättigheter på alla mappar, och att du har skrivrättigheter.

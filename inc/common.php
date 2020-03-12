@@ -113,9 +113,9 @@ function htmlHeaders(string $title, string $baseUrl, string $mode="mobile") {
         <script src="<?= $baseUrl ?>inc/jquery.mobile-1.4.5.min.js"></script>
     <?php } else { ?>
         <script src="<?= $baseUrl ?>inc/pace.min.js"></script>
-        <link rel="stylesheet" href="<?= $baseUrl ?>inc/jquery-ui-1.12.1/jquery-ui.min.css">
-        <script src="<?= $baseUrl ?>inc/jquery-ui-1.12.1/external/jquery/jquery.js"></script>
-        <script src="<?= $baseUrl ?>inc/jquery-ui-1.12.1/jquery-ui.min.js"></script>
+        <link rel="stylesheet" href="<?= $baseUrl ?>vendor/jquery-ui-1.12.1/jquery-ui.min.css">
+        <script src="<?= $baseUrl ?>vendor/jquery-ui-1.12.1/external/jquery/jquery.js"></script>
+        <script src="<?= $baseUrl ?>vendor/jquery-ui-1.12.1/jquery-ui.min.js"></script>
         <link rel="stylesheet" href="<?= $baseUrl ?>vendor/fontawesome/css/all.css">        
     <?php } ?>
     <link rel="stylesheet" href="<?= $baseUrl ?>css/ff-boka.css" />
