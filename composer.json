@@ -1,6 +1,7 @@
 {
 	"require" : {
-		"phpmailer/phpmailer" : "^6.1"
+		"phpmailer/phpmailer" : "^6.1",
+		"crossjoin/browscap": "^3.0"
 	},
 	"repositories" : [{
 			"type" : "git",
