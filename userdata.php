@@ -3,7 +3,6 @@ use FFBoka\Booking;
 use FFBoka\Category;
 use FFBoka\FFBoka;
 use FFBoka\User;
-use phpbrowscap\Browscap;
 global $cfg, $FF;
 
 session_start();
@@ -211,10 +210,9 @@ if ($_GET['first_login']) $message = "Välkommen till resursbokningen! Innan du 
             <?php
             $logins = $currentUser->persistentLogins();
             if ($logins) {
-                $browscap = new \Crossjoin\Browscap\Browscap();
                 foreach ($logins as $login) {
-                    $browser = $browscap->getBrowser($login->userAgent);
-                    echo "<li class='wrap'><a href='#' style='white-space:normal; font-weight:normal;'>" . htmlspecialchars($browser->browser . " " . $browser->device_type . " " . $browser->version . " " . $browser->platform) . ($login->selector == explode(":", $_COOKIE['remember'])[0] ? " <i>(den här inloggningen)</i>" : "") . "<br>Förfaller " . strftime("%F", $login->expires) . "</a><a href='#' onClick=\"removePersistentLogin(this.parentElement, '" . htmlspecialchars($login->userAgent) . "');\" title='ta bort inloggningen'></a></li>";
+                    $browser = preg_grep('/[^(]*\((.*)\)(.*)/', $login->userAgent);
+                    echo "<li class='wrap'><a href='#' style='white-space:normal; font-weight:normal;'>" . htmlspecialchars($browser[1] . "; " . $browser[2]) . ($login->selector == explode(":", $_COOKIE['remember'])[0] ? " <i>(den här inloggningen)</i>" : "") . "<br>Förfaller " . strftime("%F", $login->expires) . "</a><a href='#' onClick=\"removePersistentLogin(this.parentElement, '" . htmlspecialchars($login->userAgent) . "');\" title='ta bort inloggningen'></a></li>";
                 }
             } else echo "<li style='white-space:normal'>Just nu har du inte några sådana permanenta inloggningar.</li>";
             ?>
