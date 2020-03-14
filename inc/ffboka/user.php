@@ -334,4 +334,25 @@ class User extends FFBoka {
     public function setUnverifiedMail(string $mail) {
         return self::createToken("change mail address", $this->id, $mail);
     }
+    
+    /**
+     * Check whether the user has a pending change of the email address.
+     * @return string[] Array of strings with the new email addresses
+     */
+    public function getUnverifiedMails() {
+        $stmt = self::$db->query("SELECT data FROM tokens WHERE forId={$this->id} AND useFor='change mail address'");
+        $ret = array();
+        while ($row = $stmt->fetch(PDO::FETCH_OBJ)) $ret[] = $row->data;
+        return $ret;
+    }
+    
+    /**
+     * Cancel any pending email change process
+     * @param string $mail The new email address to cancel
+     * @return bool True on success, false on error
+     */
+    public function cancelUnverifiedMail(string $mail) {
+        $stmt = self::$db->prepare("DELETE FROM tokens WHERE forId={$this->id} AND useFor='change mail address' AND data=:data");
+        return $stmt->execute(array(":data"=>$mail));
+    }
 }
