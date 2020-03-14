@@ -147,7 +147,7 @@ if (isset($_REQUEST['t'])) {
                 break;
         }
     } catch (Exception $e) {
-        $message = $e;
+        $message = $e->getMessage();
     }
 }
 

@@ -110,6 +110,7 @@ EOF;
                     )
                 );
                 $message = "Dina kontaktuppgifter har sparats. Ett meddelande har skickats till adressen {$_POST['mail']}. Använd länken i mejlet för att aktivera den nya adressen.<br><br>Hittar du inte mejlet? Kolla i skräpkorgen!";
+                $_REQUEST['expand'] = "contact";
             } else {
                 header("Location: index.php?message=" . urlencode("Dina kontaktuppgifter har sparats."));
                 die();
@@ -117,6 +118,12 @@ EOF;
         } else {
             $message = "Fyll i namn, epostadress och mobilnummer, tack.";
         }
+        break;
+        
+    case "cancelMailChange":
+        if ($currentUser->cancelUnverifiedMail($_REQUEST['mail'])) $message = "Processen att byta epostadress till {$_REQUEST['mail']} har nu avbrutits.";
+        else $message="Något har gått fel. Kontakta systemadmin.";
+        $_REQUEST['expand'] = "contact";
         break;
         
     case "ajaxSetNotificationOptout":
@@ -158,7 +165,7 @@ if ($_GET['first_login']) $message = "Välkommen till resursbokningen! Innan du 
 
     <div data-role='collapsibleset' data-inset='false'>
         
-        <div data-role='collapsible' data-collapsed='<?= $_GET['first_login'] ? "true" : "false" ?>'>
+        <div data-role='collapsible' data-collapsed='<?= $_GET['first_login'] || $_REQUEST['expand']!="bookings" ? "true" : "false" ?>'>
             <h3>Mina bokningar</h3>
             <?php
             $bookingIds = $currentUser->bookingIds();
@@ -219,7 +226,7 @@ if ($_GET['first_login']) $message = "Välkommen till resursbokningen! Innan du 
             </ul>
         </div>
 
-        <div data-role='collapsible' data-collapsed='<?= $_GET['first_login'] ? "false" : "true" ?>'>
+        <div data-role='collapsible' data-collapsed='<?= $_GET['first_login'] || $_REQUEST['expand']=="contact" ? "false" : "true" ?>'>
             <h3>Kontaktuppgifter</h3>
             
             <form action="userdata.php" method="post" data-ajax="false">
@@ -233,7 +240,16 @@ if ($_GET['first_login']) $message = "Välkommen till resursbokningen! Innan du 
                 </div>
                 <div class="ui-field-contain">
                     <label for="userdata-mail" class="required">Epost:</label>
-                    <input type="email" name="mail" id="userdata-mail" required placeholder="Epost" value="<?= htmlspecialchars($_POST['mail'] ? $_POST['mail'] : $currentUser->mail) ?>">
+                    <input type="email" name="mail" id="userdata-mail" required placeholder="Epost" value="<?= htmlspecialchars($currentUser->mail) ?>">
+                    <?php
+                    $newMails = $currentUser->getUnverifiedMails();
+                    if ($newMails) {
+                        echo "Du har ett pågående ärende att byta din epostadress. Ett meddelande med en aktiveringslänk har skickats till den nya adressen. Kolla i din skräppostmapp om du inte hittar mejlet. Om du behöver en ny aktiveringslänk kan du åter skriva den nya adressen i fältet ovan. Klicka på den nya adressen nedan för att avbryta processen och behålla nuvarande epostadress.";
+                        foreach ($newMails as $newMail) {
+                            echo "<br><a href='?action=cancelMailChange&mail=" . htmlspecialchars($newMail) . "' data-ajax='false' style='float:none;'>" . htmlspecialchars($newMail) . "</a>";
+                        }
+                    }
+                    ?>
                 </div>
                 <div class="ui-field-contain">
                     <label for="userdata-phone" class="required">Telefon:</label>
