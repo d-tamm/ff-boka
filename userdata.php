@@ -3,7 +3,7 @@ use FFBoka\Booking;
 use FFBoka\Category;
 use FFBoka\FFBoka;
 use FFBoka\User;
-global $cfg, $FF;
+global $cfg, $FF, $db;
 
 session_start();
 require(__DIR__."/inc/common.php");
@@ -218,8 +218,7 @@ if ($_GET['first_login']) $message = "Välkommen till resursbokningen! Innan du 
             $logins = $currentUser->persistentLogins();
             if ($logins) {
                 foreach ($logins as $login) {
-                    preg_match('/[^(]*\((.*)\)(.*)/', $login->userAgent, $browser);
-                    echo "<li class='wrap'><a href='#' style='white-space:normal; font-weight:normal;'>" . htmlspecialchars($browser[1] . "; " . $browser[2]) . ($login->selector == explode(":", $_COOKIE['remember'])[0] ? " <i>(den här inloggningen)</i>" : "") . "<br>Förfaller " . strftime("%F", $login->expires) . "</a><a href='#' onClick=\"removePersistentLogin(this.parentElement, '" . htmlspecialchars($login->userAgent) . "');\" title='ta bort inloggningen'></a></li>";
+                    echo "<li class='wrap'><a href='#' style='white-space:normal; font-weight:normal;'>" . htmlspecialchars(resolveUserAgent($login->userAgent, $db)) . ($login->selector == explode(":", $_COOKIE['remember'])[0] ? " <i>(den här inloggningen)</i>" : "") . "<br>Förfaller " . strftime("%F", $login->expires) . "</a><a href='#' onClick=\"removePersistentLogin(this.parentElement, '" . htmlspecialchars($login->userAgent) . "');\" title='ta bort inloggningen'></a></li>";
                 }
             } else echo "<li style='white-space:normal'>Just nu har du inte några sådana permanenta inloggningar.</li>";
             ?>

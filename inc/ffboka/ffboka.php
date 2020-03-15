@@ -163,7 +163,7 @@ class FFBoka {
         $options = array(
             'http' => array(
                 'header'  => "Content-Type: application/json\r\n" .
-                "Cache-Control: no-cache\r\n".
+                             "Cache-Control: no-cache\r\n".
                 "Ocp-Apim-Subscription-Key: " . self::$apiAuthKey . "\r\n",
                 'method'  => 'POST',
                 'content' => json_encode([ 'membernumber' => $userId, 'password' => $password ])

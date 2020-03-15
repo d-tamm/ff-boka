@@ -179,6 +179,7 @@ class User extends FFBoka {
             true, // TLS-only
             true  // http-only
         )) return FALSE;
+        
         // Save token to database
         $stmt = self::$db->prepare("INSERT INTO persistent_logins SET userId=:userId, userAgent=:userAgent, selector=:selector, authenticator=:authenticator, expires=DATE_ADD(NOW(), INTERVAL $ttl SECOND)");
         if (!$stmt->execute(array(
@@ -187,6 +188,13 @@ class User extends FFBoka {
             ":selector"=>$selector,
             ":authenticator"=>hash('sha256', $authenticator),
         ))) throw new \Exception($stmt->errorInfo()[2]);
+        
+        // Save userAgent string to database
+        $stmt = self::$db->prepare("INSERT IGNORE INTO user_agents SET uaHash=:hash, userAgent=:ua");
+        $stmt->execute(array(
+            ":hash" => sha1($_SERVER['HTTP_USER_AGENT']),
+            ":ua" => $_SERVER['HTTP_USER_AGENT']
+        ));
         return TRUE;
     }
     

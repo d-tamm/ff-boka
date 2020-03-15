@@ -15,7 +15,34 @@ global $db, $cfg, $FF;
  * Hourly cron jobs
  */
 echo "Executing hourly jobs...\n";
-// e.g. booking reminders?
+// Resolve some userAgents if missing any
+$stmt = $db->query("SELECT userAgent, uaHash FROM user_agents WHERE browser='' LIMIT 1");
+if ($stmt->rowCount()) {
+    echo "Resolving user agents\n";
+    $stmt1 = $db->prepare("UPDATE user_agents SET browser=:browser, version=:version, platform=:platform, platform_version=:platform_version, platform_bits=:platform_bits, device_type=:device_type WHERE uaHash=:uaHash");
+    while ($row = $stmt->fetch(PDO::FETCH_OBJ)) {
+        $options = array(
+            'http' => array(
+                'method'  => 'POST',
+                'content' => http_build_query([ 'action' => 'parse', 'format' => 'json', 'string' => $row->userAgent ])
+            )
+        );
+        $context  = stream_context_create($options);
+        $result = file_get_contents('https://user-agents.net/parser', false, $context);
+        if ($result !== FALSE) {
+            $result = json_decode($result);
+            $stmt1->execute(array(
+                ":browser" => $result->browser,
+                ":version" => $result->version,
+                ":platform" => $result->platform,
+                ":platform_version" => $result->platform_version,
+                ":platform_bits" => $result->platform_bits,
+                ":device_type" => $result->device_type,
+                ":uaHash" => $row->uaHash
+            ));
+        }
+    }
+}
 // Record last execution time
 $db->exec("UPDATE config SET value=UNIX_TIMESTAMP() WHERE name='last hourly cron run'");
 echo "Hourly jobs finished.\n\n";
