@@ -287,7 +287,7 @@ function obfuscatedMaillink(string $to, string $subject="") {
  *        The following tags will be replaced: %browser% %version% %platform% %platform_version% %platform_bits% %device_type% 
  * @return string
  */
-function resolveUserAgent(string $userAgent, PDO $db, string $format='%browser% %version% på %platform% %platform_version% %platform_bits% bit (%device_type%)') {
+function resolveUserAgent(string $userAgent, PDO $db, string $format='%browser% %version% på %platform% %platform_version%, %platform_bits% bits (%device_type%)') {
     $ret = $format;
     $stmt = $db->prepare("SELECT * FROM user_agents WHERE uaHash=?");
     $stmt->execute(array(sha1($userAgent)));
@@ -295,7 +295,8 @@ function resolveUserAgent(string $userAgent, PDO $db, string $format='%browser% 
         // Found userAgent in database. Return a readable representation of it
         if ($row->browser=="") $row->browser = "Okänd webbläsare"; 
         if ($row->platform=="") $row->platform = "Okänd plattform";
-        if ($row->platform_bits=="") $row->platform_bits = "-";
+        if ($row->platform_bits=="") $row->platform_bits = "?";
+        if ($row->device_type=="") $row->device_type = "-";
         $ret = str_replace("%browser%", $row->browser, $ret);
         $ret = str_replace("%version%", $row->version, $ret);
         $ret = str_replace("%platform%", $row->platform, $ret);
