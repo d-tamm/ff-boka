@@ -209,6 +209,7 @@ switch ($_REQUEST['action']) {
                                     "{{name}}"=>$adm->name,
                                     "{{role}}"=>"bokningsansvarig för kategorin {$cat->caption}",
                                     "{{link}}"=>$cfg['url'],
+                                    "{{sectionName}}"=>$section->name,
                                     "{{superadmin-name}}"=>$currentUser->name,
                                     "{{superadmin-mail}}"=>$currentUser->mail,
                                     "{{superadmin-phone}}"=>$currentUser->phone
