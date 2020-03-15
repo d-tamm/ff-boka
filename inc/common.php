@@ -11,7 +11,7 @@ global $cfg;
 // is changed. The corresponding SQL code for the change must be stored in
 // resources/db/{$dbVersion}.sql and will be executed on the next invocation of
 // any page.
-$dbVersion = 3;
+$dbVersion = 4;
 
 // Set locale
 setlocale(LC_ALL, $cfg['locale']);
@@ -53,8 +53,6 @@ if (!$_SESSION['authenticatedUser'] && !empty($_COOKIE['remember'])) {
  * @return PDO $db Connection to the database 
  */
 function connectDb(string $host, string $dbname, string $user, string $pass, int $reqVer, int $port=3306) {
-    $output = array();
-    $return_var = 0;
     // Try to connect to the database
     try {
         $db = new PDO("mysql:host=$host;port=$port;dbname=$dbname;charset=utf8", $user, $pass);
@@ -227,7 +225,7 @@ function sendmail(string $to, string $subject, $template, $replace=NULL) {
         $mail->SMTPAuth = true;
         $mail->Username = $options['user'];
         $mail->Password = $options['pass'];
-        $mail->SMTPSecure = 'tls';                            // Enable TLS encryption, `ssl` also accepted
+        $mail->SMTPSecure = 'tls';   // Enable TLS encryption, `ssl` also accepted
         // Message content
         $mail->CharSet ="UTF-8";
         $mail->setFrom($from, $fromName);
@@ -279,4 +277,39 @@ function obfuscatedMaillink(string $to, string $subject="") {
     // Obfuscates email addresses.
     $id = "obfmail".substr(sha1($to), 0, 8);
     return "<span id='$id'></span><script>$('#$id').html(\"<a href='mailto:\" + atob('" . base64_encode($to) . "') + \"" . ($subject ? "?subject=".rawurlencode($subject) : "") . "'>\"+atob('" . base64_encode($to) . "')+\"</a>\");</script>";
+}
+
+/**
+ * Lookup a userAgent string and return a human readable version of it
+ * @param string $userAgent
+ * @param PDO $db Database object to use for storing userAgent information
+ * @param string $format How to return the information, similar to strftime function.
+ *        The following tags will be replaced: %browser% %version% %platform% %platform_version% %platform_bits% %device_type% 
+ * @return string
+ */
+function resolveUserAgent(string $userAgent, PDO $db, string $format='%browser% %version% på %platform% %platform_version% %platform_bits% bit (%device_type%)') {
+    $ret = $format;
+    $stmt = $db->prepare("SELECT * FROM user_agents WHERE uaHash=?");
+    $stmt->execute(array(sha1($userAgent)));
+    if ($row = $stmt->fetch(PDO::FETCH_OBJ)) {
+        // Found userAgent in database. Return a readable representation of it
+        if ($row->browser=="") $row->browser = "Okänd webbläsare"; 
+        if ($row->platform=="") $row->platform = "Okänd plattform";
+        if ($row->platform_bits=="") $row->platform_bits = "-";
+        $ret = str_replace("%browser%", $row->browser, $ret);
+        $ret = str_replace("%version%", $row->version, $ret);
+        $ret = str_replace("%platform%", $row->platform, $ret);
+        $ret = str_replace("%platform_version%", $row->platform_version, $ret);
+        $ret = str_replace("%platform_bits%", $row->platform_bits, $ret);
+        $ret = str_replace("%device_type%", $row->device_type, $ret);
+        return $ret;
+    } else {
+        // This userAgent is not yet known. Save it in database an let it be resolved by cron job later.
+        $stmt = $db->prepare("INSERT INTO user_agents SET uaHash=:hash, userAgent=:ua");
+        $stmt->execute(array(
+            ":hash" => sha1($userAgent),
+            ":ua" => $userAgent
+        ));
+        return $userAgent;
+    }
 }
