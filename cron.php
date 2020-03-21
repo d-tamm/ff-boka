@@ -99,9 +99,30 @@ if ((int)$row->value < $first->getTimestamp() && date("j") >= $cfg['cronMonthly'
             echo "Removing record for user {$row->userId}, cat {$row->catId}\n";
             $db->exec("DELETE FROM cat_admin_noalert WHERE userId={$row->userId} AND catId={$row->catId}");
         }
-        echo "Done.\n";
     }
-
+    echo "Done.\n";
+    
+    echo "Garbage collection: Remove orphaned full size images...\n";
+    foreach (glob(__DIR__ . "/img/cat/*") as $file) {
+        if (!is_dir($file)) {
+            $stmt = $db->query("SELECT catId FROM categories WHERE catId=" . basename($file));
+            if ($stmt->rowCount()==0) {
+                if (unlink($file)) echo "Removed category image $file\n";
+                else echo "ERROR: Failed to remove orphaned category image $file\n";
+            }
+        }
+    }
+    foreach (glob(__DIR__ . "/img/item/*") as $file) {
+        if (!is_dir($file)) {
+            $stmt = $db->query("SELECT imageId FROM item_images WHERE imageId=" . basename($file));
+            if ($stmt->rowCount()==0) {
+                if (unlink($file)) echo "Removed item image $file\n";
+                else echo "ERROR: Failed to remove orphaned item image $file\n";
+            }
+        }
+    }
+    echo "Done.\n";
+    
     // Record last execution time
     $db->exec("UPDATE config SET value=UNIX_TIMESTAMP() WHERE name='last monthly cron run'");
     echo "Monthly jobs finished.\n\n";
