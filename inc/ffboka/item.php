@@ -191,6 +191,7 @@ class Item extends FFBoka {
      * @return boolean True on success
      */
     public function delete() {
+        // Full size image will be removed from file system by cron
         if (self::$db->exec("DELETE FROM items WHERE itemId={$this->id}")) {
             return TRUE;
         } else {

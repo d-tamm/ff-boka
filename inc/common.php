@@ -11,7 +11,7 @@ global $cfg;
 // is changed. The corresponding SQL code for the change must be stored in
 // resources/db/{$dbVersion}.sql and will be executed on the next invocation of
 // any page.
-$dbVersion = 4;
+$dbVersion = 5;
 
 // Set locale
 setlocale(LC_ALL, $cfg['locale']);
@@ -80,7 +80,14 @@ function connectDb(string $host, string $dbname, string $user, string $pass, int
             $curVer++;
             if (!is_readable(__DIR__ . "/../resources/db/$curVer.sql")) die("<p><b>Oops... Cannot find database upgrade file to v $curVer.</b> Please take contact with the maintainers of the repository who should have supplied the file /resources/db/$curVer.sql.</p><p><a href='javascript:location.reload();'>Retry</a></p></body></html>");
             echo(str_pad("<h3>Upgrading from v " . ($curVer-1) . " to v $curVer...</h3>", 4096)); flush();
-            // Apply upgrade
+            // If exists, include php code related to db upgrade
+            if (is_readable(__DIR__ . "/../resources/db/$curVer.php")) {
+                // Setting flag which should be evaluated in the included script in order to ensure
+                // that the script does not get executed from other calls.
+                $_SESSION['dbUpgradeToVer'] = $curVer;
+                include(__DIR__ . "/../resources/db/$curVer.php");
+            }
+            // Apply SQL upgrade
             if ($db->exec(file_get_contents(__DIR__ . "/../resources/db/$curVer.sql"))===FALSE) {
                 die("<p>It seems that this did not work. :(</p>");
             }

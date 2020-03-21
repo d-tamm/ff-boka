@@ -47,12 +47,14 @@ class Image extends FFBoka {
     public function setImage($imgFile, $maxSize=0, $thumbSize=80, $maxFileSize=0) {
         $images = $this->imgFileToString($imgFile, $maxSize, $thumbSize, $maxFileSize);
         if ($images['error']) return $images;
-        $stmt = self::$db->prepare("UPDATE item_images SET image=:image, thumb=:thumb WHERE imageID={$this->id}");
-        return $stmt->execute(array(
-            ":image"=>$images['image'],
-            ":thumb"=>$images['thumb'],
-        ));       
+        // Save thumbnail to database
+        $stmt = self::$db->prepare("UPDATE item_images SET thumb=? WHERE imageID={$this->id}");
+        if (!$stmt->execute(array($images['thumb']))) return ["error"=>"Cannot save thumbnail"];
+        // Save full size image to file system
+        if (file_put_contents(__DIR__ . "/../../img/item/{$this->id}", $images['image'])===FALSE) return "Cannot save full size image";
+        return TRUE;
     }
+    
     
     /**
      * Setter function for image properties
@@ -94,12 +96,17 @@ class Image extends FFBoka {
         }
     }
     
+    /**
+     * Delete image from database
+     * @throws \Exception
+     * @return boolean
+     */
     public function delete() {
+        // Full size image will be remove from file system by cron
         if (self::$db->exec("DELETE FROM item_images WHERE imageId={$this->id}")) {
             return TRUE;
-        } else {
-            throw new \Exception("Failed to delete item image.");
         }
+        throw new \Exception("Failed to delete item image.");
     }
     
 }

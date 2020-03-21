@@ -91,11 +91,12 @@ class Category extends FFBoka {
         if (!$this->id) throw new \Exception("Cannot set image on dummy category.");
         $images = $this->imgFileToString($imgFile, $maxSize, $thumbSize, $maxFileSize);
         if ($images['error']) return $images['error'];
-        $stmt = self::$db->prepare("UPDATE categories SET image=:image, thumb=:thumb WHERE catID={$this->id}");
-        return $stmt->execute(array(
-            ":image"=>$images['image'],
-            ":thumb"=>$images['thumb'],
-        ));
+        // Save thumb to database
+        $stmt = self::$db->prepare("UPDATE categories SET thumb=? WHERE catID={$this->id}");
+        if (!$stmt->execute(array($images['thumb']))) return "Cannot save thumbnail.";
+        // Save full size image to file system
+        if (file_put_contents(__DIR__ . "/../../img/cat/{$this->id}", $images['image'])===FALSE) return "Cannot save full size image";
+        return TRUE;
     }
 
     /**
@@ -124,7 +125,6 @@ class Category extends FFBoka {
             case "contactName":
             case "contactPhone":
             case "contactMail":
-            case "image":
             case "thumb":
             case "accessExternal":
             case "accessMember":
@@ -221,6 +221,7 @@ class Category extends FFBoka {
      * @return boolean TRUE on success, throws an exception otherwise.
      */
     public function delete() {
+        // Full size images will be removed from file system by cron
         if (self::$db->exec("DELETE FROM categories WHERE catId={$this->id}")) {
             return TRUE;
         } else {
