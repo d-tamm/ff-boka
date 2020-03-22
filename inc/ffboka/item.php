@@ -228,8 +228,10 @@ class Item extends FFBoka {
         $newItem->description = $this->description;
         // copy the associated item images
         foreach ($this->images() as $image) {
-            self::$db->exec("INSERT INTO item_images (itemId, image, thumb, caption) SELECT {$newItem->id}, image, thumb, caption FROM item_images WHERE imageId={$image->id}");
+            self::$db->exec("INSERT INTO item_images (itemId, thumb, caption) SELECT {$newItem->id}, thumb, caption FROM item_images WHERE imageId={$image->id}");
             $newImageId = self::$db->lastInsertId();
+            // Copy full size image file
+            copy(__DIR__ . "/../../img/item/{$image->id}", __DIR__ . "/../../img/item/$newImageId");
             if ($image->id == $this->imageId) { // set featured image
                 self::$db->exec("UPDATE items SET imageId=$newImageId WHERE itemId={$newItem->id}");
             }
