@@ -81,7 +81,7 @@ $cfg = array(
     
     // When to do recurring jobs
     "cronDaily" => 2, // Hour of day 0...23
-    "cronWeekly" => 1, // Day of week, Monday=1, Sunday=7
+    "cronWeekly" => 7, // Day of week, Monday=1, Sunday=7
     "cronMonthly" => 1, // Day of month, 1...31
 
     // Welcome messages on landing page
