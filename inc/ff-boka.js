@@ -13,6 +13,18 @@ function showHelp() {
     });
 }
 
+/**
+ * Get a GET request variable. Found on https://stackoverflow.com/questions/831030/how-to-get-get-request-parameters-in-javascript
+ * @param name The name of the GET variable to return
+ * @returns The content of the requested variable, or undefined if the variable has no value or does not exist
+ */
+function get(name){
+	if(name=(new RegExp('[?&]'+encodeURIComponent(name)+'=([^&]*)')).exec(location.search)) {
+		return decodeURIComponent(name[1]);
+	}
+}
+
+
 function openBookingAdmin(baseUrl, sectionId) {
     if (screen.width < 800) {
         location.href= baseUrl + "admin/bookings-m.php?sectionId=" + sectionId;
@@ -186,12 +198,25 @@ $(document).on('pageshow', "#page-book-part", function() {
     checkedItems = {};
     $(".book-item").removeClass("item-checked");
     // Initialise date chooser
-    fbStart = new Date();
-    startTime = fbStart.getHours();
-    endTime = fbStart.getHours();
-    fbStart.setHours(0,0,0,0); // Midnight
-    startDate = new Date(fbStart.valueOf());
-    endDate = new Date(fbStart.valueOf());
+    if (get('start') && get('end')) {
+    	// If start/end time have been passed as GET parameters startTime and endTime, use them
+    	// Parameters are expected as unix timestamp in seconds.
+        fbStart = new Date(parseInt(get('start'))*1000);
+        fbStart.setHours(0,0,0,0); // Midnight
+    	startDate = new Date(parseInt(get('start'))*1000);
+    	startTime = startDate.getHours();
+    	startDate.setHours(0,0,0,0);
+    	endDate = new Date(parseInt(get('end'))*1000);
+    	endTime = endDate.getHours();
+    	endDate.setHours(0,0,0,0);
+    } else {
+        fbStart = new Date();
+    	startTime = fbStart.getHours();
+    	endTime = fbStart.getHours();
+        fbStart.setHours(0,0,0,0); // Midnight
+    	startDate = new Date(fbStart.valueOf());
+    	endDate = new Date(fbStart.valueOf());
+    }
     nextDateClick = "start";
     wday = fbStart.getDay() ? fbStart.getDay()-1 : 6; // Weekday, where Monday=0 ... Sunday=6
     fbStart.setDate(fbStart.getDate() - wday); // Should now be last Monday
@@ -249,6 +274,7 @@ function toggleItem(itemId){
                 }
             }
             $("#book-combined-freebusy-bar").html(data.freebusyCombined);
+            checkTimes();
             $.mobile.loading("hide", {});
         });
         $("#book-step2").show();
@@ -302,7 +328,7 @@ function popupItemDetails(itemId) {
  * Update currently chosen start and end date/time in user interface
  */
 function updateBookedTimeframe() {
-    // switch start and end time if start time is after end time
+    // swap start and end time if start time is after end time
     if (endDate.valueOf()+endTime*60*60*1000 < startDate.valueOf()+startTime*60*60*1000) {
         if (nextDateClick == "start") {
             var temp = new Date(endDate.valueOf());

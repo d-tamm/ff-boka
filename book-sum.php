@@ -61,7 +61,8 @@ $section = new Section($_SESSION['sectionId']);
 // Check if booking collides with existing ones
 $unavail = array();
 $conflicts = array();
-foreach ($booking->items() as $item) {
+$items = $booking->items();
+foreach ($items as $item) {
     if (!$item->isAvailable($item->start, $item->end)) {
         if ($item->category()->getAccess($currentUser) >= FFBoka::ACCESS_PREBOOK) {
             // User can see freebusy information. Let him change booking.
@@ -71,6 +72,12 @@ foreach ($booking->items() as $item) {
             $conflicts[] = $item->bookedItemId;
         }
     }
+}
+
+// Get start and end time for first item in booking
+if (count($items)) {
+    $startTime = $items[0]->start;
+    $endTime = $items[0]->end;
 }
 
 switch ($_REQUEST['action']) {
@@ -370,7 +377,7 @@ EOF;
     ?>
     </ul>
 
-    <button onClick="location.href='book-part.php'" data-transition='slide' data-direction='reverse' class='ui-btn ui-icon-plus ui-btn-icon-right'>Lägg till fler resurser</button>
+    <button onClick="location.href='book-part.php<?= $startTime ? "?start=$startTime&end=$endTime" : "" ?>'" data-transition='slide' data-direction='reverse' class='ui-btn ui-icon-plus ui-btn-icon-right'>Lägg till fler resurser</button>
     
     <?php
     $price = $booking->price;
