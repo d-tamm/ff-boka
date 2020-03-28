@@ -1,5 +1,6 @@
 // General vars
 var toutSetValue,
+	toutSearch,
     weekdays = [ 'sön', 'mån', 'tis', 'ons', 'tor', 'fre', 'lör' ];
 
 // Prevent caching of pages
@@ -833,7 +834,7 @@ var chosenAccessId;
 
 $(document).on('pagecreate', "#page-admin-category", function() {
     // bind events
-    
+
     /**
      * Set timeout for saving category caption
      */
@@ -938,54 +939,58 @@ $(document).on('pagecreate', "#page-admin-category", function() {
     /**
      * Get suggestions of users for category contact person
      */
-    $(document).off("filterablebeforefilter", "#cat-contact-autocomplete").on("filterablebeforefilter", "#cat-contact-autocomplete", function ( e, data ) {
-        var $ul = $( this ),
-            $input = $( data.input ),
-            value = $input.val(),
-            html = "";
-        $ul.html( "" );
-        if ( value && value.length > 2 ) {
-            $ul.html( "<li><div class='ui-loader'><span class='ui-icon ui-icon-loading'></span></div></li>" );
-            $ul.listview( "refresh" );
-            $.getJSON("index.php", {action: "ajaxFindUser", q: value}, function(data, status) {
-                $.each( data, function ( i, val ) {
-                    html += "<li style='cursor:pointer;' title='Sätt " + val['name'] + " som kontaktperson' onClick=\"setCatProp('contactUserId', " + val['userId'] + ");\">" + val['userId'] + " " + (val['name'] ? val['name'] : "(ingen persondata tillgänglig)") + "</li>";
-                });
-                if (data.length==0) {
-                    if (Number(value)) html += "<li style='cursor:pointer;' title='Lägg till medlem med medlemsnummer " + Number(value) + " som kontaktperson' onClick=\"setCatProp('contactUserId', " + Number(value) + ");\">" + Number(value) + " (ny användare)</li>";
-                    else html += "<li>Sökningen på <i>" + value + "</i> gav ingen träff</li>";
-                }
-                $ul.html( html );
-                $ul.listview( "refresh" );
-                $ul.trigger( "updatelayout");
-            });
-        }
+    $(document).off("input", "#cat-contact-autocomplete-input").on("input", "#cat-contact-autocomplete-input", function ( e, data ) {
+        clearTimeout(toutSearch);
+        var value = this.value;
+        toutSearch = setTimeout(function() {
+	        var $ul = $("#cat-contact-autocomplete"),
+	            html = "";
+	        $ul.html( "" );
+	        if ( value && value.length > 2 ) {
+	            $ul.html( "<li><div class='ui-loader'><span class='ui-icon ui-icon-loading'></span></div></li>" );
+	            $ul.listview( "refresh" );
+	            $.getJSON("index.php", {action: "ajaxFindUser", q: value}, function(data, status) {
+	                $.each( data, function ( i, val ) {
+	                    html += "<li style='cursor:pointer;' title='Sätt " + val['name'] + " som kontaktperson' onClick=\"setCatProp('contactUserId', " + val['userId'] + ");\">" + val['userId'] + " " + (val['name'] ? val['name'] : "(ingen persondata tillgänglig)") + "</li>";
+	                });
+	                if (data.length==0) {
+	                    if (Number(value)) html += "<li style='cursor:pointer;' title='Lägg till medlem med medlemsnummer " + Number(value) + " som kontaktperson' onClick=\"setCatProp('contactUserId', " + Number(value) + ");\">" + Number(value) + " (ny användare)</li>";
+	                    else html += "<li>Sökningen på <i>" + value + "</i> gav ingen träff</li>";
+	                }
+	                $ul.html( html );
+	                $ul.listview( "refresh" );
+	                $ul.trigger( "updatelayout");
+	            });
+	        }
+        }, 300);
     });
 
     /**
      * Get suggestions of users for adding category admins
      */
-    $(document).off("filterablebeforefilter", "#cat-adm-autocomplete").on("filterablebeforefilter", "#cat-adm-autocomplete", function ( e, data ) {
-        var $ul = $( this ),
-            $input = $( data.input ),
-            value = $input.val(),
-            html = "";
-        $ul.html( "" );
-        if ( value && value.length > 2 ) {
-            $ul.html( "<li><div class='ui-loader'><span class='ui-icon ui-icon-loading'></span></div></li>" );
-            $ul.listview( "refresh" );
-            $.getJSON("index.php", {action: "ajaxFindUser", q: value}, function(data, status) {
-                $.each( data, function ( i, val ) {
-                    html += "<label><input type='radio' class='cat-access-id' name='id' value='" + val['userId'] + "'>" + val['userId'] + " " + (val['name'] ? val['name'] : "(ingen persondata tillgänglig)") + "</label>";
-                });
-                if (data.length==0) {
-                    if (Number(value)) html += "<label><input type='radio' class='cat-access-id' name='id' value='" + Number(value) + "'>" + Number(value) + " (ny användare)</label>";
-                    else html += "<li>Sökningen på <i>" + value + "</i> gav ingen träff</li>";
-                }
-                $ul.html( html );
-                $ul.trigger( "create");
-            });
-        }
+    $(document).off("input", "#cat-adm-autocomplete-input").on("input", "#cat-adm-autocomplete-input", function(e, data) {
+        clearTimeout(toutSearch);
+        var value = this.value;
+        toutSearch = setTimeout(function() {
+            var $ul = $("#cat-adm-autocomplete"),
+	            html = "";
+	        $ul.html( "" );
+	        if ( value && value.length > 2 ) {
+	            $ul.html( "<li><div class='ui-loader'><span class='ui-icon ui-icon-loading'></span></div></li>" );
+	            $ul.listview( "refresh" );
+	            $.getJSON("index.php", {action: "ajaxFindUser", q: value}, function(data, status) {
+	                $.each( data, function ( i, val ) {
+	                    html += "<label><input type='radio' class='cat-access-id' name='id' value='" + val['userId'] + "'>" + val['userId'] + " " + (val['name'] ? val['name'] : "(ingen persondata tillgänglig)") + "</label>";
+	                });
+	                if (data.length==0) {
+	                    if (Number(value)) html += "<label><input type='radio' class='cat-access-id' name='id' value='" + Number(value) + "'>" + Number(value) + " (ny användare)</label>";
+	                    else html += "<li>Sökningen på <i>" + value + "</i> gav ingen träff</li>";
+	                }
+	                $ul.html( html );
+	                $ul.trigger( "create");
+	            });
+	        }
+        }, 300);
     });
 
     /**
