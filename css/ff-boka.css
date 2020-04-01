@@ -365,7 +365,7 @@ table.alternate-rows tr:nth-child(even) {
 }
 
 .desktop #iframe-booking, .desktop #panel-item-details {
-    position: absolute;
+    position: fixed;
     right: 0;
     top: 0;
     height: 100%;
@@ -377,7 +377,7 @@ table.alternate-rows tr:nth-child(even) {
     transition: width 1s;    
 }
 .desktop #close-iframe-booking {
-    position: absolute;
+    position: fixed;
     top: 20px;
     right: 33%;
     transition: right 1s;    
