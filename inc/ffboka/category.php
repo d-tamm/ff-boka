@@ -394,17 +394,20 @@ class Category extends FFBoka {
         return $ret;
     }
 
+   
     /**
      * Get all items in the current category
-     * @return array|\FFBoka\Item[]
+     * @return array|\FFBoka\Item[] Items sorted by caption
      */
     public function items() {
         if (!$this->id) return array();
-        $stmt = self::$db->query("SELECT itemId FROM items WHERE catId={$this->id} ORDER BY caption");
+        $stmt = self::$db->query("SELECT itemId FROM items WHERE catId={$this->id}");
         $items = array();
         while ($item = $stmt->fetch(PDO::FETCH_OBJ)) {
             $items[] = new Item($item->itemId);
         }
+        // Sort
+        usort($items, function($a, $b) { return strnatcasecmp($a->caption, $b->caption); });
         return $items;
     }
     
