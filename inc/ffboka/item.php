@@ -330,7 +330,7 @@ class Item extends FFBoka {
             if ($showPrice && $row->price) $class .= " has-price";
             $title = strftime("%F kl %H:00", $row->unixStart) . " till " . strftime("%F kl %H:00", $row->unixEnd);
             if ($showPrice) $title .= is_null($row->price) ? "\nInget pris satt" : "\nPris: {$row->price} kr";
-            $ret .= "<div class='$class' data-booking-id='{$row->bookingId}' data-booked-item-id='{$row->bookedItemId}' " . ($includeTokens ? "data-token='{$row->token}' " : "") . "style='left:" . (($row->unixStart - $start) / $secs * 100) . "%; width:" . (($row->unixEnd - $row->unixStart) / $secs * 100) . "%;' title='$title'></div>";
+            $ret .= "<div class='$class' data-booking-id='{$row->bookingId}' data-booked-item-id='{$row->bookedItemId}' " . ($includeTokens ? "data-token='{$row->token}' " : "") . "style='left:" . number_format(($row->unixStart - $start) / $secs * 100, 2) . "%; width:" . number_format(($row->unixEnd - $row->unixStart) / $secs * 100, 2) . "%;' title='$title'></div>";
         }
         if ($scale) $ret .= self::freebusyScale(false, $days);
         return $ret;
@@ -346,7 +346,7 @@ class Item extends FFBoka {
         $dayNames = $weekdays ? array("<span>mån</span>","<span>tis</span>","<span>ons</span>","<span>tor</span>","<span>fre</span>","<span>lör</span>","<span>sön</span>") : array_fill(0,$days,"");
         $noborder = "border-left:none;";
         for ($day=0; $day<$days; $day++) {
-            $ret .= "<div class='freebusy-tic' data-day='$day' style='$noborder " . ($weekdays ? "width:" . (100/$days) . "%; " : "") . "left:" . (100/$days*$day) . "%;'>{$dayNames[$day]}</div>";
+            $ret .= "<div class='freebusy-tic' data-day='$day' style='$noborder " . ($weekdays ? "width:" . number_format(100/$days, 2) . "%; " : "") . "left:" . number_format(100/$days*$day, 2) . "%;'>{$dayNames[$day]}</div>";
             $noborder = "";
         }
         return $ret;
@@ -363,7 +363,7 @@ class Item extends FFBoka {
         $date->setTimezone(new \DateTimeZone(self::$timezone));
         $ret = "";
         for ($day=0; $day<$days; $day++) {
-            if ($date->format('N') > 5) $ret .= "<div class='freebusy-weekend' style='left:" . (100/$days*$day) . "%; width:" . (100/$days) . "%;'></div>"; 
+            if ($date->format('N') > 5) $ret .= "<div class='freebusy-weekend' style='left:" . number_format(100/$days*$day, 2) . "%; width:" . number_format(100/$days, 2) . "%;'></div>"; 
             $date->add(new \DateInterval("P1D"));
         }
         return $ret;

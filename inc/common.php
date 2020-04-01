@@ -15,7 +15,6 @@ $dbVersion = 5;
 
 // Set locale
 setlocale(LC_ALL, $cfg['locale']);
-setlocale(LC_NUMERIC, $cfg['localeNumeric']);
 date_default_timezone_set ( $cfg['timezone'] );
 
 // $message is used on several pages. Good to initialise.

@@ -73,7 +73,7 @@ switch ($_REQUEST['action']) {
         $style = "border-left:none;";
         while ($day->format('n') == $start->format('n')) {
             $class = ($day->format('N') > 5) ? "freebusy-weekend" : "";
-            $scale .= "<div class='freebusy-tic $class' style='$style width:" . (100/$daysInMonth) . "%; left:" . (100/$daysInMonth*($day->format('j')-1)) . "%;'>{$day->format('j')}</div>";
+            $scale .= "<div class='freebusy-tic $class' style='$style width:" . number_format(100/$daysInMonth, 2) . "%; left:" . number_format(100/$daysInMonth*($day->format('j')-1), 2) . "%;'>{$day->format('j')}</div>";
             $style = "";
             $day->add(new DateInterval('P1D'));
         };

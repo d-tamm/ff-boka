@@ -51,7 +51,6 @@ $cfg = array(
 
     // Locale to use
     "locale" => "sv_SE.UTF-8",
-	"localeNumeric" => "en_US.UTF-8", // Locale for numbers shall use dots as decimal sign
     "timezone" => "Europe/Stockholm",
     
     // Section bound assignments always giving admin access to section
