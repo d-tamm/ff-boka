@@ -74,12 +74,18 @@ if (isset($_REQUEST['action'])) {
             $message = "Bokningen finns inte i systemet.";
             break;
         case "sessionExpired":
-            $message = "Du har blivit utloggad på grund av inaktivitet.";
-            // Remove session
-            session_unset();
-            session_destroy();
-            session_write_close();
-            setcookie(session_name(), "", 0, "/");
+            if (empty($_COOKIE['remember'])) {
+                $message = "Du har blivit utloggad på grund av inaktivitet.";
+                // Remove session
+                session_unset();
+                session_destroy();
+                session_write_close();
+                setcookie(session_name(), "", 0, "/");
+            } elseif ($_REQUEST['redirect'] && $_SESSION['authenticatedUser']) {
+                // This happens if user has checked Remember Me
+                header("Location: {$cfg['url']}{$_REQUEST['redirect']}");
+                die();
+            }
             break;
         case "accessDenied":
             $message = "Du har inte tillgång till {$_REQUEST['to']}.";
