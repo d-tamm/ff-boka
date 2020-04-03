@@ -44,7 +44,7 @@ if ($access < FFBoka::ACCESS_READASK) {
     
     <?php echo str_replace("\n", "<br>", htmlspecialchars($item->description));
     
-    if ($access >= FFBoka::ACCESS_CONFIRM) echo "<p class='ui-body ui-body-a'><i>" . htmlspecialchars($item->note) . "</i></p>";
+    if ($access >= FFBoka::ACCESS_CONFIRM && $item->note) echo "<p class='ui-body ui-body-a'><i>" . htmlspecialchars($item->note) . "</i></p>";
     
     foreach ($item->images() as $img) {
         echo "<div class='item-image'><img src='image.php?type=itemImage&id={$img->id}'><label>" . htmlspecialchars($img->caption) . "</label></div>";
