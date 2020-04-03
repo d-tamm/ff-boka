@@ -43,16 +43,20 @@ if ($access < FFBoka::ACCESS_READASK) {
     <div role="main" class="ui-content">
     
     <?php echo str_replace("\n", "<br>", htmlspecialchars($item->description));
+    
+    if ($access >= FFBoka::ACCESS_CONFIRM) echo "<p class='ui-body ui-body-a'><i>" . htmlspecialchars($item->note) . "</i></p>";
+    
     foreach ($item->images() as $img) {
         echo "<div class='item-image'><img src='image.php?type=itemImage&id={$img->id}'><label>" . htmlspecialchars($img->caption) . "</label></div>";
     }
     if ($access >= FFBoka::ACCESS_PREBOOK) { // show coming bookings
         $bookings = $item->upcomingBookings();
-        if (count($bookings)) echo "<div class='ui-body ui-body-a'><h3>Kommande bokningar</h3>\n<ul>\n";
+        echo "<div class='ui-body ui-body-a'><h3>Kommande bokningar</h3>\n<ul>\n";
         foreach ($bookings as $b) {
             echo "<li>" . strftime("%a %e/%-m %R", $b->start) . " till " . strftime("%a %e/%-m %R", $b->end) . "</li>\n";
         }
         if (count($bookings)) echo "</ul></div>\n";
+        else echo "</ul>Det finns inga kommande bokningar i systemet.</div>\n";
     }
     if ($access >= FFBoka::ACCESS_CATADMIN) {
         echo "<a class='ui-btn' href='{$cfg['url']}admin/item.php?catId={$cat->id}&itemId={$item->id}'>Bearbeta resursen</a>";

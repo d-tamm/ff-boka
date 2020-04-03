@@ -63,6 +63,7 @@ class Item extends FFBoka {
             case "caption":
             case "description":
             case "active":
+            case "note":
             case "imageId":
                 if (!$this->id) throw new \Exception("Cannot set property $name on dummy item.");
                 $stmt = self::$db->prepare("UPDATE items SET $name=? WHERE itemId={$this->id}");
@@ -111,6 +112,7 @@ class Item extends FFBoka {
             case "caption":
             case "description":
             case "active":
+            case "note":
             case "imageId":
                 if (!$this->id) return "";
                 $stmt = self::$db->query("SELECT $name FROM items WHERE itemId={$this->id}");

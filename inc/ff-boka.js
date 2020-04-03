@@ -1138,6 +1138,14 @@ $(document).on('pagecreate', "#page-admin-item", function() {
     });
     
     /**
+     * Set timeout for saving item internal note
+     */
+    $("#item-note").on('input', function() {
+        clearTimeout(toutSetValue);
+        toutSetValue = setTimeout(setItemProp, 1000, "note", this.value);
+    });
+
+    /**
      * Delete item
      */
     $("#delete-item").click(function() {
