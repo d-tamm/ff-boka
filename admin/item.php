@@ -84,6 +84,7 @@ resursen som kan vara användbar för användaren. Texten visas i resursens deta
 <p>Med <b>Aktiv (kan bokas)</b> bestämmer du om resursen ska visas för bokning. Det kan 
 vara användbart under tiden du lägger upp resursen tills all information är på plats, eller 
 när en resurs inte är tillgänglig på grund av skada, förlust mm.</p>
+<p>Du kan även lägga in <b>interna anteckningar</b>. De visas bara för administratörer.</p>
 <p>Knappen <b>Duplicera resursen</b> skapar en kopia. Om rubriken i din resurs slutar på
 <tt>(n)</tt> (där n är ett löpnummer) så får kopian nästa löpnummer. Om du t.ex. kopierar 
 <tt>Kanadensare (1)</tt> så heter kopian <tt>Kanadensare (2)</tt>. Annars får kopians 
@@ -115,6 +116,7 @@ EOF;
             case "caption":
             case "description":
             case "active":
+            case "note":
             case "imageId":
                 header("Content-Type: application/json");
                 if ($_REQUEST['value']=="NULL") $item->{$_REQUEST['name']} = null;
@@ -209,8 +211,13 @@ EOF;
             <textarea name="description" class="ajax-input" id="item-description" placeholder="Beskrivning"><?= htmlspecialchars($item->description) ?></textarea>
         </div>
         
-        <label>        <input type="checkbox" name="active" value="1" id="item-active" <?= $item->active ? "checked='true'" : "" ?>>Aktiv (kan bokas)</label>
+        <label><input type="checkbox" name="active" value="1" id="item-active" <?= $item->active ? "checked='true'" : "" ?>>Aktiv (kan bokas)</label>
         
+        <div class="ui-field-contain">
+            <label for="item-note">Intern anteckning:</label>
+            <textarea name="note" class="ajax-input" id="item-note" placeholder="Intern anteckning"><?= htmlspecialchars($item->note) ?></textarea>
+        </div>
+
         <div><input type='button' data-corners="false" id='delete-item' value='Ta bort resursen' data-theme='c'></div>
         <div><input type='button' data-corners="false" value='Duplicera resursen' onClick="location.href='?action=copyItem';"></div>
         
