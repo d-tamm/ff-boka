@@ -283,7 +283,7 @@ class Item extends FFBoka {
      * <b>days</b> (int) Number of days to show. Default: 7 days (1 week)<br>
      * <b>minStatus</b> (int) Don't show bookings with lower status than this. Defaults to STATUS_PREBOOKED.<br>
      * <b>includeTokens</b> Include data-token properties, default:false<br>
-     * <b>showPrice</b> Show the price in title of blocked bars
+     * <b>adminView</b> If true, shows the price in title of blocked bars and adds classes for unconfirmed and conflict. 
      * @return string HTML code showing blocks of free and busy times
      */
     function freebusyBar($params=[]) {
@@ -292,7 +292,7 @@ class Item extends FFBoka {
         $days = 7;
         $minStatus = FFBoka::STATUS_PREBOOKED;
         $includeTokens = FALSE;
-        $showPrice = FALSE;
+        $adminView = FALSE;
         extract($params, EXTR_IF_EXISTS);
         // Store start date as user defined variable because it is used multiple times
         $secs = $days * 24 * 60 * 60;
@@ -324,14 +324,16 @@ class Item extends FFBoka {
         if ($scale) $ret .= self::freebusyWeekends($start, $days);
         while ($row = $stmt->fetch(\PDO::FETCH_OBJ)) {
             if ($row->bufferAfterBooking) {
-                $ret .= "<div class='freebusy-blocked' style='left:" . (($row->unixStart-$start-$row->bufferAfterBooking*3600)/$secs*100) . "%; width:" . (($row->unixEnd - $row->unixStart + 2*$row->bufferAfterBooking*3600)/$secs*100) . "%' title='ej bokbar'></div>";
+                $ret .= "<div class='freebusy-blocked' style='left:" . number_format(($row->unixStart-$start-$row->bufferAfterBooking*3600)/$secs*100, 2) . "%; width:" . number_format(($row->unixEnd - $row->unixStart + 2*$row->bufferAfterBooking*3600)/$secs*100, 2) . "%' title='ej bokbar'></div>";
             }
             $class = "freebusy-busy";
-            if ($row->status==FFBoka::STATUS_PREBOOKED) $class .= " unconfirmed";
-            if ($row->status==FFBoka::STATUS_CONFLICT) $class .= " conflict";
-            if ($showPrice && $row->price) $class .= " has-price";
+            if ($adminView) {
+                if ($row->status==FFBoka::STATUS_PREBOOKED) $class .= " unconfirmed";
+                if ($row->status==FFBoka::STATUS_CONFLICT) $class .= " conflict";
+                if ($row->price) $class .= " has-price";
+            }
             $title = strftime("%F kl %H:00", $row->unixStart) . " till " . strftime("%F kl %H:00", $row->unixEnd);
-            if ($showPrice) $title .= is_null($row->price) ? "\nInget pris satt" : "\nPris: {$row->price} kr";
+            if ($adminView) $title .= is_null($row->price) ? "\nInget pris satt" : "\nPris: {$row->price} kr";
             $ret .= "<div class='$class' data-booking-id='{$row->bookingId}' data-booked-item-id='{$row->bookedItemId}' " . ($includeTokens ? "data-token='{$row->token}' " : "") . "style='left:" . number_format(($row->unixStart - $start) / $secs * 100, 2) . "%; width:" . number_format(($row->unixEnd - $row->unixStart) / $secs * 100, 2) . "%;' title='$title'></div>";
         }
         if ($scale) $ret .= self::freebusyScale(false, $days);

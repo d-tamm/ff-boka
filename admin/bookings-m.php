@@ -43,7 +43,6 @@ function showCat(Category $cat, User $user) {
             }
             foreach ($items as $item) {
                 echo "<li class='book-item' id='book-item-{$item->id}'><a href=\"#\">";
-                //echo embedImage($item->getFeaturedImage()->thumb);
                 echo "<h4" . ($item->active ? "" : " inactive") . "'>" . htmlspecialchars($item->caption) . "</h4>";
                 echo "<div class='freebusy-bar' id='freebusy-item-{$item->id}'></div>";
                 echo "</a><a href='javascript:showItemDetails({$item->id})'></a>";
@@ -73,6 +72,7 @@ END;
                 'start'=>$_REQUEST['start'],
                 'scale'=>TRUE,
                 'minStatus'=>FFBoka::STATUS_CONFLICT,
+                'adminView'=>TRUE
             ]);
         }
         die(json_encode([ "freebusy"=>$fbList ]));
