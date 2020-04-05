@@ -11,7 +11,7 @@ global $cfg;
 // is changed. The corresponding SQL code for the change must be stored in
 // resources/db/{$dbVersion}.sql and will be executed on the next invocation of
 // any page.
-$dbVersion = 6;
+$dbVersion = 7;
 
 // Set locale
 setlocale(LC_ALL, $cfg['locale']);

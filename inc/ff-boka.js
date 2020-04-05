@@ -584,6 +584,28 @@ function confirmBookedItem(bookedItemId) {
         else {
             $("#book-item-status-"+bookedItemId).html("Bekräftat");
             $("#book-item-btn-confirm-"+bookedItemId).hide();
+            $("#book-item-btn-reject-"+bookedItemId).hide();
+        	if (data.allManaged == true) alert("Alla obekräftade poster i bokningen har nu hanterats. Om du har justerat några start- eller sluttider bör du skriva något om det i meddelande-rutan längre ner. Skicka också gärna en uppdaterad bokningsbekräftelse genom att klicka på 'Slutför bokningen' längst ner på sidan.");
+        }
+    });
+}
+
+/**
+ * Mark an item as rejected
+ * @param int bookedItemId ID of item to reject
+ */
+function rejectBookedItem(bookedItemId) {
+    $.mobile.loading("show", {});
+    $.getJSON("book-sum.php", { action: "ajaxRejectBookedItem", bookedItemId: bookedItemId }, function(data, status) {
+        $.mobile.loading("hide", {});
+        if (data.error) alert(data.error);
+        else {
+            $("#book-item-status-"+bookedItemId).html("Avböjt");
+            $("li#item-"+bookedItemId).addClass("rejected");
+            $("li#item-"+bookedItemId+" a").removeClass("ui-btn-c").addClass("ui-btn-a");
+            $("#book-item-btn-confirm-"+bookedItemId).parent().hide();
+        	if (data.allManaged == true) alert("Alla obekräftade poster i bokningen har nu hanterats. Kom ihåg att skriva en förklaring i meddelande-fältet längre ner på sidan så att den bokande förstår varför du har avböjt den här posten. Klicka sedan på 'Slutför bokningen' längst ner på sidan för att skicka ut en uppdaterad bokningsbekräftelse.");
+        	else alert("Du har nekat bokningsförfrågan för den här posten.\n\nKom ihåg att skriva en förklaring i meddelande-fältet längre ner på sidan så att den bokande förstår varför du har avböjt den här posten. Du kan sedan välja att skicka ut en uppdaterad bokningsbekräftelse genom att klicka på 'Slutför bokningen' längst ner, eller först göra fler justeringar på bokningen.");
         }
     });
 }

@@ -58,6 +58,7 @@ class Booking extends FFBoka {
             case "extPhone":
             case "extMail":
             case "token":
+            case "confirmationSent":
                 $stmt = self::$db->query("SELECT $name FROM bookings WHERE bookingId={$this->id}");
                 $row = $stmt->fetch(PDO::FETCH_OBJ);
                 return $row->$name;
@@ -85,6 +86,7 @@ class Booking extends FFBoka {
             case "extName":
             case "extPhone":
             case "extMail":
+            case "confirmationSent":
                 $stmt = self::$db->prepare("UPDATE bookings SET $name=? WHERE bookingId={$this->id}");
                 if ($stmt->execute(array($value))) return $value;
                 break;
@@ -133,7 +135,7 @@ class Booking extends FFBoka {
     /**
      * Add an item to the booking.
      * @param int $itemId ID of the item to add
-     * @return Item|bool BookedItemID of added item on success, false on failure
+     * @return Item|bool Added item on success, false on failure
      */
     public function addItem(int $itemId) {
         $stmt = self::$db->prepare("INSERT INTO booked_items SET bookingId={$this->id}, itemId=?");

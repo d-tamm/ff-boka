@@ -84,6 +84,10 @@ li.selected {
     background: var(--FF-blue) !important;
 }
 
+li.rejected a {
+    color:gray !important;
+}
+
 table.alternate-rows tr {
     border-top: 1px solid var(--FF-cyan);
 }
@@ -240,7 +244,7 @@ table.alternate-rows tr:nth-child(even) {
 .item-edit-buttons {
     position: absolute;
     bottom: 0px;
-    left: 100px;
+    left: 0.625em;
     font-size: 0.6em;
     z-index: 1;
 }

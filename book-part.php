@@ -212,6 +212,8 @@ END;
                 $item = new Item(array_keys($_REQUEST['ids'])[0], TRUE);
                 $item->start = $_REQUEST['start'];
                 $item->end = $_REQUEST['end'];
+                if ($acc < FFBoka::ACCESS_CONFIRM) $item->status = FFBoka::STATUS_PENDING;
+                else $item->status = FFBoka::STATUS_CONFIRMED;
             } else {
                 // Step 1: Several items to save
                 if (isset($_SESSION['bookingId'])) {
