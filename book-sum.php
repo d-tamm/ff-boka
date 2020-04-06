@@ -84,17 +84,34 @@ switch ($_REQUEST['action']) {
     case "help":
         echo <<<EOF
 <h3>Resurslistan</h3>
-<p>Här ser du alla resurser som ingår i din bokning. Du kan ändra tiden på valda resurser genom att klicka på dem, och ta bort dem genom att klicka på krysset i högerkanten. Du kan även lägga till fler resurser med knappen under resurslistan. Vid varje resurs visas om den är slutgiltigt bokad eller måste bekräftas.</p>
-<p>Om du är bokningsansvarig kan du här bekräfta resurser och sätta pris på dem.</p>
+<p>Här ser du alla resurser som ingår i din bokning. Du kan ändra tiden på valda resurser
+genom att klicka på dem, och ta bort dem genom att klicka på krysset i högerkanten.
+Du kan även lägga till fler resurser med knappen under resurslistan. Vid varje resurs visas
+statusen såsom slutgiltigt bokad eller måste bekräftas.</p>
+<p>Om du är bokningsansvarig kan du här även bekräfta eller avvisa förfrågningar på enskilda
+resurser och sätta pris på dem. När du gjort det är det bra om du skickar en uppdaterad
+bokningsbekräftelse genom att klickar på knappen <i>Slutföra bokningen</i> längst ner.</p>
 <h3>Pris</h3>
-<p>Under resurslistan visas en sammanfattning av kostnaderna om bokningsansvarig har satt ett pris på någon av resurserna. Om du är bokningsansvarig kan du mata in beloppet som har betalats.</p>
+<p>Under resurslistan visas en sammanfattning av kostnaderna om bokningsansvarig har satt
+ett pris på någon av resurserna. Om du är bokningsansvarig kan du mata in beloppet som har
+betalats.</p>
 <h3>Bokningsfrågor</h3>
-<p>Beroende på vad du håller på att boka kan det finnas ett avsnitt med frågor som ska besvaras. Frågor märkta med <span class="required"></span> måste du svara på för att kunna boka, övriga frågor är frivilliga.</p>
+<p>Beroende på vad du håller på att boka kan det finnas ett avsnitt med frågor som ska
+besvaras. Frågor märkta med en asterisk (<span class="required"></span>) måste du svara på
+för att kunna boka, övriga frågor är frivilliga.</p>
 <h3>Kontaktuppgifter</h3>
-<p>Om du är inloggad så visas kontaktuppgifterna som tillhör ditt konto. Du kan när som helst ändra dem (även efter att du avslutat bokningen) genom att gå till <a href="userdata.php">Min Sida</a>.</p>
-<p>Om du bokar som gäst ska du här skriva in ditt namn och dina kontaktuppgifter så vi kan nå dig vid frågor. I bokningsbekräftelsen kommer du att få en länk till bokningen så att du kan komma tillbaka och uppdatera den.</p>
+<p>Om du är inloggad så visas kontaktuppgifterna som tillhör ditt konto. Du kan när som
+helst ändra dem (även efter att du avslutat bokningen) genom att gå till <a href="userdata.php">Min Sida</a>.</p>
+<p>Om du bokar som gäst ska du här skriva in ditt namn och dina kontaktuppgifter så vi kan
+nå dig vid frågor. I bokningsbekräftelsen kommer du att få en länk till bokningen så att du
+kan komma tillbaka och uppdatera den.</p>
 <h3>Meddelande</h3>
-<p>Längst ner på sidan kan du även lämna ett valfritt meddelande som kommer att vara tillgänglig för bokningsansvarig.</p>  
+<p>Längst ner på sidan finns det en kommentarsruta som bokande och bokningsansvarig kan använda
+för att lämna meddelanden till varandra.</p>
+<h3>Knappen Slutföra bokningen</h3>
+<p>Knappen sparar den aktuella bokningen och ändrar status på resurserna till <i>väntar på bekräftelse</i>
+eller <i>bekräftat</i> beroende på din behörighetsnivå. Sedan skickar systemet ut bekräftelsemejl
+till dig som bokar, samt vid behov till bokningsansvarig.</p>
 EOF;
         die();
     case "ajaxFreebusyItem":
