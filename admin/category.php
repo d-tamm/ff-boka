@@ -309,7 +309,7 @@ switch ($_REQUEST['action']) {
         } catch (Exception $e) {
             die(json_encode([ 'status'=>'error', 'error'=>$e->getMessage() ]));
         }
-        die(json_encode([ "status"=>"OK", html=>showAttachments($cat) ]));
+        die(json_encode([ "status"=>"OK", "html"=>showAttachments($cat) ]));
 
     case "ajaxSetCatFileProp":
         if ($cat->getAccess($currentUser) < FFBoka::ACCESS_CATADMIN) {
@@ -329,7 +329,7 @@ switch ($_REQUEST['action']) {
         }
         $cat->removeFile($_REQUEST['fileId']);
         header("Content-Type: application/json");
-        die(json_encode([ "status"=>"OK", html=>showAttachments($cat) ]));
+        die(json_encode([ "status"=>"OK", "html"=>showAttachments($cat) ]));
         die();
 }
 
