@@ -23,6 +23,9 @@ function displayCat(Category $cat, $user, $fbStart) {
         echo "<div data-role='collapsible' data-inset='false'>";
         echo "<h3><div class='cat-list-img'>" . embedImage($cat->thumb) . "</div>" . htmlspecialchars($cat->caption) . "</h3>";
         echo $cat->prebookMsg ? "<p>" . str_replace("\n", "<br>", htmlspecialchars($cat->prebookMsg)) . "</p>" : "";
+        foreach ($cat->files() as $file) {
+            if ($file->displayLink) echo "<p><span style='font-size:200%; vertical-align:middle;'>🗎 </span> <a href='attment.php?fileId={$file->fileId}' data-ajax='false' title='Ladda ner " . htmlspecialchars($file->filename) . "'>" . htmlspecialchars($file->caption) . "</a></p>";
+        }
         if ($access) {
             echo "<ul data-role='listview' data-split-icon='info' data-split-theme='a'>";
             foreach ($cat->items() as $item) {
