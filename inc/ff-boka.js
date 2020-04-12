@@ -1086,7 +1086,7 @@ $(document).on('pagecreate', "#page-admin-category", function() {
             processData: false,
             success: function(data) {
                 $.mobile.loading("hide", {});
-                if (data.status=="OK") $("#cat-attachments").html(data.html);
+                if (data.status=="OK") $("#cat-attachments").html(data.html).enhanceWithin();
                 else alert(data.error);
             },
             error: function(xhr, status, error) {
@@ -1193,7 +1193,7 @@ function catFileDelete(fileId) {
 	    	fileId: fileId
 		}).done(function(data, status) {
 	        $.mobile.loading("hide", {});
-	        if (data.status=="OK") $("#cat-attachments").html(data.html);
+	        if (data.status=="OK") $("#cat-attachments").html(data.html).enhanceWithin();
 	        else alert(data.error);
 	    }).fail(function() {
 	        $.mobile.loading("hide", {});
