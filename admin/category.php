@@ -106,7 +106,7 @@ function showAttachments(Category $cat) {
         foreach ($files as $fileId=>$file) {
             $ret .= "<div class='ui-body ui-body-a'>
             <button style='position:absolute; right:0px; top:0px;' title='Radera bilagan' onClick='catFileDelete($fileId)' class='ui-btn ui-btn-inline ui-btn-icon-notext ui-icon-delete' id='cat-file-delete-$fileId'>Radera bilaga</button>
-            <h3 id='cat-file-header-$fileId'><a href='../attment.php?fileId=$fileId' data-ajax='false'>" . htmlspecialchars($file->caption) . "</a></h3>
+            <h3><a id='cat-file-header-$fileId' href='../attment.php?fileId=$fileId' data-ajax='false'>" . htmlspecialchars($file->caption) . "</a></h3>
             <div class='ui-field-contain'>
                 <label for='cat-file-caption-$fileId'>Rubrik:</label>
                 <input id='cat-file-caption-$fileId' onInput=\"clearTimeout(toutSetValue); toutSetValue = setTimeout(setCatFileProp, 1000, $fileId, 'caption', this.value);\" placeholder='Rubrik' value='" . htmlspecialchars($file->caption) . "'>
