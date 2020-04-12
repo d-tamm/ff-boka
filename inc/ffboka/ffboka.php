@@ -308,4 +308,18 @@ class FFBoka {
         elseif (time() > $row->unixtime + $row->ttl) throw new \Exception("Koden har förfallit.");
         else return $row;
     }
+    
+    /**
+     * Formats the given amount of bytes in a human-readable way
+     * @param int $bytes
+     * @param int $precision
+     * @return string
+     */
+    protected function formatBytes(int $bytes, int $precision=1) {
+        $units = array("B", "kB", "MB", "GB", "TB");
+        $pow = floor(($bytes ? log($bytes) : 0) / log(1024));
+        $pow = min($pow, count($units) - 1);
+        $bytes /= (1 << (10*$pow));
+        return round($bytes, $precision) . " " . $units[$pow];
+    }
 }

@@ -80,6 +80,7 @@ if ((int)$row->value < $first->getTimestamp() && date("j") >= $cfg['cronMonthly'
     echo "Done.\n";
     
     echo "Garbage collection: Remove orphaned full size images...\n";
+    // TODO: remove orphaned attachment files
     foreach (glob(__DIR__ . "/img/cat/*") as $file) {
         if (!is_dir($file)) {
             $stmt = $db->query("SELECT catId FROM categories WHERE catId=" . basename($file));

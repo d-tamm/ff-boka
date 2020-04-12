@@ -270,6 +270,90 @@ class Category extends FFBoka {
         return $stmt->execute(array($id));
     }
     
+    
+    /**
+     * Add an attachment file to the category. The caption will be set to the file name.
+     * @param $_FILES[x] $file A member of the $_FILES array
+     * @param array $allowedFileTypes Associative array of $extension=>$mimeType pairs, where $mimeType may be a string or an array of strings
+     * @param int $maxSize The maximum accepted file size in bytes. Defaults to 0 (no limit)
+     * @throws \Exception if trying to upload files with unallowed mime types
+     * @return int ID of the added file
+     */
+    public function addFile($file, $allowedFileTypes, int $maxSize=0) {
+        if (!$this->id) die("Cannot add file to dummy category.");
+        if ($maxSize && filesize($file['tmp_name'])>$maxSize) { 
+            throw new \Exception("Filen är för stor. Största tillåtna storleken är " . self::formatBytes($maxSize) . ".");
+        }
+        if (!is_uploaded_file($file['tmp_name'])) throw new \Exception("This is not an uploaded file.");
+        $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        if (!array_key_exists($ext, $allowedFileTypes)) {
+            throw new \Exception("Du kan inte ladda upp filer av typen $ext. Bara följande filtyper tillåts: " . implode(", ", array_keys($allowedFileTypes)));
+        }
+        if (!is_array($allowedFileTypes[$ext])) $allowedFileTypes[$ext] = array($allowedFileTypes[$ext]);
+        if (!in_array(mime_content_type($file['tmp_name']), $allowedFileTypes[$ext])) throw new \Exception("Du kan inte ladda upp filer av typen $ext (".mime_content_type($file['tmp_name']). "). Bara följande filtyper tillåts: " . implode(", ", array_keys($allowedFileTypes)));
+        $md5 = md5_file($file['tmp_name']);
+        // Add post to database
+        $stmt = self::$db->prepare("INSERT INTO cat_files SET catId={$this->id}, filename=:filename, caption=:caption, md5='$md5'");
+        $stmt->execute(array( ":filename"=>$file['name'], ":caption"=>$file['name'] ));
+        $newId = self::$db->lastInsertId();
+        // Move file
+        if (!is_dir(__DIR__."/../../uploads")) {
+            if (!mkdir(__DIR__."/../../uploads")) die("Cannot create directory for uploaded files.");
+        }
+        if (!move_uploaded_file($file['tmp_name'], __DIR__."/../../uploads/$newId")) throw new \Exception("Kunde inte spara filen.");
+        return $newId;
+    }
+    
+    /**
+     * Set property for an attached file
+     * @param int $fileId
+     * @param string $name The name of the property to set. Must be one of caption|filename|displayLink|attachFile
+     * @param mixed $value The value of the property to set
+     * @throws \Exception if trying to set a property with another name than listed above.
+     * @return int|bool Number of changed rows, or FALSE on failure
+     */
+    public function setFileProp(int $fileId, string $name, $value) {
+        switch ($name) {
+        case "caption":
+        case "filename":
+        case "displayLink":
+        case "attachFile":
+            $stmt = self::$db->prepare("UPDATE cat_files SET $name=:$name WHERE fileId=:fileId AND catId={$this->id}");
+            if ($name=="displayLink" || $name=="attachFile") $stmt->bindValue(":$name", $value, \PDO::PARAM_BOOL);
+            else $stmt->bindValue(":$name", $value, \PDO::PARAM_STR);
+            $stmt->bindValue(":fileId", $fileId, \PDO::PARAM_INT);
+            return $stmt->execute();
+            break;
+        default: 
+            throw new \Exception("Cannot set property $name on file attachment.");
+        }
+    }
+    
+    /**
+     * Delete an uploaded category attachment file 
+     * @param int $fileId ID of the file to be deleted
+     * @return bool|int Number of deleted records, False on failure
+     */
+    function removeFile(int $fileId) {
+        if (!unlink(__DIR__."/../../uploads/$fileId")) return FALSE;
+        return self::$db->exec("DELETE FROM cat_files WHERE catId={$this->id} AND fileId=$fileId");
+    }
+    
+    /**
+     * Get all attachments for the category
+     * @return array of objects with the following members: fileId, catId, filename, md5, 
+     *      displayLink, attachFile. The array keys are the fileIds.
+     */
+    public function files() {
+        $stmt = self::$db->query("SELECT * FROM cat_files WHERE catId={$this->id}");
+        $ret = array();
+        while ($row = $stmt->fetch(\PDO::FETCH_OBJ)) {
+            $ret[$row->fileId] = $row;
+        }
+        return $ret;
+    }
+    
+    
     /**
      * Get the granted access level for given user, taking into account inherited access.
      * @param \FFBoka\User $user

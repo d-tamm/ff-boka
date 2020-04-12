@@ -16,6 +16,7 @@ $cfg = array(
     "dbuser" => "ff-boka",   // Username for connecting to mariaDb
     "dbpass" => "your secret password", // Password for that user
 
+    // On a test system, users may e.g. elevate their own permissions.
     "testSystem" => FALSE,
     
     // Connection details to Friluftsfrämjandet's API
@@ -46,8 +47,20 @@ $cfg = array(
     
     // Max size of images in pixels (longer side). If larger images are submitted, they will be downscaled.
     "maxImgSize" => 1024,
-    // Max file size for images in byte
+    // Max file size for images and attachments in bytes
     "uploadMaxFileSize" => 10 * 1024 * 1024,
+    // Allowed file mime types for attachments. Use the lower case file extension as key, and either a
+    // string or an array of strings as value defining allowed mime types for that extension
+    "allowedAttTypes" => array(
+        "jpg" => "image/jpeg",
+        "jpeg" => "image/jpeg",
+        "pdf" => "application/pdf",
+        "odt" => "application/vnd.oasis.opendocument.text",
+        "ods" => "application/vnd.oasis.opendocument.spreadsheet",
+        "doc" => "application/msword",
+        "docx" => array("application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/zip"),
+        "xlsx" => array("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "application/octet-stream")
+    ),
 
     // Locale to use
     "locale" => "sv_SE.UTF-8",

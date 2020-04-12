@@ -9,10 +9,14 @@ require(__DIR__ . "/../inc/common.php");
 global $cfg;
 $message = "";
 
-if (!isset($_SESSION['sectionId']) || !isset($_SESSION['authenticatedUser'])) {
+if (!isset($_SESSION['authenticatedUser'])) {
     header("Location: {$cfg['url']}?action=sessionExpired&redirect=" . urlencode("admin/category.php"));
     die();
 }
+if (!isset($_SESSION['sectionId'])) {
+    header("Location: {$cfg['url']}");
+    die();
+} 
 
 if (isset($_REQUEST['catId'])) $_SESSION['catId'] = $_REQUEST['catId'];
 $cat = new Category($_SESSION['catId']);
@@ -95,6 +99,38 @@ function displayCatAccess($cat, $accLevels) {
 }
 
 
+function showAttachments(Category $cat) {
+    $files = $cat->files();
+    if (count($files)) {
+        $ret = "";
+        foreach ($files as $fileId=>$file) {
+            $ret .= "<div class='ui-body ui-body-a'>
+            <button style='position:absolute; right:0px; top:0px;' title='Radera bilagan' onClick='catFileDelete($fileId)' class='ui-btn ui-btn-inline ui-btn-icon-notext ui-icon-delete' id='cat-file-delete-$fileId'>Radera bilaga</button>
+            <h3 id='cat-file-header-$fileId'><a href='../attment.php?fileId=$fileId' data-ajax='false'>" . htmlspecialchars($file->caption) . "</a></h3>
+            <div class='ui-field-contain'>
+                <label for='cat-file-caption-$fileId'>Rubrik:</label>
+                <input id='cat-file-caption-$fileId' onInput=\"clearTimeout(toutSetValue); toutSetValue = setTimeout(setCatFileProp, 1000, $fileId, 'caption', this.value);\" placeholder='Rubrik' value='" . htmlspecialchars($file->caption) . "'>
+            </div>
+            <div class='ui-field-contain'>
+                <label for='cat-file-filename-$fileId'>Filnamn:</label>
+                <input id='cat-file-filename-$fileId' onInput=\"clearTimeout(toutSetValue); toutSetValue = setTimeout(setCatFileProp, 1000, $fileId, 'filename', this.value);\" placeholder='Filnamn' value='" . htmlspecialchars($file->filename) . "'>
+            </div>
+            <fieldset data-role='controlgroup' data-mini='true'>
+                <label><input onChange=\"setCatFileProp($fileId, 'displayLink', this.checked ? 1 : 0);\" type='checkbox'" . ($file->displayLink==1 ? " checked" : "") . " data-mini='true'> Visa länk i bokningsflödet</label>
+            </fieldset>
+            <fieldset data-role='controlgroup' data-mini='true'>
+                <label><input onChange=\"setCatFileProp($fileId, 'attachFile', this.value);\" type='radio' name='attachFile-$fileId' value='0'" . ($file->attachFile ? "" : " checked") . "> Skicka med som länk i bokningsbekräftelsen</label>
+                <label><input onChange=\"setCatFileProp($fileId, 'attachFile', this.value);\" type='radio' name='attachFile-$fileId' value='1'" . ($file->attachFile ? " checked" : "") . "> Skicka med som fil i bokningsbekräftelsen</label>
+            </fieldset>
+            </div>\n";
+        }
+        return $ret;
+    } else {
+        return "<p><i>Här laddar du upp filer som du vill skicka med vid bokning av resurser från den här kategorin eller underordnade kategorier.</i></p>";
+    }
+}
+
+
 switch ($_REQUEST['action']) {
     case "help":
         echo "
@@ -152,106 +188,149 @@ switch ($_REQUEST['action']) {
         break;
         
     case "ajaxSetCatProp":
-        if ($cat->getAccess($currentUser) >= FFBoka::ACCESS_CATADMIN) {
-            switch ($_REQUEST['name']) {
-                case "sendAlertTo":
-                case "contactUserId":
-                case "contactName":
-                case "contactPhone":
-                case "contactMail":
-                case "caption":
-                case "parentId":
-                case "prebookMsg":
-                case "postbookMsg":
-                case "bufferAfterBooking":
-                    header("Content-Type: application/json");
-                    if ($_REQUEST['value']=="NULL") $cat->{$_REQUEST['name']} = null;
-                    else $cat->{$_REQUEST['name']} = $_REQUEST['value'];
-                    die(json_encode([
-                        "status" => "OK",
-                        "contactUserId" => $cat->contactUserId,
-                        "contactData" => $cat->contactData(),
-                        "contactName" => $cat->contactName,
-                        "contactPhone" => $cat->contactPhone,
-                        "contactMail" => $cat->contactMail
-                    ]));
-            }
+        if ($cat->getAccess($currentUser) < FFBoka::ACCESS_CATADMIN) {
+            http_response_code(403);
+            die();
         }
-        die();
+        switch ($_REQUEST['name']) {
+            case "sendAlertTo":
+            case "contactUserId":
+            case "contactName":
+            case "contactPhone":
+            case "contactMail":
+            case "caption":
+            case "parentId":
+            case "prebookMsg":
+            case "postbookMsg":
+            case "bufferAfterBooking":
+                header("Content-Type: application/json");
+                if ($_REQUEST['value']=="NULL") $cat->{$_REQUEST['name']} = null;
+                else $cat->{$_REQUEST['name']} = $_REQUEST['value'];
+                die(json_encode([
+                    "status" => "OK",
+                    "contactUserId" => $cat->contactUserId,
+                    "contactData" => $cat->contactData(),
+                    "contactName" => $cat->contactName,
+                    "contactPhone" => $cat->contactPhone,
+                    "contactMail" => $cat->contactMail
+                ]));
+            default: die(json_encode([ "status"=>"error", "error"=>"Unknown field name." ]));
+        }
         
     case "ajaxSetImage":
-        if ($cat->getAccess($currentUser) >= FFBoka::ACCESS_CATADMIN) {
-            header("Content-Type: application/json");
-            $ret = $cat->setImage($_FILES['image']);
-            if($ret===TRUE) die(json_encode(["status"=>"OK", "id"=>$cat->id]));
-            else die(json_encode(["error"=>$ret]));
-        } else die();
+        if ($cat->getAccess($currentUser) < FFBoka::ACCESS_CATADMIN) {
+            http_response_code(403);
+            die();
+        }
+        header("Content-Type: application/json");
+        $ret = $cat->setImage($_FILES['image']);
+        if($ret===TRUE) die(json_encode(["status"=>"OK", "id"=>$cat->id]));
+        else die(json_encode(["error"=>$ret]));
         
     case "ajaxSetAccess":
-        if ($cat->getAccess($currentUser) >= FFBoka::ACCESS_CATADMIN) {
-            switch ($_GET['id']) {
-                case "accessExternal":
-                case "accessMember":
-                case "accessLocal":
-                    $cat->{$_GET['id']} = $_GET['access'];
-                    break;
-                default:
-                    $cat->setAccess($_GET['id'], $_GET['access']);
-                    if ($_GET['access'] >= FFBoka::ACCESS_CONFIRM) {
-                        // New admin added. Send notification if not current user
-                        $adm = new User($_GET['id']);
-                        if ($_GET['id'] != $currentUser->id && $adm->mail) {
-                            sendmail(
-                                $adm->mail,
-                                "Du är nu bokningsansvarig",
-                                "notify_new_admin",
-                                array(
-                                    "{{name}}"=>$adm->name,
-                                    "{{role}}"=>"bokningsansvarig för kategorin {$cat->caption}",
-                                    "{{link}}"=>$cfg['url'],
-                                    "{{sectionName}}"=>$section->name,
-                                    "{{superadmin-name}}"=>$currentUser->name,
-                                    "{{superadmin-mail}}"=>$currentUser->mail,
-                                    "{{superadmin-phone}}"=>$currentUser->phone
-                                )
-                            );
-                        } elseif ($_GET['id'] != $currentUser->id) $message = "OBS! Vi har inte någon epostadress till denna användare och kan inte meddela hen om den nya rollen. Därför ska du informera hen på annat sätt. Se gärna också till att hen loggar in och lägger upp sin epostadress för att kunna få meddelanden om nya bokningar.";
-                    }
-            }
-            die(json_encode([ "html"=>displayCatAccess($cat, $cfg['catAccessLevels']), "message"=>$message ]));
+        if ($cat->getAccess($currentUser) < FFBoka::ACCESS_CATADMIN) {
+            http_response_code(403);
+            die();
         }
-        break;
+        switch ($_GET['id']) {
+        case "accessExternal":
+        case "accessMember":
+        case "accessLocal":
+            $cat->{$_GET['id']} = $_GET['access'];
+            break;
+        default:
+            $cat->setAccess($_GET['id'], $_GET['access']);
+            if ($_GET['access'] >= FFBoka::ACCESS_CONFIRM) {
+                // New admin added. Send notification if not current user
+                $adm = new User($_GET['id']);
+                if ($_GET['id'] != $currentUser->id && $adm->mail) {
+                    sendmail(
+                        $adm->mail,
+                        "Du är nu bokningsansvarig",
+                        "notify_new_admin",
+                        array(
+                            "{{name}}"=>$adm->name,
+                            "{{role}}"=>"bokningsansvarig för kategorin {$cat->caption}",
+                            "{{link}}"=>$cfg['url'],
+                            "{{sectionName}}"=>$section->name,
+                            "{{superadmin-name}}"=>$currentUser->name,
+                            "{{superadmin-mail}}"=>$currentUser->mail,
+                            "{{superadmin-phone}}"=>$currentUser->phone
+                        )
+                    );
+                } elseif ($_GET['id'] != $currentUser->id) $message = "OBS! Vi har inte någon epostadress till denna användare och kan inte meddela hen om den nya rollen. Därför ska du informera hen på annat sätt. Se gärna också till att hen loggar in och lägger upp sin epostadress för att kunna få meddelanden om nya bokningar.";
+            }
+        }
+        die(json_encode([ "html"=>displayCatAccess($cat, $cfg['catAccessLevels']), "message"=>$message ]));
         
     case "ajaxToggleQuestion":
         // empty -> show -> show+required -> empty
         // inherited -> show+required -> inherited
         // inherited+required -> show -> inherited+required
-        if ($cat->getAccess($currentUser) >= FFBoka::ACCESS_CATADMIN) {
-            $questions = $cat->getQuestions();
-            if (isset($questions[$_REQUEST['id']])) {
-                if ($questions[$_REQUEST['id']]->inherited) {
-                    $cat->addQuestion($_REQUEST['id']);
-                } elseif ($questions[$_REQUEST['id']]->required) {
-                    $cat->removeQuestion($_REQUEST['id']);
-                } else {
-                    $cat->addQuestion($_REQUEST['id'], TRUE);
-                }
-            } else {
-                $cat->addQuestion($_REQUEST['id']);
-            }
-            header("Content-Type: application/json");
-            die(json_encode(['html'=>showQuestions($cat, $section)]));
+        if ($cat->getAccess($currentUser) < FFBoka::ACCESS_CATADMIN) {
+            http_response_code(403);
+            die();
         }
+        $questions = $cat->getQuestions();
+        if (isset($questions[$_REQUEST['id']])) {
+            if ($questions[$_REQUEST['id']]->inherited) {
+                $cat->addQuestion($_REQUEST['id']);
+            } elseif ($questions[$_REQUEST['id']]->required) {
+                $cat->removeQuestion($_REQUEST['id']);
+            } else {
+                $cat->addQuestion($_REQUEST['id'], TRUE);
+            }
+        } else {
+            $cat->addQuestion($_REQUEST['id']);
+        }
+        header("Content-Type: application/json");
+        die(json_encode(['html'=>showQuestions($cat, $section)]));
         
     case "ajaxDeleteCat":
-        if ($cat->getAccess($currentUser) >= FFBoka::ACCESS_CATADMIN) {
-            header("Content-Type: application/json");
-            if ($cat->delete()) {
-                die(json_encode(['status'=>'OK']));
-            } else {
-                die(json_encode(['status'=>'error']));
-            }
+        if ($cat->getAccess($currentUser) < FFBoka::ACCESS_CATADMIN) {
+            http_response_code(403);
+            die();
         }
+        header("Content-Type: application/json");
+        if ($cat->delete()) {
+            die(json_encode(['status'=>'OK']));
+        } else {
+            die(json_encode(['status'=>'error']));
+        }
+        
+    case "ajaxAddFile":
+        if ($cat->getAccess($currentUser) < FFBoka::ACCESS_CATADMIN) {
+            http_response_code(403);
+            die();
+        }
+        header("Content-Type: application/json");
+        try {
+            $fileId = $cat->addFile($_FILES['file'], $cfg['allowedAttTypes'], $cfg['uploadMaxFileSize']);            
+        } catch (Exception $e) {
+            die(json_encode([ 'status'=>'error', 'error'=>$e->getMessage() ]));
+        }
+        die(json_encode([ "status"=>"OK", html=>showAttachments($cat) ]));
+
+    case "ajaxSetCatFileProp":
+        if ($cat->getAccess($currentUser) < FFBoka::ACCESS_CATADMIN) {
+            http_response_code(403);
+            die();
+        }
+        header("Content-Type: application/json");
+        if ($cat->setFileProp($_REQUEST['fileId'], $_REQUEST['name'], $_REQUEST['value']) === FALSE) {
+            die(json_encode([ "status"=>"error", "error"=>"Kunde inte spara." ]));
+        }
+        die(json_encode([ "status"=>"OK" ]));
+        
+    case "ajaxDeleteFile":
+        if ($cat->getAccess($currentUser) < FFBoka::ACCESS_CATADMIN) {
+            http_response_code(403);
+            die();
+        }
+        $cat->removeFile($_REQUEST['fileId']);
+        header("Content-Type: application/json");
+        die(json_encode([ "status"=>"OK", html=>showAttachments($cat) ]));
+        die();
 }
 
 unset ($_SESSION['itemId']);
@@ -288,7 +367,7 @@ unset ($_SESSION['itemId']);
 
             <div class="ui-field-contain">
                 <label for="cat-caption" class="required">Rubrik:</label>
-                <input name="caption" class="ajax-input" id="cat-caption" placeholder="Namn till kategorin" value="<?= htmlspecialchars($cat->caption) ?>">
+                <input name="caption" id="cat-caption" placeholder="Namn till kategorin" value="<?= htmlspecialchars($cat->caption) ?>">
             </div>
 
             <div class="ui-field-contain">
@@ -312,34 +391,34 @@ unset ($_SESSION['itemId']);
             <hr>
             
             <label for="cat-prebookMsg">Text som ska visas när användare vill boka resurser från denna kategori:</label>
-                <textarea name="prebookMsg" class="ajax-input" id="cat-prebookMsg" placeholder="Exempel: Kom ihåg att ta höjd för torkningstiden efter användningen!"><?= htmlspecialchars($cat->prebookMsg) ?></textarea>
+                <textarea name="prebookMsg" id="cat-prebookMsg" placeholder="Exempel: Kom ihåg att ta höjd för torkningstiden efter användningen!"><?= htmlspecialchars($cat->prebookMsg) ?></textarea>
             <hr>
 
             <label for="cat-postbookMsg">Text som ska skickas med bokningsbekräftelsen:</label>
-                <textarea name="postbookMsg" class="ajax-input" id="cat-postbookMsg" placeholder="Exempel: Uthämtning lör-sön mellan 11 och 16."><?= htmlspecialchars($cat->postbookMsg) ?></textarea>
+                <textarea name="postbookMsg" id="cat-postbookMsg" placeholder="Exempel: Uthämtning lör-sön mellan 11 och 16."><?= htmlspecialchars($cat->postbookMsg) ?></textarea>
             <hr>
             
             <div class="ui-field-contain">
                 <label for="cat-bufferAfterBooking">Buffertid i timmar mellan bokningar (ärvs inte av överordnad kategori):</label>
-                <input name="bufferAfterBooking" type="number" min="0" class="ajax-input" id="cat-bufferAfterBooking" placeholder="Buffertid mellan bokingnar" value="<?= $cat->bufferAfterBooking ?>">
+                <input name="bufferAfterBooking" type="number" min="0" id="cat-bufferAfterBooking" placeholder="Buffertid mellan bokingnar" value="<?= $cat->bufferAfterBooking ?>">
             </div>
             
             <label for="cat-sendAlertTo">Förutom till bokningsansvariga, skicka meddelande om nya bokningar till:</label>
-                <input name="sendAlertTo" class="ajax-input" id="cat-sendAlertTo" placeholder="t.ex. kanoter@gmail.com, emil@yahoo.com" value="<?= htmlspecialchars($cat->sendAlertTo) ?>">
+                <input name="sendAlertTo" id="cat-sendAlertTo" placeholder="t.ex. kanoter@gmail.com, emil@yahoo.com" value="<?= htmlspecialchars($cat->sendAlertTo) ?>">
             <hr>
 
             <h3>Kontaktuppgifter</h3>
             <div class="ui-field-contain">
                 <label for="cat-contactName">Namn:</label>
-                <input name="contactName" class="ajax-input" id="cat-contactName" placeholder="Namn" value="<?= htmlspecialchars($cat->contactName) ?>">
+                <input name="contactName" id="cat-contactName" placeholder="Namn" value="<?= htmlspecialchars($cat->contactName) ?>">
             </div>
             <div class="ui-field-contain">
                 <label for="cat-contactPhone">Telefon:</label>
-                <input name="contactPhone" class="ajax-input" id="cat-contactPhone" placeholder="Telefon" value="<?= htmlspecialchars($cat->contactPhone) ?>">
+                <input name="contactPhone" id="cat-contactPhone" placeholder="Telefon" value="<?= htmlspecialchars($cat->contactPhone) ?>">
             </div>
             <div class="ui-field-contain">
                 <label for="cat-contactMail">Epost:</label>
-                <input name="contactMail" class="ajax-input" id="cat-contactMail" placeholder="Epost" value="<?= htmlspecialchars($cat->contactMail) ?>">
+                <input name="contactMail" id="cat-contactMail" placeholder="Epost" value="<?= htmlspecialchars($cat->contactMail) ?>">
             </div>
 
             <button id='btn-unset-contact-user' title='Ta bort kontaktperson' onClick="setCatProp('contactUserId', 'NULL');" style='position:absolute; right:1em; display:<?= is_null($cat->contactUserId) ? "none" : "block" ?>;' class='ui-btn ui-icon-delete ui-btn-icon-notext'>Ta bort</button>
@@ -352,6 +431,50 @@ unset ($_SESSION['itemId']);
             <br>
         </div>
         <?php } ?>
+        
+
+        <?php
+        $children = $cat->children(); ?>
+        <div data-role="collapsible" data-collapsed="<?= $cat->getAccess($currentUser) >= FFBoka::ACCESS_CATADMIN ? "true" : "false" ?>">
+            <h2>Underkategorier</h2>
+            <ul data-role="listview"><?php
+                foreach ($children as $child) {
+                    if ($child->showFor($currentUser, FFBoka::ACCESS_CATADMIN)) {
+                        echo "<li><a data-transition='slide' href='category.php?catId={$child->id}'>" .
+                            embedImage($child->thumb) .
+                            "<h3>" . htmlspecialchars($child->caption) . "</h3>";
+                        $subcats = array();
+                        foreach ($child->children() as $grandchild) $subcats[] = htmlspecialchars($grandchild->caption);
+                        if ($subcats) echo "<p>" . implode(", ", $subcats) . "</p>";
+                        echo "<span class='ui-li-count'>{$child->itemCount}</span></a></li>\n";
+                    }
+                }
+                if ($cat->getAccess($currentUser) >= FFBoka::ACCESS_CATADMIN) echo "<li><a data-transition='slide' href='category.php?action=new'>Lägg till underkategori</a></li>";
+                ?>
+            </ul>
+            <br>
+        </div>
+
+        <?php
+        if ($cat->getAccess($currentUser) >= FFBoka::ACCESS_CATADMIN) {
+        $items = $cat->items(); ?>
+        <div data-role="collapsible" data-collapsed="<?= $_REQUEST['expand']!="items" ? "true" : "false" ?>">
+            <h2>Resurser (<?= count($items) ?>)</h2>
+            <ul data-role="listview">
+                <?php
+                foreach ($items as $item) {
+                    echo "<li" . ($item->active ? "" : " class='inactive'") . "><a data-transition='slide' href='item.php?itemId={$item->id}'>" .
+                        embedImage($item->getFeaturedImage()->thumb) .
+                        "<h3>" . htmlspecialchars($item->caption) . "</h3>" .
+                        "<p>" . ($item->active ? htmlspecialchars($item->description) : "(inaktiv)") . "</p>" .
+                        "</a></li>\n";
+                }
+                if ($cat->getAccess($currentUser) >= FFBoka::ACCESS_CATADMIN) echo "<li><a data-transition='slide' href='item.php?action=newItem'>Lägg till resurs</a></li>"; ?>
+            </ul>
+            <br>
+        </div>
+        <?php } ?>
+
 
         <?php if ($cat->getAccess($currentUser) >= FFBoka::ACCESS_CATADMIN) { ?>
         <div data-role="collapsible" class="ui-filterable" data-collapsed="<?= $_REQUEST['expand']=="access" ? "false" : "true" ?>">
@@ -396,7 +519,7 @@ unset ($_SESSION['itemId']);
         </div>
         
 
-        <div data-role="collapsible" class="ui-filterable" data-collapsed="<?= $_REQUEST['expand']=="access" ? "false" : "true" ?>">
+        <div data-role="collapsible" class="ui-filterable" data-collapsed="<?= $_REQUEST['expand']=="questions" ? "false" : "true" ?>">
             <h2>Bokningsfrågor</h2>
             <?php
             if ($questions = showQuestions($cat, $section)) {
@@ -406,48 +529,15 @@ unset ($_SESSION['itemId']);
             }
             ?>
         </div>
-        <?php } ?>
         
 
-        <?php
-        $children = $cat->children(); ?>
-        <div data-role="collapsible" data-collapsed="<?= $cat->getAccess($currentUser) >= FFBoka::ACCESS_CATADMIN ? "true" : "false" ?>">
-            <h2>Underkategorier</h2>
-            <ul data-role="listview"><?php
-                foreach ($children as $child) {
-                    if ($child->showFor($currentUser, FFBoka::ACCESS_CATADMIN)) {
-                        echo "<li><a data-transition='slide' href='category.php?catId={$child->id}'>" .
-                            embedImage($child->thumb) .
-                            "<h3>" . htmlspecialchars($child->caption) . "</h3>";
-                        $subcats = array();
-                        foreach ($child->children() as $grandchild) $subcats[] = htmlspecialchars($grandchild->caption);
-                        if ($subcats) echo "<p>" . implode(", ", $subcats) . "</p>";
-                        echo "<span class='ui-li-count'>{$child->itemCount}</span></a></li>\n";
-                    }
-                }
-                if ($cat->getAccess($currentUser) >= FFBoka::ACCESS_CATADMIN) echo "<li><a data-transition='slide' href='category.php?action=new'>Lägg till underkategori</a></li>";
-                ?>
-            </ul>
-            <br>
-        </div>
-
-        <?php
-        if ($cat->getAccess($currentUser) >= FFBoka::ACCESS_CATADMIN) {
-        $items = $cat->items(); ?>
-        <div data-role="collapsible" data-collapsed="<?= $_REQUEST['expand']!="items" ? "true" : "false" ?>">
-            <h2>Resurser (<?= count($items) ?>)</h2>
-            <ul data-role="listview">
-                <?php
-                foreach ($items as $item) {
-                    echo "<li" . ($item->active ? "" : " class='inactive'") . "><a data-transition='slide' href='item.php?itemId={$item->id}'>" .
-                        embedImage($item->getFeaturedImage()->thumb) .
-                        "<h3>" . htmlspecialchars($item->caption) . "</h3>" .
-                        "<p>" . ($item->active ? htmlspecialchars($item->description) : "(inaktiv)") . "</p>" .
-                        "</a></li>\n";
-                }
-                if ($cat->getAccess($currentUser) >= FFBoka::ACCESS_CATADMIN) echo "<li><a data-transition='slide' href='item.php?action=newItem'>Lägg till resurs</a></li>"; ?>
-            </ul>
-            <br>
+        <div data-role="collapsible" class="ui-filterable" data-collapsed="<?= $_REQUEST['expand']=="files" ? "false" : "true" ?>">
+            <h2>Bilagor</h2>
+            <div id="cat-attachments"><?= showAttachments($cat) ?></div>
+            <p class="ui-body ui-body-a">
+                Ladda upp en ny bilaga:<br>
+                <input type='file' id='cat-file-file'>
+            </p>
         </div>
         <?php } ?>
         
