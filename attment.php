@@ -11,7 +11,7 @@ if (!is_readable($path)) {
 }
 $stmt = $db->prepare("SELECT * FROM cat_files WHERE fileId=?");
 $stmt->execute(array($_GET['fileId']));
-if (!($row = $stmt->fetch(PDO::FETCH_OBJ)) || !array_key_exists(pathinfo($row->filename, PATHINFO_EXTENSION), $cfg['allowedAttTypes'])) {
+if (!($row = $stmt->fetch(PDO::FETCH_OBJ)) || !array_key_exists(strtolower(pathinfo($row->filename, PATHINFO_EXTENSION)), $cfg['allowedAttTypes'])) {
     http_response_code(415); // unsupported media type
     die();
 }
