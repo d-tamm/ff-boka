@@ -292,7 +292,10 @@ class Category extends FFBoka {
         $md5 = md5_file($file['tmp_name']);
         // Add post to database
         $stmt = self::$db->prepare("INSERT INTO cat_files SET catId={$this->id}, filename=:filename, caption=:caption, md5='$md5'");
-        $stmt->execute(array( ":filename"=>$file['name'], ":caption"=>$file['name'] ));
+        if (!$stmt->execute(array( ":filename"=>$file['name'], ":caption"=>$file['name'] ))) {
+            unlink($file['tmp_name']);
+            throw new \Exception("Filen kunde inte sparas, eftersom samma fil redan har laddats upp till denna kategori.");
+        }
         $newId = self::$db->lastInsertId();
         // Move file
         if (!is_dir(__DIR__."/../../uploads")) {
@@ -339,14 +342,17 @@ class Category extends FFBoka {
     
     /**
      * Get all attachments for the category
+     * @param bool $includeParents Whether to also return attachments of superordinate categories
      * @return array of objects with the following members: fileId, catId, filename, md5, 
-     *      displayLink, attachFile. The array keys are the fileIds.
+     *      displayLink, attachFile. The array keys are the md5 checksums, so no double files
+     *      should be returned.
      */
-    public function files() {
+    public function files(bool $includeParents=FALSE) {
+        if ($includeParents) $ret = $this->parent()->files(TRUE);
+        else $ret = array();
         $stmt = self::$db->query("SELECT * FROM cat_files WHERE catId={$this->id}");
-        $ret = array();
         while ($row = $stmt->fetch(\PDO::FETCH_OBJ)) {
-            $ret[$row->fileId] = $row;
+            $ret[$row->md5] = $row;
         }
         return $ret;
     }

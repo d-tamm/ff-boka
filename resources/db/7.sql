@@ -14,6 +14,7 @@ CREATE TABLE `ff-boka`.`cat_files`(
   `displayLink` BOOLEAN NOT NULL DEFAULT TRUE COMMENT 'display link on booking page',
   `attachFile` BOOLEAN NOT NULL DEFAULT TRUE COMMENT 'attach file or attach link to booking confirmation?',
   PRIMARY KEY(`fileId`),
+  UNIQUE (`md5`, `catId`),
   FOREIGN KEY(`catId`) REFERENCES `categories`(`catId`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE = InnoDB;
 
