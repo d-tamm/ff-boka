@@ -30,13 +30,15 @@ class FFBoka {
 
     /** Booking status constants */
     /** Booking is being added by user, but has not yet been sent */
-    const STATUS_PENDING=0;
+    const STATUS_PENDING = 0;
+    /** Rejected (and hence arkived) booking */
+    const STATUS_REJECTED = 1;
     /** Booking has been placed, but conflicts with existing booking */
-    const STATUS_CONFLICT=1;
+    const STATUS_CONFLICT = 2;
     /** Booking has been placed, but needs to be confirmed */
-    const STATUS_PREBOOKED=2;
+    const STATUS_PREBOOKED = 3;
     /** Booking has been placed and is confirmed */
-    const STATUS_CONFIRMED=3;
+    const STATUS_CONFIRMED = 4;
     
     /** API URL for authentication */
     protected static $apiAuthUrl;
@@ -305,5 +307,19 @@ class FFBoka {
         if (!$row = $stmt->fetch(PDO::FETCH_OBJ)) throw new \Exception("Ogiltig kod.");
         elseif (time() > $row->unixtime + $row->ttl) throw new \Exception("Koden har förfallit.");
         else return $row;
+    }
+    
+    /**
+     * Formats the given amount of bytes in a human-readable way
+     * @param int $bytes
+     * @param int $precision
+     * @return string
+     */
+    static function formatBytes(int $bytes, int $precision=1) {
+        $units = array("B", "kB", "MB", "GB", "TB");
+        $pow = floor(($bytes ? log($bytes) : 0) / log(1024));
+        $pow = min($pow, count($units) - 1);
+        $bytes /= (1 << (10*$pow));
+        return round($bytes, $precision) . " " . $units[$pow];
     }
 }

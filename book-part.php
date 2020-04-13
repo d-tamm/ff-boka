@@ -14,15 +14,30 @@ require("inc/common.php");
  * @param Category $cat Starting category
  * @param User $user User whose access rights shall be used
  * @param int $fbStart Timestamp for date from which to start showing freebusy information
+ * @param string[] $fileTypes Array of allowed file types for attachments ($extension=>$icon_filename)
  * @return int Number of items displayed, including those of child categories. 
  */
-function displayCat(Category $cat, $user, $fbStart) {
+function displayCat(Category $cat, $user, $fbStart, $fileTypes=[]) {
     $numItems = 0;
     if ($cat->showFor($user)) {
         $access = $cat->getAccess($user);
         echo "<div data-role='collapsible' data-inset='false'>";
         echo "<h3><div class='cat-list-img'>" . embedImage($cat->thumb) . "</div>" . htmlspecialchars($cat->caption) . "</h3>";
         echo $cat->prebookMsg ? "<p>" . str_replace("\n", "<br>", htmlspecialchars($cat->prebookMsg)) . "</p>" : "";
+        $files = "";
+        foreach ($cat->files() as $file) {
+            if ($file->displayLink) {
+                $files .= "<p><a href='attment.php?fileId={$file->fileId}' data-ajax='false' title='Ladda ner " . htmlspecialchars($file->filename) . "'>";
+                $ext = strtolower(pathinfo($file->filename, PATHINFO_EXTENSION));
+                if (array_key_exists($ext, $fileTypes)) {
+                    $files .= "<img src='resources/{$fileTypes[$ext]}' style='vertical-align:middle; width:32px;'> ";
+                } else {
+                    $files .= "<img src='resources/document.svg' style='vertical-align:middle; width:32px;'> ";
+                }
+                $files .= htmlspecialchars($file->caption) . "</a></p>";
+            }
+        }
+        if ($files) echo "<h4>Dokument till denna kategori:</h4>$files";
         if ($access) {
             echo "<ul data-role='listview' data-split-icon='info' data-split-theme='a'>";
             foreach ($cat->items() as $item) {
@@ -39,7 +54,7 @@ function displayCat(Category $cat, $user, $fbStart) {
             echo "<br></ul>";
         }
         foreach ($cat->children() as $child) {
-            $numItems += displayCat($child, $user, $fbStart);
+            $numItems += displayCat($child, $user, $fbStart, $fileTypes);
         }
         echo "</div>";
     }
@@ -212,6 +227,8 @@ END;
                 $item = new Item(array_keys($_REQUEST['ids'])[0], TRUE);
                 $item->start = $_REQUEST['start'];
                 $item->end = $_REQUEST['end'];
+                if ($acc < FFBoka::ACCESS_CONFIRM) $item->status = FFBoka::STATUS_PENDING;
+                else $item->status = FFBoka::STATUS_CONFIRMED;
             } else {
                 // Step 1: Several items to save
                 if (isset($_SESSION['bookingId'])) {
@@ -265,7 +282,7 @@ END;
     <?php
     $numItems = 0;
     foreach ($section->getMainCategories() as $cat) {
-        $numItems += displayCat($cat, $currentUser, strtotime("last sunday +1 day"));
+        $numItems += displayCat($cat, $currentUser, strtotime("last sunday +1 day"), $cfg['allowedAttTypes']);
     }
     if ($numItems==0) {
         echo "<p><i>I den här lokalavdelningen finns det inte några resurser som du kan boka. Det kan bero på att lokalavdelningen inte (ännu) använder systemet, eller att du inte har behörighet att boka de resurser som har lagts upp.</i></p>";

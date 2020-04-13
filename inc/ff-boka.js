@@ -584,6 +584,28 @@ function confirmBookedItem(bookedItemId) {
         else {
             $("#book-item-status-"+bookedItemId).html("Bekräftat");
             $("#book-item-btn-confirm-"+bookedItemId).hide();
+            $("#book-item-btn-reject-"+bookedItemId).hide();
+        	if (data.allManaged == true) alert("Alla obekräftade poster i bokningen har nu hanterats. Om du har justerat några start- eller sluttider bör du skriva något om det i meddelande-rutan längre ner. Skicka också gärna en uppdaterad bokningsbekräftelse genom att klicka på 'Slutför bokningen' längst ner på sidan.");
+        }
+    });
+}
+
+/**
+ * Mark an item as rejected
+ * @param int bookedItemId ID of item to reject
+ */
+function rejectBookedItem(bookedItemId) {
+    $.mobile.loading("show", {});
+    $.getJSON("book-sum.php", { action: "ajaxRejectBookedItem", bookedItemId: bookedItemId }, function(data, status) {
+        $.mobile.loading("hide", {});
+        if (data.error) alert(data.error);
+        else {
+            $("#book-item-status-"+bookedItemId).html("Avböjt");
+            $("li#item-"+bookedItemId).addClass("rejected");
+            $("li#item-"+bookedItemId+" a").removeClass("ui-btn-c").addClass("ui-btn-a");
+            $("#book-item-btn-confirm-"+bookedItemId).parent().hide();
+        	if (data.allManaged == true) alert("Alla obekräftade poster i bokningen har nu hanterats. Kom ihåg att skriva en förklaring i meddelande-fältet längre ner på sidan så att den bokande förstår varför du har avböjt den här posten. Klicka sedan på 'Slutför bokningen' längst ner på sidan för att skicka ut en uppdaterad bokningsbekräftelse.");
+        	else alert("Du har nekat bokningsförfrågan för den här posten.\n\nKom ihåg att skriva en förklaring i meddelande-fältet längre ner på sidan så att den bokande förstår varför du har avböjt den här posten. Du kan sedan välja att skicka ut en uppdaterad bokningsbekräftelse genom att klicka på 'Slutför bokningen' längst ner, eller först göra fler justeringar på bokningen.");
         }
     });
 }
@@ -1043,6 +1065,39 @@ $(document).on('pagecreate', "#page-admin-category", function() {
             });
         }
     });
+    
+    /**
+     * Save new attachment file
+     */
+    $(document).off('change', "#cat-file-file").on('change', "#cat-file-file", function() {
+        // Save file via ajax: https://makitweb.com/how-to-upload-image-file-using-ajax-and-jquery/
+        var fd = new FormData();
+        var file = $('#cat-file-file')[0].files[0];
+        fd.append('file', file);
+        fd.append('action', "ajaxAddFile");
+        $.mobile.loading("show", {});
+
+        $.ajax({
+            url: 'category.php',
+            type: 'post',
+            data: fd,
+            dataType: 'json',
+            contentType: false,
+            processData: false,
+            success: function(data) {
+                $.mobile.loading("hide", {});
+                if (data.status=="OK") {
+                	$("#cat-file-file")[0].value="";
+            		$("#cat-attachments").html(data.html).enhanceWithin();
+                }
+                else alert(data.error);
+            },
+            error: function(xhr, status, error) {
+                $.mobile.loading("hide", {});
+            	alert("Kunde inte spara. Kan inte få kontakt med servern.");
+            }
+        });    	
+    });
 });
 
 $(document).on('pageshow', "#page-admin-category", function() {
@@ -1075,7 +1130,11 @@ function unsetAccess(userId) {
  */
 function setCatProp(name, val) {
     $.mobile.loading("show", {});
-    $.getJSON("category.php", {action: "ajaxSetCatProp", name: name, value: val}, function(data, status) {
+    $.getJSON("category.php", {
+    	action: "ajaxSetCatProp", 
+    	name: name, 
+    	value: val
+	}).done(function(data, status) {
         $.mobile.loading("hide", {});
         if (data.status=="OK") {
             $("#cat-contact-data").html(data.contactData);
@@ -1091,7 +1150,59 @@ function setCatProp(name, val) {
         } else {
             alert("Kan inte spara ändringen :(");
         }
+    }).fail(function() {
+        $.mobile.loading("hide", {});
+    	alert("Servern accepterar inte förfrågan.");
     });
+}
+
+/**
+ * Saves a category attachment property
+ * @param fileId The fileId of the file
+ * @param name Name of the property
+ * @param value Value of the property
+ */
+function setCatFileProp(fileId, name, value) {
+    $.mobile.loading("show", {});
+    $.getJSON("category.php", {
+    	action: "ajaxSetCatFileProp",
+    	fileId: fileId,
+    	name: name,
+    	value: value
+	}).done(function(data, status) {
+        $.mobile.loading("hide", {});
+        if (data.status=="OK") {
+        	if (name=="caption") $("#cat-file-header-"+fileId).text(value);
+            $("#cat-saved-indicator").addClass("saved");
+            setTimeout(function(){ $("#cat-saved-indicator").removeClass("saved"); }, 2500);
+        } else {
+            alert("Kan inte spara ändringen :(");
+        }
+    }).fail(function() {
+        $.mobile.loading("hide", {});
+    	alert("Servern accepterar inte förfrågan.");
+    });
+}
+
+/**
+ * Remove an attachment from category
+ * @param fileId ID of the attachment to remove
+ */
+function catFileDelete(fileId) {
+	if (confirm("Vill du ta bort bilagan?")) {
+	    $.mobile.loading("show", {});
+	    $.get("category.php", {
+	    	action: "ajaxDeleteFile",
+	    	fileId: fileId
+		}).done(function(data, status) {
+	        $.mobile.loading("hide", {});
+	        if (data.status=="OK") $("#cat-attachments").html(data.html).enhanceWithin();
+	        else alert(data.error);
+	    }).fail(function() {
+	        $.mobile.loading("hide", {});
+	    	alert("Servern accepterar inte förfrågan.");
+	    });
+	}
 }
 
 /**
@@ -1106,8 +1217,6 @@ function toggleQuestion(id) {
         $("#cat-questions").html(data.html).listview("refresh");
     });
 }
-
-
 
 
 // ========== admin/item.php ==========

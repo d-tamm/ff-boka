@@ -89,7 +89,7 @@ switch ($_REQUEST['action']) {
                 'scale'=>TRUE,
                 'days'=>$daysInMonth,
                 'minStatus'=>FFBoka::STATUS_CONFLICT,
-                'showPrice'=>TRUE
+                'adminView'=>TRUE
             ]);
             foreach ($item->upcomingBookings(0) as $b) {
                 switch ($b->status) {

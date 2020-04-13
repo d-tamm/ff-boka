@@ -1,7 +1,4 @@
 <?php
-use FFBoka\Category;
-use FFBoka\Image;
-
 session_start();
 require(__DIR__."/inc/common.php");
 

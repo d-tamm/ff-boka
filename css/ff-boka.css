@@ -84,6 +84,10 @@ li.selected {
     background: var(--FF-blue) !important;
 }
 
+li.rejected a {
+    color:gray !important;
+}
+
 table.alternate-rows tr {
     border-top: 1px solid var(--FF-cyan);
 }
@@ -240,7 +244,7 @@ table.alternate-rows tr:nth-child(even) {
 .item-edit-buttons {
     position: absolute;
     bottom: 0px;
-    left: 100px;
+    left: 0.625em;
     font-size: 0.6em;
     z-index: 1;
 }
@@ -346,10 +350,10 @@ table.alternate-rows tr:nth-child(even) {
     cursor: pointer;
 }
 
-.desktop .freebusy-busy.unconfirmed, #booking-admin .freebusy-busy.conflict {
+.freebusy-busy.unconfirmed, .freebusy-busy.conflict {
     background-color:var(--FF-unconfirmed);
 }
-.desktop .freebusy-busy.conflict {
+.freebusy-busy.conflict {
     background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' version='1.1' height='50px' width='20px'><text x='0' y='15' fill='red' font-size='20'>⚠</text></svg>");
     background-repeat: repeat-x;
     z-index: 5;
