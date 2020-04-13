@@ -103,21 +103,18 @@ function showAttachments(Category $cat) {
     $files = $cat->files();
     if (count($files)) {
         $ret = "";
-        foreach ($files as $fileId=>$file) {
+        foreach ($files as $file) {
             $ret .= "<div class='ui-body ui-body-a'>
-            <button style='position:absolute; right:0px; top:0px;' title='Radera bilagan' onClick='catFileDelete($fileId)' class='ui-btn ui-btn-inline ui-btn-icon-notext ui-icon-delete' id='cat-file-delete-$fileId'>Radera bilaga</button>
-            <h3><a id='cat-file-header-$fileId' href='../attment.php?fileId=$fileId' data-ajax='false'>" . htmlspecialchars($file->caption) . "</a></h3>
+            <button style='position:absolute; right:0px; top:0px;' title='Radera bilagan' onClick='catFileDelete({$file->fileId})' class='ui-btn ui-btn-inline ui-btn-icon-notext ui-icon-delete' id='cat-file-delete-{$file->fileId}'>Radera bilaga</button>
+            <h3><a id='cat-file-header-{$file->fileId}' href='../attment.php?fileId={$file->fileId}' data-ajax='false'>" . htmlspecialchars($file->caption) . "</a></h3>
             <p>Filnamn: " . htmlspecialchars($file->filename) . "</p>
             <div class='ui-field-contain'>
-                <label for='cat-file-caption-$fileId'>Rubrik:</label>
-                <input id='cat-file-caption-$fileId' onInput=\"clearTimeout(toutSetValue); toutSetValue = setTimeout(setCatFileProp, 1000, $fileId, 'caption', this.value);\" placeholder='Rubrik' value='" . htmlspecialchars($file->caption) . "'>
+                <label for='cat-file-caption-{$file->fileId}'>Rubrik:</label>
+                <input id='cat-file-caption-{$file->fileId}' onInput=\"clearTimeout(toutSetValue); toutSetValue = setTimeout(setCatFileProp, 1000, {$file->fileId}, 'caption', this.value);\" placeholder='Rubrik' value='" . htmlspecialchars($file->caption) . "'>
             </div>
             <fieldset data-role='controlgroup' data-mini='true'>
-                <label><input onChange=\"setCatFileProp($fileId, 'displayLink', this.checked ? 1 : 0);\" type='checkbox'" . ($file->displayLink==1 ? " checked" : "") . " data-mini='true'> Visa länk i bokningsflödet</label>
-            </fieldset>
-            <fieldset data-role='controlgroup' data-mini='true'>
-                <label><input onChange=\"setCatFileProp($fileId, 'attachFile', this.value);\" type='radio' name='attachFile-$fileId' value='0'" . ($file->attachFile ? "" : " checked") . "> Skicka med som länk i bokningsbekräftelsen</label>
-                <label><input onChange=\"setCatFileProp($fileId, 'attachFile', this.value);\" type='radio' name='attachFile-$fileId' value='1'" . ($file->attachFile ? " checked" : "") . "> Skicka med som fil i bokningsbekräftelsen</label>
+                <label><input onChange=\"setCatFileProp({$file->fileId}, 'displayLink', this.checked ? 1 : 0);\" type='checkbox'" . ($file->displayLink==1 ? " checked" : "") . "> Visa länk till fil i bokningsflödet</label>
+                <label><input onChange=\"setCatFileProp({$file->fileId}, 'attachFile', this.checked ? 1 : 0);\" type='checkbox'" . ($file->attachFile==1 ? " checked" : "") . "> Skicka med som fil i bokningsbekräftelsen</label>
             </fieldset>
             </div>\n";
         }
@@ -305,7 +302,7 @@ switch ($_REQUEST['action']) {
         }
         header("Content-Type: application/json");
         try {
-            $fileId = $cat->addFile($_FILES['file'], $cfg['allowedAttTypes'], $cfg['uploadMaxFileSize']);            
+            $cat->addFile($_FILES['file'], $cfg['allowedAttTypes'], $cfg['uploadMaxFileSize']);            
         } catch (Exception $e) {
             die(json_encode([ 'status'=>'error', 'error'=>$e->getMessage() ]));
         }
