@@ -147,6 +147,7 @@ EOF;
         $messages = array();
         $rawContData = array();
         $adminsToNotify = array();
+        $attachments = array();
         foreach ($booking->items() as $item) {
             $cat = $item->category();
             // remember contact data for item
@@ -199,6 +200,10 @@ EOF;
                 default: $mailItems .= "(väntar på bekräftelse) ";
             }
             $mailItems .= strftime("%a %F kl %k:00", $item->start) . " till " . strftime("%a %F kl %k:00", $item->end) . " $msgRef</li>";
+            // Get attachments
+            foreach ($cat->files() as $file) {
+                if ($file->attachFile) $attachments[$file->md5] = array("path"=>"uploads/{$file->fileId}", "filename"=>$file->filename);
+            }
         }
         $contactData = "";
         foreach ($rawContData as $cd=>$captions) {
@@ -228,7 +233,8 @@ EOF;
                     "{{answers}}" => $mailAnswers,
                     "{{commentCust}}" => $booking->commentCust ? str_replace("\n", "<br>", $booking->commentCust) : "(ingen kommentar har lämnats)",
                     "{{bookingLink}}" => "{$cfg['url']}book-sum.php?bookingId={$booking->id}&token={$booking->token}",
-                )
+                ),
+                $attachments
             );
         } catch(Exception $e) {
             $message = "Kunde inte skicka bekräftelsen:" . $e;
