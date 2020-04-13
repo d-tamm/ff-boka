@@ -145,6 +145,12 @@ switch ($_REQUEST['action']) {
     <dt>Kontaktuppgifter</dt><dd>Skickas med bokningarna i denna kategori, så att användarna kan vända sig till någon vid problem. Du kan antingen sätta namn, telefon och epost själv, eller välja en medlem som kontaktperson. Om du väljer en medlem så används  kontaktuppgifterna till denne när bokningen görs, dvs ändringar som medlemmen gör i sina kontaktuppgifter tillämpas även här.</dd> 
 </dl>
 
+<h3>Underkategorier</h3>
+<p>Vid komplex verksamhet kan det vara intressant att organisera resurserna på flera nivåer, t.ex. med <tt>Kanoter</tt> som huvudkategori och <tt>Kajaker</tt> och <tt>Kanadensare</tt> som underordnade kategorier. Du kan skapa så många nivåer som du behöver, eller bara använda den översta nivån.</p>
+
+<h3>Resurser</h3>
+<p>Här ser du alla resurser som finns i kategorin, med titel och grundläggande information. Klicka på resurserna för att ändra.</p>
+
 <h3>Behörigheter</h3>
 <p>Här bestäms vem som får se och boka resurserna i kategorin. Först väljer du vem som ska få behörighet. Sedan väljer du önskad behörighetsnivå.</p>
 <p>Återkalla behörigheter genom att klicka på den röda knappen höger om dem.</p>
@@ -169,11 +175,8 @@ switch ($_REQUEST['action']) {
 <p>Om du vill hämta in kompletterande information vid bokning av resurser i den här kategorin använder du bokningsfrågor. Frågorna måste först läggas upp i din lokalavdelning, så prata med någon administratör om du saknar någon fråga.</p>
 <p>Aktivera/avaktivera och byt mellan valfritt och obligatoriskt genom att klicka på frågorna. Valda frågor visas även vid bokning i underordnade kategorier, men kan där ändras till obligatoriska respektive valfria.</p>
 
-<h3>Underkategorier</h3>
-<p>Vid komplex verksamhet kan det vara intressant att organisera resurserna på flera nivåer, t.ex. med <tt>Kanoter</tt> som huvudkategori och <tt>Kajaker</tt> och <tt>Kanadensare</tt> som underordnade kategorier. Du kan skapa så många nivåer som du behöver, eller bara använda den översta nivån.</p>
-
-<h3>Resurser</h3>
-<p>Här ser du alla resurser som finns i kategorin, med titel och grundläggande information. Klicka på resurserna för att ändra.</p>
+<h3>Bilagor</h3>
+<p>Här laddar du upp filer som du vill skicka med bokningsbekräftelser och/eller visa som länk i bokningsflödet. Det kan vara sådant som städrutiner, en särskild blankett du vill att användaren fyller i, körinstruktioner mm. Du kan ladda upp filer av typerna " . implode(", ", array_keys($cfg['allowedAttTypes'])) . ". Filstorleken får maximalt vara " . FFBoka::formatBytes($cfg['uploadMaxFileSize']). ". Rubriken är den text som visas för användaren på skärmen.</p>
 ";
         die();
     case "new":
