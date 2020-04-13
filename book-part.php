@@ -30,9 +30,9 @@ function displayCat(Category $cat, $user, $fbStart, $fileTypes=[]) {
                 $files .= "<p><a href='attment.php?fileId={$file->fileId}' data-ajax='false' title='Ladda ner " . htmlspecialchars($file->filename) . "'>";
                 $ext = strtolower(pathinfo($file->filename, PATHINFO_EXTENSION));
                 if (array_key_exists($ext, $fileTypes)) {
-                    $files .= "<img src='resources/{$fileTypes[$ext]}' style='vertical-align:middle; width:48px;'> ";
+                    $files .= "<img src='resources/{$fileTypes[$ext]}' style='vertical-align:middle; width:32px;'> ";
                 } else {
-                    $files .= "<img src='resources/document.svg' style='vertical-align:middle; width:48px;'> ";
+                    $files .= "<img src='resources/document.svg' style='vertical-align:middle; width:32px;'> ";
                 }
                 $files .= htmlspecialchars($file->caption) . "</a></p>";
             }
