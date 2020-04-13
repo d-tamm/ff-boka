@@ -5,7 +5,7 @@ UPDATE booked_items SET status = status+1 WHERE status > 0;
 ALTER TABLE bookings ADD confirmationSent BOOLEAN NOT NULL AFTER token;
 
 -- Add table for attached files
-CREATE TABLE `ff-boka`.`cat_files`(
+CREATE TABLE `cat_files`(
   `fileId` INT UNSIGNED NOT NULL AUTO_INCREMENT,
   `catId` INT UNSIGNED NOT NULL,
   `filename` VARCHAR(255) NOT NULL,
