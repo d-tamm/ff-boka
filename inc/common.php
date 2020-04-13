@@ -196,10 +196,13 @@ function head(string $caption, string $baseUrl, $currentUser=NULL, $superAdmins=
  * be used as non-HTML body if it exists. Otherwise, the function will try to strip off the tags from the html file.
  * If no html file exists, $template will be used as message body.
  * @param array $replace [ search=>replace ] Array of strings to be replaced
+ * @param array $attachments Array of files to attach. Each element must have at least the 
+ * members path (absolute or relative path to the file), and filename (the name the file shall
+ * appear with in the email) 
  * @throws Exception if sending fails
  * @return bool True on success
  */
-function sendmail(string $to, string $subject, $template, $replace=NULL) {
+function sendmail(string $to, string $subject, $template, $replace=NULL, $attachments=NULL) {
     global $cfg;
     $from = $cfg['mailFrom'];
     $fromName = $cfg['mailFromName'];
@@ -223,6 +226,12 @@ function sendmail(string $to, string $subject, $template, $replace=NULL) {
     // Send mail
     try {
         $mail = new PHPMailer(true);
+        // Handle attachments
+        if (!is_null($attachments)) {
+            foreach ($attachments as $att) {
+                $mail->addAttachment($att->path, $att->filename);
+            }
+        }
         //Server settings
         $mail->SMTPDebug = 0;
         $mail->isSMTP();
