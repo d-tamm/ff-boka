@@ -8,7 +8,7 @@ use FFBoka\FFBoka;
  * To be called once every 60 minutes via cron or webcron
  */
 
-require("inc/common.php");
+require(__DIR__."inc/common.php");
 global $db, $cfg, $FF;
 
 /**
