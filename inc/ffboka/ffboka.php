@@ -315,7 +315,7 @@ class FFBoka {
      * @param int $precision
      * @return string
      */
-    protected function formatBytes(int $bytes, int $precision=1) {
+    static function formatBytes(int $bytes, int $precision=1) {
         $units = array("B", "kB", "MB", "GB", "TB");
         $pow = floor(($bytes ? log($bytes) : 0) / log(1024));
         $pow = min($pow, count($units) - 1);
