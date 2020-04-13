@@ -1086,7 +1086,10 @@ $(document).on('pagecreate', "#page-admin-category", function() {
             processData: false,
             success: function(data) {
                 $.mobile.loading("hide", {});
-                if (data.status=="OK") $("#cat-attachments").html(data.html).enhanceWithin();
+                if (data.status=="OK") {
+                	$("#cat-file-file")[0].value="";
+            		$("#cat-attachments").html(data.html).enhanceWithin();
+                }
                 else alert(data.error);
             },
             error: function(xhr, status, error) {
