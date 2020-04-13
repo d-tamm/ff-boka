@@ -24,18 +24,20 @@ function displayCat(Category $cat, $user, $fbStart, $fileTypes=[]) {
         echo "<div data-role='collapsible' data-inset='false'>";
         echo "<h3><div class='cat-list-img'>" . embedImage($cat->thumb) . "</div>" . htmlspecialchars($cat->caption) . "</h3>";
         echo $cat->prebookMsg ? "<p>" . str_replace("\n", "<br>", htmlspecialchars($cat->prebookMsg)) . "</p>" : "";
+        $files = "";
         foreach ($cat->files() as $file) {
             if ($file->displayLink) {
-                echo "<p><a href='attment.php?fileId={$file->fileId}' data-ajax='false' title='Ladda ner " . htmlspecialchars($file->filename) . "'>";
+                $files .= "<p><a href='attment.php?fileId={$file->fileId}' data-ajax='false' title='Ladda ner " . htmlspecialchars($file->filename) . "'>";
                 $ext = strtolower(pathinfo($file->filename, PATHINFO_EXTENSION));
                 if (array_key_exists($ext, $fileTypes)) {
-                    echo "<img src='resources/{$fileTypes[$ext]}' style='vertical-align:middle; width:48px;'>";
+                    $files .= "<img src='resources/{$fileTypes[$ext]}' style='vertical-align:middle; width:48px;'>";
                 } else {
-                    echo "<img src='resources/document.svg' style='vertical-align:middle; width:48px;'>";
+                    $files .= "<img src='resources/document.svg' style='vertical-align:middle; width:48px;'>";
                 }
-                echo htmlspecialchars($file->caption) . "</a></p>";
+                $files .= htmlspecialchars($file->caption) . "</a></p>";
             }
         }
+        if ($files) echo "<h4>Dokument till denna kategori:</h4>$files";
         if ($access) {
             echo "<ul data-role='listview' data-split-icon='info' data-split-theme='a'>";
             foreach ($cat->items() as $item) {
