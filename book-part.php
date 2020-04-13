@@ -14,9 +14,10 @@ require("inc/common.php");
  * @param Category $cat Starting category
  * @param User $user User whose access rights shall be used
  * @param int $fbStart Timestamp for date from which to start showing freebusy information
+ * @param string[] $fileTypes Array of allowed file types for attachments ($extension=>$icon_filename)
  * @return int Number of items displayed, including those of child categories. 
  */
-function displayCat(Category $cat, $user, $fbStart) {
+function displayCat(Category $cat, $user, $fbStart, $fileTypes=[]) {
     $numItems = 0;
     if ($cat->showFor($user)) {
         $access = $cat->getAccess($user);
@@ -24,7 +25,16 @@ function displayCat(Category $cat, $user, $fbStart) {
         echo "<h3><div class='cat-list-img'>" . embedImage($cat->thumb) . "</div>" . htmlspecialchars($cat->caption) . "</h3>";
         echo $cat->prebookMsg ? "<p>" . str_replace("\n", "<br>", htmlspecialchars($cat->prebookMsg)) . "</p>" : "";
         foreach ($cat->files() as $file) {
-            if ($file->displayLink) echo "<p><span style='font-size:200%; vertical-align:middle;'>🗎 </span> <a href='attment.php?fileId={$file->fileId}' data-ajax='false' title='Ladda ner " . htmlspecialchars($file->filename) . "'>" . htmlspecialchars($file->caption) . "</a></p>";
+            if ($file->displayLink) {
+                echo "<p><a href='attment.php?fileId={$file->fileId}' data-ajax='false' title='Ladda ner " . htmlspecialchars($file->filename) . "'>";
+                $ext = strtolower(pathinfo($file->filename, PATHINFO_EXTENSION));
+                if (array_key_exists($ext, $fileTypes)) {
+                    echo "<img src='resources/{$fileTypes[$ext]}' style='vertical-align:middle; width:48px;'>";
+                } else {
+                    echo "<img src='resources/document.svg' style='vertical-align:middle; width:48px;'>";
+                }
+                echo htmlspecialchars($file->caption) . "</a></p>";
+            }
         }
         if ($access) {
             echo "<ul data-role='listview' data-split-icon='info' data-split-theme='a'>";
@@ -42,7 +52,7 @@ function displayCat(Category $cat, $user, $fbStart) {
             echo "<br></ul>";
         }
         foreach ($cat->children() as $child) {
-            $numItems += displayCat($child, $user, $fbStart);
+            $numItems += displayCat($child, $user, $fbStart, $fileTypes);
         }
         echo "</div>";
     }
@@ -270,7 +280,7 @@ END;
     <?php
     $numItems = 0;
     foreach ($section->getMainCategories() as $cat) {
-        $numItems += displayCat($cat, $currentUser, strtotime("last sunday +1 day"));
+        $numItems += displayCat($cat, $currentUser, strtotime("last sunday +1 day"), $cfg['allowedAttTypes']);
     }
     if ($numItems==0) {
         echo "<p><i>I den här lokalavdelningen finns det inte några resurser som du kan boka. Det kan bero på att lokalavdelningen inte (ännu) använder systemet, eller att du inte har behörighet att boka de resurser som har lagts upp.</i></p>";

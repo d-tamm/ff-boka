@@ -274,9 +274,9 @@ class Category extends FFBoka {
     /**
      * Add an attachment file to the category. The caption will be set to the file name.
      * @param $_FILES[x] $file A member of the $_FILES array
-     * @param array $allowedFileTypes Associative array of $extension=>$mimeType pairs, where $mimeType may be a string or an array of strings
+     * @param array $allowedFileTypes Associative array of $extension=>$icon_filename pairs.
      * @param int $maxSize The maximum accepted file size in bytes. Defaults to 0 (no limit)
-     * @throws \Exception if trying to upload files with unallowed mime types
+     * @throws \Exception if trying to upload files with unallowed file types
      * @return int ID of the added file
      */
     public function addFile($file, $allowedFileTypes, int $maxSize=0) {
@@ -289,8 +289,6 @@ class Category extends FFBoka {
         if (!array_key_exists($ext, $allowedFileTypes)) {
             throw new \Exception("Du kan inte ladda upp filer av typen $ext. Bara följande filtyper tillåts: " . implode(", ", array_keys($allowedFileTypes)));
         }
-        if (!is_array($allowedFileTypes[$ext])) $allowedFileTypes[$ext] = array($allowedFileTypes[$ext]);
-        if (!in_array(mime_content_type($file['tmp_name']), $allowedFileTypes[$ext])) throw new \Exception("Du kan inte ladda upp filer av typen $ext (".mime_content_type($file['tmp_name']). "). Bara följande filtyper tillåts: " . implode(", ", array_keys($allowedFileTypes)));
         $md5 = md5_file($file['tmp_name']);
         // Add post to database
         $stmt = self::$db->prepare("INSERT INTO cat_files SET catId={$this->id}, filename=:filename, caption=:caption, md5='$md5'");
