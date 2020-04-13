@@ -107,13 +107,10 @@ function showAttachments(Category $cat) {
             $ret .= "<div class='ui-body ui-body-a'>
             <button style='position:absolute; right:0px; top:0px;' title='Radera bilagan' onClick='catFileDelete($fileId)' class='ui-btn ui-btn-inline ui-btn-icon-notext ui-icon-delete' id='cat-file-delete-$fileId'>Radera bilaga</button>
             <h3><a id='cat-file-header-$fileId' href='../attment.php?fileId=$fileId' data-ajax='false'>" . htmlspecialchars($file->caption) . "</a></h3>
+            <p>Filnamn: " . htmlspecialchars($file->filename) . "</p>
             <div class='ui-field-contain'>
                 <label for='cat-file-caption-$fileId'>Rubrik:</label>
                 <input id='cat-file-caption-$fileId' onInput=\"clearTimeout(toutSetValue); toutSetValue = setTimeout(setCatFileProp, 1000, $fileId, 'caption', this.value);\" placeholder='Rubrik' value='" . htmlspecialchars($file->caption) . "'>
-            </div>
-            <div class='ui-field-contain'>
-                <label for='cat-file-filename-$fileId'>Filnamn:</label>
-                <input id='cat-file-filename-$fileId' onInput=\"clearTimeout(toutSetValue); toutSetValue = setTimeout(setCatFileProp, 1000, $fileId, 'filename', this.value);\" placeholder='Filnamn' value='" . htmlspecialchars($file->filename) . "'>
             </div>
             <fieldset data-role='controlgroup' data-mini='true'>
                 <label><input onChange=\"setCatFileProp($fileId, 'displayLink', this.checked ? 1 : 0);\" type='checkbox'" . ($file->displayLink==1 ? " checked" : "") . " data-mini='true'> Visa länk i bokningsflödet</label>
