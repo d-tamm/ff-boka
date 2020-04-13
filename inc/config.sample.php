@@ -49,19 +49,21 @@ $cfg = array(
     "maxImgSize" => 1024,
     // Max file size for images and attachments in bytes
     "uploadMaxFileSize" => 10 * 1024 * 1024,
-    // Allowed file mime types for attachments. Use the lower case file extension as key, and either a
-    // string or an array of strings as value defining allowed mime types for that extension
+    // Allowed file types for attachments. Use the lower case file extension as key, and the filename
+    // of the corresponding icon (in the resources folder) as value. document.svg is the generic icon.
+    // Icons fetched from https://www.iconfinder.com (filter: iconset:hawcons)
     "allowedAttTypes" => array(
-        "jpg" => "image/jpeg",
-        "jpeg" => "image/jpeg",
-        "pdf" => "application/pdf",
-        "odt" => "application/vnd.oasis.opendocument.text",
-        "ods" => "application/vnd.oasis.opendocument.spreadsheet",
-        "doc" => "application/msword",
-        "docx" => array("application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/zip"),
-        "xlsx" => array("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "application/octet-stream")
+        "jpg" => "image.svg",
+        "jpeg" => "image.svg",
+        "png" => "image.svg",
+        "pdf" => "pdf.svg",
+        "odt" => "text.svg",
+        "doc" => "text.svg",
+        "docx" => "text.svg",
+        "ods" => "spreadsheet.svg",
+        "xlsx" => "spreadsheet.svg",
     ),
-
+    
     // Locale to use
     "locale" => "sv_SE.UTF-8",
     "timezone" => "Europe/Stockholm",
