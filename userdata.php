@@ -176,15 +176,22 @@ if ($_GET['first_login']) $message = "Välkommen till resursbokningen! Innan du 
                 $completed = "";
                 foreach ($bookingIds as $id) {
                     $b = new Booking($id);
-                    $latestEnd = time();
-                    $html = "<li><a href='book-sum.php?bookingId={$b->id}'><p>Bokat {$b->timestamp} i LA {$b->section()->name}:</p>";
+                    $start = NULL;
+                    $end = NULL;
+                    $html = "";
                     foreach ($b->items() as $item) {
-                        $html .= "<p><b>" . htmlspecialchars($item->caption) . "</b> (" . strftime("%F kl %k:00", $item->start) . " &mdash; " . strftime("%F kl %k:00", $item->end) . ($item->status<FFBoka::STATUS_CONFIRMED ? ", <b>obekräftat</b>" : "") . ")</p>";
-                        $latestEnd = min($latestEnd, $item->end);
+                        $start = is_null($start) ? $item->start : min($start, $item->start);
+                        $end = is_null($end) ? $item->end : min($end, $item->end);
+                        $html .= "&bull; " . htmlspecialchars($item->caption) . ($item->status<FFBoka::STATUS_CONFIRMED ? " (<b>obekräftat</b>)" : "") . "<br>";
                     }
-                    $html .= "</a></li>";
+                    $html = "<li><a href='book-sum.php?bookingId={$b->id}'>\n" .
+                        ($b->commentCust ? htmlspecialchars($b->commentCust) : "") .
+                        "<p><b>Bokat {$b->timestamp} i LA {$b->section()->name}</b></p>\n" .
+                        "<p>$html</p>" .
+                        "<p>" . strftime("%F kl %k:00", $start) . " &mdash; " . strftime("%F kl %k:00", $end) . "</p>\n" .
+                        "</a></li>";
                     if ($b->status() < FFBoka::STATUS_CONFIRMED) $unconfirmed .= $html;
-                    elseif ($latestEnd<time()) $completed .= $html;
+                    elseif ($end < time()) $completed .= $html;
                     else $upcoming .= $html;
                 }
                 if ($unconfirmed) echo "<h4>Obekräftade bokningar</h4><ul data-role='listview'>$unconfirmed</ul>";
