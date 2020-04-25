@@ -186,9 +186,9 @@ if ($_GET['first_login']) $message = "Välkommen till resursbokningen! Innan du 
                     }
                     $html = "<li><a href='book-sum.php?bookingId={$b->id}'>\n" .
                         ($b->commentCust ? htmlspecialchars($b->commentCust) : "") .
-                        "<p><b>Bokat {$b->timestamp} i LA {$b->section()->name}</b></p>\n" .
+                        "<p><b>" . strftime("%F kl %k:00", $start) . " &mdash; " . strftime("%F kl %k:00", $end) . "</b></p>\n" .
                         "<p>$html</p>" .
-                        "<p>" . strftime("%F kl %k:00", $start) . " &mdash; " . strftime("%F kl %k:00", $end) . "</p>\n" .
+                        "<p>Bokat {$b->timestamp} i LA {$b->section()->name}</p>\n" .
                         "</a></li>";
                     if ($b->status() < FFBoka::STATUS_CONFIRMED) $unconfirmed .= $html;
                     elseif ($end < time()) $completed .= $html;
