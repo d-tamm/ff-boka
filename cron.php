@@ -18,7 +18,7 @@ echo "Executing hourly jobs...\n";
 // Get missing user agents
 fetchUA($db);
 // Keep login API alive
-$FF->authenticateUser("0", "0");
+//$FF->authenticateUser("0", "0");
 // Record last execution time
 $db->exec("UPDATE config SET value=UNIX_TIMESTAMP() WHERE name='last hourly cron run'");
 echo "Hourly jobs finished.\n\n";
