@@ -19,7 +19,7 @@ if (!isset($_SESSION['sectionId'])) {
 } 
 
 if (isset($_REQUEST['catId'])) $_SESSION['catId'] = $_REQUEST['catId'];
-$cat = new Category($_SESSION['catId']);
+$cat = new Category(isset($_SESSION['catId']) ? $_SESSION['catId'] : 0);
 $currentUser = new User($_SESSION['authenticatedUser']);
 $section = new Section($_SESSION['sectionId']);
 
@@ -124,7 +124,9 @@ function showAttachments(Category $cat) {
     }
 }
 
+if (!isset($_REQUEST['expand'])) $_REQUEST['expand']="";
 
+if (isset($_REQUEST['action'])) {
 switch ($_REQUEST['action']) {
     case "help":
         echo "
@@ -328,6 +330,7 @@ switch ($_REQUEST['action']) {
         header("Content-Type: application/json");
         die(json_encode([ "status"=>"OK", "html"=>showAttachments($cat) ]));
         die();
+}
 }
 
 unset ($_SESSION['itemId']);

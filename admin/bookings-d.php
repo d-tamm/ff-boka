@@ -56,6 +56,7 @@ function showCat(Category $cat, User $user) {
     }
 }
 
+if (isset($_REQUEST['action'])) {
 switch ($_REQUEST['action']) {
     case "ajaxFindUser":
         header("Content-Type: application/json");
@@ -114,6 +115,7 @@ switch ($_REQUEST['action']) {
         $_SESSION['bookingId'] = $booking->id;
         $_SESSION['token'] = $booking->token;
         die(json_encode([ "status"=>"OK" ]));
+}
 }
 
 ?><!DOCTYPE html>

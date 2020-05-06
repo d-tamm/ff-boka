@@ -101,7 +101,7 @@ class Section extends FFBoka {
         if ($stmt->execute()) {
             return new Category(self::$db->lastInsertId());
         } else {
-            throw new \Exception("Failed to create category.");
+            throw new \Exception("Failed to create category. " . $stmt->errorInfo()[2]);
         }
     }
     

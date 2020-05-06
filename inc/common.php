@@ -11,7 +11,7 @@ global $cfg;
 // is changed. The corresponding SQL code for the change must be stored in
 // resources/db/{$dbVersion}.sql and will be executed on the next invocation of
 // any page.
-$dbVersion = 7;
+$dbVersion = 8;
 
 // Set locale
 setlocale(LC_ALL, $cfg['locale']);
@@ -34,7 +34,7 @@ $FF = new FFBoka($cfg['ff-api'], $db, $cfg['sectionAdmins'], $cfg['timezone']);
 
 // Check if there is a persistent login cookie
 //https://stackoverflow.com/questions/3128985/php-login-system-remember-me-persistent-cookie
-if (!$_SESSION['authenticatedUser'] && !empty($_COOKIE['remember'])) {
+if (!isset($_SESSION['authenticatedUser']) && !empty($_COOKIE['remember'])) {
     User::restorePersistentLogin($_COOKIE['remember'], $cfg['TtlPersistentLogin']);
 }
 
@@ -153,12 +153,12 @@ function head(string $caption, string $baseUrl, $currentUser=NULL, $superAdmins=
     <div data-role="panel" data-theme="b" data-position-fixed="true" data-display="push" id="navpanel">
         <ul data-role="listview">
             <li data-icon="home"><a href="<?= $baseUrl ?>index.php" data-transition='slide' data-direction='reverse' data-rel="close">Startsida</a></li><?php
-            if ($_SESSION['authenticatedUser']) { ?>
+            if (isset($_SESSION['authenticatedUser'])) { ?>
                 <li data-icon="user"><a href="<?= $baseUrl ?>userdata.php" data-transition='slide' data-rel="close">Min sida</a></li>
                 <li data-icon="power"><a href="<?= $baseUrl ?>index.php?logout" data-rel="close">Logga ut</a></li><?php
-            }
-            if (in_array($_SESSION['authenticatedUser'], $superAdmins)) {
-                echo "<li data-icon='alert'><a href='{$baseUrl}admin/superadmin.php' data-transition='slide' data-rel='close'>Super-Admin</a></li>";
+                if (in_array($_SESSION['authenticatedUser'], $superAdmins)) {
+                    echo "<li data-icon='alert'><a href='{$baseUrl}admin/superadmin.php' data-transition='slide' data-rel='close'>Super-Admin</a></li>";
+                }
             } ?>
             <li data-icon="info"><a href="<?= $baseUrl ?>cookies.php" data-transition='slide' data-rel="close">Om kakor (cookies)</a></li>
         </ul>

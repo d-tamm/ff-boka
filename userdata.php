@@ -40,6 +40,9 @@ function showNotificationOptout(User $user, Category $cat) {
     }
 }
 
+if (!isset($_REQUEST['expand'])) $_REQUEST['expand'] = "";
+
+if (isset($_REQUEST['action'])) {
 switch ($_REQUEST['action']) {
     case "help":
         echo <<<EOF
@@ -76,6 +79,11 @@ EOF;
         break;
     case "deleteAccount":
         if ($currentUser->delete()) {
+            // We remove the session cookie here. Otherwise, the user would be recreated in index.php
+            session_unset();
+            session_destroy();
+            session_write_close();
+            setcookie(session_name(), "", 0, "/");
             header("Location: index.php?logout&action=accountDeleted");
             break;
         } else {
@@ -142,9 +150,10 @@ EOF;
         $currentUser->removePersistentLogin($_REQUEST['userAgent']);
         die(json_encode([ "status"=>"OK" ]));
 }
+}
     
 
-if ($_GET['first_login']) $message = "Välkommen till resursbokningen! Innan du sätter igång med din bokning vill vi att du berättar vem du är, så att andra (t.ex. administratörer) kan komma i kontakt med dig vid frågor. Du kan läsa om hur vi hanterar dina uppgifter genom att klicka på <b>?</b> uppe till höger på sidan.";
+if (isset($_GET['first_login'])) $message = "Välkommen till resursbokningen! Innan du sätter igång med din bokning vill vi att du berättar vem du är, så att andra (t.ex. administratörer) kan komma i kontakt med dig vid frågor. Du kan läsa om hur vi hanterar dina uppgifter genom att klicka på <b>?</b> uppe till höger på sidan.";
 
 ?><!DOCTYPE html>
 <html>
@@ -165,7 +174,7 @@ if ($_GET['first_login']) $message = "Välkommen till resursbokningen! Innan du 
 
     <div data-role='collapsibleset' data-inset='false'>
         
-        <div data-role='collapsible' data-collapsed='<?= $_GET['first_login'] || $_REQUEST['expand']!="bookings" ? "true" : "false" ?>'>
+        <div data-role='collapsible' data-collapsed='<?= isset($_GET['first_login']) || $_REQUEST['expand']!="bookings" ? "true" : "false" ?>'>
             <h3>Mina bokningar</h3>
             <?php
             $bookingIds = $currentUser->bookingIds();
@@ -232,7 +241,7 @@ if ($_GET['first_login']) $message = "Välkommen till resursbokningen! Innan du 
             </ul>
         </div>
 
-        <div data-role='collapsible' data-collapsed='<?= $_GET['first_login'] || $_REQUEST['expand']=="contact" ? "false" : "true" ?>'>
+        <div data-role='collapsible' data-collapsed='<?= isset($_GET['first_login']) || $_REQUEST['expand']=="contact" ? "false" : "true" ?>'>
             <h3>Kontaktuppgifter</h3>
             
             <form action="userdata.php" method="post" data-ajax="false">
@@ -242,7 +251,7 @@ if ($_GET['first_login']) $message = "Välkommen till resursbokningen! Innan du 
                 <p>Lokalavdelning: <?= $currentUser->section->name ?></p>
                 <div class="ui-field-contain">
                     <label for="userdata-name" class="required">Namn:</label>
-                    <input type="text" name="name" id="userdata-name" required placeholder="Namn" value="<?= htmlspecialchars($_POST['name'] ? $_POST['name'] : $currentUser->name) ?>">
+                    <input type="text" name="name" id="userdata-name" required placeholder="Namn" value="<?= htmlspecialchars(isset($_POST['name']) ? $_POST['name'] : $currentUser->name) ?>">
                 </div>
                 <div class="ui-field-contain">
                     <label for="userdata-mail" class="required">Epost:</label>
@@ -259,7 +268,7 @@ if ($_GET['first_login']) $message = "Välkommen till resursbokningen! Innan du 
                 </div>
                 <div class="ui-field-contain">
                     <label for="userdata-phone" class="required">Telefon:</label>
-                    <input type="tel" name="phone" id="userdata-phone" required placeholder="Mobilnummer" value="<?= htmlspecialchars($_POST['phone'] ? $_POST['phone'] : $currentUser->phone) ?>">
+                    <input type="tel" name="phone" id="userdata-phone" required placeholder="Mobilnummer" value="<?= htmlspecialchars(isset($_POST['phone']) ? $_POST['phone'] : $currentUser->phone) ?>">
                 </div>
                 Ange ditt aktuella lösenord nedan för att bekräfta att du vill ändra dina kontaktuppgifter.
                 <div class="ui-field-contain">

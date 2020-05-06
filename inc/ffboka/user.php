@@ -35,12 +35,14 @@ class User extends FFBoka {
         }
         // Get home section for user
         if ($section) {
-            $stmt = self::$db->prepare("UPDATE users SET sectionId=(SELECT sectionId FROM sections WHERE sectionId=:sectionId OR name=:name) WHERE userId=:userId");
-            $stmt->execute(array(
-                ":sectionId"=> $section,
-                ":name"     => $section,
-                ":userId"   => $this->id
-            ));
+            if (is_numeric($section)) {
+                $this->sectionId = $section;
+            } else {
+                $stmt = self::$db->prepare("SELECT sectionId FROM sections WHERE name=:name");
+                $stmt->execute(array(":name" => $section));
+                $row = $stmt->fetch(\PDO::FETCH_OBJ);
+                $this->sectionId = $row->sectionId;
+            }
         }
     }
     

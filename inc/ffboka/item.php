@@ -349,6 +349,7 @@ class Item extends FFBoka {
     public static function freebusyScale(bool $weekdays = FALSE, int $days=7) {
         $dayNames = $weekdays ? array("<span>mån</span>","<span>tis</span>","<span>ons</span>","<span>tor</span>","<span>fre</span>","<span>lör</span>","<span>sön</span>") : array_fill(0,$days,"");
         $noborder = "border-left:none;";
+        $ret = "";
         for ($day=0; $day<$days; $day++) {
             $ret .= "<div class='freebusy-tic' data-day='$day' style='$noborder " . ($weekdays ? "width:" . number_format(100/$days, 2) . "%; " : "") . "left:" . number_format(100/$days*$day, 2) . "%;'>{$dayNames[$day]}</div>";
             $noborder = "";

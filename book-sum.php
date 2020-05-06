@@ -80,6 +80,7 @@ if (count($items)) {
     $endTime = $items[0]->end;
 }
 
+if (isset($_REQUEST['action'])) {
 switch ($_REQUEST['action']) {
     case "help":
         echo <<<EOF
@@ -348,6 +349,7 @@ EOF;
             'status'=>'OK',
             'allManaged'=>$allManaged
         ]));
+}
 }
 
 ?><!DOCTYPE html>

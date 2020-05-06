@@ -28,7 +28,7 @@ function deleteDirectory($dir) {
     return rmdir($dir);
 }
 
-
+if (isset($_REQUEST['action'])) {
 switch ($_REQUEST['action']) {
 case "help":
     die("Finns ingen hjälp till denna sida.");
@@ -85,6 +85,7 @@ case "ajaxUpgrade":
         else $ret[] = "Har rensat tillfälliga update-filer.";
         die(json_encode([ "status"=>implode("</li><li>", $ret) ]));
     }
+}
 }
 
 ?><!DOCTYPE html>

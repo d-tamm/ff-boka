@@ -127,6 +127,7 @@ $section = new Section($_SESSION['sectionId']);
 if ($_SESSION['authenticatedUser']) $currentUser = new User($_SESSION['authenticatedUser']);
 else $currentUser = new User(0);
 
+if (isset($_REQUEST['action'])) {
 switch ($_REQUEST['action']) {
     case "help":
         echo <<<END
@@ -250,6 +251,7 @@ END;
             "timesOK" => (count($unavail) === 0),
             "unavail" => $unavail,
         ]));
+}
 }
 
 ?><!DOCTYPE html>

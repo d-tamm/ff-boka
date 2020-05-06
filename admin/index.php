@@ -12,6 +12,7 @@ use FFBoka\Category;
  */
 function adminList($section, $currentUserId) {
     if (!$admins = $section->getAdmins()) $ret = "<li>Inga administratörer har lagts upp än.</li>";
+    $ret = "";
     foreach ($admins as $admId) {
         $adm = new User($admId);
         $ret .= "<li><a href='#'><h2>" . ($adm->name ? htmlspecialchars($adm->name) : "(ingen persondata tillgänglig)") . "</h2><p>{$adm->id}</p></a><a href=\"javascript:removeAdmin({$adm->id}, $currentUserId, '" . htmlspecialchars($adm->name) . "');\">Ta bort</a></li>";
@@ -22,10 +23,10 @@ function adminList($section, $currentUserId) {
 
 session_start();
 require(__DIR__."/../inc/common.php");
-global $cfg, $FF, $db;
+global $cfg, $FF;
 
 // Set current section and user
-if ($_GET['sectionId']) $_SESSION['sectionId'] = $_GET['sectionId'];
+if (isset($_GET['sectionId'])) $_SESSION['sectionId'] = $_GET['sectionId'];
 if (!$_SESSION['sectionId']) {
     header("Location: {$cfg['url']}");
     die();
@@ -48,7 +49,7 @@ if (is_array($_SESSION['assignments'][$section->id])) {
     if (array_intersect($_SESSION['assignments'][$section->id], $cfg['sectionAdmins'])) $userAccess=FFBoka::ACCESS_SECTIONADMIN;
 }
 
-if ($_REQUEST['message']) $message = $_REQUEST['message'];
+if (isset($_REQUEST['message'])) $message = $_REQUEST['message'];
 
 /**
  * Find all categories in section which contain items but do not have an admin who at least can confirm bookings.
@@ -75,7 +76,9 @@ if ($userAccess >= FFBoka::ACCESS_CATADMIN) {
     }
 }
 
+if (!isset($_REQUEST['expand'])) $_REQUEST['expand']="";
 
+if (isset($_REQUEST['action'])) {
 switch ($_REQUEST['action']) {
     case "help":
         $allAss = $cfg['sectionAdmins'];
@@ -185,6 +188,7 @@ switch ($_REQUEST['action']) {
         header("Content-Type: application/json");
         $question = new Question($_REQUEST['id']);
         die(json_encode($question->delete()));
+}
 }
 
 // First admin login from a section? Give some hints on how to get started.
