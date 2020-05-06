@@ -21,12 +21,13 @@ $cfg = array(
     
     // Connection details to Friluftsfrämjandet's API
     "ff-api" => array(
-        'authUrl' => "", // URL for authentication
-        'authKey' => "", // Key for authentication
-        'feedUrl' => "", // Base URL to get user's assignments and sections, with trailing slash
-        'feedAss' => "", // Feed to get all existing assignments
-        'feedUserAss' => "", // Feed to get a user's assignments. Append member number or personnummer.
-        'feedSec' => "", // Feed to get all existing sections
+        'authUrl' => "https://url.to.auth_api/path/to/api", // URL for authentication
+        'authKey' => "secret_key", // Key for authentication
+        'feedUrl' => "https://url.to.feed_api/", // Base URL to get user's assignments and sections, with trailing slash
+        'feedAss' => "path/to/feed", // Feed to get all existing assignments
+        'feedUserAss' => "path/to/feed?MNoSocnr=", // Feed to get a user's assignments. Member number or personnummer will be appended
+        'feedSec' => "path/to/feed", // Feed to get all existing sections
+        'feedSocnr' => "path/to/feed?MNoSocnr=", // Feed to convert personnummer to member number. Personnummer will be appended
     ),
 
     // Sender address, readable name and Reply-to address for auto-generated emails
