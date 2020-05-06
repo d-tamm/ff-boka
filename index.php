@@ -149,7 +149,7 @@ if (isset($_REQUEST['t'])) {
                 $user = new User($token->forId);
                 $user->mail = $token->data;
                 $FF->deleteToken($token->token);
-                $message="Din epostadress {$token->data} är nu aktiverad.";
+                $message="Grattis! Din epostadress {$token->data} är nu aktiverad.";
                 break;
         }
     } catch (Exception $e) {
@@ -158,7 +158,7 @@ if (isset($_REQUEST['t'])) {
 }
 
 
-if ($_SESSION['authenticatedUser']) {
+if (isset($_SESSION['authenticatedUser'])) {
     $currentUser = new User($_SESSION['authenticatedUser']);
     if (isset($_REQUEST['logout'])) {
         // Remove persistent login cookie
@@ -174,7 +174,7 @@ if ($_SESSION['authenticatedUser']) {
         header("Location: userdata.php?first_login=1");
         die();
     }
-}
+} else $currentUser = NULL;
 
 if (isset($_REQUEST['message'])) $message = ($message ? "$message<br>" : "") . $_REQUEST['message'];
 
@@ -195,12 +195,12 @@ if (isset($_REQUEST['message'])) $message = ($message ? "$message<br>" : "") . $
         <a href='#' data-rel='back' class='ui-btn ui-btn-icon-left ui-btn-inline ui-corner-all ui-icon-check'>OK</a>
     </div>
 
-    <img src="<?= $cfg['url'] ?>resources/liggande-bla.png" style="width:100%; max-width:600px; display:block; margin-left:auto; margin-right:auto;">
+    <img src="<?= $cfg['url'] ?>resources/liggande-bla.png" style="width:100%; max-width:300px; display:block; margin-left:auto; margin-right:auto;">
 
-    <?= $_SESSION['authenticatedUser'] ? $cfg['welcomeMsgLoggedIn'] : $cfg['welcomeMsg'] ?>
+    <?= isset($_SESSION['authenticatedUser']) ? $cfg['welcomeMsgLoggedIn'] : $cfg['welcomeMsg'] ?>
     
     <?php
-    if ($_SESSION['authenticatedUser']) {
+    if (isset($_SESSION['authenticatedUser'])) {
         if ($ub = $currentUser->unfinishedBookings()) {
             echo "<p class='ui-body ui-body-c'>Du har minst en påbörjad bokning som du bör avsluta eller ta bort.";
             echo "<a href='book-sum.php?bookingId={$ub[0]}' class='ui-btn ui-btn-a'>Gå till bokningen</a></p>";
@@ -209,18 +209,18 @@ if (isset($_REQUEST['message'])) $message = ($message ? "$message<br>" : "") . $
     ?>
 
     <div data-role='collapsibleset' data-inset='false'>
-        <?php if ($_SESSION['authenticatedUser']) {
+        <?php if (isset($_SESSION['authenticatedUser'])) {
             // Show link for booking in user's home section
             $section = new Section($currentUser->sectionId);
             if ($section->showFor($currentUser)) echo "<a href='book-part.php?sectionId={$section->id}' class='ui-btn ui-btn-icon-right ui-icon-home' style='white-space:normal;'>Boka resurser i " . htmlspecialchars($section->name) . "</a>";
             // Show a list of all sections with categories where user may book resources
-            echo "<select onChange=\"location.href='book-part.php?sectionId='+this.value;\"><option>Boka i annan lokalavdelning</option>";
+            $otherSections = "";
             foreach ($FF->getAllSections() as $section) {
                 if ($section->showFor($currentUser) && count($section->getMainCategories())) {
-                    echo "<option value='{$section->id}'>" . htmlspecialchars($section->name) . "</option>";
+                    $otherSections .= "<option value='{$section->id}'>" . htmlspecialchars($section->name) . "</option>";
                 }
             }
-            echo "</select>"; ?>
+            if ($otherSections) echo "<select onChange=\"location.href='book-part.php?sectionId='+this.value;\"><option>Boka i annan lokalavdelning</option>$otherSections</select>"; ?>
 
         <?php
         // Show a list of all sections where user has admin role
@@ -250,7 +250,7 @@ if (isset($_REQUEST['message'])) $message = ($message ? "$message<br>" : "") . $
         
     </div><!-- /collapsibleset -->
 
-    <?php if (!($_SESSION['authenticatedUser'])) { ?>
+    <?php if (!isset($_SESSION['authenticatedUser'])) { ?>
         <div data-role='collapsible' data-collapsed='true'>
             <h3>Boka som gäst</h3>
             <?php // List of sections with categories open for guests
@@ -267,7 +267,7 @@ if (isset($_REQUEST['message'])) $message = ($message ? "$message<br>" : "") . $
 
         <form id="formLogin" style="padding:10px 20px;" action="index.php" method="post" data-ajax="false">
             <h3>Inloggning</h3>
-            <input type="hidden" name="redirect" id="loginRedirect" value="<?= $_REQUEST['redirect'] ?>">
+            <input type="hidden" name="redirect" id="loginRedirect" value="<?= isset($_REQUEST['redirect']) ? $_REQUEST['redirect'] : "" ?>">
             <input name="id" value="" placeholder="Medlemsnummer eller personnummer" required>
             <input name="password" value="" placeholder="Lösenord" type="password">
             <div id="div-remember-me" style="<?= empty($_COOKIE['cookiesOK']) || !$_SERVER['HTTPS'] ? "display:none;" : "" ?>"><label><input data-mini='true' name='rememberMe' value='1' type='checkbox'> Kom ihåg mig</label></div>
@@ -275,6 +275,28 @@ if (isset($_REQUEST['message'])) $message = ($message ? "$message<br>" : "") . $
         </form>
     <?php } ?>
     
+    	<h3>Senaste nytt</h3>
+    	<ul data-role="listview" data-inset="true">
+    		<?php
+    		$stmt = $db->query("SELECT * FROM news ORDER BY date DESC LIMIT 3");
+    		while ($row = $stmt->fetch(PDO::FETCH_OBJ)) {
+    		    echo "<li>
+    		    <h3>{$row->caption}</h3>
+    		    <p style='white-space:normal;'>{$row->body}</p>
+    		    <p class='ui-li-aside'><strong>{$row->date}</strong></p>
+    		    </li>";
+    		}
+    		?>
+    	</ul>
+
+	<p>
+		<?php
+		$stmt = $db->query("SELECT COUNT(DISTINCT sectionId) sections FROM sections JOIN categories USING (sectionId) JOIN items USING (catId)");
+		$rowSec = $stmt->fetch(PDO::FETCH_OBJ);
+		$stmt = $db->query("SELECT COUNT(*) items FROM items WHERE active");
+		$rowItems = $stmt->fetch(PDO::FETCH_OBJ);
+		echo "Just nu finns det {$rowItems->items} resurser från {$rowSec->sections} lokalavdelningar i systemet."; ?> 
+	</p>    
     </div><!--/main-->
 
 </div><!--/page-->
