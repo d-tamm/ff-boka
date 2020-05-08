@@ -838,7 +838,7 @@ function addAdmin(userId) {
 function removeAdmin(userId, currentUserId, name) {
     if (confirm('Du håller på att återkalla admin-behörighet för ' + (currentUserId==userId ? "dig själv" : (name ? name : "(okänd)")) + '. Vill du fortsätta?')) {
         $.getJSON("index.php", {action: "ajaxRemoveSectionAdmin", id: userId}, function(data, status) {
-            if (data['html']) {
+            if (typeof data.html != 'undefined') {
                 $("#ul-sec-admins").html(data['html']).listview("refresh");
                 if (currentUserId==userId) location.reload();
             } else {
