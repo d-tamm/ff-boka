@@ -10,7 +10,7 @@ global $cfg, $message;
 session_start();
 require(__DIR__."/inc/common.php");
 
-$currentUser = new User($_SESSION['authenticatedUser'] ? $_SESSION['authenticatedUser'] : 0);
+$currentUser = new User(isset($_SESSION['authenticatedUser']) ? $_SESSION['authenticatedUser'] : 0);
 
 if (isset($_REQUEST['bookingId'])) {
     $_SESSION['bookingId'] = $_REQUEST['bookingId'];

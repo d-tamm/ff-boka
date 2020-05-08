@@ -124,7 +124,7 @@ if (!$_SESSION['sectionId']) {
 }
 
 $section = new Section($_SESSION['sectionId']);
-if ($_SESSION['authenticatedUser']) $currentUser = new User($_SESSION['authenticatedUser']);
+if (isset($_SESSION['authenticatedUser'])) $currentUser = new User($_SESSION['authenticatedUser']);
 else $currentUser = new User(0);
 
 if (isset($_REQUEST['action'])) {
@@ -275,7 +275,7 @@ END;
     <p><i>Välj de resurser du vill boka genom att klicka på dem. Längst ner på skärmen finns det kontroller där du kan bläddra bak och fram i tiden för att se tillgängligheten. Start- och sluttid på din bokning väljer du i steg 2.</i></p>
 
     <?php
-    if (!$_SESSION['authenticatedUser']) echo "<p class='ui-body ui-body-a'>Du bokar som gäst. Om du är medlem i Friluftsfrämjandet och vill boka som medlem så behöver du <a href='index.php?redirect=" . urlencode($_SERVER['REQUEST_URI']) . "'>logga in först</a>.</p>";
+    if (!isset($_SESSION['authenticatedUser'])) echo "<p class='ui-body ui-body-a'>Du bokar som gäst. Om du är medlem i Friluftsfrämjandet och vill boka som medlem så behöver du <a href='index.php?redirect=" . urlencode($_SERVER['REQUEST_URI']) . "'>logga in först</a>.</p>";
     
     if (isset($_SESSION['bookingId'])) echo "<p class='ui-body ui-body-a'>Du har en påbörjad bokning. Resurserna du väljer nedan kommer att läggas till bokningen.<a data-transition='slide' class='ui-btn' href='book-sum.php'>Visa bokningen</a></p>";
     ?>
