@@ -254,10 +254,9 @@ class Category extends FFBoka {
      */
     public function addQuestion(int $id, bool $required=FALSE) {
         $stmt = self::$db->prepare("INSERT INTO cat_questions SET questionId=:questionId, catId={$this->id}, required=:required ON DUPLICATE KEY UPDATE required=VALUES(required)");
-        return $stmt->execute(array(
-            ":questionId"=>$id,
-            ":required"=>$required,
-        ));
+        $stmt->bindValue("questionId", $id, \PDO::PARAM_INT);
+        $stmt->bindValue(":required", $required, \PDO::PARAM_BOOL);
+        return ($stmt->execute());
     }
     
     /**
