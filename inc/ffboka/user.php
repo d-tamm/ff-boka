@@ -153,6 +153,8 @@ class User extends FFBoka {
                 $u->getAssignments();
                 // Regenerate login token
                 $u->createPersistentLogin($ttl);
+                // Log
+                self::$db->exec("INSERT INTO logins (ip, userId, success, userAgent) VALUES (INET_ATON('{$_SERVER['REMOTE_ADDR']}'), '{$row->userId}', 2, '{$_SERVER['HTTP_USER_AGENT']}')");
             }
         }
     }
