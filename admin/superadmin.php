@@ -148,7 +148,7 @@ case "ajaxUpgrade":
                 echo "<tr><td>{$row->timestamp}</td>
                     <td>{$row->ip}</td>
                     <td" . ($row->name ? " title='Login: {$row->login}, medlemsnr: {$row->userId}'" : "") . ">" . ($row->name ? htmlspecialchars($row->name) : $row->userId) . "</td>
-                    <td>" . substr(htmlspecialchars($row->section), 0, 10) . "</td>
+                    <td title='" . htmlspecialchars($row->section) . "'>" . substr(htmlspecialchars($row->section), 0, 10) . "</td>
                     <td>{$row->success}</td>
                     <td>" . resolveUserAgent($row->userAgent, $db) . "</td></tr>";
             }
