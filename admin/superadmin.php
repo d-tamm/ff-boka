@@ -141,13 +141,14 @@ case "ajaxUpgrade":
         <div data-role="collapsible">
             <h2>Senaste inloggningar</h2>
             <table class="alternate-rows">
-            <tr><th>timestamp</th><th>ip</th><th>userId</th><th>succ</th><th>userAgent</th></tr>
+            <tr><th>timestamp</th><th>IP</th><th>user</th><th>LA</th><th>succ</th><th>userAgent</th></tr>
             <?php
-            $stmt = $db->query("SELECT logins.timestamp timestamp, INET_NTOA(ip) ip, userId, users.name name, sections.name section, success, userAgent FROM logins LEFT JOIN users USING (userId) LEFT JOIN sections USING (sectionId) ORDER BY timestamp DESC LIMIT 50");
+            $stmt = $db->query("SELECT logins.timestamp timestamp, INET_NTOA(ip) ip, login, userId, users.name name, sections.name section, success, userAgent FROM logins LEFT JOIN users USING (userId) LEFT JOIN sections USING (sectionId) ORDER BY timestamp DESC LIMIT 50");
             while ($row = $stmt->fetch(PDO::FETCH_OBJ)) {
                 echo "<tr><td>{$row->timestamp}</td>
                     <td>{$row->ip}</td>
-                    <td title='" . ($row->name ? $row->userId.", " : "") . htmlspecialchars($row->section) . "'>" . ($row->name ? htmlspecialchars($row->name) : $row->userId) . "</td>
+                    <td" . ($row->name ? " title='Login: {$row->login}, medlemsnr: {$row->userId}'" : "") . ">" . ($row->name ? htmlspecialchars($row->name) : $row->userId) . "</td>
+                    <td>" . substr(htmlspecialchars($row->section), 0, 10) . "</td>
                     <td>{$row->success}</td>
                     <td>" . resolveUserAgent($row->userAgent, $db) . "</td></tr>";
             }
