@@ -176,6 +176,7 @@ if (isset($_GET['first_login'])) $message = "Välkommen till resursbokningen! In
         
         <div data-role='collapsible' data-collapsed='<?= isset($_GET['first_login']) || $_REQUEST['expand']!="bookings" ? "true" : "false" ?>'>
             <h3>Mina bokningar</h3>
+            <a href="index.php" class="ui-btn ui-btn-b">Lägg en ny bokning</a>
             <?php
             $bookingIds = $currentUser->bookingIds();
             if (count($bookingIds)) {
