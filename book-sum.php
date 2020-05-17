@@ -238,8 +238,7 @@ EOF;
                 $attachments
             );
         } catch(Exception $e) {
-            $message = "Kunde inte skicka bekräftelsen:" . $e;
-            break;
+            $message = "Kunde inte skicka bekräftelsen till dig:" . $e;
         }
         // Send notifications to admins
         foreach ($adminsToNotify as $id=>$itemIds) {
