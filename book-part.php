@@ -124,8 +124,16 @@ if (!$_SESSION['sectionId']) {
 }
 
 $section = new Section($_SESSION['sectionId']);
-if (isset($_SESSION['authenticatedUser'])) $currentUser = new User($_SESSION['authenticatedUser']);
-else $currentUser = new User(0);
+
+if (isset($_SESSION['authenticatedUser'])) {
+    $currentUser = new User($_SESSION['authenticatedUser']);
+    if (!$currentUser->name || !$currentUser->mail || !$currentUser->phone) {
+        // We are missing contact details for this user.
+        header("Location: userdata.php?first_login=1");
+        die();
+    }
+} else $currentUser = new User(0);
+
 
 if (isset($_REQUEST['action'])) {
 switch ($_REQUEST['action']) {
