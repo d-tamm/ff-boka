@@ -173,6 +173,7 @@ class Item extends FFBoka {
         if ($days) $timeConstraint = "AND (
             (start>NOW() AND start<DATE_ADD(NOW(), INTERVAL :days DAY)) OR (end>NOW() AND end<DATE_ADD(NOW(), INTERVAL :days DAY))
             )";
+        else $timeConstraint = "";
         $stmt = self::$db->prepare("
             SELECT bookingId, bookedItemId, UNIX_TIMESTAMP(start)-bufferAfterBooking*3600 AS start, UNIX_TIMESTAMP(end)+bufferAfterBooking*3600 AS end, status
             FROM booked_items
@@ -300,11 +301,12 @@ class Item extends FFBoka {
         $stmt->execute(array(":start"=>$start));
         // Get freebusy information.
         $stmt = self::$db->query("
-            SELECT bookingId, bookedItemId, status, price, token, bufferAfterBooking, DATE_SUB(start, INTERVAL bufferAfterBooking HOUR) start, UNIX_TIMESTAMP(start) unixStart, DATE_ADD(end, INTERVAL bufferAfterBooking HOUR) end, UNIX_TIMESTAMP(end) unixEnd 
+            SELECT bookingId, bookedItemId, status, commentCust, price, token, bufferAfterBooking, DATE_SUB(start, INTERVAL bufferAfterBooking HOUR) start, UNIX_TIMESTAMP(start) unixStart, DATE_ADD(end, INTERVAL bufferAfterBooking HOUR) end, UNIX_TIMESTAMP(end) unixEnd, users.name username 
             FROM booked_items 
             INNER JOIN bookings USING (bookingId) 
             INNER JOIN items USING (itemId) 
-            INNER JOIN categories USING (catId) 
+            INNER JOIN categories USING (catId)
+            INNER JOIN users using (userId)
             WHERE 
                 itemId={$this->id} " . 
                 (isset($this->bookedItemId) ? "AND bookedItemId != {$this->bookedItemId} " : "") . " 
@@ -333,7 +335,7 @@ class Item extends FFBoka {
                 if ($row->price) $class .= " has-price";
             }
             $title = strftime("%F kl %H:00", $row->unixStart) . " till " . strftime("%F kl %H:00", $row->unixEnd);
-            if ($adminView) $title .= is_null($row->price) ? "\nInget pris satt" : "\nPris: {$row->price} kr";
+            if ($adminView) $title .= "\n" . htmlspecialchars($row->username) . "\n" . htmlspecialchars($row->commentCust) . (is_null($row->price) ? "\nInget pris satt" : "\nPris: {$row->price} kr");
             $ret .= "<div class='$class' data-booking-id='{$row->bookingId}' data-booked-item-id='{$row->bookedItemId}' " . ($includeTokens ? "data-token='{$row->token}' " : "") . "style='left:" . number_format(($row->unixStart - $start) / $secs * 100, 2) . "%; width:" . number_format(($row->unixEnd - $row->unixStart) / $secs * 100, 2) . "%;' title='$title'></div>";
         }
         if ($scale) $ret .= self::freebusyScale(false, $days);
