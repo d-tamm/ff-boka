@@ -223,6 +223,9 @@ $(document).on('pageshow', "#page-book-part", function() {
     fbStart.setDate(fbStart.getDate() - wday); // Should now be last Monday
     scrollDate(0);
     updateBookedTimeframe();
+    if (get('selectItemId')) {
+    	toggleItem(get('selectItemId'));
+    }
 });
 
 /**

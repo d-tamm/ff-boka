@@ -21,7 +21,13 @@ function displayCat(Category $cat, $user, $fbStart, $fileTypes=[]) {
     $numItems = 0;
     if ($cat->showFor($user)) {
         $access = $cat->getAccess($user);
-        echo "<div data-role='collapsible' data-inset='false'>";
+        echo "<div id='book-cat-{$cat->id}' data-role='collapsible'";
+        if (isset($_GET['selectItemId'])) {
+            // Expand category of selected item. The item itself will be selected by javascript.
+            $i = new Item($_GET['selectItemId']);
+            if ($i->isBelowCategory($cat)) echo " data-collapsed='false'";  
+        }
+        echo " data-inset='false'>";
         echo "<h3><div class='cat-list-img'>" . embedImage($cat->thumb) . "</div>" . htmlspecialchars($cat->caption) . "</h3>";
         echo $cat->prebookMsg ? "<p>" . str_replace("\n", "<br>", htmlspecialchars($cat->prebookMsg)) . "</p>" : "";
         $files = "";
@@ -43,7 +49,7 @@ function displayCat(Category $cat, $user, $fbStart, $fileTypes=[]) {
             foreach ($cat->items() as $item) {
                 if ($item->active) {
                     $numItems++;
-                    echo "<li class='book-item' id='book-item-{$item->id}'><a href=\"javascript:toggleItem({$item->id});\">";
+                    echo "<li data-catid='{$cat->id}' class='book-item' id='book-item-{$item->id}'><a href=\"javascript:toggleItem({$item->id});\">";
                     echo embedImage($item->getFeaturedImage()->thumb);
                     echo "<h4>" . htmlspecialchars($item->caption) . "</h4>";
                     if ($cat->getAccess($user)>=FFBoka::ACCESS_PREBOOK) echo "<div class='freebusy-bar'><div id='freebusy-item-{$item->id}'></div>" . Item::freebusyScale() . "</div>";

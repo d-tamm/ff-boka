@@ -172,7 +172,7 @@ class FFBoka {
             )
         );
         $context  = stream_context_create($options);
-        $result = file_get_contents(self::$apiAuthUrl, false, $context);
+        $result = @file_get_contents(self::$apiAuthUrl, false, $context);
         if ($result === FALSE) return FALSE;
         $result = json_decode($result);
         return array(
