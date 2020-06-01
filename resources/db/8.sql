@@ -1,76 +1,76 @@
 -- Add default values
 ALTER TABLE booked_items
-	ALTER `start` SET DEFAULT 0,
-	ALTER `end` SET DEFAULT 0,
-	ALTER `status` SET DEFAULT 0;
+	CHANGE `start` DEFAULT 0,
+	CHANGE `end` DEFAULT 0,
+	CHANGE `status` DEFAULT 0;
 ALTER TABLE bookings
-	ALTER `commentCust` SET DEFAULT '',
-	ALTER `commentIntern` SET DEFAULT '',
-	ALTER `paid` SET DEFAULT 0,
-	ALTER `extName` SET DEFAULT '',
-	ALTER `extPhone` SET DEFAULT '',
-	ALTER `extMail` SET DEFAULT '',
-	ALTER `token` SET DEFAULT '',
-	ALTER `confirmationSent` SET DEFAULT 0;
+	CHANGE `commentCust` DEFAULT '',
+	CHANGE `commentIntern` DEFAULT '',
+	CHANGE `paid` DEFAULT 0,
+	CHANGE `extName` DEFAULT '',
+	CHANGE `extPhone` DEFAULT '',
+	CHANGE `extMail` DEFAULT '',
+	CHANGE `token` DEFAULT '',
+	CHANGE `confirmationSent` DEFAULT 0;
 ALTER TABLE booking_answers
-	ALTER `question` SET DEFAULT '',
-	ALTER `answer` SET DEFAULT '';
+	CHANGE `question` DEFAULT '',
+	CHANGE `answer` DEFAULT '';
 ALTER TABLE categories
-	ALTER `caption` SET DEFAULT '',
-	ALTER `prebookMsg` SET DEFAULT '',
-	ALTER `postbookMsg` SET DEFAULT '',
-	ALTER `bufferAfterBooking` SET DEFAULT 0,
-	ALTER `sendAlertTo` SET DEFAULT '',
-	ALTER `contactName` SET DEFAULT '',
-	ALTER `contactPhone` SET DEFAULT '',
-	ALTER `contactMail` SET DEFAULT '',
-	ALTER `accessExternal` SET DEFAULT 0,
-	ALTER `accessMember` SET DEFAULT 0,
-	ALTER `accessLocal` SET DEFAULT 0,
-	ALTER `hideForExt` SET DEFAULT 0;
+	CHANGE `caption` DEFAULT '',
+	CHANGE `prebookMsg` DEFAULT '',
+	CHANGE `postbookMsg` DEFAULT '',
+	CHANGE `bufferAfterBooking` DEFAULT 0,
+	CHANGE `sendAlertTo` DEFAULT '',
+	CHANGE `contactName` DEFAULT '',
+	CHANGE `contactPhone` DEFAULT '',
+	CHANGE `contactMail` DEFAULT '',
+	CHANGE `accessExternal` DEFAULT 0,
+	CHANGE `accessMember` DEFAULT 0,
+	CHANGE `accessLocal` DEFAULT 0,
+	CHANGE `hideForExt` DEFAULT 0;
 ALTER TABLE cat_admins
-	ALTER `access` SET DEFAULT 0;
+	CHANGE `access` DEFAULT 0;
 ALTER TABLE cat_files
-	ALTER `filename` SET DEFAULT '',
-	ALTER `md5` SET DEFAULT '',
-	ALTER `caption` SET DEFAULT '';
+	CHANGE `filename` DEFAULT '',
+	CHANGE `md5` DEFAULT '',
+	CHANGE `caption` DEFAULT '';
 ALTER TABLE items
-	ALTER `caption` SET DEFAULT '',
-	ALTER `description` SET DEFAULT '',
-	ALTER `note` SET DEFAULT '';
+	CHANGE `caption` DEFAULT '',
+	CHANGE `description` DEFAULT '',
+	CHANGE `note` DEFAULT '';
 ALTER TABLE item_images
-	ALTER `caption` SET DEFAULT '';
+	CHANGE `caption` DEFAULT '';
 ALTER TABLE logins
-	ALTER `ip` SET DEFAULT 0,
-	ALTER `userId` SET DEFAULT '',
-	ALTER `userAgent` SET DEFAULT '';	
+	CHANGE `ip` DEFAULT 0,
+	CHANGE `userId` DEFAULT '',
+	CHANGE `userAgent` DEFAULT '';	
 ALTER TABLE persistent_logins
-	ALTER `userAgent` SET DEFAULT '',
-	ALTER `selector` SET DEFAULT '',
-	ALTER `authenticator` SET DEFAULT '',
-	ALTER `expires` SET DEFAULT 0;
+	CHANGE `userAgent` DEFAULT '',
+	CHANGE `selector` DEFAULT '',
+	CHANGE `authenticator` DEFAULT '',
+	CHANGE `expires` DEFAULT 0;
 ALTER TABLE questions
-	ALTER `caption` SET DEFAULT '',
-	ALTER `options` SET DEFAULT '';
+	CHANGE `caption` DEFAULT '',
+	CHANGE `options` DEFAULT '';
 ALTER TABLE sections
-	ALTER `name` SET DEFAULT '';
+	CHANGE `name` DEFAULT '';
 ALTER TABLE tokens
-	ALTER `useFor` SET DEFAULT '',
-	ALTER `forId` SET DEFAULT 0;
+	CHANGE `useFor` DEFAULT '',
+	CHANGE `forId` DEFAULT 0;
 ALTER TABLE users
-	ALTER COLUMN `name` SET DEFAULT '',
-	ALTER `mail` SET DEFAULT '',
-	ALTER `phone` SET DEFAULT '',
-	ALTER `sectionId` SET DEFAULT '0';
+	CHANGE COLUMN `name` DEFAULT '',
+	CHANGE `mail` DEFAULT '',
+	CHANGE `phone` DEFAULT '',
+	CHANGE `sectionId` DEFAULT '0';
 ALTER TABLE user_agents
-	ALTER `uaHash` SET DEFAULT '',
-	ALTER `userAgent` SET DEFAULT '',
-	ALTER `platform` SET DEFAULT '',
-	ALTER `platform_version` SET DEFAULT '',
-	ALTER `platform_bits` SET DEFAULT '',
-	ALTER `browser` SET DEFAULT '',
-	ALTER `version` SET DEFAULT '',
-	ALTER `device_type` SET DEFAULT '';
+	CHANGE `uaHash` DEFAULT '',
+	CHANGE `userAgent` DEFAULT '',
+	CHANGE `platform` DEFAULT '',
+	CHANGE `platform_version` DEFAULT '',
+	CHANGE `platform_bits` DEFAULT '',
+	CHANGE `browser` DEFAULT '',
+	CHANGE `version` DEFAULT '',
+	CHANGE `device_type` DEFAULT '';
 	
 -- Add Latest News table 
 CREATE TABLE `news` (
