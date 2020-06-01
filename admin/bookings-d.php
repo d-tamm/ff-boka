@@ -47,7 +47,7 @@ function showCat(Category $cat, User $user) {
             }
             foreach ($items as $item) {
                 echo "<tr><td class='col-caption" . ($item->active ? "" : " inactive") . "' onClick=\"showItemDetails({$item->id});\"><span title='" . htmlspecialchars($item->caption) . "'>" . htmlspecialchars($item->caption) . "</span></td>\n";
-                echo "<td class='col-freebusy'><div class='freebusy-bar' id='freebusy-item-{$item->id}' style='margin-bottom:0px;'></div></td></tr>\n";
+                echo "<td class='col-freebusy'><div class='freebusy-bar' id='freebusy-item-{$item->id}' data-itemid='{$item->id}' style='margin-bottom:0px;'></div></td></tr>\n";
                 $_SESSION['itemIds'][] = $item->id;
             }
             if (count($items)) echo "</table>\n";
@@ -124,7 +124,9 @@ switch ($_REQUEST['action']) {
     <?php htmlHeaders("Friluftsfrämjandets resursbokning - Bokningsadmin ".$section->name, $cfg['url'], "desktop") ?>
     <script>
     var startDate,
-        maxBookedItemId=0;
+        maxBookedItemId=0,
+        newBookingDate = new Date(),
+        newBookingItemId = 0;
     const dateOptions = { year: 'numeric', month: 'long' };
     
     startDate = new Date(new Date().setHours(0,0,0,0)); // Midnight
@@ -169,6 +171,18 @@ switch ($_REQUEST['action']) {
         
         $(document).on('click', ".freebusy-busy, .link-unconfirmed", function() {
             openSidePanelOrWindow("../book-sum.php?bookingId=" + this.dataset.bookingId, "booking"+this.dataset.bookingId);
+        });
+
+        // Trigger new booking when user clicks the freebusy bar of an item
+        $(".freebusy-bar").click(function(e) {
+            if (e.target.className === "freebusy-weekend" || e.target.className === "freebusy-week") {
+                var hour = Math.floor(e.offsetX / e.target.offsetWidth * 24);
+            	newBookingDate = new Date(startDate.valueOf());
+            	newBookingDate.setDate(e.target.dataset.day);
+            	newBookingDate.setHours(hour);
+            	newBookingItemId = e.currentTarget.dataset.itemid;
+                $('#popup-add-booking').dialog('open');
+            }
         });
     });
 
@@ -221,7 +235,7 @@ switch ($_REQUEST['action']) {
     function addBooking(userId) {
         $.getJSON("<?= basename(__FILE__) ?>", { action: "ajaxAddBookingOnBehalf", userId: userId }, function(data) {
             if (data.status=="OK") {
-                openSidePanelOrWindow("../book-part.php");
+                openSidePanelOrWindow("../book-part.php?start="+(newBookingDate.valueOf()/1000) + "&end="+(newBookingDate.valueOf()/1000+24*60*60) + "&selectItemId="+newBookingItemId );
             }
             else alert("Något har gått fel. Kontakta systemadmin.");
             $('#popup-add-booking').dialog('close');
@@ -255,9 +269,9 @@ switch ($_REQUEST['action']) {
 <iframe id="iframe-booking"></iframe>
 <div id="close-iframe-booking"><a href="#" title="Stäng sidpanel" onClick="closeSidePanel();"><i class="fas fa-times"></i></a></div>
 
-<div id='popup-add-booking' title="Lägg till bokning">
+<div id='popup-add-booking' title='Lägg till bokning'>
     <div class="ui-widget">
-        <label for="search-member">Leta efter medlem:</label>
+        <label for="search-member">Leta efter medlem (medlemsnummer eller namn):</label>
         <input id="search-member">
     </div>
     <div>
@@ -277,8 +291,7 @@ switch ($_REQUEST['action']) {
                 <a title="1 månad bakåt (vänsterpil)" href="#" onClick="scrollDate(-1);"><i class='fas fa-chevron-left'></i></a>
                 <a title="Gå till idag" href="#" onClick="startDate = new Date(new Date().setHours(0,0,0,0));scrollDate(0);"><i class='fas fa-calendar-day'></i></a>
                 <a title="1 månad framåt (högerpil)" href="#" onClick="scrollDate(1);"><i class='fas fa-chevron-right'></i></a>
-                <a title="Uppdatera" href="#" onClick="scrollDate(0);"><i class='fas fa-sync'></i></a>
-                <a title="Lägg in ny bokning" href="#" onClick="$('#popup-add-booking').dialog('open');"><i class='fas fa-plus'></i></a>
+                <a title="Kolla efter nya bokningar NU" href="#" onClick="scrollDate(0);"><i class='fas fa-sync'></i></a>
             </td>
             <td><div class='freebusy-bar' id='booking-adm-scale'></div></td></tr>
         </table>

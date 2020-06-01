@@ -144,6 +144,20 @@ class Item extends FFBoka {
     }
     
     /**
+     * Is this item placed under the specified category or its child categories?
+     * @param Category $cat
+     * @return bool True if the item is in this category or a child category of this category
+     */
+    public function isBelowCategory(Category $cat) {
+        $childCat = $this->category();
+        do {
+            if ($childCat->id === $cat->id) return TRUE;
+            $childCat = $childCat->parent();
+        } while (!is_null($childCat));
+        return FALSE;
+    }
+    
+    /**
      * Move the item to another category
      * @param Category $cat Category to move the item to.
      */
@@ -370,7 +384,8 @@ class Item extends FFBoka {
         $date->setTimezone(new \DateTimeZone(self::$timezone));
         $ret = "";
         for ($day=0; $day<$days; $day++) {
-            if ($date->format('N') > 5) $ret .= "<div class='freebusy-weekend' style='left:" . number_format(100/$days*$day, 2) . "%; width:" . number_format(100/$days, 2) . "%;'></div>"; 
+            if ($date->format('N') > 5) $ret .= "<div data-day='" . ($day+1) . "' class='freebusy-weekend' style='left:" . number_format(100/$days*$day, 2) . "%; width:" . number_format(100/$days, 2) . "%;'></div>";
+            else $ret .= "<div data-day='" . ($day+1) . "' class='freebusy-week' style='left:" . number_format(100/$days*$day, 2) . "%; width:" . number_format(100/$days, 2) . "%;'></div>";
             $date->add(new \DateInterval("P1D"));
         }
         return $ret;
