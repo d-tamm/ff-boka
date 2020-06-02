@@ -371,7 +371,7 @@ EOF;
     <h4>Lokalavdelning: <?= htmlspecialchars($section->name) ?></h4>
 
     <?php
-    if (count($unavail)) echo "<p class='ui-body ui-body-c'>Några av de resurser du har valt är inte längre tillgängliga vid den valda tiden. De är markerade nedan. För att kunna slutföra bokningen behöver du ta bort dessa resurser eller ändra tiden genom att ta bort dem och sedan lägga till dem igen med en annan, ledig tid.</p>";
+    if (count($unavail)) echo "<p class='ui-body ui-body-c'>Några av de resurser du har valt är inte längre tillgängliga vid den valda tiden. De är markerade nedan. För att kunna slutföra bokningen behöver du ta bort dessa resurser eller ändra tiden till en ledig tid.</p>";
     ?>
     
     <ul data-role='listview' data-inset='true' data-divider-theme='a' data-split-icon='delete'>

@@ -7,12 +7,14 @@ session_start();
 require("inc/common.php");
 global $cfg;
 
-switch ($_REQUEST['action']) {
-case "help":
-    echo <<<EOF
-Här visas detaljer till resursen.
-EOF;
-    die();
+if (isset($_REQUEST['action'])) {
+    switch ($_REQUEST['action']) {
+    case "help":
+        echo <<<EOF
+    Här visas detaljer till resursen.
+    EOF;
+        die();
+    }
 }
 
 if ($_SESSION['authenticatedUser']) $currentUser = new User($_SESSION['authenticatedUser']);

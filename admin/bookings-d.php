@@ -99,17 +99,23 @@ switch ($_REQUEST['action']) {
             foreach ($item->upcomingBookings(0) as $b) {
                 switch ($b->status) {
                 case FFBoka::STATUS_CONFLICT:
-                    $conflicts[] = "<span class='freebusy-busy conflict' style='display:inline-block; width:1em;'>&nbsp;</span> <a class='link-unconfirmed' href='#' data-booking-id='{$b->bookingId}'>{$item->caption} (" . strftime("%e %b", $b->start) . ")</a><br>";
+                    $conflicts[] = "<span class='freebusy-busy conflict' style='display:inline-block; width:1em;'>&nbsp;</span> <a class='link-unconfirmed' href='#' data-booking-id='{$b->bookingId}'>{$item->caption} (" . trim(strftime("%e %b", $b->start)) . ")</a><br>";
                     $maxBookedItemId = max($maxBookedItemId, $b->bookedItemId);
                     break;
                 case FFBoka::STATUS_PREBOOKED:
-                    $unconfirmed[] = "<span class='freebusy-busy unconfirmed' style='display:inline-block; width:1em;'>&nbsp;</span> <a class='link-unconfirmed' href='#' data-booking-id='{$b->bookingId}'>{$item->caption} (" . strftime("%e %b", $b->start) . ")</a><br>";
+                    $unconfirmed[] = "<span class='freebusy-busy unconfirmed' style='display:inline-block; width:1em;'>&nbsp;</span> <a class='link-unconfirmed' href='#' data-booking-id='{$b->bookingId}'>{$item->caption} (" . trim(strftime("%e %b", $b->start)) . ")</a><br>";
                     $maxBookedItemId = max($maxBookedItemId, $b->bookedItemId);
                     break;
                 }
             }
         }
-        die(json_encode([ "scale"=>$scale, "freebusy"=>$fbList, "unconfirmed"=>$unconfirmed, "conflicts"=>$conflicts, "maxBookedItemId"=>$maxBookedItemId ]));
+        die(json_encode([
+            "scale"=>$scale,
+            "freebusy"=>$fbList,
+            "unconfirmed"=>$unconfirmed,
+            "conflicts"=>$conflicts,
+            "maxBookedItemId"=>$maxBookedItemId
+        ]));
         
     case "ajaxAddBookingOnBehalf":
         header("Content-Type: application/json");

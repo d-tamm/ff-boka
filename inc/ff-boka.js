@@ -65,6 +65,9 @@ $(document).on('pageshow', "#page-bookings", function() {
     wday = startDate.getDay() ? startDate.getDay()-1 : 6; // Weekday, where Monday=0 ... Sunday=6
     startDate.setDate(startDate.getDate() - wday); // Should now be last Monday
     scrollDateBookings(0);
+    if ($("#bookings-list-unconfirmed").html!="") {
+    	$("#bookings-tab-unconfirmed").collapsible("expand");
+    }
 });
 
 
@@ -90,6 +93,12 @@ function scrollDateBookings(offset) {
         start: startDate.valueOf()/1000
     }, function(data, status) {
         $("#bookings-current-range-readable").html( readableRange );
+        $("#bookings-list-unconfirmed").html("");
+        $.each(data.unconfirmed, function( index, value ) {
+            $("#bookings-list-unconfirmed").append(value);
+        });
+        $("#bookings-list-unconfirmed").listview("refresh");
+        $("#bookings-unconfirmed-count").text("("+data.unconfirmed.length+")");
         $.each(data.freebusy, function(key, value) { // key will be "item-nn"
             $("#freebusy-"+key).html(value);
         });
