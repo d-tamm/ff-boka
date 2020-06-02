@@ -224,7 +224,7 @@ $(document).on('pageshow', "#page-book-part", function() {
     scrollDate(0);
     updateBookedTimeframe();
     if (get('selectItemId')) {
-    	toggleItem(get('selectItemId'));
+    	setTimeout(toggleItem, 500, get('selectItemId'));
     }
 });
 
@@ -274,7 +274,7 @@ function toggleItem(itemId){
             } else {
                 $("#book-access-msg").html("");
                 if (data.access <= ACCESS_PREBOOK) {
-                    $("#book-access-msg").append("<p><b>OBS: Bokninen är preliminär.</b> För ditt urval av resurser kommer bokningen behöva bekräftas av materialansvarig.</p>"); 
+                    $("#book-access-msg").append("<p><b>OBS: Bokningen är preliminär.</b> För ditt urval av resurser kommer bokningen behöva bekräftas av materialansvarig.</p>"); 
                 }
             }
             $("#book-combined-freebusy-bar").html(data.freebusyCombined);
