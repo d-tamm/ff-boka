@@ -83,6 +83,8 @@ case "ajaxUpgrade":
         // remove all update files
         if (!deleteDirectory("update")) die(json_encode([ "error"=>"FEL: Kan inte ta bort gamla filer." ]));
         else $ret[] = "Har rensat tillfälliga update-filer.";
+        include(__DIR__."/../inc/common.php");
+        $ret[] = "Den aktuella DB-versionen är nu $dbVersion";
         die(json_encode([ "status"=>implode("</li><li>", $ret) ]));
     }
 }
@@ -162,6 +164,10 @@ case "ajaxUpgrade":
 
         <div data-role="collapsible">
             <h2>Uppgradering</h2>
+            <p>Aktuell DB-version är <?php 
+            $stmt = $db->query("SELECT value FROM config WHERE name='db-version'");
+            $ver = $stmt->fetch(PDO::FETCH_OBJ);
+            echo $ver->value; ?></p>
             <p>Med knappen nedan kan du hämta senaste versionen från master-grenen på Github och installera den.</p>
             <button class='ui-btn ui-btn-c' onClick="systemUpgrade(1);">Uppgradera systemet</button>
             <ul id="upgrade-progress"></ul>
