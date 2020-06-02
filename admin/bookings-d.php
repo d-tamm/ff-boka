@@ -10,8 +10,12 @@ require(__DIR__."/../inc/common.php");
 global $FF, $cfg;
 
 if (isset($_GET['sectionId'])) $_SESSION['sectionId'] = $_GET['sectionId'];
+if (!$_SESSION['sectionId']) {
+    header("Location: {$cfg['url']}");
+    die();
+}
 // This page may only be accessed by registered users 
-if (!$_SESSION['authenticatedUser'] || !$_SESSION['sectionId']) {
+if (!$_SESSION['authenticatedUser']) {
     header("Location: {$cfg['url']}index.php?message=" . urlencode("Du måste logga in för att använda bokningsöversikten.") . "&redirect=" . urlencode("{$cfg['url']}admin/bookings-d.php?sectionId={$_REQUEST['sectionId']}"));
     die();
 }
