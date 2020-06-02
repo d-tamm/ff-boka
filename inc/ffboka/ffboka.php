@@ -274,7 +274,7 @@ class FFBoka {
      */
     protected function createToken(string $useFor, int $forId, string $data="", int $ttl=86400) {
         // generate 40 character random token
-        for ($token = '', $i = 0, $z = strlen($a = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789')-1; $i < 40; $x = rand(0,$z), $token .= $a{$x}, $i++);
+        for ($token = '', $i = 0, $z = strlen($a = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789')-1; $i < 40; $x = rand(0,$z), $token .= $a[$x], $i++);
         $stmt = self::$db->prepare("REPLACE INTO tokens SET token=SHA1('$token'), ttl=$ttl, useFor=:useFor, forId=:forId, data=:data");
         if (!$stmt->execute(array(
             ":data"=>$data,
