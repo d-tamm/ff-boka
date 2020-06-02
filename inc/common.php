@@ -7,11 +7,7 @@ spl_autoload_register(function($class) {
 require_once __DIR__ . "/config.php";
 global $cfg;
 
-// DB version used by this code. Must be incremented when the database structure
-// is changed. The corresponding SQL code for the change must be stored in
-// resources/db/{$dbVersion}.sql and will be executed on the next invocation of
-// any page.
-$dbVersion = 9;
+require __DIR__ . "/version.php";
 
 // Set locale
 setlocale(LC_ALL, $cfg['locale']);

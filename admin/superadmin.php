@@ -83,7 +83,7 @@ case "ajaxUpgrade":
         // remove all update files
         if (!deleteDirectory("update")) die(json_encode([ "error"=>"FEL: Kan inte ta bort gamla filer." ]));
         else $ret[] = "Har rensat tillfälliga update-filer.";
-        include(__DIR__."/../inc/common.php");
+        require(__DIR__."/../inc/version.php");
         $ret[] = "Den aktuella DB-versionen är nu $dbVersion";
         die(json_encode([ "status"=>implode("</li><li>", $ret) ]));
     }
