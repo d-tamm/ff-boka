@@ -4,8 +4,6 @@ ALTER TABLE booked_items
 	ALTER COLUMN `end` SET DEFAULT 0,
 	ALTER COLUMN `status` SET DEFAULT 0;
 ALTER TABLE bookings
-	ALTER COLUMN `commentCust` SET DEFAULT '',
-	ALTER COLUMN `commentIntern` SET DEFAULT '',
 	ALTER COLUMN `paid` SET DEFAULT 0,
 	ALTER COLUMN `extName` SET DEFAULT '',
 	ALTER COLUMN `extPhone` SET DEFAULT '',
@@ -13,12 +11,9 @@ ALTER TABLE bookings
 	ALTER COLUMN `token` SET DEFAULT '',
 	ALTER COLUMN `confirmationSent` SET DEFAULT 0;
 ALTER TABLE booking_answers
-	ALTER COLUMN `question` SET DEFAULT '',
-	ALTER COLUMN `answer` SET DEFAULT '';
+	ALTER COLUMN `question` SET DEFAULT '';
 ALTER TABLE categories
 	ALTER COLUMN `caption` SET DEFAULT '',
-	ALTER COLUMN `prebookMsg` SET DEFAULT '',
-	ALTER COLUMN `postbookMsg` SET DEFAULT '',
 	ALTER COLUMN `bufferAfterBooking` SET DEFAULT 0,
 	ALTER COLUMN `sendAlertTo` SET DEFAULT '',
 	ALTER COLUMN `contactName` SET DEFAULT '',
@@ -36,13 +31,12 @@ ALTER TABLE cat_files
 	ALTER COLUMN `caption` SET DEFAULT '';
 ALTER TABLE items
 	ALTER COLUMN `caption` SET DEFAULT '',
-	ALTER COLUMN `description` SET DEFAULT '',
 	ALTER COLUMN `note` SET DEFAULT '';
 ALTER TABLE item_images
 	ALTER COLUMN `caption` SET DEFAULT '';
 ALTER TABLE logins
 	ALTER COLUMN `ip` SET DEFAULT 0,
-	ALTER COLUMN `userId` SET DEFAULT '',
+	ALTER COLUMN `userId` SET DEFAULT 0,
 	ALTER COLUMN `userAgent` SET DEFAULT '';	
 ALTER TABLE persistent_logins
 	ALTER COLUMN `userAgent` SET DEFAULT '',
@@ -50,8 +44,7 @@ ALTER TABLE persistent_logins
 	ALTER COLUMN `authenticator` SET DEFAULT '',
 	ALTER COLUMN `expires` SET DEFAULT 0;
 ALTER TABLE questions
-	ALTER COLUMN `caption` SET DEFAULT '',
-	ALTER COLUMN `options` SET DEFAULT '';
+	ALTER COLUMN `caption` SET DEFAULT '';
 ALTER TABLE sections
 	ALTER COLUMN `name` SET DEFAULT '';
 ALTER TABLE tokens
