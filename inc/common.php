@@ -88,9 +88,16 @@ function connectDb(string $host, string $dbname, string $user, string $pass, int
             }
             // Apply SQL upgrade
             if ($db->exec(file_get_contents(__DIR__ . "/../resources/db/$curVer.sql"))===FALSE) {
-                die("<p>It seems that this did not work. :(</p>");
+                die("<p><b>It seems that this did not work. :(</b></p>");
             }
-            echo "<p>Upgrade to version $curVer seems to have been successful.</p>"; 
+            // Double check success by checking DB version number
+            $stmt = $db->query("SELECT value FROM config WHERE name='db-version'");
+            $ver = $stmt->fetch(PDO::FETCH_OBJ);
+            if ($ver->value == $curVer) {
+                echo "<p>Successful upgrade to version $curVer.</p>";
+            } else {
+                echo "<p><b>Upgrade to version $curVer has failed.</b></p>";
+            }
         }
         die("<p>Finished.</p><p>If you do not see any error messages, you may <a href='javascript:location.reload();'>reload this page</a> to continue.</p></body></html>");
     }
