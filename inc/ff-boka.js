@@ -400,7 +400,7 @@ function checkTimes(save=false) {
                 location.href="book-sum.php";
             } else if (save && bookingStep==2) {
                 $("#popup-item-details").popup("close");
-                location.reload();
+				setTimeout(function() { location.reload() },200);
             }
             $("#book-warning-conflict").hide();
         } else {
