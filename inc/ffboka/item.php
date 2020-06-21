@@ -320,7 +320,7 @@ class Item extends FFBoka {
             INNER JOIN bookings USING (bookingId) 
             INNER JOIN items USING (itemId) 
             INNER JOIN categories USING (catId)
-            INNER JOIN users using (userId)
+            LEFT JOIN users using (userId)
             WHERE 
                 itemId={$this->id} " . 
                 (isset($this->bookedItemId) ? "AND bookedItemId != {$this->bookedItemId} " : "") . " 

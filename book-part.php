@@ -187,7 +187,13 @@ END;
             if (count($bookings)) $html .= "</ul></div>\n";
         }
         $html .= "<a href='#' data-rel='back' class='ui-btn ui-icon-delete ui-btn-icon-left'>Stäng inforutan</a>";
-        die(json_encode([ "caption"=>htmlspecialchars($item->caption), "html"=>$html, "start"=>$start, "end"=>$end, "price"=>$price ]));
+        die(json_encode([
+            "caption" => htmlspecialchars($item->caption),
+            "html" => $html,
+            "start" => isset($start) ? $start : "",
+            "end" => isset($end) ? $end : "",
+            "price" => isset($price) ? $price : ""
+        ]));
 
     case "ajaxFreebusy":
         // Get freebusy bars for all items in section
