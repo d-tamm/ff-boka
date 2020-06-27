@@ -241,6 +241,11 @@ EOF;
             $message = "Kunde inte skicka bekräftelsen till dig:" . $e;
         }
         // Send notifications to admins
+        if (is_null($booking->userId)) {
+            $contactData = "Detta är en gästbokning.<br>Namn: {$_REQUEST['extName']}<br>Telefon: {$_REQUEST['extPhone']}<br>Mejl: {$_REQUEST['extMail']}";
+        } else {
+            $contactData = "Namn: " . $booking->user()->name . "<br>Telefon: " . $booking->user()->phone . "<br>Mejl: " . $booking->user()->mail;
+        }
         foreach ($adminsToNotify as $id=>$itemIds) {
             if (is_numeric($id)) {
                 if ($id == $_SESSION['authenticatedUser']) continue; // Don't send notification to current user
@@ -269,8 +274,9 @@ EOF;
                     $booking->confirmationSent ? "FF Uppdaterad bokning #{$booking->id}" : "FF Ny bokning #{$booking->id}", // subject
                     "booking_alert",
                     array(
-                        "{{name}}"=>htmlspecialchars($name),
-                        "{{items}}"=>$mailItems,
+                        "{{name}}" => htmlspecialchars($name),
+                        "{{contactData}}" => $contactData,
+                        "{{items}}" => $mailItems,
                         "{{commentCust}}" => $booking->commentCust ? str_replace("\n", "<br>", $booking->commentCust) : "(ingen kommentar har lämnats)",
                         "{{bookingLink}}" => "{$cfg['url']}book-sum.php?bookingId={$booking->id}",
                     )
