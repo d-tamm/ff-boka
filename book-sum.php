@@ -141,7 +141,7 @@ EOF;
             }
         }
         if (count($unavail)) break;
-        $mailItems = "";
+        $mailItems = "<tr><th>Resurs</th><th>Status</th><th>Datum</th><th></th></tr>";
         // Set booking status of each item, and build confirmation string incl post-booking messages
         $leastStatus = FFBoka::STATUS_CONFIRMED;
         $rejectedItems = FALSE;
@@ -193,14 +193,17 @@ EOF;
                     }
                 }
             }
-            // Bullet list with booked items
-            $mailItems .= "<li><b>" . htmlspecialchars($item->caption) . "</b> ";
+            // Table with booked items
+            $mailItems .= "<tr>";
+            $mailItems .= "<td>" . htmlspecialchars($item->caption) . "</td>";
             switch ($item->status) {
-                case FFBoka::STATUS_CONFIRMED: $mailItems .= "(bekräftat) "; break;
-                case FFBoka::STATUS_REJECTED: $mailItems .= "(<b style='color:red;'>avböjt</b>) "; break;
-                default: $mailItems .= "(väntar på bekräftelse) ";
+                case FFBoka::STATUS_CONFIRMED: $mailItems .= "<td>bekräftat</td>"; break;
+                case FFBoka::STATUS_REJECTED: $mailItems .= "<td><b style='color:red;'>avböjt</b></td>"; break;
+                default: $mailItems .= "<td>väntar på bekräftelse</td>";
             }
-            $mailItems .= strftime("%a %F kl %k:00", $item->start) . " till " . strftime("%a %F kl %k:00", $item->end) . " $msgRef</li>";
+            $mailItems .= "<td>" . strftime("%a %F kl %k:00", $item->start) . " till " . strftime("%a %F kl %k:00", $item->end) . "</td>";
+            $mailItems .= "<td>$msgRef</td>";
+            $mailItems .= "</tr>";
             // Get attachments
             foreach ($cat->files() as $file) {
                 if ($file->attachFile) $attachments[$file->md5] = array("path"=>"uploads/{$file->fileId}", "filename"=>$file->filename);
@@ -257,17 +260,19 @@ EOF;
                 $name = "";
             }
             if ($mail) { // can only send if admin has email address
-                $mailItems = "";
+                $mailItems = "<tr><th>Resurs</th><th>Datum</th><th>Status</th></tr>";
                 foreach ($itemIds as $itemId) {
                     $item = new Item($itemId, TRUE);
-                    $mailItems .= "<li><b>" . htmlspecialchars($item->caption) . "</b> " . strftime("%a %F kl %k:00", $item->start) . " till " . strftime("%a %F kl %k:00", $item->end);
+                    $mailItems .= "<tr>";
+                    $mailItems .= "<td>" . htmlspecialchars($item->caption) . "</td>";
+                    $mailItems .= "<td>". strftime("%a %F kl %k:00", $item->start) . " till " . strftime("%a %F kl %k:00", $item->end) . "</td>";
                     switch ($item->status) {
-                        case FFBoka::STATUS_CONFIRMED: $mailItems .= " (bekräftat)"; break;
-                        case FFBoka::STATUS_PREBOOKED: $mailItems .= " <b>(obekräftat)</b>"; break;
-                        case FFBoka::STATUS_CONFLICT: $mailItems .= " <b style='color:red'>(krockar med befintlig bokning)</b>"; break;
-                        case FFBoka::STATUS_REJECTED: $mailItems .= " (avvisat)"; break;
+                        case FFBoka::STATUS_CONFIRMED: $mailItems .= "<td>bekräftat</td>"; break;
+                        case FFBoka::STATUS_PREBOOKED: $mailItems .= "<td><b>obekräftat</b></td>"; break;
+                        case FFBoka::STATUS_CONFLICT: $mailItems .= "<td><b style='color:red'>krockar med befintlig bokning</b></td>"; break;
+                        case FFBoka::STATUS_REJECTED: $mailItems .= "<td>avvisat</td>"; break;
                     }
-                    $mailItems .= "</li>";
+                    $mailItems .= "</tr>";
                 }
                 sendmail(
                     $mail, // to
