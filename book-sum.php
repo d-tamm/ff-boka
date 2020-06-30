@@ -91,7 +91,7 @@ Du kan även lägga till fler resurser med knappen under resurslistan. Vid varje
 statusen såsom slutgiltigt bokad eller måste bekräftas.</p>
 <p>Om du är bokningsansvarig kan du här även bekräfta eller avvisa förfrågningar på enskilda
 resurser och sätta pris på dem. När du gjort det är det bra om du skickar en uppdaterad
-bokningsbekräftelse genom att klickar på knappen <i>Slutföra bokningen</i> längst ner.</p>
+bokningsbekräftelse genom att klickar på knappen <i>Spara ändringar</i> längst ner.</p>
 <h3>Pris</h3>
 <p>Under resurslistan visas en sammanfattning av kostnaderna om bokningsansvarig har satt
 ett pris på någon av resurserna. Om du är bokningsansvarig kan du mata in beloppet som har
@@ -109,7 +109,7 @@ kan komma tillbaka och uppdatera den.</p>
 <h3>Meddelande</h3>
 <p>Längst ner på sidan finns det en kommentarsruta som bokande och bokningsansvarig kan använda
 för att lämna meddelanden till varandra.</p>
-<h3>Knappen Slutföra bokningen</h3>
+<h3>Knappen Slutföra bokningen / Spara ändringar</h3>
 <p>Knappen sparar den aktuella bokningen och ändrar status på resurserna till <i>väntar på bekräftelse</i>
 eller <i>bekräftat</i> beroende på din behörighetsnivå. Sedan skickar systemet ut bekräftelsemejl
 till dig som bokar, samt vid behov till bokningsansvarig.</p>

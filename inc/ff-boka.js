@@ -597,7 +597,7 @@ function confirmBookedItem(bookedItemId) {
             $("#book-item-status-"+bookedItemId).html("Bekräftat");
             $("#book-item-btn-confirm-"+bookedItemId).hide();
             $("#book-item-btn-reject-"+bookedItemId).hide();
-        	if (data.allManaged == true) alert("Alla obekräftade poster i bokningen har nu hanterats. Om du har justerat några start- eller sluttider bör du skriva något om det i meddelande-rutan längre ner. Skicka också gärna en uppdaterad bokningsbekräftelse genom att klicka på 'Slutför bokningen' längst ner på sidan.");
+        	if (data.allManaged == true) alert("Alla obekräftade poster i bokningen har nu hanterats. Om du har justerat några start- eller sluttider bör du skriva något om det i meddelande-rutan längre ner. Skicka också gärna en uppdaterad bokningsbekräftelse genom att klicka på 'Spara ändringar' längst ner på sidan.");
         }
     });
 }
