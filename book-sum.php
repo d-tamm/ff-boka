@@ -155,9 +155,9 @@ EOF;
             $itemContact = $cat->contactData();
             if ($itemContact) $rawContData[$itemContact][] = htmlspecialchars($cat->caption);
             if ($item->status == FFBoka::STATUS_REJECTED) {
+                // For rejected items, we just list them, but do not notify admins or add postbook messages
                 $rejectedItems = TRUE;
             } else {
-                // For rejected items, we just list them, but do not notify admins or add postbook messages
                 // Collect functional email addresses to notify
                 $alerts = $cat->sendAlertTo;
                 if ($alerts) {
@@ -296,8 +296,79 @@ EOF;
     case "ajaxDeleteBooking":
         header("Content-Type: application/json");
         // Check permissions: Only the original user and section admin can delete whole bookings
-        if ($section->getAccess($currentUser) < FFBoka::ACCESS_SECTIONADMIN && $booking->userId !== $_SESSION['authenticatedUser'] && $_SESSION['token'] != $booking->token) {
+        if ($section->getAccess($currentUser) < FFBoka::ACCESS_SECTIONADMIN && (!isset($_SESSION['authenticatedUser']) || $booking->userId !== $_SESSION['authenticatedUser']) && $_SESSION['token'] != $booking->token) {
             die(json_encode([ "error"=>"Du har inte behörighet att ta bort bokningen. :-P" ]));
+        }
+        // Send confirmation to user
+        $mailItems = "<tr><th>Resurs</th><th>Datum</th></tr>";
+        $adminsToNotify = array();
+        foreach ($booking->items() as $item) {
+            $cat = $item->category();
+            // Collect functional email addresses to notify
+            $alerts = $cat->sendAlertTo;
+            if ($alerts) {
+                foreach (explode(",", $alerts) as $alert) {
+                    $alert = trim($alert);
+                    $adminsToNotify[$alert][] = $item->bookedItemId;
+                }
+            }
+            // collect admins to notify about booking: array[userId][itemId1, itemId2...]
+            foreach ($cat->admins(FFBoka::ACCESS_CONFIRM, TRUE) as $adm) {
+                $admin = new User($adm['userId']);
+                if ($admin->getNotifyAdminOnNewBooking($cat) == "yes") $adminsToNotify[$adm['userId']][] = $item->bookedItemId;
+            }
+            // Table with booked items
+            $mailItems .= "<tr>
+                <td>" . htmlspecialchars($item->caption) . "</td>
+                <td>" . strftime("%a %F kl %k:00", $item->start) . " till " . strftime("%a %F kl %k:00", $item->end) . "</td>
+                </tr>";
+        }
+        if ($booking->userId == $currentUser->id) $statusText = "Din bokning har nu raderats.";
+        else $statusText = "Din bokning har raderats av bokningsansvarig (" . htmlspecialchars($currentUser->name) . ", " . htmlspecialchars($currentUser->mail) . "). Om detta är felaktigt, vänligen ta kontakt med " . htmlspecialchars($currentUser->name) . " omgående för att reda ut vad som har hänt.";
+        try {
+            sendmail(
+                is_null($booking->userId) ? $booking->extMail : $booking->user()->mail, // to
+                "Bokning #{$booking->id} har raderats", // subject
+                "booking_deleted", // template name
+                array( // replace.
+                    "{{name}}"    => is_null($booking->userId) ? $booking->extName : $booking->user()->name,
+                    "{{items}}"   => $mailItems,
+                    "{{status}}"  => $statusText,
+                    "{{commentCust}}" => $booking->commentCust ? str_replace("\n", "<br>", $booking->commentCust) : "(ingen kommentar har lämnats)",
+                )
+            );
+        } catch(Exception $e) {
+            $message = "Kunde inte skicka bekräftelsen till dig:" . $e;
+        }
+        // Send notifications to admins
+        if (is_null($booking->userId)) {
+            $contactData = "Detta är en gästbokning.<br>Namn: {$booking->extName}<br>Telefon: {$booking->extPhone}<br>Mejl: {$booking->extMail}";
+        } else {
+            $contactData = "Namn: " . $booking->user()->name . "<br>Telefon: " . $booking->user()->phone . "<br>Mejl: " . $booking->user()->mail;
+        }
+        foreach ($adminsToNotify as $id=>$itemIds) {
+            if (is_numeric($id)) {
+                if (isset($_SESSION['authenticatedUser']) && $id == $_SESSION['authenticatedUser']) continue; // Don't send notification to current user
+                $adm = new User($id);
+                $mail = $adm->mail;
+                $name = $adm->name;
+            } else {
+                $mail = $id;
+                $name = "";
+            }
+            if ($mail) { // can only send if admin has email address
+                sendmail(
+                    $mail, // to
+                    "FF Bokning #{$booking->id} raderad", // subject
+                    "booking_deleted",
+                    array(
+                        "{{name}}"    => $name,
+                        "{{items}}"   => $mailItems,
+                        "{{status}}"  => "Bokningen nedan har raderats.",
+                        "{{commentCust}}" => str_replace("\n", "<br>", $booking->commentCust) . "<br><br>$contactData",
+                    )
+                );
+            }
         }
         $booking->delete();
         unset($_SESSION['bookingId']);
