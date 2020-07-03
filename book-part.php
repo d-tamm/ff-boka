@@ -168,10 +168,15 @@ END;
             $_SESSION['bookedItemId'] = $_REQUEST['id']; 
         }
         $html = "";
-        if ($_REQUEST['bookingStep']==2 && $item->category()->getAccess($currentUser) >= FFBoka::ACCESS_CONFIRM && $item->status > FFBoka::STATUS_PENDING) {
-            $start = $item->start;
-            $end = $item->end;
-            $price = $item->price;
+        if ($_REQUEST['bookingStep']==2 && $item->status > FFBoka::STATUS_PENDING) {
+            if ($item->category()->getAccess($currentUser) >= FFBoka::ACCESS_CONFIRM || // admin
+                (isset($_SESSION['token']) && $_SESSION['token'] == $item->booking()->token) || // correct token
+                (isset($_SESSION['authenticatedUser']) && $item->booking()->userId == $_SESSION['authenticatedUser']) // same user
+                ) {
+                $start = $item->start;
+                $end = $item->end;
+                $price = $item->price;
+            }
         }
         $cat = $item->category();
         $html .= str_replace("\n", "<br>", htmlspecialchars($item->description));

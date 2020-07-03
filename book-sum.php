@@ -636,7 +636,7 @@ EOF;
                 </div>
             </div>
             <button id="book-btn-save-part" disabled="disabled" onClick="checkTimes(true);">Spara ändringarna</button>
-        </div><!-- /ui-body change booking -->
+        </div><!-- /book-item-booking-details -->
         <div id="item-details"></div>
     </div>
 
