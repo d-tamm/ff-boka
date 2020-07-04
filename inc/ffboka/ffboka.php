@@ -322,4 +322,36 @@ class FFBoka {
         $bytes /= (1 << (10*$pow));
         return round($bytes, $precision) . " " . $units[$pow];
     }
+    
+    /**
+     * Add a new poll
+     * @return \FFBoka\Poll
+     */
+    public function addPoll() {
+        self::$db->exec("INSERT INTO polls SET question='Ny enkät', choices='" . json_encode(["Option 1", "Option 2"]) . "', votes='[0,0]'");
+        return new Poll(self::$db->lastInsertId());
+    }
+    
+    /**
+     * Get all polls
+     * @param string $only Set to "active" to only get non-expired polls, or "expired" to only get expired polls
+     * @return \FFBoka\Poll[]
+     */
+    public function polls(string $only=NULL) {
+        switch ($only) {
+        case "active":
+            $stmt = self::$db->query("SELECT pollId FROM polls WHERE expires IS NULL OR expires > NOW()");
+            break;
+        case "expired":
+            $stmt = self::$db->query("SELECT pollId FROM polls WHERE expires <= NOW() ORDER BY expires DESC");
+            break;
+        default:
+            $stmt = self::$db->query("SELECT pollId FROM polls ORDER BY expires IS NULL, expires DESC");
+        }
+        $polls = array();
+        while ($row = $stmt->fetch(\PDO::FETCH_OBJ)) {
+            $polls[] = new Poll($row->pollId);
+        }
+        return $polls;
+    }
 }

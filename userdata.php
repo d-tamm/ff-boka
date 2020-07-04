@@ -176,7 +176,8 @@ if (isset($_GET['first_login'])) $message = "Välkommen till resursbokningen! In
         
         <div data-role='collapsible' data-collapsed='<?= isset($_GET['first_login']) || $_REQUEST['expand']!="bookings" ? "true" : "false" ?>'>
             <h3>Mina bokningar</h3>
-            <a href="index.php" class="ui-btn ui-btn-b">Lägg en ny bokning</a>
+            <ul data-role='listview'>
+            <li data-icon='plus'><a href="index.php">Lägg en ny bokning</a></li>
             <?php
             $bookingIds = $currentUser->bookingIds();
             if (count($bookingIds)) {
@@ -204,12 +205,13 @@ if (isset($_GET['first_login'])) $message = "Välkommen till resursbokningen! In
                     elseif ($end < time()) $completed .= $html;
                     else $upcoming .= $html;
                 }
-                if ($unconfirmed) echo "<h4>Obekräftade bokningar</h4><ul data-role='listview'>$unconfirmed</ul>";
-                if ($upcoming) echo "<h4>Kommande bokningar</h4><ul data-role='listview'>$upcoming</ul>";
-                if ($completed) echo "<h4>Avslutade bokningar</h4><ul data-role='listview'>$completed</ul>";
+                if ($unconfirmed) echo "<li data-role='list-divider'>Obekräftade bokningar</li>$unconfirmed";
+                if ($upcoming) echo "<li data-role='list-divider'>Kommande bokningar</li>$upcoming";
+                if ($completed) echo "<li data-role='list-divider'>Avslutade bokningar</li>$completed";
             } else {
-                echo "<ul data-role='listview'><li>Du har inga bokningar.</li></ul>";
+                echo "<li>Du har inga bokningar.</li>";
             } ?>
+            </ul>
         </div>
         
         <?php

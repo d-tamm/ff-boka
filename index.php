@@ -2,6 +2,7 @@
 use FFBoka\FFBoka;
 use FFBoka\Section;
 use FFBoka\User;
+use FFBoka\Poll;
 
 session_start();
 require(__DIR__."/inc/common.php");
@@ -96,6 +97,10 @@ if (isset($_REQUEST['action'])) {
         case "bookingConfirmed":
             $message = "Din bokning är nu klar. En bekräftelse har skickats till din epostadress " . htmlspecialchars($_REQUEST['mail']) . ".";
             break;
+        case "ajaxAnswerPoll":
+            $poll = new Poll($_REQUEST['pollId']);
+            $poll->addVote($_REQUEST['choiceId'], $_SESSION['authenticatedUser']);
+            die(json_encode([ "status" => "OK" ]));
     }
 }
 
@@ -163,6 +168,7 @@ if (isset($_SESSION['authenticatedUser'])) {
     if (isset($_REQUEST['logout'])) {
         // Remove persistent login cookie
         $currentUser->removePersistentLogin();
+        $currentUser = NULL;
         // Remove session
         session_unset();
         session_destroy();
@@ -192,7 +198,7 @@ if (isset($_REQUEST['message'])) $message = ($message ? "$message<br>" : "") . $
 
     <div data-role="popup" data-overlay-theme="b" id="popup-msg-page-start" class="ui-content">
         <p id="msg-page-start"><?= $message ?></p>
-        <a href='#' data-rel='back' class='ui-btn ui-btn-icon-left ui-btn-inline ui-corner-all ui-icon-check'>OK</a>
+        <a href='#' data-rel='back' class='ui-btn ui-btn-icon-left ui-btn-inline ui-icon-check'>OK</a>
     </div>
 
     <img src="<?= $cfg['url'] ?>resources/liggande-bla.png" style="width:100%; max-width:300px; display:block; margin-left:auto; margin-right:auto;">
@@ -200,6 +206,21 @@ if (isset($_REQUEST['message'])) $message = ($message ? "$message<br>" : "") . $
     <?= isset($_SESSION['authenticatedUser']) ? $cfg['welcomeMsgLoggedIn'] : $cfg['welcomeMsg'] ?>
     
     <?php
+    // Show poll?
+    $poll = NULL;
+    if (!is_null($currentUser)) {
+        $poll = $currentUser->getUnansweredPoll();
+        if (!is_null($poll)) {
+            echo "<div class='ui-body ui-body-b' id='poll-page-start'>";
+            echo "<p>{$poll->question}</p>";
+            foreach ($poll->choices as $index=>$choice) {
+                echo "<a href='#' onClick='answerPoll({$poll->id}, $index);' style='white-space:normal;' class='ui-btn ui-btn-a'>" . htmlspecialchars($choice) . "</a>";
+            }
+            echo "</div>";
+            echo "<div data-role='popup' data-overlay-theme='b' id='popup-poll-page-start' class='ui-content'>Tack för ditt svar!</div>";
+        }
+    }
+    
     if (isset($_SESSION['authenticatedUser'])) {
         if ($ub = $currentUser->unfinishedBookings()) {
             echo "<p class='ui-body ui-body-c'>Du har minst en påbörjad bokning som du bör avsluta eller ta bort.";

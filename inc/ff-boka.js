@@ -48,6 +48,18 @@ $(document).on('pageshow', "#page-start", function() {
     }
 });
 
+function answerPoll(pollId, choiceId) {
+    $.getJSON("index.php", {
+        action: "ajaxAnswerPoll",
+        pollId: pollId,
+        choiceId: choiceId
+    }, function(data, status) {
+    	$("#poll-page-start").hide();
+        $("#popup-poll-page-start").popup('open');
+        setTimeout(function() { $("#popup-poll-page-start").popup('close'); }, 2000);
+    });
+}
+
 
 // ========== bookings-m.php ==========
 var startDate;
@@ -69,7 +81,6 @@ $(document).on('pageshow', "#page-bookings", function() {
     	$("#bookings-tab-unconfirmed").collapsible("expand");
     }
 });
-
 
 // Show details for an item
 function showItemDetails(itemId) {
@@ -1368,6 +1379,22 @@ function deleteImage(id) {
 
 
 //========== superadmin.php ==========
+$(document).on('pagecreate', "#page-super-admin", function() {
+    // Bind events
+    
+    /**
+     * Add a new poll
+     */
+    $("#add-poll").on('click', function() {
+        $.getJSON("?action=ajaxAddPoll", function(data, status) {
+        	$("#super-admin-poll-id").val(data.id);
+        	$("#super-admin-poll-question").val(data.question);
+        	$("#super-admin-poll-choices").val(data.choices);
+        	$("#super-admin-poll-expires").val(data.expires);
+	        $("#popup-super-admin-poll").popup('open');
+        });
+    });
+});
 
 $(document).on('pageshow', "#page-super-admin", function() {
     // Show message if there is any
@@ -1420,6 +1447,29 @@ function systemUpgrade(step) {
         });
         break;
 	}
+}
+
+function editPoll(id) {
+    $.getJSON("?action=ajaxGetPoll&id="+id, function(data, status) {
+    	$("#super-admin-poll-id").val(data.id);
+    	$("#super-admin-poll-question").val(data.question);
+    	$("#super-admin-poll-choices").val(data.choices.join("\n"));
+    	$("#super-admin-poll-expires").val(data.expires);
+        $("#popup-super-admin-poll").popup('open');
+    });
+}
+
+function showPollResults(id) {
+    $.getJSON("?action=ajaxGetPoll&id="+id, function(data, status) {
+    	$("#super-admin-pollresults-question").html(data.question);
+    	$("#super-admin-pollresults-votes").html("<tr><th>Svar</th><th colspan=2>Antal</th></tr>");
+    	var voteCount = 0;
+    	$.each(data.choices, function(index, value) {
+    		voteCount += data.votes[index];
+    		$("#super-admin-pollresults-votes").append("<tr><td>" + value + "</td><td title='" + data.votes[index] + " röster' style='width:40%;'><span style='display:inline-block; align:right; background-color:gray; width:" + (data.votes[index]/data.voteMax*100) + "%'>&nbsp;</span></td><td>" + data.votes[index] + "</td></tr>");
+    	});
+        $("#popup-super-admin-pollresults").popup('open');
+    });
 }
 
 

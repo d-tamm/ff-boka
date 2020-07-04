@@ -1,0 +1,16 @@
+CREATE TABLE `polls` (
+	`pollId` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+	`question` VARCHAR(500) NOT NULL,
+	`expires` DATE NULL,
+	`choices` VARCHAR(1000) NOT NULL DEFAULT '[]',
+	`votes` VARCHAR(255) NOT NULL DEFAULT '[]',
+	PRIMARY KEY (`pollId`)
+) ENGINE = InnoDB; 
+
+CREATE TABLE `poll_answers` (
+	`pollId` INT UNSIGNED NOT NULL,
+	`userId` INT UNSIGNED NOT NULL,
+	FOREIGN KEY (`userId`) REFERENCES `users`(`userId`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE = InnoDB;
+
+UPDATE config SET value=10 WHERE name='db-version';

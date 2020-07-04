@@ -367,4 +367,14 @@ class User extends FFBoka {
         $stmt = self::$db->prepare("DELETE FROM tokens WHERE forId={$this->id} AND useFor='change mail address' AND data=:data");
         return $stmt->execute(array(":data"=>$mail));
     }
+    
+    /**
+     * Get a poll not yet answered by this user
+     * @return \FFBoka\Poll[]|NULL
+     */
+    public function getUnansweredPoll() {
+        $stmt = self::$db->query("SELECT polls.pollId FROM polls WHERE (expires IS NULL OR expires > NOW()) AND pollId NOT IN (SELECT pollId FROM poll_answers WHERE userId={$this->id}) LIMIT 1");
+        if ($row = $stmt->fetch(\PDO::FETCH_OBJ)) return new \FFBoka\Poll($row->pollId);
+        else return NULL;
+    }
 }

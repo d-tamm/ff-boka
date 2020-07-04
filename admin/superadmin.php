@@ -1,13 +1,14 @@
 <?php
 use FFBoka\User;
 use FFBoka\Section;
+use FFBoka\Poll;
 
 session_start();
 require(__DIR__."/../inc/common.php");
-global $cfg, $db;
+global $cfg, $db, $FF;
 
 // This page may only be accessed by superadmins
-if (!in_array($_SESSION['authenticatedUser'], $cfg['superAdmins'])) {
+if (!isset($_SESSION['authenticatedUser']) || !in_array($_SESSION['authenticatedUser'], $cfg['superAdmins'])) {
     die("Försök inte!");
 }
 $currentUser = new User($_SESSION['authenticatedUser']);
@@ -41,6 +42,7 @@ case "make me admin":
             $message = "Något har gått fel.";
         }
     }
+    break;
 case "ajaxUpgrade":
     header("Content-Type: application/json");
     switch ($_REQUEST['step']) {
@@ -87,6 +89,33 @@ case "ajaxUpgrade":
         $ret[] = "Den aktuella DB-versionen är nu $dbVersion";
         die(json_encode([ "status"=>implode("</li><li>", $ret) ]));
     }
+    
+case "ajaxAddPoll":
+case "ajaxGetPoll":
+    if ($_REQUEST['action']=="ajaxAddPoll") $poll = $FF->addPoll();
+    else $poll = new Poll($_GET['id']);
+    die(json_encode([
+        "id" => $poll->id,
+        "question" => $poll->question,
+        "choices" => $poll->choices,
+        "expires" => $poll->expires,
+        "votes" => $poll->votes,
+        "voteMax" => $poll->voteMax
+    ]));
+    
+case "savePoll":
+    $poll = new Poll($_REQUEST['id']);
+    if (isset($_REQUEST['submit']) && $_REQUEST['submit']=="Ta bort") {
+        $poll->delete();
+    } else {
+        if ($poll->question != $_REQUEST['question']) $poll->question = $_REQUEST['question'];
+        if ($poll->choices != array_map('trim', explode("\n", $_REQUEST['choices']))) $poll->choices = array_map('trim', explode("\n", $_REQUEST['choices']));
+        if ($_REQUEST['expires']=="") $_REQUEST['expires'] = NULL;
+        if ($poll->expires != $_REQUEST['expires']) $poll->expires = $_REQUEST['expires'];
+    }
+    $expand = "polls";
+    break;
+
 }
 }
 
@@ -105,6 +134,34 @@ case "ajaxUpgrade":
     <div data-role="popup" data-overlay-theme="b" id="popup-msg-page-super-admin" class="ui-content">
         <p id="msg-page-super-admin"><?= $message ?></p>
         <a href='#' data-rel='back' class='ui-btn ui-btn-icon-left ui-btn-inline ui-corner-all ui-icon-check'>OK</a>
+    </div>
+
+    <div data-role="popup" data-overlay-theme="b" id="popup-super-admin-poll" class="ui-content">
+        <h3>Bearbeta enkät</h3>
+        <form action='superadmin.php' data-ajax='false' method='POST'>
+	        <input type="hidden" name="action" value="savePoll">
+	        <input type="hidden" name="id" id="super-admin-poll-id">
+            <div class="ui-field-contain">
+                <label for="super-admin-poll-question">Fråga<br><small>Här kan du använda valfri HTML-kod.</small></label>
+                <textarea name="question" id="super-admin-poll-question"></textarea>
+            </div>
+            <div class="ui-field-contain">
+                <label for="super-admin-poll-choices">Svarsalternativ<br><small>1 alternaiv per rad</small></label>
+                <textarea name="choices" id="super-admin-poll-choices"></textarea>
+            </div>
+            <div class="ui-field-contain">
+                <label for="super-admin-poll-expires">Aktiv t.o.m.<br><small>Tomt = inget slutdatum</small></label>
+                <input name="expires" type="date" id="super-admin-poll-expires">
+            </div>
+        	<input data-inline='true' data-icon='delete' data-corners='false' data-theme='c' type="submit" name="submit" value="Ta bort">
+        	<input data-inline='true' data-icon='check' data-corners='false' data-theme='b' type="submit" value="Spara">
+        </form>
+    </div>
+
+    <div data-role="popup" data-overlay-theme="b" id="popup-super-admin-pollresults" class="ui-content">
+        <h3>Enkätresultat</h3>
+        <p>Fråga:<br><span id="super-admin-pollresults-question"></span></p>
+        <table id="super-admin-pollresults-votes" style="width:100%;"></table>
     </div>
 
     <div data-role="collapsibleset" data-inset="false">
@@ -187,6 +244,19 @@ case "ajaxUpgrade":
                 </select>
                 <input data-theme="b" type="submit" data-corners="false" value="Gör mig till admin">
             </form>
+        </div>
+
+        <div data-role="collapsible" data-collapsed="<?= (isset($expand) && $expand=="polls") ? "false" : "true" ?>">
+            <h2>Enkäter</h2>
+            <ul data-role='listview' data-split-icon='edit'>
+                <?php
+                foreach ($FF->polls() as $poll) {
+                    echo "<li><a href='#' onClick='showPollResults({$poll->id});'>" . htmlspecialchars($poll->question) . "</a>
+                        <a href='#' onClick='editPoll({$poll->id});'></a></li>";
+                }
+                ?>
+                <li data-icon='plus' id='add-poll'><a href='#'>Lägg till ny enkät</a></li>
+            </ul>
         </div>
 
     </div><!--/collapsibleset-->
