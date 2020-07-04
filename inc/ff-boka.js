@@ -1389,7 +1389,7 @@ $(document).on('pagecreate', "#page-super-admin", function() {
         $.getJSON("?action=ajaxAddPoll", function(data, status) {
         	$("#super-admin-poll-id").val(data.id);
         	$("#super-admin-poll-question").val(data.question);
-        	$("#super-admin-poll-choices").val(data.choices);
+        	$("#super-admin-poll-choices").val(data.choices.join("\n"));
         	$("#super-admin-poll-expires").val(data.expires);
 	        $("#popup-super-admin-poll").popup('open');
         });
