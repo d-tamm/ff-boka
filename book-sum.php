@@ -460,6 +460,7 @@ EOF;
     <?php
     $questions = array();
     $leastStatus = FFBoka::STATUS_CONFIRMED;
+    $itemsToConfirm = array();
     foreach ($booking->items() as $item) {
         $leastStatus = min($leastStatus, $item->status);
         $showEditButtons = ($item->category()->getAccess($currentUser) >= FFBoka::ACCESS_CONFIRM && $item->status != FFBoka::STATUS_REJECTED);
@@ -472,6 +473,7 @@ EOF;
             echo "<div class='item-edit-buttons'>";
             if ($item->status == FFBoka::STATUS_CONFLICT || $item->status == FFBoka::STATUS_PREBOOKED) {
                 echo "<button id='book-item-btn-confirm-{$item->bookedItemId}' class='ui-btn ui-btn-inline ui-btn-a' onclick=\"confirmBookedItem({$item->bookedItemId});\">Bekräfta</button>";
+                $itemsToConfirm[] = $item->bookedItemId;
                 echo "<button id='book-item-btn-reject-{$item->bookedItemId}' class='ui-btn ui-btn-inline ui-btn-a' onclick=\"rejectBookedItem({$item->bookedItemId});\">Avböj</button>";
             }
             echo "<button class='ui-btn ui-btn-inline ui-btn-a' onclick=\"setItemPrice({$item->bookedItemId}, {$item->price});\">Sätt pris</button>";
@@ -500,7 +502,12 @@ EOF;
 
     <button onClick="location.href='book-part.php<?= $startTime ? "?start=$startTime&end=$endTime" : "" ?>'" data-transition='slide' data-direction='reverse' class='ui-btn ui-icon-plus ui-btn-icon-right'>Lägg till fler resurser</button>
     
+    <script>itemsToConfirm = <?= json_encode($itemsToConfirm) ?>;</script>
     <?php
+    if (count($itemsToConfirm)) {
+        echo "<button onClick='confirmAllItems();' id='btn-confirm-all-items' class='ui-btn ui-icon-check ui-btn-icon-right'>Bekräfta alla</button>";
+    }
+    
     $price = $booking->price;
     $paid = $booking->paid;
     if (!is_null($price)) { ?>
