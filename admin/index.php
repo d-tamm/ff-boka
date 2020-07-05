@@ -324,8 +324,6 @@ unset($_SESSION['catId']);
             <p><a href="<?= $cfg['url'] . "boka-" . urlencode($section->name) ?>"><?= $cfg['url'] . "boka-" . $section->name ?></a></p>
         </div>
         <?php } ?>
-        
-        </div>
 
     </div><!--/collapsibleset-->
 
