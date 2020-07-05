@@ -187,7 +187,7 @@ EOF;
                 ?></select>
                 <p style="text-align:center;">
                     <a href="#" data-rel="back" class="ui-btn ui-btn-inline">Avbryt</a>
-                    <h href="#" onClick="location.href='?action=moveItem&catId='+$('#move-item-cat-id').val();" class="ui-btn ui-btn-b ui-btn-inline">Spara</a>
+                    <a href="#" onClick="location.href='?action=moveItem&catId='+$('#move-item-cat-id').val();" class="ui-btn ui-btn-b ui-btn-inline">Spara</a>
                 </p>
             </form>
         </div>
