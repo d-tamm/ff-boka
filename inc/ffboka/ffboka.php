@@ -97,7 +97,7 @@ class FFBoka {
      * @param bool $verbose If TRUE, outputs some diagnostic text.
      */
     public function updateSectionList(bool $verbose=FALSE) {
-        if ($verbose) echo "Getting updated section list from API...";
+        if ($verbose) echo "Getting updated section list from API...\n";
         $data = json_decode(file_get_contents(self::$apiFeedSec));
         // We may not remove and re-add entries because that would cause linked records in other
         // tables to be removed. So we need to use ON DUPLICATE KEY clause and keep track of last change date.
@@ -125,22 +125,30 @@ class FFBoka {
     public function updateAssignmentList(bool $verbose=FALSE) {
         if ($verbose) echo "Update assignments from API...\n";
         $data = json_decode(file_get_contents(self::$apiFeedAllAss));
-        // We may not remove and re-add entries because that would cause linked records in other
-        // tables to be removed. So we need to use ON DUPLICATE KEY clause and keep track of last change date.
-        $stmt = self::$db->prepare("INSERT INTO assignments SET ass_name=:name, typeID=:typeID, type_name=:type_name, timestamp=NULL ON DUPLICATE KEY UPDATE timestamp=NULL");
+        // We may not remove and re-add entries because that would break linked records in other
+        // tables. So we need to use ON DUPLICATE KEY clause and keep track of last change date.
+        $stmt = self::$db->prepare("INSERT INTO assignments SET assName=:assName, sort=:sort, timestamp=NULL ON DUPLICATE KEY UPDATE timestamp=NULL");
         foreach ($data->results as $ass) {
-            if ($ass->cint_name && $ass->cint_assignment_party_type->value) {
-                if ($verbose) echo "Add assignment {$ass->cint_name} {$ass->cint_assignment_party_type->name}\n";
-                $stmt->execute(array(
-                    ":name"   => $ass->cint_name,
-                    ":typeID" => $ass->cint_assignment_party_type->value,
-                    ":type_name" => $ass->cint_assignment_party_type->name,
-                ));
+            if ($ass->cint_name && $ass->cint_assignment_party_type->value && $ass->cint_assignment_party_type->value == FFBoka::TYPE_SECTION) {
+                if ($verbose) echo "Add assignment {$ass->cint_name}\n";
+                if (!$stmt->execute(array(
+                    ":assName"   => $ass->cint_name,
+                    ":sort" => 2
+                ))) echo "ERROR: Failed to add assignment: ".$stmt->errorInfo()[2];
+                if (strpos($ass->cint_name, ":") !== FALSE) {
+                    // This is a sub-assignment to a principal assignment (e.g. Ledare: Mulle).
+                    // Save the principal assignment with the string left of the colon.
+                    if ($verbose) echo "Add principal assignment for {$ass->cint_name}\n";
+                    if (!$stmt->execute(array(
+                        ":assName"   => substr($ass->cint_name, 0, strpos($ass->cint_name, ":")),
+                        ":sort" => 1
+                    ))) echo "ERROR: Failed to add assignment: " . $stmt->errorInfo()[2];
+                }
             }
         }
         if ($verbose) echo "All assignments are updated.\n";
         if ($verbose) echo "Deleting all (outdated) records not affected by the update...";
-        $numDeleted = self::$db->exec("DELETE FROM assignments WHERE TIMESTAMPDIFF(SECOND, timestamp, NOW())>100");
+        $numDeleted = self::$db->exec("DELETE FROM assignments WHERE sort>0 AND TIMESTAMPDIFF(SECOND, timestamp, NOW())>100");
         if ($verbose) echo "$numDeleted records deleted.\n";
     }
     
