@@ -45,7 +45,7 @@ function displayCat(Category $cat, $user, $fbStart, $fileTypes=[]) {
         }
         if ($files) echo "<h4>Dokument till denna kategori:</h4>$files";
         if ($access) {
-            echo "<ul data-role='listview' data-split-icon='info' data-split-theme='a'>";
+            echo "<ul data-role='listview' data-split-icon='info' data-split-theme='b'>";
             foreach ($cat->items() as $item) {
                 if ($item->active) {
                     $numItems++;

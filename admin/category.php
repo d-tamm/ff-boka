@@ -91,6 +91,9 @@ function displayCatAccess($cat, $accLevels) {
     if ($cat->accessExternal) $ret .= "<li><a href='#' class='ajax-input'>Icke-medlemmar<p>{$accLevels[$cat->accessExternal]}</p></a><a href='#' onclick=\"unsetAccess('accessExternal');\">Återkalla behörighet</a></li>";
     if ($cat->accessMember) $ret .= "<li><a href='#' class='ajax-input'>Medlem i valfri lokalavdelning<p>{$accLevels[$cat->accessMember]}</p></a><a href='#' onclick=\"unsetAccess('accessMember');\">Återkalla behörighet</a></li>";
     if ($cat->accessLocal) $ret .= "<li><a href='#' class='ajax-input'>Lokal medlem<p>{$accLevels[$cat->accessLocal]}</p></a><a href='#' onclick=\"unsetAccess('accessLocal');\">Återkalla behörighet</a></li>";
+    foreach ($cat->groupPerms() as $perm) {
+        $ret .= "<li><a href='#' class='ajax-input'>{$perm['assName']}<p>{$accLevels[$perm['access']]}</p></a><a href='#' onclick=\"unsetAccess('{$perm['assName']}');\">Återkalla behörighet</a></li>";
+    }
     foreach ($cat->admins() as $adm) {
         $ret .= "<li><a href='#' class='ajax-input'>{$adm['userId']} " . ($adm['name'] ? htmlspecialchars($adm['name']) : "(ingen persondata tillgänglig)") . "<p>{$accLevels[$adm['access']]}</p></a><a href='#' onclick=\"unsetAccess('{$adm['userId']}');\">Återkalla behörighet</a></li>";
     }
@@ -131,6 +134,7 @@ switch ($_REQUEST['action']) {
     case "help":
         echo "
 <p>Alla resurser är organiserade i kategorier. På den här sidan kan du göra inställningarna för den aktuella kategorin. Det beror på din behörighetsnivå vilka avsnitt du kan se på sidan.</p>
+
 <h3>Allmänt</h3>
 <p>Här gör du de flesta inställningar som ska gälla för hela kategorin. Inställningarna sparas direkt, du behöver inte trycka på någon Spara-knapp. Inställningar du gör här gäller (med några få undantag) även för underordnade kategorier. Längst upp visas var kategorin sorteras in i strukturen, med klickbara länkar till överordnade element. Det är användbart för att snabbt navigera upp i hirarkin.</p>
 <dl>
@@ -139,7 +143,7 @@ switch ($_REQUEST['action']) {
     <dt>Bild</dt><dd>I listor kommer kategorin ofta att visas tillsammans med en liten bild. Här kan du ladda upp den.</dd>
     <dt>Text vid bokning</dt><dd>Denna text kommer att visas i samband med kategorin medans man bokar resurser. Det är alltså information som gäller för alla resurser i den här kategorin, samt för underordnade kategorier, och som du vill att den visas i bokningsflödet även om användaren inte öppnar detaljsidan för resurserna. Det kan t.ex. vara särskilda bokningsregler som gäller, eller en påminnelse om att även boka relaterad utrustning som inte ingår per automatik.</dd>
     <dt>Text i bokningsbekräftelse</dt><dd>Som ovan, men visas istället i meddelandet som användaren får som bokningsbekräftelse. Det är ett bra ställe för att nämna var nyckeln ska hämtas, regler kring slutstädning mm.</dd>
-    <dt>Bufferttid</dt><dd>Ibland behöver man lite tid mellan bokningarna, t.ex. för städning av stugor eller översyn av utrustning. Här kan du ställa in antalet timmar före/efter befintliga bokningar som är spärrade för nya bokningar. <b>OBS: Denna inställning gäller bara för resurser i den här kategorin och ärvs inte till underordnade kategorier!</b></dd>
+    <dt>Bufferttid</dt><dd>Ibland behöver man lite tid mellan bokningarna, t.ex. för städning av stugor eller översyn av utrustning. Här kan du ställa in antalet timmar före/efter befintliga bokningar som är spärrade för nya bokningar. <i>OBS: Denna inställning gäller bara för resurser i den här kategorin och ärvs inte till underordnade kategorier!</i></dd>
     <dt>Bokningsmeddelanden</dt><dd>När nya bokningar görs i kategorin skickas normalt ett meddelande till bokningsansvariga (se nedan), som dock kan välja att stänga av dessa meddelanden i sina personliga inställningar. Om du vill att bokningsmeddelanden dessutom ska skickas till en eller flera funktionella epostadresser kan du lägga in dem här. Separera flera adresser med ett kommatecken.</dd>  
     <dt>Kontaktuppgifter</dt><dd>Skickas med bokningarna i denna kategori, så att användarna kan vända sig till någon vid problem. Du kan antingen sätta namn, telefon och epost själv, eller välja en medlem som kontaktperson. Om du väljer en medlem så används  kontaktuppgifterna till denne när bokningen görs, dvs ändringar som medlemmen gör i sina kontaktuppgifter tillämpas även här.</dd> 
 </dl>
@@ -151,14 +155,16 @@ switch ($_REQUEST['action']) {
 <p>Här ser du alla resurser som finns i kategorin, med titel och grundläggande information. Klicka på resurserna för att ändra.</p>
 
 <h3>Behörigheter</h3>
-<p>Här bestäms vem som får se och boka resurserna i kategorin. Först väljer du vem som ska få behörighet. Sedan väljer du önskad behörighetsnivå.</p>
-<p>Återkalla behörigheter genom att klicka på den röda knappen höger om dem.</p>
+<p>Här bestäms vem som får se och boka resurserna i kategorin, samt vem som administrerar. Först väljer du vem som ska få behörighet. Sedan väljer du önskad behörighetsnivå.</p>
+<p>Återkalla en behörighet genom att klicka på den röda knappen höger om den.</p>
 <p>Behörigheter ärvs, dvs de gäller även för underordnade kategorier.</p>
 <p>Du kan tilldela behörigheter för:</p>
 <ul>
     <li>Icke-medlemmar (dvs externa användare som bokar som gäst utan inloggning)</li>
     <li>Medlemmar i valfri lokalavdelning</li>
     <li>Lokala medlemmar (dvs medlemmar som tillhör samma lokalavdelning som kategorin)</li>
+    <li>Lokala medlemmar med ett visst uppdrag</li>
+    <li>Enskilda medlemmar genom att ange medlemsnummer</li>
 </ul>
 <p>Du kan välja mellan följande behörighetsnivåer:</p>
 <ol>
@@ -166,9 +172,9 @@ switch ($_REQUEST['action']) {
     <li>" . $cfg['catAccessLevels'][FFBoka::ACCESS_PREBOOK] . ": Användbar om du har en bokningsansvarig som ska ha sista ordet och ska bekräfta bokningar</li>
     <li>" . $cfg['catAccessLevels'][FFBoka::ACCESS_BOOK] . ": Ingen bekräftelse från bokningsansvarig behövs</li>
     <li>" . $cfg['catAccessLevels'][FFBoka::ACCESS_CONFIRM] . "</li>
-    <li>" . $cfg['catAccessLevels'][FFBoka::ACCESS_CATADMIN] . ": Som ovan, men kan även ändra inställningarna för kategorin och lägga till resurser.</li>
+    <li>" . $cfg['catAccessLevels'][FFBoka::ACCESS_CATADMIN] . ". Som ovan, men kan även ändra inställningarna för kategorin och lägga till resurser.</li>
 </ol>
-<p>Nivå 4 eller 5 är bara tillgänglig för enskilda medlemmar, inte för grupper. När du tilldelar behörighet på dessa nivåer skickas ett meddelande till användaren så att hen är med på banan.</p>
+<p>Nivå 4 eller 5 kan bara väljas för enskilda medlemmar och medlemmar med specifika uppdrag. När du tilldelar behörighet på dessa nivåer till enskilda medlemmar skickas ett meddelande till användaren så att hen är med på banan.</p>
 
 <h3>Bokningsfrågor</h3>
 <p>Om du vill hämta in kompletterande information vid bokning av resurser i den här kategorin använder du bokningsfrågor. Frågorna måste först läggas upp i din lokalavdelning, så prata med någon administratör om du saknar någon fråga.</p>
@@ -239,8 +245,8 @@ switch ($_REQUEST['action']) {
             break;
         default:
             $cat->setAccess($_GET['id'], $_GET['access']);
-            if ($_GET['access'] >= FFBoka::ACCESS_CONFIRM) {
-                // New admin added. Send notification if not current user
+            if ($_GET['access'] >= FFBoka::ACCESS_CONFIRM && is_numeric($_GET['id'])) {
+                // New admin added. Send notification if not current user and if not an assignment group
                 $adm = new User($_GET['id']);
                 if ($_GET['id'] != $currentUser->id && $adm->mail) {
                     sendmail(
@@ -481,10 +487,19 @@ unset ($_SESSION['itemId']);
             <h2>Behörigheter</h2>
             <fieldset data-role="controlgroup" id="cat-access-ids" data-mini="true">
                 <p>1. Välj grupp eller enskild medlem:</p>
-                <label><input type="radio" class="cat-access-id" name="id" value="accessExternal">Icke-medlemmar </label>
-                <label><input type="radio" class="cat-access-id" name="id" value="accessMember">Medlem i valfri lokalavdelning</label>
-                <label><input type="radio" class="cat-access-id" name="id" value="accessLocal">Lokal medlem</label>
-                <input id="cat-adm-autocomplete-input" data-type="search" placeholder="Välj enskild medlem...">
+                <select class='cat-access-id' name='id'>
+                	<option value=''>Välj grupp...</option>
+                	<option value='accessExternal'>Icke-medlemmar</option>
+                	<option value='accessMember'>Medlem i valfri LA</option>
+                	<option value='accessLocal'>Lokal medlem</option>
+                	<optgroup label="Lokal medlem med uppdrag:"></optgroup>
+                	<?php
+                	foreach ($FF->getAllAssignments() as $ass) {
+                	    echo "<option value='$ass'>" . htmlspecialchars($ass) . "</option>";
+                	}
+                	?>
+                </select>
+                <input id="cat-adm-autocomplete-input" data-type="search" placeholder="... eller enskild medlem...">
                 <ul id="cat-adm-autocomplete" data-role="listview" data-filter="true" data-input="#cat-adm-autocomplete-input" data-inset="true"></ul>
             </fieldset>
             

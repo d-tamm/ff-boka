@@ -47,6 +47,7 @@ if ((int)$row->value < $monday->getTimestamp() && date("N") >= $cfg['cronWeekly'
     echo "Time to execute weekly jobs...\n";
     
     $FF->updateSectionList(TRUE);
+    $FF->updateAssignmentList(TRUE);
 
     // Update incomplete user agents
     fetchUA($db, 5);
@@ -122,14 +123,17 @@ function fetchUA(PDO $db, int $updateIncomplete = 0) {
         echo "Resolving user agents\n";
         $stmt1 = $db->prepare("UPDATE user_agents SET browser=:browser, version=:version, platform=:platform, platform_version=:platform_version, platform_bits=:platform_bits, device_type=:device_type WHERE uaHash=:uaHash");
         while ($row = $stmt->fetch(PDO::FETCH_OBJ)) {
+            echo "Resolving {$row->userAgent}\n";
             $options = array(
                 'http' => array(
+                    'header'  => 'Content-Type: application/x-www-form-urlencoded',
                     'method'  => 'POST',
                     'content' => http_build_query([ 'action' => 'parse', 'format' => 'json', 'string' => $row->userAgent ])
                 )
             );
             $context  = stream_context_create($options);
             $result = file_get_contents('https://user-agents.net/parser', false, $context);
+            print_r($result);
             if ($result !== FALSE) {
                 $result = json_decode($result);
                 $stmt1->execute(array(

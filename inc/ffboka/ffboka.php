@@ -42,16 +42,25 @@ class FFBoka {
     
     /** API URL for authentication */
     protected static $apiAuthUrl;
+
     /** API key for authentication */
     protected static $apiAuthKey;
+    
     /** URL and file path to API feed for getting user's assignments */
     protected static $apiFeedUserAss;
+    
+    /** URL and file path to API feed for getting all existing assignments */
+    protected static $apiFeedAllAss;
+    
     /** URL and file path to API feed for getting all valid sections */
     protected static $apiFeedSec;
+    
     /** URL and file path to API feed to convert personnummer to member number */
     protected static $apiFeedSocnr;
+    
     /** GUID in API indicating sections */
     const TYPE_SECTION = 478880001;
+    
     /** string[] Assignment names from API giving section admin access. */
     protected static $sectionAdmins;
     
@@ -76,6 +85,7 @@ class FFBoka {
         self::$apiFeedUserAss = $api['feedUrl'] . $api['feedUserAss'];
         self::$apiFeedSec = $api['feedUrl'] . $api['feedSec'];
         self::$apiFeedSocnr = $api['feedUrl'] . $api['feedSocnr'];
+        self::$apiFeedAllAss = $api['feedUrl'] . $api['feedAss'];
         self::$db = $db;
         self::$sectionAdmins = $sectionAdmins;
         self::$timezone = $timezone;
@@ -87,8 +97,10 @@ class FFBoka {
      * @param bool $verbose If TRUE, outputs some diagnostic text.
      */
     public function updateSectionList(bool $verbose=FALSE) {
-        if ($verbose) echo "Getting updated section list from API...";
+        if ($verbose) echo "Getting updated section list from API...\n";
         $data = json_decode(file_get_contents(self::$apiFeedSec));
+        // We may not remove and re-add entries because that would cause linked records in other
+        // tables to be removed. So we need to use ON DUPLICATE KEY clause and keep track of last change date.
         $stmt = self::$db->prepare("INSERT INTO sections SET sectionID=:sectionID, name=:name1, timestamp=NULL ON DUPLICATE KEY UPDATE name=:name2, timestamp=NULL");
         foreach ($data->results as $section) {
             if ($section->cint_nummer && $section->cint_name) {
@@ -106,6 +118,48 @@ class FFBoka {
         if ($verbose) echo " $numDeleted records deleted.\n";
     }
     
+    /**
+     * Get an updated list of all assignments from API.
+     * @param bool $verbose If TRUE, outputs some diagnostic text.
+     */
+    public function updateAssignmentList(bool $verbose=FALSE) {
+        if ($verbose) echo "Update assignments from API...\n";
+        $data = json_decode(file_get_contents(self::$apiFeedAllAss));
+        // We may not remove and re-add entries because that would break linked records in other
+        // tables. So we need to use ON DUPLICATE KEY clause and keep track of last change date.
+        $stmt = self::$db->prepare("INSERT INTO assignments SET assName=:assName, sort=:sort, timestamp=NULL ON DUPLICATE KEY UPDATE timestamp=NULL");
+        foreach ($data->results as $ass) {
+            if ($ass->cint_name && $ass->cint_assignment_party_type->value && $ass->cint_assignment_party_type->value == FFBoka::TYPE_SECTION) {
+                if ($verbose) echo "Add assignment {$ass->cint_name}\n";
+                if (!$stmt->execute(array(
+                    ":assName"   => $ass->cint_name,
+                    ":sort" => 2
+                ))) echo "ERROR: Failed to add assignment: ".$stmt->errorInfo()[2];
+                if (strpos($ass->cint_name, ":") !== FALSE) {
+                    // This is a sub-assignment to a principal assignment (e.g. Ledare: Mulle).
+                    // Save the principal assignment with the string left of the colon.
+                    if ($verbose) echo "Add principal assignment for {$ass->cint_name}\n";
+                    if (!$stmt->execute(array(
+                        ":assName"   => substr($ass->cint_name, 0, strpos($ass->cint_name, ":")),
+                        ":sort" => 1
+                    ))) echo "ERROR: Failed to add assignment: " . $stmt->errorInfo()[2];
+                }
+            }
+        }
+        if ($verbose) echo "All assignments are updated.\n";
+        if ($verbose) echo "Deleting all (outdated) records not affected by the update...";
+        $numDeleted = self::$db->exec("DELETE FROM assignments WHERE sort>0 AND TIMESTAMPDIFF(SECOND, timestamp, NOW())>100");
+        if ($verbose) echo "$numDeleted records deleted.\n";
+    }
+    
+    /**
+     * Returns a list of all assignments available
+     * @return string[]
+     */
+    public function getAllAssignments() {
+        $stmt = self::$db->query("SELECT assName FROM assignments ORDER BY sort, assName");
+        return $stmt->fetchAll(\PDO::FETCH_COLUMN);
+    }
     
     /**
      * Get a list of all sections in FF

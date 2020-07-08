@@ -367,12 +367,18 @@ class Category extends FFBoka {
         // On fake category, assume full cat access and don't go further
         if (!$this->id) return FFBoka::ACCESS_CATADMIN;
         $access = FFBoka::ACCESS_NONE;
-        // Get group access for this category
+        // Get group permissions for this category
         $access = $access | $this->accessExternal;
         if ($user->id) {
             $access = $access | $this->accessMember;
             if ($user->sectionId==$this->sectionId) $access = $access | $this->accessLocal;
-            // Get access rules for individuals
+            // Add permissions for assignment groups
+            foreach ($this->groupPerms(TRUE) as $groupPerm) {
+                if (in_array($groupPerm['assName'], $_SESSION['assignments'][$this->sectionId])) {
+                    $access = $access | $groupPerm['access'];
+                }
+            }
+            // Add individual permissions
             $stmt = self::$db->prepare("SELECT access FROM cat_admins WHERE catId={$this->id} AND userId=?");
             $stmt->execute(array($user->id));
             if ($row = $stmt->fetch(PDO::FETCH_OBJ)) $access = $access | $row->access;
@@ -388,21 +394,36 @@ class Category extends FFBoka {
     }
     
     /**
-     * Set personal access rights to category
-     * @param int $userId
-     * @param int $access Access constant, e.g. FFBoka::ACCESS_CATADMIN, FFBoka::ACCESS_CONFIRM. If set to FFBoka::ACCESS_NONE, access is revoked
+     * Set personal and assignment based access rights to category
+     * @param int|string $id Either a numeric user id, or the name of an assignment
+     * @param int $access Access constant, e.g. FFBoka::ACCESS_CATADMIN, FFBoka::ACCESS_CONFIRM.
+     *  If set to FFBoka::ACCESS_NONE, access is revoked
      * @return boolean
      */ 
-    public function setAccess($userId, $access) {
-        $user = new User($userId); // This will add user to database if not already there.
-        if (!$user->id) return FALSE;
-        if ($access == FFBoka::ACCESS_NONE) {
-            $stmt = self::$db->prepare("DELETE FROM cat_admins WHERE catId={$this->id} AND userId=?");
-            return $stmt->execute(array($userId));
+    public function setAccess($id, $access) {
+        if (is_numeric($id)) {
+            $user = new User($id); // This will add user to database if not already there.
+            if (!$user->id) return FALSE;
         }
-        $stmt = self::$db->prepare("INSERT INTO cat_admins SET catId={$this->id}, userId=:userId, access=:access ON DUPLICATE KEY UPDATE access=VALUES(access)");
+        if ($access == FFBoka::ACCESS_NONE) {
+            if (is_numeric($id)) {
+                // Revoke permission for single user
+                $stmt = self::$db->prepare("DELETE FROM cat_admins WHERE catId={$this->id} AND userId=?");
+            } else {
+                // Revoke permission for user group with assignment
+                $stmt = self::$db->prepare("DELETE FROM cat_perms WHERE catId={$this->id} AND assName=?");
+            }
+            return $stmt->execute(array($id));
+        }
+        if (is_numeric($id)) {
+            // Set permission for single user
+            $stmt = self::$db->prepare("INSERT INTO cat_admins SET catId={$this->id}, userId=:id, access=:access ON DUPLICATE KEY UPDATE access=VALUES(access)");
+        } else {
+            // Set permission for user group with assignment
+            $stmt = self::$db->prepare("INSERT INTO cat_perms SET catId={$this->id}, assName=:id, access=:access ON DUPLICATE KEY UPDATE access=VALUES(access)");
+        }
         return $stmt->execute(array(
-            ":userId"=>$userId,
+            ":id"=>$id,
             ":access"=>$access,
         ));
     }
@@ -425,6 +446,24 @@ class Category extends FFBoka {
             }
         }
         return $admins;
+    }
+    
+    /**
+     * Retrieve all group permissions for category
+     * @param bool $inherit Even return permissions inherited from parents
+     * @return array['assName', 'access']
+     */
+    public function groupPerms(bool $inherit=FALSE) {
+        if (!$this->id) return array();
+        $stmt = self::$db->query("SELECT assName, access FROM cat_perms WHERE catId={$this->id} ORDER BY assName");
+        $perms = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        if ($inherit && $this->parentId) {
+            // Tie in permissions from parent category
+            foreach ($this->parent()->groupPerms(TRUE) as $inh) {
+                if (!in_array($inh['assName'], array_column($perms, "assName"))) $perms[] = $inh;
+            }
+        }
+        return $perms;
     }
     
     /**

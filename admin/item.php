@@ -75,25 +75,28 @@ switch ($_REQUEST['action']) {
 <h3>Allmänt</h3>
 <p>Inställningarna här sparas direkt. Du behöver inte trycka på någon spara-knapp. Längst
 upp ser du var i strukturen resursen är placerad, med klickbara överordnade element. Det 
-är användbart för att snabbt navigera upp i hirarkin.</p>
+är användbart för att snabbt navigera upp i hirarkin. Klicka på knappen med pennsymbol till
+höger om sökvägen för att flytta resursen till en annan kategori.</p>
 <p><b>Rubriken</b> visas i listor och bör hållas kort och tydlig. Har du flera resurser av
 samma typ kan det vara bra att lägga till ett löpnummer eller dylikt  som hjälper dig att 
 identifiera resurserna.</p>
 <p><b>Beskrivningen</b> kan vara en längre text. Här kan du samla all information om 
-resursen som kan vara användbar för användaren. Texten visas i resursens detailjvy.</p>
+resursen som kan vara användbar för användaren. Texten visas bara i resursens detailjvy, inte
+i listor.</p>
 <p>Med <b>Aktiv (kan bokas)</b> bestämmer du om resursen ska visas för bokning. Det kan 
 vara användbart under tiden du lägger upp resursen tills all information är på plats, eller 
 när en resurs inte är tillgänglig på grund av skada, förlust mm.</p>
 <p>Du kan även lägga in <b>interna anteckningar</b>. De visas bara för administratörer.</p>
 <p>Knappen <b>Duplicera resursen</b> skapar en kopia. Om rubriken i din resurs slutar på
-<tt>(n)</tt> (där n är ett löpnummer) så får kopian nästa löpnummer. Om du t.ex. kopierar 
+en siffra eller en siffra i parenteser så får kopian nästa löpnummer. Om du t.ex. kopierar 
 <tt>Kanadensare (1)</tt> så heter kopian <tt>Kanadensare (2)</tt>. Annars får kopians 
-rubrik tillägget <tt>(kopia)</tt>. <b>OBS</b>, du måste själv aktivera kopian!</p>
+rubrik tillägget <tt>(kopia)</tt>. <b>OBS</b>, kopian är avaktiverad från början! Du måste
+själv aktivera den.</p>
 
 <h3>Bilder</h3>
-<p>Du kan lägga in ett valfritt antal bilder på din resurs. En av bilderna blir huvudbilden, 
-vilket innebär att den visas i listor vid t.ex. bokning. Till varje bild kan du även lägga 
-in en bildtext som visas under bilden.</p>
+<p>Du kan lägga in ett valfritt antal bilder till din resurs. En av bilderna blir huvudbilden, 
+vilket innebär att den visas i listor vid t.ex. bokning. Övriga bilder visas bara på
+detaljsidor. Till varje bild kan du även lägga in en bildtext som visas under bilden.</p>
 EOF;
         die();
     case "newItem":
