@@ -11,7 +11,7 @@ INSERT INTO assignments SET assName="Grenledare", sort=1, timestamp=NULL;
 INSERT INTO assignments SET assName="Hjälpledare", sort=1, timestamp=NULL; 
 
 CREATE TABLE `cat_perms` (
-	`assName` VARCHAR(10) NOT NULL,
+	`assName` VARCHAR(255) NOT NULL,
 	`catId` INT UNSIGNED NOT NULL,
 	`access` TINYINT UNSIGNED NOT NULL,
 	UNIQUE( `catId`, `assName`),
