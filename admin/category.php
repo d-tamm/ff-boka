@@ -91,6 +91,9 @@ function displayCatAccess($cat, $accLevels) {
     if ($cat->accessExternal) $ret .= "<li><a href='#' class='ajax-input'>Icke-medlemmar<p>{$accLevels[$cat->accessExternal]}</p></a><a href='#' onclick=\"unsetAccess('accessExternal');\">Återkalla behörighet</a></li>";
     if ($cat->accessMember) $ret .= "<li><a href='#' class='ajax-input'>Medlem i valfri lokalavdelning<p>{$accLevels[$cat->accessMember]}</p></a><a href='#' onclick=\"unsetAccess('accessMember');\">Återkalla behörighet</a></li>";
     if ($cat->accessLocal) $ret .= "<li><a href='#' class='ajax-input'>Lokal medlem<p>{$accLevels[$cat->accessLocal]}</p></a><a href='#' onclick=\"unsetAccess('accessLocal');\">Återkalla behörighet</a></li>";
+    foreach ($cat->groupPerms() as $perm) {
+        $ret .= "<li><a href='#' class='ajax-input'>{$perm['assName']}<p>{$accLevels[$perm['access']]}</p></a><a href='#' onclick=\"unsetAccess('{$perm['assName']}');\">Återkalla behörighet</a></li>";
+    }
     foreach ($cat->admins() as $adm) {
         $ret .= "<li><a href='#' class='ajax-input'>{$adm['userId']} " . ($adm['name'] ? htmlspecialchars($adm['name']) : "(ingen persondata tillgänglig)") . "<p>{$accLevels[$adm['access']]}</p></a><a href='#' onclick=\"unsetAccess('{$adm['userId']}');\">Återkalla behörighet</a></li>";
     }
@@ -481,10 +484,19 @@ unset ($_SESSION['itemId']);
             <h2>Behörigheter</h2>
             <fieldset data-role="controlgroup" id="cat-access-ids" data-mini="true">
                 <p>1. Välj grupp eller enskild medlem:</p>
-                <label><input type="radio" class="cat-access-id" name="id" value="accessExternal">Icke-medlemmar </label>
-                <label><input type="radio" class="cat-access-id" name="id" value="accessMember">Medlem i valfri lokalavdelning</label>
-                <label><input type="radio" class="cat-access-id" name="id" value="accessLocal">Lokal medlem</label>
-                <input id="cat-adm-autocomplete-input" data-type="search" placeholder="Välj enskild medlem...">
+                <select id='cat-access-id' name='id'>
+                	<option value=''>Välj grupp...</option>
+                	<option value='accessExternal'>Icke-medlemmar</option>
+                	<option value='accessMember'>Medlem i valfri LA</option>
+                	<option value='accessLocal'>Lokal medlem</option>
+                	<optgroup label="Medlem med uppdrag:"></optgroup>
+                	<?php
+                	foreach ($FF->getAllAssignments() as $ass) {
+                	    echo "<option value='$ass'>" . htmlspecialchars($ass) . "</option>";
+                	}
+                	?>
+                </select>
+                <input id="cat-adm-autocomplete-input" data-type="search" placeholder="... eller enskild medlem...">
                 <ul id="cat-adm-autocomplete" data-role="listview" data-filter="true" data-input="#cat-adm-autocomplete-input" data-inset="true"></ul>
             </fieldset>
             

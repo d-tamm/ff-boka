@@ -153,6 +153,15 @@ class FFBoka {
     }
     
     /**
+     * Returns a list of all assignments available
+     * @return string[]
+     */
+    public function getAllAssignments() {
+        $stmt = self::$db->query("SELECT assName FROM assignments ORDER BY sort, assName");
+        return $stmt->fetchAll(\PDO::FETCH_COLUMN);
+    }
+    
+    /**
      * Get a list of all sections in FF
      * @param int $showFirst If set, this section will be returned as the first element
      * @return Section[] Array of sections in alphabetical order

@@ -1058,7 +1058,7 @@ $(document).on('pagecreate', "#page-admin-category", function() {
      * Triggered when user choses group or specific user for new access rights (step 1)
      * Remembers choice and shows step 2. Disables admin levels if group is chosen.
      */
-    $(document).off("change", ".cat-access-id").on("change", ".cat-access-id", function(e, data) {
+    $(document).off("change", "#cat-access-id").on("change", "#cat-access-id", function(e, data) {
         $(".cat-access-level").attr("checked", false).checkboxradio("refresh");
         chosenAccessId = this.value;
         $("#cat-access-levels").show();
@@ -1075,7 +1075,7 @@ $(document).on('pagecreate', "#page-admin-category", function() {
     $(document).off("change", ".cat-access-level").on("change", ".cat-access-level", function() {
         $.mobile.loading("show", {});
         $("#cat-access-levels").hide();
-        $(".cat-access-id").prop("checked", false).checkboxradio("refresh");
+        $("#cat-access-id").val("").selectmenu("refresh");
         $("#cat-adm-autocomplete-input").val("");
         $("#cat-adm-autocomplete").html("");
         $.getJSON("?action=ajaxSetAccess&id="+encodeURIComponent(chosenAccessId)+"&access="+this.value, function(data, status) {
@@ -1152,9 +1152,9 @@ $(document).on('pageshow', "#page-admin-category", function() {
  * Revoke category admin permissions
  * @param userId ID of affected user
  */
-function unsetAccess(userId) {
+function unsetAccess(id) {
     $.mobile.loading("show", {});
-    $.getJSON("?action=ajaxSetAccess&id=" + encodeURIComponent(userId) + "&access=" + ACCESS_NONE, function(data, status) {
+    $.getJSON("?action=ajaxSetAccess&id=" + encodeURIComponent(id) + "&access=" + ACCESS_NONE, function(data, status) {
         $("#assigned-cat-access").html(data.html).enhanceWithin();
         $.mobile.loading("hide", {});
         if (data.message!="") alert(data.message);

@@ -93,7 +93,7 @@ class User extends FFBoka {
 
     /**
      * Get user's assignments on section level from the FF API.
-     * Fills $_SESSION['assignments'] with array['sectionId']['names']
+     * Fills $_SESSION['assignments'] with array[sectionIds][names]
      * @return bool Success or failure
      */
     public function getAssignments() {
@@ -108,6 +108,11 @@ class User extends FFBoka {
                     if ($ass->uppdragstyp__cint_assignment_party_type->value == FFBoka::TYPE_SECTION) {
                         // This will sort the assignments on section ID
                         $_SESSION['assignments'][$ass->section__cint_nummer][] = $ass->cint_assignment_type_id->name;
+                        // Add general assignment group if applicable
+                        if (strpos($ass->cint_assignment_type_id->name, ":") !== FALSE) {
+                            list($main, $sub) = explode(":", $ass->cint_assignment_type_id->name);
+                            if (!in_array($main, $_SESSION['assignments'][$ass->section__cint_nummer])) $_SESSION['assignments'][$ass->section__cint_nummer][] = $main;
+                        }
                     }
                 }
                 return TRUE;
