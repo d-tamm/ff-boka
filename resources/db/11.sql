@@ -19,4 +19,6 @@ CREATE TABLE `cat_perms` (
 	FOREIGN KEY (`catId`) REFERENCES `categories`(`catId`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE = InnoDB;
 
+INSERT INTO `news` (`newsId`, `date`, `caption`, `body`) VALUES (NULL, CURRENT_DATE(), 'Rollbaserade behörigheter', 'Nu går det även att tilldela bokningsbehörighet baserat på roller i aktivitetshanteraren. Så nu kan du t.ex. ställa in att alla kajakledare själva får boka era kajaker.');
+
 UPDATE config SET value=11 WHERE name='db-version';
