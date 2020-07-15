@@ -51,6 +51,7 @@ class Booking extends FFBoka {
             case "sectionId":
                 return $this->$name;
             case "timestamp":
+            case "ref":
             case "commentCust":
             case "commentIntern":
             case "paid":
@@ -79,6 +80,7 @@ class Booking extends FFBoka {
      */
     public function __set($name, $value) {
         switch ($name) {
+            case "ref":
             case "commentCust":
             case "commentIntern":
             case "status":

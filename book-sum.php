@@ -106,6 +106,9 @@ helst ändra dem (även efter att du avslutat bokningen) genom att gå till <a h
 <p>Om du bokar som gäst ska du här skriva in ditt namn och dina kontaktuppgifter så vi kan
 nå dig vid frågor. I bokningsbekräftelsen kommer du att få en länk till bokningen så att du
 kan komma tillbaka och uppdatera den.</p>
+<h3>Referens</h3>
+<p>Här kan du skriva in en valfri kort beskrivande text, så att du lättare kan se vad bokningen
+avser. Texten kommer att visas som rubrik till bokningen på Min Sida.</p>
 <h3>Meddelande</h3>
 <p>Längst ner på sidan finns det en kommentarsruta som bokande och bokningsansvarig kan använda
 för att lämna meddelanden till varandra.</p>
@@ -127,6 +130,7 @@ EOF;
         ]));
 
     case "confirmBooking":
+        $booking->ref = $_REQUEST['ref'];
         $booking->commentCust = $_REQUEST['commentCust'];
         if (isset($_REQUEST['commentIntern'])) $booking->commentIntern = $_REQUEST['commentIntern'];
         $booking->extName = $_REQUEST['extName'];
@@ -226,28 +230,29 @@ EOF;
         try {
             sendmail(
                 is_null($booking->userId) ? $_REQUEST['extMail'] : $booking->user()->mail, // to
-                $booking->confirmationSent ? "Uppdaterad bokningsbekräftelse #{$booking->id}" : "Bokningsbekräftelse #{$booking->id}", // subject
+                ($booking->confirmationSent ? "Uppdaterad bokningsbekräftelse" : "Bokningsbekräftelse") . " #{$booking->id} " . htmlspecialchars($booking->ref), // subject
                 "confirm_booking", // template name
                 array( // replace.
-                    "{{name}}"    => is_null($booking->userId) ? $_REQUEST['extName'] : $booking->user()->name,
+                    "{{name}}"    => htmlspecialchars(is_null($booking->userId) ? $_REQUEST['extName'] : $booking->user()->name),
                     "{{items}}"   => $mailItems,
                     "{{messages}}"=> $messages ? "<li>".implode("</li><li>", $messages)."</li>" : "",
                     "{{status}}"  => $statusText,
                     "{{contactData}}" => $contactData,
                     "{{answers}}" => $mailAnswers,
-                    "{{commentCust}}" => $booking->commentCust ? str_replace("\n", "<br>", $booking->commentCust) : "(ingen kommentar har lämnats)",
+                    "{{ref}}"     => htmlspecialchars($booking->ref),
+                    "{{commentCust}}" => $booking->commentCust ? str_replace("\n", "<br>", htmlspecialchars($booking->commentCust)) : "(ingen kommentar har lämnats)",
                     "{{bookingLink}}" => "{$cfg['url']}book-sum.php?bookingId={$booking->id}&token={$booking->token}",
                 ),
                 $attachments
             );
         } catch(Exception $e) {
-            $message = "Kunde inte skicka bekräftelsen till dig:" . $e;
+            $message = "Kunde inte skicka bokningsbekräftelsen:" . $e;
         }
         // Send notifications to admins
         if (is_null($booking->userId)) {
             $contactData = "Detta är en gästbokning.<br>Namn: {$_REQUEST['extName']}<br>Telefon: {$_REQUEST['extPhone']}<br>Mejl: {$_REQUEST['extMail']}";
         } else {
-            $contactData = "Namn: " . $booking->user()->name . "<br>Telefon: " . $booking->user()->phone . "<br>Mejl: " . $booking->user()->mail;
+            $contactData = "Namn: " . htmlspecialchars($booking->user()->name) . "<br>Telefon: " . htmlspecialchars($booking->user()->phone) . "<br>Mejl: " . htmlspecialchars($booking->user()->mail);
         }
         foreach ($adminsToNotify as $id=>$itemIds) {
             if (is_numeric($id)) {
@@ -282,7 +287,8 @@ EOF;
                         "{{name}}" => htmlspecialchars($name),
                         "{{contactData}}" => $contactData,
                         "{{items}}" => $mailItems,
-                        "{{commentCust}}" => $booking->commentCust ? str_replace("\n", "<br>", $booking->commentCust) : "(ingen kommentar har lämnats)",
+                        "{{ref}}"   => htmlspecialchars($booking->ref),
+                        "{{commentCust}}" => $booking->commentCust ? str_replace("\n", "<br>", htmlspecialchars($booking->commentCust)) : "(ingen kommentar har lämnats)",
                         "{{bookingLink}}" => "{$cfg['url']}book-sum.php?bookingId={$booking->id}",
                     )
                 );
@@ -323,18 +329,18 @@ EOF;
                 <td>" . strftime("%a %F kl %k:00", $item->start) . " till " . strftime("%a %F kl %k:00", $item->end) . "</td>
                 </tr>";
         }
-        if ($booking->userId == $currentUser->id) $statusText = "Din bokning har nu raderats.";
-        else $statusText = "Din bokning har raderats av bokningsansvarig (" . htmlspecialchars($currentUser->name) . ", " . htmlspecialchars($currentUser->mail) . "). Om detta är felaktigt, vänligen ta kontakt med " . htmlspecialchars($currentUser->name) . " omgående för att reda ut vad som har hänt.";
+        if ($booking->userId == $currentUser->id) $statusText = "Din bokning <i>" . htmlspecialchars($booking->ref) . "</i> har nu raderats.";
+        else $statusText = "Din bokning <i>" . htmlspecialchars($booking->ref) . "</i> har raderats av bokningsansvarig (" . htmlspecialchars($currentUser->name . ", " . $currentUser->mail) . "). Om detta är felaktigt, vänligen ta kontakt med " . htmlspecialchars($currentUser->name) . " omgående för att reda ut vad som har hänt.";
         try {
             sendmail(
                 is_null($booking->userId) ? $booking->extMail : $booking->user()->mail, // to
                 "Bokning #{$booking->id} har raderats", // subject
                 "booking_deleted", // template name
                 array( // replace.
-                    "{{name}}"    => is_null($booking->userId) ? $booking->extName : $booking->user()->name,
+                    "{{name}}"    => htmlspecialchars(is_null($booking->userId) ? $booking->extName : $booking->user()->name),
                     "{{items}}"   => $mailItems,
                     "{{status}}"  => $statusText,
-                    "{{commentCust}}" => $booking->commentCust ? str_replace("\n", "<br>", $booking->commentCust) : "(ingen kommentar har lämnats)",
+                    "{{commentCust}}" => $booking->commentCust ? str_replace("\n", "<br>", htmlspecialchars($booking->commentCust)) : "(ingen kommentar har lämnats)",
                 )
             );
         } catch(Exception $e) {
@@ -342,9 +348,9 @@ EOF;
         }
         // Send notifications to admins
         if (is_null($booking->userId)) {
-            $contactData = "Detta är en gästbokning.<br>Namn: {$booking->extName}<br>Telefon: {$booking->extPhone}<br>Mejl: {$booking->extMail}";
+            $contactData = "Detta är en gästbokning.<br>Namn: " . htmlspecialchars($booking->extName) . "<br>Telefon: " . htmlspecialchars($booking->extPhone) . "<br>Mejl: " . htmlspecialchars($booking->extMail);
         } else {
-            $contactData = "Namn: " . $booking->user()->name . "<br>Telefon: " . $booking->user()->phone . "<br>Mejl: " . $booking->user()->mail;
+            $contactData = "Namn: " . htmlspecialchars($booking->user()->name) . "<br>Telefon: " . htmlspecialchars($booking->user()->phone) . "<br>Mejl: " . htmlspecialchars($booking->user()->mail);
         }
         foreach ($adminsToNotify as $id=>$itemIds) {
             if (is_numeric($id)) {
@@ -365,7 +371,7 @@ EOF;
                         "{{name}}"    => $name,
                         "{{items}}"   => $mailItems,
                         "{{status}}"  => "Bokningen nedan har raderats.",
-                        "{{commentCust}}" => str_replace("\n", "<br>", $booking->commentCust) . "<br><br>$contactData",
+                        "{{commentCust}}" => str_replace("\n", "<br>", htmlspecialchars($booking->commentCust)) . "<br><br>$contactData",
                     )
                 );
             }
@@ -590,7 +596,13 @@ EOF;
             </div>
         <?php } ?>
         
-        Här kan du lämna valfritt meddelande:<textarea name="commentCust" placeholder="Plats för meddelande"><?= $booking->commentCust ?></textarea>
+        <div class="ui-field-contain">
+            <label for="book-sum-ref">Referens:</label>
+            <input name="ref" id="book-sum-ref" placeholder="valfri referens" value="<?= $booking->ref ?>">
+        </div>
+        
+        Här kan du lämna valfritt meddelande:
+        <textarea name="commentCust" placeholder="Plats för meddelande"><?= $booking->commentCust ?></textarea>
         
         <?php
         if ($section->showFor($currentUser, FFBoka::ACCESS_CONFIRM)) echo "Intern anteckning:<br><textarea name='commentIntern' placeholder='Intern anteckning'>{$booking->commentIntern}</textarea>";

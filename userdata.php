@@ -177,7 +177,7 @@ if (isset($_GET['first_login'])) $message = "Välkommen till resursbokningen! In
         <div data-role='collapsible' data-collapsed='<?= isset($_GET['first_login']) || $_REQUEST['expand']!="bookings" ? "true" : "false" ?>'>
             <h3>Mina bokningar</h3>
             <ul data-role='listview'>
-            <li data-icon='plus'><a href="index.php">Lägg en ny bokning</a></li>
+            <li data-icon='plus'><a href="book-part.php?sectionId=<?= $currentUser->sectionId ?>">Lägg en ny bokning</a></li>
             <?php
             $bookingIds = $currentUser->bookingIds();
             if (count($bookingIds)) {
@@ -196,7 +196,7 @@ if (isset($_GET['first_login'])) $message = "Välkommen till resursbokningen! In
                         $html .= "&bull; " . htmlspecialchars($item->caption) . ($item->status<FFBoka::STATUS_CONFIRMED ? " (<b>obekräftat</b>)" : "") . "<br>";
                     }
                     $html = "<li><a href='book-sum.php?bookingId={$b->id}'>\n" .
-                        ($b->commentCust ? htmlspecialchars($b->commentCust) : "") .
+                        ($b->ref ? htmlspecialchars($b->ref) : "") .
                         "<p><b>" . strftime("%F kl %k:00", $start) . " &mdash; " . strftime("%F kl %k:00", $end) . "</b></p>\n" .
                         "<p>$html</p>" .
                         "<p>Bokat {$b->timestamp} i LA {$b->section()->name}</p>\n" .
