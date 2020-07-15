@@ -9,7 +9,7 @@ global $cfg, $db, $FF;
 
 // This page may only be accessed by superadmins
 if (!isset($_SESSION['authenticatedUser']) || !in_array($_SESSION['authenticatedUser'], $cfg['superAdmins'])) {
-    die("Försök inte!");
+    header("Location: {$cfg['url']}?redirect=" . urlencode("admin/superadmin.php"));
 }
 $currentUser = new User($_SESSION['authenticatedUser']);
 
@@ -206,7 +206,7 @@ case "savePoll":
             while ($row = $stmt->fetch(PDO::FETCH_OBJ)) {
                 echo "<tr><td>{$row->timestamp}</td>
                     <td>{$row->ip}</td>
-                    <td" . ($row->name ? " title='Login: {$row->login}, medlemsnr: {$row->userId}'" : "") . ">" . ($row->name ? htmlspecialchars($row->name) : $row->userId) . "</td>
+                    <td" . ($row->name ? " title='Login: {$row->login}, medlemsnr: {$row->userId}'" : "") . ">" . ($row->name ? htmlspecialchars($row->name) : (is_null($row->userId) ? $row->login : $row->userId)) . "</td>
                     <td title='" . htmlspecialchars($row->section) . "'>" . substr(htmlspecialchars($row->section), 0, 10) . "</td>
                     <td>{$row->success}</td>
                     <td>" . resolveUserAgent($row->userAgent, $db) . "</td></tr>";
