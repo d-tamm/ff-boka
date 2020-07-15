@@ -228,6 +228,7 @@ function sendmail(string $to, string $subject, $template, $replace=NULL, $attach
     // Send mail
     try {
         $mail = new PHPMailer(true);
+        $mail->XMailer = ' '; // Don't advertise that we are using PHPMailer
         // Handle attachments
         if (!is_null($attachments)) {
             foreach ($attachments as $att) {
