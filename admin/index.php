@@ -40,13 +40,16 @@ if (!$_SESSION['authenticatedUser']) {
 }
 // Only allow users which have at least some admin role in this section
 $currentUser = new User($_SESSION['authenticatedUser']);
-if (!$section->showFor($currentUser, FFBoka::ACCESS_CATADMIN) && !array_intersect($_SESSION['assignments'][$section->id], $cfg['sectionAdmins'])) {
+if (
+    !$section->showFor($currentUser, FFBoka::ACCESS_CATADMIN) && 
+    (!isset($_SESSION['assignments'][$section->id]) || !array_intersect($_SESSION['assignments'][$section->id], $cfg['sectionAdmins']))
+) {
     header("Location: {$cfg['url']}?action=accessDenied&to=" . urlencode("administrationssidan för {$section->name}"));
     die();
 }
 $userAccess = $section->getAccess($currentUser);
-if (is_array($_SESSION['assignments'][$section->id])) {
-    if (array_intersect($_SESSION['assignments'][$section->id], $cfg['sectionAdmins'])) $userAccess=FFBoka::ACCESS_SECTIONADMIN;
+if (isset($_SESSION['assignments'][$section->id]) && is_array($_SESSION['assignments'][$section->id])) {
+    if (array_intersect($_SESSION['assignments'][$section->id], $cfg['sectionAdmins'])) $userAccess = FFBoka::ACCESS_SECTIONADMIN;
 }
 
 if (isset($_REQUEST['message'])) $message = $_REQUEST['message'];
@@ -192,7 +195,11 @@ switch ($_REQUEST['action']) {
 }
 
 // First admin login from a section? Give some hints on how to get started.
-if (count(array_intersect($_SESSION['assignments'][$section->id], $cfg['sectionAdmins']))>0 && count($section->getAdmins())==0) {
+if (
+    isset($_SESSION['assignments'][$section->id]) && 
+    count(array_intersect($_SESSION['assignments'][$section->id], $cfg['sectionAdmins']))>0 && 
+    count($section->getAdmins())==0
+) {
     $message = "Hej!<br><br>Vill du komma igång med din lokalavdelning? Första steget är att lägga till LA-administratörer.<br><br>Tipps: Använd medlemsnumret i sökrutan!";
 }
 
