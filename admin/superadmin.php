@@ -33,16 +33,26 @@ if (isset($_REQUEST['action'])) {
 switch ($_REQUEST['action']) {
 case "help":
     die("Finns ingen hjälp till denna sida.");
-case "make me admin":
+case "ajaxMakeMeAdmin":
+    header("Content-Type: application/json");
     if (is_numeric($_REQUEST['sectionId'])) {
         $section = new Section($_REQUEST['sectionId']);
         if ($section->addAdmin($_SESSION['authenticatedUser'])) {
-            header("Location: index.php?sectionId={$section->id}");
+            die(json_encode([ "sectionId" => $section->id ]));
         } else {
-            $message = "Något har gått fel.";
+            die(json_encode([ "error" => "Något har gått fel." ]));
         }
-    }
+    } else die(json_encode([ "error" => "Wrong argument type." ]));
     break;
+case "ajaxImpersonate":
+    header("Content-Type: application/json");
+    if (is_numeric($_REQUEST['userId'])) {
+        $_SESSION['impersonate_realUserId'] = $_SESSION['authenticatedUser'];
+        $_SESSION['authenticatedUser'] = $_REQUEST['userId'];
+        die(json_encode([ "userId" => $_SESSION['authenticatedUser'] ]));
+    } else {
+        die(json_encode([ "error" => "Du ska ange ett numeriskt medlemsnummer." ]));
+    }
 case "ajaxUpgrade":
     header("Content-Type: application/json");
     switch ($_REQUEST['step']) {
@@ -231,19 +241,21 @@ case "savePoll":
         </div>
 
         <div data-role="collapsible">
-            <h2>Gör mig till LA-admin</h2>
-            <form>
-                <p>Här kan du ge dig själv administratörs-behörighet i valfri lokalavdelning.</p>
-                <input type="hidden" name="action" value="make me admin">
-                <select name="sectionId">
-                    <option>Välj lokalavdelning</option><?php
-                    $stmt = $db->query("SELECT * FROM sections ORDER BY name");
-                    while ($row = $stmt->fetch(PDO::FETCH_OBJ)) {
-                        echo "<option value='{$row->sectionId}'>{$row->name}</option>";
-                    } ?>
-                </select>
-                <input data-theme="b" type="submit" data-corners="false" value="Gör mig till admin">
-            </form>
+            <h2>Diverse</h2>
+            <h4>Ta LA-admin-rollen:</h4>
+            <select name="sectionId" id="sectionadmin-sectionlist">
+                <option>Välj lokalavdelning</option><?php
+                $stmt = $db->query("SELECT * FROM sections ORDER BY name");
+                while ($row = $stmt->fetch(PDO::FETCH_OBJ)) {
+                    echo "<option value='{$row->sectionId}'>{$row->name}</option>";
+                } ?>
+            </select>
+            <hr>
+            <h4>Imitera annan användare:</h4>
+            <fieldset class="ui-grid-a">
+            	<div class="ui-block-a"><input id="admin-impersonate-userId" placeholder="medlemsnummer"></div>
+            	<div class="ui-block-b"><button id="admin-impersonate-start">OK</button></div>
+        	</fieldset>
         </div>
 
         <div data-role="collapsible" data-collapsed="<?= (isset($expand) && $expand=="polls") ? "false" : "true" ?>">

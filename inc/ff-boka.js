@@ -1401,6 +1401,20 @@ function deleteImage(id) {
 $(document).on('pagecreate', "#page-super-admin", function() {
     // Bind events
     
+	$("#sectionadmin-sectionlist").on('change', function() {
+		$.getJSON("?action=ajaxMakeMeAdmin&sectionId=" + this.value, function(data, status) {
+			if (data.error) alert(data.error);
+			else location.href = "index.php?sectionId=" + data.sectionId;
+		});
+	});
+	
+	$("#admin-impersonate-start").on("click", function() {
+		$.getJSON("?action=ajaxImpersonate&userId=" + $("#admin-impersonate-userId").val(), function(data,status) {
+			if (data.error) alert(data.error);
+			else location.href = "index.php";
+		});
+	});
+	
     /**
      * Add a new poll
      */

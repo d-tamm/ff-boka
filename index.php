@@ -56,6 +56,14 @@ if (isset($_REQUEST['action'])) {
 <h3>Kontakt</h3>
 <p>Om du har frågor eller synpunkter vill vi väldigt gärna veta det för att hjälpa dig och göra systemet bättre! Skicka ett mejl till " . obfuscatedMaillink($cfg['mailReplyTo'], "Fråga om resursbokningen") . " eller gå till vårt team <a href='https://teams.microsoft.com/l/team/19%3ad94d6ea5be8c4dc99827f5a8027fa713%40thread.tacv2/conversations?groupId=d2e0218f-ec87-4b7d-8e74-d2b91e530c9b&tenantId=f68d9ffd-156c-4e18-8cb6-7c55c3ec7111' target='_blank'>Resursbokning</a> i Teams som du har tillgång till som ledare med Friluftsfrämjandet-adress.</p>";
             die();
+        case "exit_impersonate":
+            if (isset($_SESSION['impersonate_realUserId'])) {
+                $_SESSION['authenticatedUser'] = $_SESSION['impersonate_realUserId'];
+                unset($_SESSION['impersonate_realUserId']);
+                header("Location: {$cfg['url']}admin/superadmin.php");
+                die();
+            }
+            break;
         case "make me admin":
             if ($cfg['testSystem']===TRUE) {
                 if (is_numeric($_REQUEST['sectionId'])) {
@@ -163,7 +171,6 @@ if (isset($_REQUEST['t'])) {
         $message = $e->getMessage();
     }
 }
-
 
 if (isset($_SESSION['authenticatedUser'])) {
     $currentUser = new User($_SESSION['authenticatedUser']);

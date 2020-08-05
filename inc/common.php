@@ -162,6 +162,9 @@ function head(string $caption, string $baseUrl, $currentUser=NULL, $superAdmins=
                 if (in_array($_SESSION['authenticatedUser'], $superAdmins)) {
                     echo "<li data-icon='alert'><a href='{$baseUrl}admin/superadmin.php' data-transition='slide' data-rel='close'>Super-Admin</a></li>";
                 }
+                if (isset($_SESSION['impersonate_realUserId'])) {
+                    echo "<li data-icon='action'><a href='{$baseUrl}?action=exit_impersonate' data-transition='slide' data-rel='close' data-ajax='false'>Sluta imitera {$_SESSION['authenticatedUser']}</a></li>";
+                }
             } ?>
             <li data-icon="info"><a href="<?= $baseUrl ?>cookies.php" data-transition='slide' data-rel="close">Om kakor (cookies)</a></li>
         </ul>
