@@ -408,4 +408,15 @@ class FFBoka {
         }
         return $polls;
     }
+    
+    /**
+     * Get the next available ID for booking series
+     * @return int
+     */
+    public function getNextRepeatId() {
+        $stmt = self::$db->query("SELECT 0+MAX(repeatId) lastId FROM bookings");
+        $row = $stmt->fetch(\PDO::FETCH_OBJ);
+        if (is_null($row->lastId)) return 1;
+        else return $row->lastId + 1;
+    }
 }

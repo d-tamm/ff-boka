@@ -10,13 +10,52 @@ global $cfg, $message;
 session_start();
 require(__DIR__."/inc/common.php");
 
+/**
+ * Show a list of bookings belonging to this series 
+ * @param \FFBoka\Booking $booking
+ * @return HTML formatted list
+ */
+function showBookingSeries(\FFBoka\Booking $booking) {
+    if(is_null($booking->repeatId)) {
+        $ret = "<p style='margin:0;'>Skapa serie med <span style='display:inline-block; width:4em;'><input type='number' id='repeat-count' value='2' min='2' max='40'></span> tillfällen</p>
+    	    <fieldset data-role='controlgroup' data-type='horizontal' data-mini='true'>
+    	    	<legend>Upprepning varje</legend>
+    	    	<label><input type='radio' name='repeat-type' value='day' onClick=\"repeatType=this.value;
+repeatPreview($('#repeat-count').val(), repeatType);\">dag</label>
+    	    	<label><input type='radio' name='repeat-type' value='week' onClick=\"repeatType=this.value;
+repeatPreview($('#repeat-count').val(), repeatType);\">vecka</label>
+    	    	<label><input type='radio' name='repeat-type' onClick=\"repeatType=this.value;
+repeatPreview($('#repeat-count').val(), repeatType);\" value='month'>månad</label>
+    	    </fieldset>
+            <div id='repeat-preview'><i>När du har valt antal och typ så kommer du här se ifall resurserna är tillgängliga vid respektive tillfälle.</i></div>
+            <p><i>Icke-tillgängliga resurser kommer inte att bokas.</i></p>
+            <button disabled='disabled' class='ui-btn' id='repeat-create'>Skapa serien</button>";
+	} else {
+	    $ret = "<p>Den här bokningen är del av en bokningsserie.</p>";
+        $series = $booking->getBookingSeries();
+        if (count($series)==0) {
+            $ret .= "<p>Det finns inga fler tillfällen än det här.</p>";
+        } else {
+            $ret .= "<ul data-role='listview' data-inset='true'>";
+            foreach ($series as $b) {
+                $ret .= "<li><a href='book-sum.php?bookingId={$b->id}'><p>" . (is_null($start = $b->start()) ? "(bokning utan resurser)" : strftime("%F", $start)) . "</p></a></li>";
+            }
+            $ret .= "</ul>";
+        }
+        $ret .= "<button onClick='unlinkBooking()' class='ui-btn ui-icon-action ui-btn-icon-left'>Avlänka det här tillfället</button>";
+        $ret .= "<button onClick='unlinkSeries()' class='ui-btn ui-icon-back ui-btn-icon-left'>Avlänka hela serien</button>";
+        $ret .= "<button onClick='deleteSeries()' class='ui-btn ui-btn-c ui-icon-delete ui-btn-icon-left'>Radera alla tillfällen</button>";
+	}
+    return $ret;
+}
+
 $currentUser = new User(isset($_SESSION['authenticatedUser']) ? $_SESSION['authenticatedUser'] : 0);
 
 if (isset($_REQUEST['bookingId'])) {
     $_SESSION['bookingId'] = $_REQUEST['bookingId'];
 }
 
-if ($_SESSION['bookingId']) {
+if (isset($_SESSION['bookingId'])) {
     // Open existing booking
     try {
         $booking = new Booking($_SESSION['bookingId']);
@@ -84,7 +123,7 @@ if (isset($_REQUEST['action'])) {
 switch ($_REQUEST['action']) {
     case "help":
         echo <<<EOF
-<h3>Resurslistan</h3>
+<h3>Bokningssammanfattning</h3>
 <p>Här ser du alla resurser som ingår i din bokning. Du kan ändra tiden på valda resurser
 genom att klicka på dem, och ta bort dem genom att klicka på krysset i högerkanten.
 Du kan även lägga till fler resurser med knappen under resurslistan. Vid varje resurs visas
@@ -162,14 +201,6 @@ EOF;
                 // For rejected items, we just list them, but do not notify admins or add postbook messages
                 $rejectedItems = TRUE;
             } else {
-                // Collect functional email addresses to notify
-                $alerts = $cat->sendAlertTo;
-                if ($alerts) {
-                    foreach (explode(",", $alerts) as $alert) {
-                        $alert = trim($alert);
-                        $adminsToNotify[$alert][] = $item->bookedItemId;
-                    }
-                }
                 // Remember postbook messages and build string of reference numbers (e.g. (1), (2))
                 $msgRef = "";
                 foreach ($cat->postbookMsgs() as $msg) {
@@ -186,7 +217,15 @@ EOF;
                     }
                 }
                 $leastStatus = $leastStatus & $item->status;
-                // collect admins to notify about booking: array[userId][itemId1, itemId2...]
+                // Collect functional email addresses to notify
+                $alerts = $cat->sendAlertTo;
+                if ($alerts) {
+                    foreach (explode(",", $alerts) as $alert) {
+                        $alert = trim($alert);
+                        $adminsToNotify[$alert][] = $item->bookedItemId;
+                    }
+                }
+                // collect admins to notify: array[userId][itemId1, itemId2...]
                 foreach ($cat->admins(FFBoka::ACCESS_CONFIRM, TRUE) as $adm) {
                     $admin = new User($adm['userId']);
                     switch ($admin->getNotifyAdminOnNewBooking($cat)) {
@@ -410,10 +449,119 @@ EOF;
         // Check permissions
         $item = new Item($_REQUEST['bookedItemId'], TRUE);
         if ($item->category()->getAccess($currentUser) < FFBoka::ACCESS_CONFIRM && ($booking->userId && $booking->userId!==$_SESSION['authenticatedUser']) && $_SESSION['token'] != $booking->token) {
-            die(json_encode([ "error"=>"Du har inte behörighet att ta bort resursen." ]));
+            die(json_encode([ "error" => "Du har inte behörighet att ta bort resursen." ]));
         }
-        if ($item->removeFromBooking()) die(json_encode([ "status"=>"OK" ]));
-        else die(json_encode([ "error"=>"Oväntat fel: Kan inte ta bort resursen. Kontakta systemadministratören."]));
+        if ($item->removeFromBooking()) die(json_encode([ "status" => "OK" ]));
+        else die(json_encode([ "error" => "Oväntat fel: Kan inte ta bort resursen. Kontakta systemadministratören."]));
+        
+    case "ajaxRepeatPreview":
+        header("Content-Type: application/json");
+        // check availability for every item and each date
+        $unavail = array_fill(0, $_REQUEST['count'], array());
+        switch ($_REQUEST['type']) {
+            case "day": $interval = new DateInterval("P1D"); break;
+            case "week": $interval = new DateInterval("P1W"); break;
+            case "month": $interval = new DateInterval("P1M"); break;
+        }
+        foreach ($booking->items() as $item) {
+            $start = new DateTime("@{$item->start}");
+            $end = new DateTime("@{$item->end}");
+            for ($i=0; $i<$_REQUEST['count']; $i++) {
+                if (!$item->isAvailable($start->getTimestamp(), $end->getTimestamp())) $unavail[$i][] = htmlspecialchars($item->caption);
+                $start->add($interval);
+                $end->add($interval);
+            }
+        }
+        $start = new DateTime("@".$booking->start());
+        $html = [];
+        for ($i=0; $i<$_REQUEST['count']; $i++) {
+            if (count($unavail[$i])) $html[] = "<li styles='color:var(--FF-orange);' class='repeat-unavail'>" . $start->format("Y-m-d") . ": " . implode(", ", $unavail[$i]) . " ej tillgänglig</li>";
+            else $html[] = "<li>" . $start->format("Y-m-d") . ": alla resurser tillgängliga</li>";
+            $start->add($interval);
+        }
+        die(json_encode([ "html" => "<ul>" . implode("", $html) . "</ul>" ]));
+        
+    case "ajaxRepeatCreate":
+        header("Content-Type: application/json");
+        // Mark the current booking as part of this series
+        $repeatId = $FF->getNextRepeatId();
+        $booking->repeatId = $repeatId;
+        // Create the copies
+        for ($i=1; $i<$_REQUEST['count']; $i++) {
+            switch ($_REQUEST['type']) {
+                case "day": $interval = new DateInterval("P{$i}D"); break;
+                case "week": $interval = new DateInterval("P{$i}W"); break;
+                case "month": $interval = new DateInterval("P{$i}M"); break;
+            }
+            $booking->copy($interval);
+        }
+        // Send alerts
+        $adminsToNotify = array();
+        foreach ($booking->items() as $item) {
+            $cat = $item->category();
+            // Collect functional email addresses to notify:  array[userId][itemId1, itemId2...]
+            $alerts = $cat->sendAlertTo;
+            if ($alerts) {
+                foreach (explode(",", $alerts) as $alert) $adminsToNotify[trim($alert)][] = $item->bookedItemId;
+            }
+            // collect admins to notify
+            foreach ($cat->admins(FFBoka::ACCESS_CONFIRM, TRUE) as $adm) {
+                $admin = new User($adm['userId']);
+                if ($admin->getNotifyAdminOnNewBooking($cat) == "yes") $adminsToNotify[$adm['userId']][] = $item->bookedItemId;
+            }
+        }
+        foreach ($adminsToNotify as $id=>$itemIds) {
+            if (is_numeric($id)) {
+                if (isset($_SESSION['authenticatedUser']) && $id == $_SESSION['authenticatedUser']) continue; // Don't send notification to current user
+                $adm = new User($id);
+                $mail = $adm->mail;
+                $name = $adm->name;
+            } else {
+                $mail = $id;
+                $name = "";
+            }
+            if ($mail) { // can only send if admin has email address
+                sendmail(
+                    $mail, // to
+                    "FF Återkommande bokning har skapats", // subject
+                    "alert_series_created",
+                    array(
+                        "{{name}}"    => $name,
+                        "{{bookingLink}}" => "{$cfg['url']}book-sum.php?bookingId={$booking->id}",
+                    )
+                );
+            }
+        }
+        die(json_encode([ "html" => showBookingSeries($booking) ]));
+        
+    case "ajaxUnlinkBooking":
+        header("Content-Type: application/json");
+        $booking->repeatId = NULL;
+        die(json_encode([ "html" => showBookingSeries($booking) ]));
+        
+    case "ajaxUnlinkSeries":
+        header("Content-Type: application/json");
+        foreach ($booking->getBookingSeries(TRUE) as $b) $b->repeatId = NULL;
+        die(json_encode([ "html" => showBookingSeries($booking) ]));
+        
+    case "ajaxDeleteSeries":
+        header("Content-Type: application/json");
+        $first = NULL;
+        $gotoFirst = false;
+        foreach ($booking->getBookingSeries(TRUE) as $b) {
+            if (is_null($first)) { // keep the first instance and switch to it
+                $first = $b;
+                continue;
+            }
+            if ($b->start() > time()) { // Booking in the future, delete it
+                if ($b->id == $booking->id) $gotoFirst = true;
+                $b->delete();
+            }
+        }
+        // If only one occurence is left, remove the series ID
+        if (count($first->getBookingSeries(TRUE))==1) $first->repeatId=NULL;
+        if ($gotoFirst) die(json_encode([ "gotoBookingId"=>$first->id ]));
+        else die(json_encode([ "html" => showBookingSeries($booking) ]));
         
     case "ajaxConfirmBookedItem":
     case "ajaxRejectBookedItem":
@@ -466,10 +614,13 @@ EOF;
     <?php
     $questions = array();
     $leastStatus = FFBoka::STATUS_CONFIRMED;
+    $showRepeating = isset($_SESSION['authenticatedUser']) ? true : false;
     $itemsToConfirm = array();
     foreach ($booking->items() as $item) {
         $leastStatus = min($leastStatus, $item->status);
-        $showEditButtons = ($item->category()->getAccess($currentUser) >= FFBoka::ACCESS_CONFIRM && $item->status != FFBoka::STATUS_REJECTED);
+        $access = $item->category()->getAccess($currentUser);
+        $showRepeating = $showRepeating && $access >= FFBoka::ACCESS_BOOK;
+        $showEditButtons = ($access >= FFBoka::ACCESS_CONFIRM && $item->status != FFBoka::STATUS_REJECTED);
         foreach ($item->category()->getQuestions() as $id=>$q) {
             if (isset($questions[$id])) $questions[$id]=($questions[$id] || $q->required);
             else $questions[$id]=$q->required;
@@ -506,7 +657,7 @@ EOF;
     ?>
     </ul>
 
-    <button onClick="location.href='book-part.php<?= $startTime ? "?start=$startTime&end=$endTime" : "" ?>'" data-transition='slide' data-direction='reverse' class='ui-btn ui-icon-plus ui-btn-icon-right'>Lägg till fler resurser</button>
+    <button onClick="location.href='book-part.php<?= isset($startTime) ? "?start=$startTime&end=$endTime" : "" ?>'" data-transition='slide' data-direction='reverse' class='ui-btn ui-icon-plus ui-btn-icon-right'>Lägg till fler resurser</button>
     
     <script>itemsToConfirm = <?= json_encode($itemsToConfirm) ?>;</script>
     <?php
@@ -607,11 +758,18 @@ EOF;
         <?php
         if ($section->showFor($currentUser, FFBoka::ACCESS_CONFIRM)) echo "Intern anteckning:<br><textarea name='commentIntern' placeholder='Intern anteckning'>{$booking->commentIntern}</textarea>";
         ?>
-
+    
         <input type="submit" data-icon="carat-r" data-iconpos="right" data-theme="b" data-corners="false" value="<?= $booking->status()==FFBoka::STATUS_PENDING ? "Slutför bokningen" : "Spara ändringar" ?>">
         <a href="#" onClick="deleteBooking(<?= $currentUser->id ? $currentUser->id : 0 ?>, '<?= $cfg['url'] ?>');" class='ui-btn ui-btn-c ui-icon-delete ui-btn-icon-right'>Ta bort bokningen</a>
     </form>
-    
+            
+    <?php if ($showRepeating) { ?>
+    <div data-role="collapsible" data-corners="false" data-collapsed-icon="recycle" data-expanded-icon="recycle">
+    	<h4>Återkommande bokningar</h4>
+    	<div id='series-panel'><?= showBookingSeries($booking) ?></div>
+    </div>
+<?php } ?>
+            
     </div><!--/main-->
 
     <div data-role="popup" id="popup-item-details" class="ui-content" data-overlay-theme="b">

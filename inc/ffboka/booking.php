@@ -42,7 +42,7 @@ class Booking extends FFBoka {
      * Getter function for Booking properties
      * @param string $name Name of the property to retrieve
      * @throws \Exception
-     * @return number|string
+     * @return number|string|NULL
      */
     public function __get($name) {
         switch ($name) {
@@ -50,6 +50,7 @@ class Booking extends FFBoka {
             case "userId":
             case "sectionId":
                 return $this->$name;
+            case "repeatId":
             case "timestamp":
             case "ref":
             case "commentCust":
@@ -80,6 +81,7 @@ class Booking extends FFBoka {
      */
     public function __set($name, $value) {
         switch ($name) {
+            case "repeatId":
             case "ref":
             case "commentCust":
             case "commentIntern":
@@ -89,8 +91,10 @@ class Booking extends FFBoka {
             case "extPhone":
             case "extMail":
             case "confirmationSent":
-                $stmt = self::$db->prepare("UPDATE bookings SET $name=? WHERE bookingId={$this->id}");
-                if ($stmt->execute(array($value))) return $value;
+                $stmt = self::$db->prepare("UPDATE bookings SET $name=:name WHERE bookingId={$this->id}");
+                if ($name=="repeatId") $stmt->bindValue(":name", $value, \PDO::PARAM_INT);
+                else $stmt->bindValue(":name", $value);
+                if ($stmt->execute()) return $value;
                 break;
             default:
                 throw new \Exception("Use of undefined Booking property $name");
@@ -203,5 +207,69 @@ class Booking extends FFBoka {
         }
         return $ans;
     }
-}
+    
+    /**
+     * Get the datetime when the first item's booking starts
+     * @return NULL|int Unix timestamp. Returns NULL if booking contains no items.
+     */
+    public function start() {
+        $start = NULL;
+        foreach ($this->items() as $item) {
+            if (is_null($start)) $start = $item->start;
+            else $start = min($start, $item->start);
+        }
+        return $start;
+    }
 
+    /**
+     * Make a copy of the booking. Non-available items will be skipped. Items will also
+     * be skipped if the user's privileges are so low that the booking would need to be confirmed.
+     * @param \DateInterval $offset The date interval by which the new booking shall be moved. 
+     * @return \FFBoka\Booking The new booking
+     */
+    public function copy(\DateInterval $offset) {
+        $b = $this->user()->addBooking($this->sectionId);
+        $b->repeatId = $this->repeatId;
+        $b->ref = $this->ref;
+        $b->commentCust = $this->commentCust;
+        $b->commentIntern = $this->commentIntern;
+        $b->paid = $this->paid;
+        $b->extName = $this->extName;
+        $b->extPhone = $this->extPhone;
+        $b->extMail = $this->extMail;
+        foreach ($this->answers() as $ans) {
+            $b->addAnswer($ans->question, $ans->answer);
+        }
+        foreach ($this->items() as $item) {
+            $start = new \DateTime("@".$item->start);
+            $start = $start->add($offset)->getTimestamp();
+            $end = new \DateTime("@".$item->end);
+            $end = $end->add($offset)->getTimestamp();
+            // Only add the item if user has privileges to book without confirmation and item is available
+            if ($item->category()->getAccess($this->user())>=FFBoka::ACCESS_BOOK && $item->isAvailable($start, $end)) {
+                $i = $b->addItem($item->id);
+                $i->start = $start;
+                $i->end = $end;
+                $i->status = $item->status;
+                $i->price = $item->price;
+            }
+        }
+        return $b;
+    }
+        
+    /**
+     * Get all bookings belonging to the same booking series.
+     * @param bool $includeThis Whether to include this booking in the answer.
+     * @return bool|\FFBoka\Booking[] Returns FALSE if this is not a series, otherwise returns all
+     * bookings in this series.
+     */
+    public function getBookingSeries(bool $includeThis=FALSE) {
+        if (is_null($this->repeatId)) return FALSE;
+        $stmt = self::$db->query("SELECT bookingId FROM bookings WHERE repeatId={$this->repeatId}" . ($includeThis ? "" : " AND bookingId != {$this->id}"));
+        $ret = array();
+        while ($row = $stmt->fetch(\PDO::FETCH_OBJ)) {
+            $ret[] = new Booking($row->bookingId);
+        }
+        return $ret;
+    }
+}

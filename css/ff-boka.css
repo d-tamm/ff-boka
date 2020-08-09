@@ -239,6 +239,10 @@ table.alternate-rows tr:nth-child(even) {
     display:none;
 }
 
+#repeat-preview li.repeat-unavail {
+	color:var(--FF-orange) !important;
+}
+
 #page-book-sum .has-edit-buttons {
     padding-bottom:40px;
 }
