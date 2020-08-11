@@ -43,10 +43,10 @@ repeatPreview($('#repeat-count').val(), repeatType);\" value='month'>månad</lab
             $ret .= "</ul>";
         }
         $ret .= "<div data-role='controlgroup'>
-            <button onClick='unlinkBooking()' class='ui-btn ui-icon-action ui-btn-icon-left'>Avlänka det här tillfället</button>
-            <button onClick='unlinkSeries()' class='ui-btn ui-icon-back ui-btn-icon-left'>Avlänka hela serien</button>
-            </div>
-            <button onClick='deleteSeries()' class='ui-btn ui-btn-c ui-icon-delete ui-btn-icon-left'>Radera alla tillfällen</button>";
+            <button onClick='unlinkBooking()' class='ui-btn ui-mini ui-icon-action ui-btn-icon-left'>Lyft ut det här tillfället</button>
+            <button onClick='unlinkSeries()' class='ui-btn ui-mini ui-icon-bars ui-btn-icon-left'>Lös upp serien</button>
+            <button onClick='deleteSeries()' class='ui-btn ui-mini ui-btn-c ui-icon-delete ui-btn-icon-left'>Radera serien</button>
+            </div>";
 	}
     return $ret;
 }
@@ -170,10 +170,10 @@ du även skapa en bokningsserie. Välj mellan daglig, veckovis eller månadsvis 
 tillfällen. När du skapar serien så skapas varje tillfälle som en fristående bokning, där det visas
 länkar för att hoppa till de andra tillfällena i serien. Om du ändrar en bokning påverkas dock inte
 de andra tillfällena.</p>
-<p><b>Avlänka det här tillfället</b> löser länken mellan den här bokningen och övriga
+<p><b>Lyft ut det här tillfället</b> löser länken mellan den här bokningen och övriga
 serien utan att ta bort själva tillfället.</p>
-<p><b>Avlänka hela serien</b> löser upp serien men lämnar kvar alla tillfällen som olänkade bokningar.</p>
-<p><b>Radera alla tillfällen</b> raderar hela serien förutom det första tillfället och alla
+<p><b>Lös upp serien</b> löser upp serien men lämnar kvar alla tillfällen som olänkade bokningar.</p>
+<p><b>Radera serien</b> raderar hela serien förutom det första tillfället och alla
 tillfällen som redan har passerat så att historiken behålls.</p>
 EOF;
         die();
@@ -435,6 +435,11 @@ EOF;
                 );
             }
         }
+        // If the booking belongs to a series and only one occurrence would be left, remove the series.
+        if (!is_null($booking->repeatId)) {
+            $series = $booking->getBookingSeries();
+            if (count($series) == 1) $series[0]->repeatId = NULL;
+        }
         $booking->delete();
         unset($_SESSION['bookingId']);
         die(json_encode([ "status"=>"OK" ]));
@@ -556,6 +561,10 @@ EOF;
         
     case "ajaxUnlinkBooking":
         header("Content-Type: application/json");
+        // If there will only be one occurrence left in the series, remove even that one.
+        $series = $booking->getBookingSeries();
+        if (count($series)==1) $series[0]->repeatId = NULL;
+        // Remove this occurrence from the series
         $booking->repeatId = NULL;
         die(json_encode([ "html" => showBookingSeries($booking) ]));
         
@@ -787,7 +796,7 @@ EOF;
     </form>
             
     <?php if ($showRepeating) { ?>
-    <div data-role="collapsible" data-corners="false" data-collapsed-icon="recycle" data-expanded-icon="recycle">
+    <div data-role="collapsible" data-corners="false" <?= is_null($booking->repeatId) ? "" : "data-collapsed='false'" ?>>
     	<h4>Återkommande bokningar</h4>
     	<div id='series-panel'><?= showBookingSeries($booking) ?></div>
     </div>
