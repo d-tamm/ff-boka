@@ -187,7 +187,9 @@ function head(string $caption, string $baseUrl, $currentUser=NULL, $superAdmins=
     </div>
     
     <div data-role="popup" id="popup-help" class="ui-content" data-overlay-theme="b">
-    <h1>Hjälp</h1>
+    	<a href='#' data-rel='back' class='ui-btn ui-icon-delete ui-btn-icon-left'>Stäng inforutan</a>
+    	<div id="help-content"></div>
+    	<a href='#' data-rel='back' class='ui-btn ui-icon-delete ui-btn-icon-left'>Stäng inforutan</a>
     </div>
     <?php
 }

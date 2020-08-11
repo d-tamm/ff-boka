@@ -11,7 +11,8 @@ $(document).on('pagecontainerhide', function (event, ui) {
 
 function showHelp() {
     $.get("?action=help", function( data ) {
-        $("#popup-help").html(data).popup("open", { transition: "slide" });
+        $("#help-content").html(data);
+		$("#popup-help").popup("open", { transition: "slide" });
     });
 }
 
