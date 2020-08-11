@@ -597,7 +597,7 @@ function deleteSeries() {
 	        action: "ajaxDeleteSeries"
 	    }, function(data, status) {
 	        $.mobile.loading("hide", {});
-			alert("Bokningsserien har nu raderats.");
+			alert("Bokningsserien har nu raderats, förutom det första tillfället samt de tillfällen som har passerat.");
 			if (data.gotoBookingId) location.href="book-sum.php?bookingId="+data.gotoBookingId;
 			else $('#series-panel').html(data.html).enhanceWithin();
 	    });
