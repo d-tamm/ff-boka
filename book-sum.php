@@ -38,13 +38,15 @@ repeatPreview($('#repeat-count').val(), repeatType);\" value='month'>månad</lab
         } else {
             $ret .= "<ul data-role='listview' data-inset='true'>";
             foreach ($series as $b) {
-                $ret .= "<li><a href='book-sum.php?bookingId={$b->id}'><p>" . (is_null($start = $b->start()) ? "(bokning utan resurser)" : strftime("%F", $start)) . "</p></a></li>";
+                $ret .= "<li><a href='book-sum.php?bookingId={$b->id}'>" . (is_null($start = $b->start()) ? "(bokning utan resurser)" : strftime("%F", $start)) . "</a></li>";
             }
             $ret .= "</ul>";
         }
-        $ret .= "<button onClick='unlinkBooking()' class='ui-btn ui-icon-action ui-btn-icon-left'>Avlänka det här tillfället</button>";
-        $ret .= "<button onClick='unlinkSeries()' class='ui-btn ui-icon-back ui-btn-icon-left'>Avlänka hela serien</button>";
-        $ret .= "<button onClick='deleteSeries()' class='ui-btn ui-btn-c ui-icon-delete ui-btn-icon-left'>Radera alla tillfällen</button>";
+        $ret .= "<div data-role='controlgroup'>
+            <button onClick='unlinkBooking()' class='ui-btn ui-icon-action ui-btn-icon-left'>Avlänka det här tillfället</button>
+            <button onClick='unlinkSeries()' class='ui-btn ui-icon-back ui-btn-icon-left'>Avlänka hela serien</button>
+            </div>
+            <button onClick='deleteSeries()' class='ui-btn ui-btn-c ui-icon-delete ui-btn-icon-left'>Radera alla tillfällen</button>";
 	}
     return $ret;
 }
@@ -131,30 +133,48 @@ statusen såsom slutgiltigt bokad eller måste bekräftas.</p>
 <p>Om du är bokningsansvarig kan du här även bekräfta eller avvisa förfrågningar på enskilda
 resurser och sätta pris på dem. När du gjort det är det bra om du skickar en uppdaterad
 bokningsbekräftelse genom att klickar på knappen <i>Spara ändringar</i> längst ner.</p>
+
 <h3>Pris</h3>
 <p>Under resurslistan visas en sammanfattning av kostnaderna om bokningsansvarig har satt
 ett pris på någon av resurserna. Om du är bokningsansvarig kan du mata in beloppet som har
 betalats.</p>
+
 <h3>Bokningsfrågor</h3>
 <p>Beroende på vad du håller på att boka kan det finnas ett avsnitt med frågor som ska
 besvaras. Frågor märkta med en asterisk (<span class="required"></span>) måste du svara på
 för att kunna boka, övriga frågor är frivilliga.</p>
+
 <h3>Kontaktuppgifter</h3>
 <p>Om du är inloggad så visas kontaktuppgifterna som tillhör ditt konto. Du kan när som
 helst ändra dem (även efter att du avslutat bokningen) genom att gå till <a href="userdata.php">Min Sida</a>.</p>
 <p>Om du bokar som gäst ska du här skriva in ditt namn och dina kontaktuppgifter så vi kan
 nå dig vid frågor. I bokningsbekräftelsen kommer du att få en länk till bokningen så att du
 kan komma tillbaka och uppdatera den.</p>
+
 <h3>Referens</h3>
 <p>Här kan du skriva in en valfri kort beskrivande text, så att du lättare kan se vad bokningen
 avser. Texten kommer att visas som rubrik till bokningen på Min Sida.</p>
+
 <h3>Meddelande</h3>
 <p>Längst ner på sidan finns det en kommentarsruta som bokande och bokningsansvarig kan använda
 för att lämna meddelanden till varandra.</p>
+
 <h3>Knappen Slutföra bokningen / Spara ändringar</h3>
 <p>Knappen sparar den aktuella bokningen och ändrar status på resurserna till <i>väntar på bekräftelse</i>
 eller <i>bekräftat</i> beroende på din behörighetsnivå. Sedan skickar systemet ut bekräftelsemejl
 till dig som bokar, samt vid behov till bokningsansvarig.</p>
+
+<h3>Återkommande bokningar</h3>
+<p>Om du har behörighet att lägga din bokning utan behov av att en administratör godkänner den, så kan
+du även skapa en bokningsserie. Välj mellan daglig, veckovis eller månadsvis upprepning samt antal
+tillfällen. När du skapar serien så skapas varje tillfälle som en fristående bokning, där det visas
+länkar för att hoppa till de andra tillfällena i serien. Om du ändrar en bokning påverkas dock inte
+de andra tillfällena.</p>
+<p><b>Avlänka det här tillfället</b> löser länken mellan den här bokningen och övriga
+serien utan att ta bort själva tillfället.</p>
+<p><b>Avlänka hela serien</b> löser upp serien men lämnar kvar alla tillfällen som olänkade bokningar.</p>
+<p><b>Radera alla tillfällen</b> raderar hela serien förutom det första tillfället och alla
+tillfällen som redan har passerat så att historiken behålls.</p>
 EOF;
         die();
     case "ajaxFreebusyItem":
@@ -616,7 +636,8 @@ EOF;
     $leastStatus = FFBoka::STATUS_CONFIRMED;
     $showRepeating = isset($_SESSION['authenticatedUser']) ? true : false;
     $itemsToConfirm = array();
-    foreach ($booking->items() as $item) {
+    $items = $booking->items();
+    foreach ($items as $item) {
         $leastStatus = min($leastStatus, $item->status);
         $access = $item->category()->getAccess($currentUser);
         $showRepeating = $showRepeating && $access >= FFBoka::ACCESS_BOOK;
@@ -656,6 +677,8 @@ EOF;
     }
     ?>
     </ul>
+
+    <?= count($items) == 0 ? "<p>Bokningen innehåller inte några resurser.</p>" : "" ?>
 
     <button onClick="location.href='book-part.php<?= isset($startTime) ? "?start=$startTime&end=$endTime" : "" ?>'" data-transition='slide' data-direction='reverse' class='ui-btn ui-icon-plus ui-btn-icon-right'>Lägg till fler resurser</button>
     
