@@ -191,17 +191,14 @@ if (isset($_GET['first_login'])) $message = "Välkommen till resursbokningen! In
                     $end = NULL;
                     $html = "";
                     $items = $b->items();
-                    if (count($items) == 0) $html .= "Bokningen är tom<br>";
-                    else {
-                        foreach ($b->items() as $item) {
-                            $start = is_null($start) ? $item->start : min($start, $item->start);
-                            $end = is_null($end) ? $item->end : min($end, $item->end);
-                            $html .= "&bull; " . htmlspecialchars($item->caption) . ($item->status<FFBoka::STATUS_CONFIRMED ? " (<b>obekräftat</b>)" : "") . "<br>";
-                        }
+                    foreach ($b->items() as $item) {
+                        $start = is_null($start) ? $item->start : min($start, $item->start);
+                        $end = is_null($end) ? $item->end : min($end, $item->end);
+                        $html .= "&bull; " . htmlspecialchars($item->caption) . ($item->status<FFBoka::STATUS_CONFIRMED ? " (<b>obekräftat</b>)" : "") . "<br>";
                     }
                     $html = "<li><a href='book-sum.php?bookingId={$b->id}'>\n" .
                         ($b->ref ? htmlspecialchars($b->ref) : "") .
-                        (is_null($start) ? "" : "<p><b>" . strftime("%F kl %k:00", $start) . " &mdash; " . strftime("%F kl %k:00", $end) . "</b></p>\n") .
+                        "<p>" . (is_null($b->repeatId) ? "" : "🔄 ") . "<b>" . (is_null($start) ? "Bokningen är tom" : strftime("%F kl %k:00", $start) . " &mdash; " . strftime("%F kl %k:00", $end)) . "</b></p>\n" .
                         "<p>$html</p>" .
                         "<p>Bokat {$b->timestamp} i LA {$b->section()->name}</p>\n" .
                         "</a></li>";
