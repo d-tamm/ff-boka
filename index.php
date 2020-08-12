@@ -16,11 +16,17 @@ if (isset($_REQUEST['action'])) {
             $oneAss = array_pop($allAss);
             echo "
 <h3>Få hjälp</h3>
-<p>Grattis! Du har redan hittat frågetecknet <img src='resources/help.svg' style='height:1em;'> uppe i högra hörnet. Det finns på alla sidor och visar olika innehåll beroende på vilken sida du är på.</p>
+<p>Grattis! Du har redan hittat frågetecknet <img src='resources/help.svg' style='height:1em;'>
+uppe i högra hörnet. Det finns på alla sidor och visar olika innehåll beroende på vilken sida du
+är på.</p>
 <p>Du kan stänga hjälp-rutan med tillbaka-knappen (på mobilen) eller ESC-tangenten (på datorn).</p>
 
 <h3>Inloggning</h3>
-<p>Resursbokningen använder samma inloggning som Friluftsfrämjandets aktivitetshanterare. Det innebär att du kan använda både medlemsnummer och personnummer, och att du använder samma lösenord som i aktivitetshanteraren. Har du problem med inloggningen, vänd dig i första hand till dem som har hand om inloggningen på friluftsframjandet.se.</p>
+<p>Resursbokningen använder samma inloggningstjänst som Friluftsfrämjandets aktivitetshanterare.
+Det innebär att du kan använda både medlemsnummer och personnummer, och att du använder samma
+lösenord som i aktivitetshanteraren. Har du tidigare loggat in i resursbokningen och aktiverat
+din epostadress kan du även använda den istället för medlemsnumret. Har du problem med 
+inloggningen, vänd dig i första hand till dem som har hand om inloggningen på friluftsframjandet.se.</p>
 
 <h3>Kom igång med din lokalavdelning</h3>
 <ul>
@@ -298,7 +304,7 @@ if (isset($_REQUEST['message'])) $message = ($message ? "$message<br>" : "") . $
         <form id="formLogin" style="padding:10px 20px;" action="index.php" method="post" data-ajax="false">
             <h3>Inloggning</h3>
             <input type="hidden" name="redirect" id="loginRedirect" value="<?= isset($_REQUEST['redirect']) ? $_REQUEST['redirect'] : "" ?>">
-            <input name="id" value="" placeholder="Medlemsnummer eller personnummer" required>
+            <input name="id" value="" placeholder="Medlemsnummer, personnummer eller epost" required>
             <input name="password" value="" placeholder="Lösenord" type="password">
             <div id="div-remember-me" style="<?= empty($_COOKIE['cookiesOK']) || empty($_SERVER['HTTPS']) ? "display:none;" : "" ?>"><label><input data-mini='true' name='rememberMe' value='1' type='checkbox'> Kom ihåg mig</label></div>
             <button name="login" value="login" class="ui-btn ui-shadow ui-btn-b ui-btn-icon-right ui-icon-user">Logga in</button>

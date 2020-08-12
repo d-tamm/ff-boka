@@ -214,6 +214,11 @@ class FFBoka {
             } else {
                 return array("authenticated" => FALSE, "section" => NULL);
             }
+        } elseif (filter_var($userId, FILTER_VALIDATE_EMAIL)) {
+            // $userId given as email address. Look it up in the users table
+            $stmt = self::$db->prepare("SELECT userId FROM users WHERE mail=? LIMIT 1");
+            $stmt->execute(array($userId));
+            if ($row = $stmt->fetch(\PDO::FETCH_OBJ)) $userId = $row->userId;
         }
         // Check password via API and get home section
         $options = array(
