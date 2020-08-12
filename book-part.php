@@ -168,8 +168,9 @@ END;
             $_SESSION['bookedItemId'] = $_REQUEST['id']; 
         }
         $html = "";
-        if ($_REQUEST['bookingStep']==2 && $item->status > FFBoka::STATUS_PENDING) {
-            if ($item->category()->getAccess($currentUser) >= FFBoka::ACCESS_CONFIRM || // admin
+        if ($_REQUEST['bookingStep']==2) {
+            if ($item->status <= FFBoka::STATUS_PENDING ||
+                $item->category()->getAccess($currentUser) >= FFBoka::ACCESS_CONFIRM || // admin
                 (isset($_SESSION['token']) && $_SESSION['token'] == $item->booking()->token) || // correct token
                 (isset($_SESSION['authenticatedUser']) && $item->booking()->userId == $_SESSION['authenticatedUser']) // same user
                 ) {
