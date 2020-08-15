@@ -19,7 +19,6 @@ if (isset($_REQUEST['action'])) {
 <p>Grattis! Du har redan hittat frågetecknet <img src='resources/help.svg' style='height:1em;'>
 uppe i högra hörnet. Det finns på alla sidor och visar olika innehåll beroende på vilken sida du
 är på.</p>
-<p>Du kan stänga hjälp-rutan med tillbaka-knappen (på mobilen) eller ESC-tangenten (på datorn).</p>
 
 <h3>Inloggning</h3>
 <p>Resursbokningen använder samma inloggningstjänst som Friluftsfrämjandets aktivitetshanterare.
