@@ -102,7 +102,7 @@ if (isset($_REQUEST['action'])) {
 
 <body>
 <div data-role="page" id="page-bookings">
-    <?= head("Bokningar " . htmlspecialchars($section->name), $cfg['url'], $currentUser, $cfg['superAdmins']) ?>
+    <?= head("Bokningar " . htmlspecialchars($section->name), $cfg['url'], $cfg['superAdmins']) ?>
     <div role="main" class="ui-content">
 
 	<div data-role='collapsible' id='bookings-tab-unconfirmed' data-inset='false'>

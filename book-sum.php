@@ -448,7 +448,7 @@ EOF;
 
 <body>
 <div data-role="page" id="page-book-sum">
-    <?= head("Din bokning", $cfg['url'], $currentUser, $cfg['superAdmins']) ?>
+    <?= head("Din bokning", $cfg['url'], $cfg['superAdmins']) ?>
     <div role="main" class="ui-content">
 
     <div data-role="popup" data-overlay-theme="b" id="popup-msg-page-book-sum" class="ui-content">

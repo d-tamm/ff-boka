@@ -171,7 +171,7 @@ EOF;
 
 <body>
 <div data-role="page" id="page-admin-item">
-    <?= head($item->caption ? htmlspecialchars($item->caption) : "Ny utrustning", $cfg['url'], $currentUser, $cfg['superAdmins']) ?>
+    <?= head($item->caption ? htmlspecialchars($item->caption) : "Ny utrustning", $cfg['url'], $cfg['superAdmins']) ?>
     <div role="main" class="ui-content">
     
         <div data-role="popup" data-overlay-theme="b" id="popup-msg-page-admin-item" class="ui-content">

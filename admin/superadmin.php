@@ -138,7 +138,7 @@ case "savePoll":
 
 <body>
 <div data-role="page" id="page-super-admin">
-    <?= head("Super-Admin", $cfg['url'], $currentUser, $cfg['superAdmins']) ?>
+    <?= head("Super-Admin", $cfg['url'], $cfg['superAdmins']) ?>
     <div role="main" class="ui-content">
 
     <div data-role="popup" data-overlay-theme="b" id="popup-msg-page-super-admin" class="ui-content">

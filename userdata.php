@@ -164,7 +164,7 @@ if (isset($_GET['first_login'])) $message = "Välkommen till resursbokningen! In
 
 <body>
 <div data-role="page" id="page-userdata">
-    <?= head("Min sida", $cfg['url'], $currentUser, $cfg['superAdmins']) ?>
+    <?= head("Min sida", $cfg['url'], $cfg['superAdmins']) ?>
     <div role="main" class="ui-content">
 
     <div data-role="popup" data-overlay-theme="b" id="popup-msg-page-userdata" class="ui-content">

@@ -147,10 +147,9 @@ function htmlHeaders(string $title, string $baseUrl, string $mode="mobile") {
  * Output HTML code for the common page heading and side panel
  * @param string $caption
  * @param string $baseUrl Base URL of the installation
- * @param User $currentUser The currently logged in user
  * @param array[int] $superAdmins Member IDs giving superadmin access 
  */
-function head(string $caption, string $baseUrl, $currentUser=NULL, $superAdmins=array()) {
+function head(string $caption, string $baseUrl, $superAdmins=array()) {
     // Declare side panel
     ?>
     <div data-role="panel" data-theme="b" data-position-fixed="true" data-display="push" id="navpanel">
