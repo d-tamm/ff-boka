@@ -785,7 +785,7 @@ EOF;
         
         <div class="ui-field-contain">
             <label for="book-sum-ref">Referens:</label>
-            <input name="ref" id="book-sum-ref" placeholder="valfri referens" value="<?= $booking->ref ?>">
+            <input name="ref" id="book-sum-ref" placeholder="visas i din bokningsöversikt" value="<?= $booking->ref ?>">
         </div>
         
         Här kan du lämna valfritt meddelande:
