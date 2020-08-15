@@ -1,6 +1,7 @@
 // General vars
 var toutSetValue,
 	toutSearch,
+	toutUpdateRepeatPreview,
     weekdays = [ 'sön', 'mån', 'tis', 'ons', 'tor', 'fre', 'lör' ];
 
 // Prevent caching of pages
@@ -10,7 +11,8 @@ $(document).on('pagecontainerhide', function (event, ui) {
 
 function showHelp() {
     $.get("?action=help", function( data ) {
-        $("#popup-help").html(data).popup("open", { transition: "slide" });
+        $("#help-content").html(data);
+		$("#popup-help").popup("open", { transition: "slide" });
     });
 }
 
@@ -432,7 +434,7 @@ function checkTimes(save=false) {
 
 
 // ========== book-sum.php ==========
-var reqCheckRadios, itemsToConfirm;
+var reqCheckRadios, itemsToConfirm, repeatType="";
 
 $(document).on('pagecreate', "#page-book-sum", function() {
     // bind events
@@ -454,6 +456,28 @@ $(document).on('pagecreate', "#page-book-sum", function() {
         nextDateClick = nextDateClick=="start" ? "end" : "start"; 
         updateBookedTimeframe();
     });
+
+	/** User changed number of occurences in the booking series dialog */
+    $(document).on('input', '#repeat-count', function() {
+		if (repeatType!="") {
+	        clearTimeout(toutUpdateRepeatPreview);
+	        toutUpdateRepeatPreview = setTimeout(repeatPreview, 600, this.value, repeatType);
+		}
+	});
+
+	/** User chose to create a booking series */
+	$(document).on('click', '#repeat-create', function(event) {
+	    $.mobile.loading("show", {});
+	    $.getJSON("book-sum.php", {
+	        action: "ajaxRepeatCreate",
+	        count: $('#repeat-count').val(),
+			type: repeatType
+	    }, function(data, status) {
+	        $.mobile.loading("hide", {});
+	        $('#series-panel').html(data.html).enhanceWithin();
+			alert("Bokningsserien har skapats.");
+	    });
+	});
 
     /**
      * User chose a new start date from date picker for booking items
@@ -522,6 +546,63 @@ $(document).on('pageshow', "#page-book-sum", function() {
     }
     bookingStep=2;
 });
+
+/**
+ * Get a preview for a new booking series
+ * @param int count Number of bookings in the series, including the original one
+ * @param int type Type of repetition (day|week|month)
+ */
+function repeatPreview(count, type) {
+    $.mobile.loading("show", {});
+    $.getJSON("book-sum.php", {
+        action: "ajaxRepeatPreview",
+        count: count,
+		type: type
+    }, function(data, status) {
+        $.mobile.loading("hide", {});
+        if (data.error) alert(data.error);
+        else $('#repeat-preview').html(data.html);
+		$('#repeat-create').prop("disabled", false);
+    });
+}
+
+/** Remove the booking from its booking series (but keep it) */
+function unlinkBooking() {
+    $.mobile.loading("show", {});
+    $.getJSON("book-sum.php", {
+        action: "ajaxUnlinkBooking"
+    }, function(data, status) {
+        $.mobile.loading("hide", {});
+        $('#series-panel').html(data.html).enhanceWithin();
+		alert("Bokningen har nu tagits bort från bokningsserien.");
+    });
+}
+
+/** Remove all bookings from series (but keep them) */
+function unlinkSeries() {
+    $.mobile.loading("show", {});
+    $.getJSON("book-sum.php", {
+        action: "ajaxUnlinkSeries"
+    }, function(data, status) {
+        $.mobile.loading("hide", {});
+        $('#series-panel').html(data.html).enhanceWithin();
+		alert("Bokningen har nu tagits bort från bokningsserien.");
+    });
+}
+
+function deleteSeries() {
+	if (confirm("OBS! Om du fortsätter raderas alla kommande tillfällen i den här serien. Tillfällen som har passerat samt det första tillfället i serien raderas dock inte. Vill du fortsätta?")) {
+	    $.mobile.loading("show", {});
+	    $.getJSON("book-sum.php", {
+	        action: "ajaxDeleteSeries"
+	    }, function(data, status) {
+	        $.mobile.loading("hide", {});
+			alert("Bokningsserien har nu raderats, förutom det första tillfället samt de tillfällen som har passerat.");
+			if (data.gotoBookingId) location.href="book-sum.php?bookingId="+data.gotoBookingId;
+			else $('#series-panel').html(data.html).enhanceWithin();
+	    });
+	}
+}
 
 /**
  * Remove a single item from booking
@@ -1401,6 +1482,11 @@ function deleteImage(id) {
 $(document).on('pagecreate', "#page-super-admin", function() {
     // Bind events
     
+	$(".superadmin-login-post").on("click", function() {
+		$("#admin-impersonate-userId").val(this.dataset.userid);
+		$("#admin-section-misc").collapsible("expand");
+	});
+	
 	$("#sectionadmin-sectionlist").on('change', function() {
 		$.getJSON("?action=ajaxMakeMeAdmin&sectionId=" + this.value, function(data, status) {
 			if (data.error) alert(data.error);

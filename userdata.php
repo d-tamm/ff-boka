@@ -190,6 +190,7 @@ if (isset($_GET['first_login'])) $message = "Välkommen till resursbokningen! In
                     $start = NULL;
                     $end = NULL;
                     $html = "";
+                    $items = $b->items();
                     foreach ($b->items() as $item) {
                         $start = is_null($start) ? $item->start : min($start, $item->start);
                         $end = is_null($end) ? $item->end : min($end, $item->end);
@@ -197,7 +198,7 @@ if (isset($_GET['first_login'])) $message = "Välkommen till resursbokningen! In
                     }
                     $html = "<li><a href='book-sum.php?bookingId={$b->id}'>\n" .
                         ($b->ref ? htmlspecialchars($b->ref) : "") .
-                        "<p><b>" . strftime("%F kl %k:00", $start) . " &mdash; " . strftime("%F kl %k:00", $end) . "</b></p>\n" .
+                        "<p>" . (is_null($b->repeatId) ? "" : "🔄 ") . "<b>" . (is_null($start) ? "Bokningen är tom" : strftime("%F kl %k:00", $start) . " &mdash; " . strftime("%F kl %k:00", $end)) . "</b></p>\n" .
                         "<p>$html</p>" .
                         "<p>Bokat {$b->timestamp} i LA {$b->section()->name}</p>\n" .
                         "</a></li>";
