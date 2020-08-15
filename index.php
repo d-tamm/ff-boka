@@ -303,7 +303,7 @@ if (isset($_REQUEST['message'])) $message = ($message ? "$message<br>" : "") . $
         <form id="formLogin" style="padding:10px 20px;" action="index.php" method="post" data-ajax="false">
             <h3>Inloggning</h3>
             <input type="hidden" name="redirect" id="loginRedirect" value="<?= isset($_REQUEST['redirect']) ? $_REQUEST['redirect'] : "" ?>">
-            <input name="id" value="" placeholder="Medlemsnummer, personnummer eller epost" required>
+            <input name="id" value="" placeholder="Medlemsnummer eller personnummer" required>
             <input name="password" value="" placeholder="Lösenord" type="password">
             <div id="div-remember-me" style="<?= empty($_COOKIE['cookiesOK']) || empty($_SERVER['HTTPS']) ? "display:none;" : "" ?>"><label><input data-mini='true' name='rememberMe' value='1' type='checkbox'> Kom ihåg mig</label></div>
             <button name="login" value="login" class="ui-btn ui-shadow ui-btn-b ui-btn-icon-right ui-icon-user">Logga in</button>
