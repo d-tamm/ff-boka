@@ -180,6 +180,12 @@ if (isset($_GET['first_login'])) $message = "Välkommen till resursbokningen! In
             <li data-icon='plus'><a href="book-part.php?sectionId=<?= $currentUser->sectionId ?>">Lägg en ny bokning</a></li>
             <?php
             $bookingIds = $currentUser->bookingIds();
+            // Sort by start date of first item respectively
+            usort($bookingIds, function($b1, $b2) {
+                $booking1 = new Booking($b1);
+                $booking2 = new Booking($b2);
+                return ($booking2->start() - $booking1->start());
+            });
             if (count($bookingIds)) {
                 // Sort the bookings in unconfirmed, upcoming and completed
                 $unconfirmed = "";
