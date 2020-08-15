@@ -367,7 +367,9 @@ EOF;
         // Send confirmation to user
         $mailItems = "<tr><th>Resurs</th><th>Datum</th></tr>";
         $adminsToNotify = array();
+        $maxStatus = FFBoka::STATUS_PENDING;
         foreach ($booking->items() as $item) {
+            $maxStatus = max($maxStatus, $item->status);
             $cat = $item->category();
             // Collect functional email addresses to notify
             $alerts = $cat->sendAlertTo;
@@ -390,49 +392,51 @@ EOF;
         }
         if ($booking->userId == $currentUser->id) $statusText = "Din bokning <i>" . htmlspecialchars($booking->ref) . "</i> har nu raderats.";
         else $statusText = "Din bokning <i>" . htmlspecialchars($booking->ref) . "</i> har raderats av bokningsansvarig (" . htmlspecialchars($currentUser->name . ", " . $currentUser->mail) . "). Om detta är felaktigt, vänligen ta kontakt med " . htmlspecialchars($currentUser->name) . " omgående för att reda ut vad som har hänt.";
-        try {
-            sendmail(
-                is_null($booking->userId) ? $booking->extMail : $booking->user()->mail, // to
-                "Bokning #{$booking->id} har raderats", // subject
-                "booking_deleted", // template name
-                array( // replace.
-                    "{{name}}"    => htmlspecialchars(is_null($booking->userId) ? $booking->extName : $booking->user()->name),
-                    "{{items}}"   => $mailItems,
-                    "{{status}}"  => $statusText,
-                    "{{commentCust}}" => $booking->commentCust ? str_replace("\n", "<br>", htmlspecialchars($booking->commentCust)) : "(ingen kommentar har lämnats)",
-                )
-            );
-        } catch(Exception $e) {
-            $message = "Kunde inte skicka bekräftelsen till dig:" . $e;
-        }
-        // Send notifications to admins
-        if (is_null($booking->userId)) {
-            $contactData = "Detta är en gästbokning.<br>Namn: " . htmlspecialchars($booking->extName) . "<br>Telefon: " . htmlspecialchars($booking->extPhone) . "<br>Mejl: " . htmlspecialchars($booking->extMail);
-        } else {
-            $contactData = "Namn: " . htmlspecialchars($booking->user()->name) . "<br>Telefon: " . htmlspecialchars($booking->user()->phone) . "<br>Mejl: " . htmlspecialchars($booking->user()->mail);
-        }
-        foreach ($adminsToNotify as $id=>$itemIds) {
-            if (is_numeric($id)) {
-                if (isset($_SESSION['authenticatedUser']) && $id == $_SESSION['authenticatedUser']) continue; // Don't send notification to current user
-                $adm = new User($id);
-                $mail = $adm->mail;
-                $name = $adm->name;
-            } else {
-                $mail = $id;
-                $name = "";
-            }
-            if ($mail) { // can only send if admin has email address
+        if ($maxStatus > FFBoka::STATUS_PENDING) {
+            try {
                 sendmail(
-                    $mail, // to
-                    "FF Bokning #{$booking->id} raderad", // subject
-                    "booking_deleted",
-                    array(
-                        "{{name}}"    => $name,
+                    is_null($booking->userId) ? $booking->extMail : $booking->user()->mail, // to
+                    "Bokning #{$booking->id} har raderats", // subject
+                    "booking_deleted", // template name
+                    array( // replace.
+                        "{{name}}"    => htmlspecialchars(is_null($booking->userId) ? $booking->extName : $booking->user()->name),
                         "{{items}}"   => $mailItems,
-                        "{{status}}"  => "Bokningen nedan har raderats.",
-                        "{{commentCust}}" => str_replace("\n", "<br>", htmlspecialchars($booking->commentCust)) . "<br><br>$contactData",
+                        "{{status}}"  => $statusText,
+                        "{{commentCust}}" => $booking->commentCust ? str_replace("\n", "<br>", htmlspecialchars($booking->commentCust)) : "(ingen kommentar har lämnats)",
                     )
                 );
+            } catch(Exception $e) {
+                $message = "Kunde inte skicka bekräftelsen till dig:" . $e;
+            }
+            // Send notifications to admins
+            if (is_null($booking->userId)) {
+                $contactData = "Detta är en gästbokning.<br>Namn: " . htmlspecialchars($booking->extName) . "<br>Telefon: " . htmlspecialchars($booking->extPhone) . "<br>Mejl: " . htmlspecialchars($booking->extMail);
+            } else {
+                $contactData = "Namn: " . htmlspecialchars($booking->user()->name) . "<br>Telefon: " . htmlspecialchars($booking->user()->phone) . "<br>Mejl: " . htmlspecialchars($booking->user()->mail);
+            }
+            foreach ($adminsToNotify as $id=>$itemIds) {
+                if (is_numeric($id)) {
+                    if (isset($_SESSION['authenticatedUser']) && $id == $_SESSION['authenticatedUser']) continue; // Don't send notification to current user
+                    $adm = new User($id);
+                    $mail = $adm->mail;
+                    $name = $adm->name;
+                } else {
+                    $mail = $id;
+                    $name = "";
+                }
+                if ($mail) { // can only send if admin has email address
+                    sendmail(
+                        $mail, // to
+                        "FF Bokning #{$booking->id} raderad", // subject
+                        "booking_deleted",
+                        array(
+                            "{{name}}"    => $name,
+                            "{{items}}"   => $mailItems,
+                            "{{status}}"  => "Bokningen nedan har raderats.",
+                            "{{commentCust}}" => str_replace("\n", "<br>", htmlspecialchars($booking->commentCust)) . "<br><br>$contactData",
+                        )
+                    );
+                }
             }
         }
         // If the booking belongs to a series and only one occurrence would be left, remove the series.
