@@ -5,14 +5,15 @@ session_start();
 require("inc/common.php");
 global $cfg;
 
-if ($_SESSION['authenticatedUser']) {
+if (isset($_SESSION['authenticatedUser'])) {
     $currentUser = new User($_SESSION['authenticatedUser']);
 }
 
+if (isset($_REQUEST['action'])) {
 switch ($_REQUEST['action']) {
     case "help":
         die("Mer hjälp än texten på sidan finns inte här.");
-}
+}}
 
 ?><!DOCTYPE html>
 <html>
