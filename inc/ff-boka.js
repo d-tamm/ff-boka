@@ -16,6 +16,12 @@ function showHelp() {
     });
 }
 
+/** Convert a date into ISO format (YYYY-mm-dd) */
+function dateToISO(date) {
+	return date.getFullYear().toString() + '-' + (date.getMonth() + 1).toString().padStart(2, 0) +
+    '-' + date.getDate().toString().padStart(2, 0);
+}
+
 /**
  * Get a GET request variable. Found on https://stackoverflow.com/questions/831030/how-to-get-get-request-parameters-in-javascript
  * @param name The name of the GET variable to return
@@ -340,8 +346,8 @@ function popupItemDetails(itemId) {
             wday = fbStart.getDay() ? fbStart.getDay()-1 : 6; // Weekday, where Monday=0 ... Sunday=6
             fbStart.setDate(fbStart.getDate() - wday); // Should now be last Monday
             nextDateClick = "start";
-            $("#book-item-booked-start").html(startDate.toLocaleDateString() + ' ' + startTime + ':00');
-            $("#book-item-booked-end").html(endDate.toLocaleDateString() + ' ' + endTime + ':00');
+            $("#book-item-booked-start").html(startDate.toLocaleDateString("sv-SE") + ' ' + startTime + ':00');
+            $("#book-item-booked-end").html(endDate.toLocaleDateString("sv-SE") + ' ' + endTime + ':00');
             scrollItemDate(0);
             $("#book-item-price").val(data.price);
         } else {
@@ -368,9 +374,9 @@ function updateBookedTimeframe() {
             endTime = startTime;
         }
     }
-    $("#book-date-start").val( startDate.toLocaleDateString("sv-SE") );
+    $("#book-date-start").val( dateToISO(startDate) );
     $("#book-time-start").val( startTime ).selectmenu("refresh");
-    $("#book-date-end").val( endDate.toLocaleDateString("sv-SE") );
+    $("#book-date-end").val( dateToISO(endDate) );
     $("#book-time-end").val( endTime ).selectmenu("refresh");
     if (nextDateClick=="start") {
         $("#book-date-chooser-next-click").html("Klicka på önskat startdatum för att ändra datum.");
