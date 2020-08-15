@@ -177,7 +177,7 @@ $(document).on('pagecreate', "#page-book-part", function() {
      * User chose a new start date from date picker for booking items
      */
     $('#book-date-start').change(function(event) {
-        startDate = new Date(this.value);
+		startDate = new Date(this.value+"T00:00:00");
         if (startDate<fbStart || startDate.valueOf()>fbStart.valueOf()+7*24*60*60) {
             // scroll to chosen week
             fbStart = new Date(this.value);
@@ -193,7 +193,7 @@ $(document).on('pagecreate', "#page-book-part", function() {
      * User chose a new end date from date picker for booking items
      */
     $('#book-date-end').change(function(event) {
-        endDate = new Date(this.value);
+        endDate = new Date(this.value+"T00:00:00");
         nextDateClick = "start";
         updateBookedTimeframe();
     });
@@ -489,7 +489,7 @@ $(document).on('pagecreate', "#page-book-sum", function() {
      * User chose a new start date from date picker for booking items
      */
     $('#book-date-start').change(function(event) {
-        startDate = new Date(this.value);
+        startDate = new Date(this.value+"T00:00:00");
         if (startDate<fbStart || startDate.valueOf()>fbStart.valueOf()+7*24*60*60) {
             // scroll to chosen week
             fbStart = new Date(this.value);
@@ -505,7 +505,7 @@ $(document).on('pagecreate', "#page-book-sum", function() {
      * User chose a new end date from date picker for booking items
      */
     $('#book-date-end').change(function(event) {
-        endDate = new Date(this.value);
+        endDate = new Date(this.value+"T00:00:00");
         nextDateClick = "start";
         updateBookedTimeframe();
     });
