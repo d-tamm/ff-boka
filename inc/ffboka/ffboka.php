@@ -200,6 +200,7 @@ class FFBoka {
      */
     public function authenticateUser($userId, $password) {
         $matches = array();
+        $userId = trim($userId);
         if (preg_match("/^(19|20)?(\d{6})-?(\d{4})$/", $userId, $matches)) {
             // $userId is given as personnummer.
             // Convert to 10 digits if given as 12 digits
