@@ -99,8 +99,10 @@ if (!(
 $_SESSION['sectionId'] = $booking->sectionId;
 $section = new Section($_SESSION['sectionId']);
 
-// Check if booking collides with existing ones
+// Check if booking collides with existing ones ...
 $unavail = array();
+// ... or with itself
+$overlap = $booking->getOverlappingItems();
 $conflicts = array();
 $items = $booking->items();
 foreach ($items as $item) {
@@ -115,7 +117,7 @@ foreach ($items as $item) {
     }
 }
 
-// Get start and end time for first item in booking
+// Get start and end time for first item in booking, as default for other items
 if (count($items)) {
     $startTime = $items[0]->start;
     $endTime = $items[0]->end;
@@ -203,7 +205,7 @@ EOF;
                 $booking->addAnswer($question->caption, implode(", ", isset($_REQUEST["answer-$id"]) ? $_REQUEST["answer-$id"] : array()));
             }
         }
-        if (count($unavail)) break;
+        if (count($unavail)>0 || count($overlap)>0) break;
         $mailItems = "<tr><th>Resurs</th><th>Status</th><th>Datum</th><th></th></tr>";
         // Set booking status of each item, and build confirmation string incl post-booking messages
         $leastStatus = FFBoka::STATUS_CONFIRMED;
@@ -641,6 +643,7 @@ EOF;
 
     <?php
     if (count($unavail)) echo "<p class='ui-body ui-body-c'>Några av de resurser du har valt är inte längre tillgängliga vid den valda tiden. De är markerade nedan. För att kunna slutföra bokningen behöver du ta bort dessa resurser eller ändra tiden till en ledig tid.</p>";
+    if (count($overlap)) echo "<p class='ui-body ui-body-c'>Du har lagt in " . (count($overlap)==1 ? "en resurs" : "några resurser") . " flera gånger vid samma tid eller så att tiderna överlappar. De berörda raderna är markerade nedan. Du behöver ta bort dubletten eller justera tiden för att kunna slutföra bokningen.</p>";
     ?>
     
     <ul data-role='listview' data-inset='true' data-divider-theme='a' data-split-icon='delete'>
@@ -659,7 +662,7 @@ EOF;
             if (isset($questions[$id])) $questions[$id]=($questions[$id] || $q->required);
             else $questions[$id]=$q->required;
         }
-        echo "<li id='item-{$item->bookedItemId}'" . (in_array($item->bookedItemId, $unavail) ? " data-theme='c'" : "") . ($item->status==FFBoka::STATUS_REJECTED ? " class='rejected'" : "") . ">";
+        echo "<li id='item-{$item->bookedItemId}'" . ((in_array($item->bookedItemId, $unavail) || array_key_exists($item->id, $overlap)) ? " data-theme='c'" : "") . ($item->status==FFBoka::STATUS_REJECTED ? " class='rejected'" : "") . ">";
         if ($showEditButtons) {
             echo "<div class='item-edit-buttons'>";
             if ($item->status == FFBoka::STATUS_CONFLICT || $item->status == FFBoka::STATUS_PREBOOKED) {
@@ -674,6 +677,7 @@ EOF;
         "<h3 style='white-space:normal;'>" . htmlspecialchars($item->caption) . "</h3><p style='overflow:auto; white-space:normal; margin-bottom:0px;'>";
         echo strftime("%F kl %H", $item->start) . " &mdash; " . strftime("%F kl %H", $item->end) . "<br>\n";
         if (in_array($item->bookedItemId, $unavail)) echo "<span id='book-item-status-{$item->bookedItemId}'>Inte tillgänglig</span>";
+        elseif (array_key_exists($item->id, $overlap)) echo "Överlappar";
         else {
             switch ($item->status) {
             case FFBoka::STATUS_PENDING: echo "Bokning ej slutförd än"; break;
@@ -795,7 +799,7 @@ EOF;
         if ($section->showFor($currentUser, FFBoka::ACCESS_CONFIRM)) echo "Intern anteckning:<br><textarea name='commentIntern' placeholder='Intern anteckning'>{$booking->commentIntern}</textarea>";
         ?>
     
-        <input type="submit" data-icon="carat-r" data-iconpos="right" data-theme="b" data-corners="false" value="<?= $booking->status()==FFBoka::STATUS_PENDING ? "Slutför bokningen" : "Spara ändringar" ?>">
+        <input type="submit" data-icon="carat-r" data-iconpos="right" data-theme="b" data-corners="false" value="<?= $booking->status()==FFBoka::STATUS_PENDING ? "Slutför bokningen" : "Spara ändringar" ?>" <?= count($overlap) ? " disabled='disabled'" : "" ?>>
         <a href="#" onClick="deleteBooking(<?= $currentUser->id ? $currentUser->id : 0 ?>, '<?= $cfg['url'] ?>');" class='ui-btn ui-btn-c ui-icon-delete ui-btn-icon-right'>Ta bort bokningen</a>
     </form>
             

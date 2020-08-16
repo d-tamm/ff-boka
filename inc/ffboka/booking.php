@@ -272,4 +272,31 @@ class Booking extends FFBoka {
         }
         return $ret;
     }
+    
+    /**
+     * Get all items in booking which are included multiple times and where the times overlap.
+     * @return string[] Array where the keys are item IDs and the values are the HTML escaped item captions 
+     */
+    public function getOverlappingItems() {
+        $itemTimes = array();
+        $overlap = array();
+        foreach ($this->items() as $item) {
+            $start = $item->start;
+            $end = $item->end;
+            foreach ($itemTimes as $id=>$itemTime) {
+                if (
+                    $id == $item->id && (
+                        ($start >= $itemTime["start"] && $start <= $itemTime["end"]) ||
+                        ($end >= $itemTime["start"] && $end <= $itemTime["end"]) ||
+                        ($start < $itemTime["start"] && $end > $itemTime["end"])
+                    )
+                ) { // item included multiple overlapping times
+                    $overlap[$item->id] = htmlspecialchars($item->caption);
+                    break;
+                }
+            }
+            $itemTimes[$item->id] = [ "start"=>$start, "end"=>$end ];
+        }
+        return $overlap;
+    }
 }
