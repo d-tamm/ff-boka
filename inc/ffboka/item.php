@@ -196,7 +196,8 @@ class Item extends FFBoka {
             INNER JOIN categories USING (catId)
             WHERE
                 itemId={$this->id}
-            $timeConstraint
+                AND status>0
+                $timeConstraint
             ORDER BY start");
         $stmt->execute(array( ":days"=>$days ));
         return $stmt->fetchAll(\PDO::FETCH_OBJ);
