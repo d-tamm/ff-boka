@@ -375,7 +375,7 @@ class User extends FFBoka {
     
     /**
      * Get a poll not yet answered by this user
-     * @return \FFBoka\Poll[]|NULL
+     * @return \FFBoka\Poll|NULL
      */
     public function getUnansweredPoll() {
         $stmt = self::$db->query("SELECT polls.pollId FROM polls WHERE (expires IS NULL OR expires > NOW()) AND pollId NOT IN (SELECT pollId FROM poll_answers WHERE userId={$this->id}) LIMIT 1");
