@@ -229,8 +229,8 @@ switch ($_REQUEST['action']) {
         }
         header("Content-Type: application/json");
         $ret = $cat->setImage($_FILES['image']);
-        if($ret===TRUE) die(json_encode(["status"=>"OK", "id"=>$cat->id]));
-        else die(json_encode(["error"=>$ret]));
+        if($ret===TRUE) die(json_encode( ["status"=>"OK", "id"=>$cat->id] ));
+        else die(json_encode( ["error"=>$ret] ));
         
     case "ajaxSetAccess":
         if ($cat->getAccess($currentUser) < FFBoka::ACCESS_CATADMIN) {

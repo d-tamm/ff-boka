@@ -88,14 +88,17 @@ class Category extends FFBoka {
      * @return boolean|string True on success, error message on failure
      */
     public function setImage($imgFile, $maxSize=0, $thumbSize=80, $maxFileSize=0) {
-        if (!$this->id) throw new \Exception("Cannot set image on dummy category.");
+        if (!$this->id) return "Cannot set image on dummy category.";
+        if (!file_exists(__DIR__."/../../img/cat")) {
+            if (!mkdir(__DIR__."/../../img/cat", 0777, true)) return "Kan inte spara bilden. Kan inte skapa mappen för kategoribilder (./img/cat). Kontakta administratören.";
+        }
         $images = $this->imgFileToString($imgFile, $maxSize, $thumbSize, $maxFileSize);
         if ($images['error']) return $images['error'];
         // Save thumb to database
         $stmt = self::$db->prepare("UPDATE categories SET thumb=? WHERE catID={$this->id}");
-        if (!$stmt->execute(array($images['thumb']))) return "Cannot save thumbnail.";
+        if (!$stmt->execute(array($images['thumb']))) return "Kan inte spara miniaturbilden i databasen.";
         // Save full size image to file system
-        if (file_put_contents(__DIR__ . "/../../img/cat/{$this->id}", $images['image'])===FALSE) return "Cannot save full size image";
+        if (file_put_contents(__DIR__ . "/../../img/cat/{$this->id}", $images['image'])===FALSE) return "Kan inte spara originalbilden på ./img/cat. Är mappen skrivskyddad? Kontakta administratören.";
         return TRUE;
     }
 

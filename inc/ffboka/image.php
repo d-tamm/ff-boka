@@ -42,16 +42,19 @@ class Image extends FFBoka {
      * @param int $maxSize Image will be scaled down if any dimension is bigger than this. 0=no limit
      * @param int $thumbSize Size of thumbnail
      * @param int $maxFileSize If file is bigger than this, it will be rejected. 0=no limit
-     * @return boolean|array True on success, ["error"=>"errMsg"] on failure
+     * @return boolean|string True on success, error message as string on failure
      */
     public function setImage($imgFile, $maxSize=0, $thumbSize=80, $maxFileSize=0) {
+        if (!file_exists(__DIR__."/../../img/item")) {
+            if (!mkdir(__DIR__."/../../img/item", 0777, true)) return "Kan inte skapa mapp för resursbilder på ./img/item. Set till att servern har skrivåtkomst. Kontakta systemadministratören.";
+        }
         $images = $this->imgFileToString($imgFile, $maxSize, $thumbSize, $maxFileSize);
-        if ($images['error']) return $images;
+        if ($images['error']) return $images['error'];
         // Save thumbnail to database
         $stmt = self::$db->prepare("UPDATE item_images SET thumb=? WHERE imageID={$this->id}");
-        if (!$stmt->execute(array($images['thumb']))) return ["error"=>"Cannot save thumbnail"];
+        if (!$stmt->execute(array($images['thumb']))) return "Kan inte spara miniaturbilden i databasen. Kontakta systemadministratören.";
         // Save full size image to file system
-        if (file_put_contents(__DIR__ . "/../../img/item/{$this->id}", $images['image'])===FALSE) return "Cannot save full size image";
+        if (file_put_contents(__DIR__ . "/../../img/item/{$this->id}", $images['image'])===FALSE) return "Kan inte spara originalbilden som fil. Kontakta systemadministratören.";
         return TRUE;
     }
     
