@@ -188,6 +188,7 @@ if (isset($_GET['first_login'])) $message = "Välkommen till resursbokningen! In
             });
             if (count($bookingIds)) {
                 // Sort the bookings in unconfirmed, upcoming and completed
+                $pending = "";
                 $unconfirmed = "";
                 $upcoming = "";
                 $completed = "";
@@ -200,7 +201,7 @@ if (isset($_GET['first_login'])) $message = "Välkommen till resursbokningen! In
                     foreach ($b->items() as $item) {
                         $start = is_null($start) ? $item->start : min($start, $item->start);
                         $end = is_null($end) ? $item->end : min($end, $item->end);
-                        $html .= "&bull; " . htmlspecialchars($item->caption) . ($item->status<FFBoka::STATUS_CONFIRMED ? " (<b>obekräftat</b>)" : "") . "<br>";
+                        $html .= "&bull; " . htmlspecialchars($item->caption) . ($item->status==FFBoka::STATUS_PREBOOKED ? " (<b>obekräftat</b>)" : "") . "<br>";
                     }
                     $html = "<li><a href='book-sum.php?bookingId={$b->id}'>\n" .
                         ($b->ref ? htmlspecialchars($b->ref) : "") .
@@ -208,10 +209,12 @@ if (isset($_GET['first_login'])) $message = "Välkommen till resursbokningen! In
                         "<p>$html</p>" .
                         "<p>Bokat {$b->timestamp} i LA {$b->section()->name}</p>\n" .
                         "</a></li>";
-                    if ($b->status() < FFBoka::STATUS_CONFIRMED) $unconfirmed .= $html;
+                    if ($b->status() == FFBoka::STATUS_PENDING) $pending .= $html;
+                    elseif ($b->status() < FFBoka::STATUS_CONFIRMED) $unconfirmed .= $html;
                     elseif ($end < time()) $completed .= $html;
                     else $upcoming .= $html;
                 }
+                if ($pending) echo "<li data-role='list-divider'>Ej slutförda bokningar</li>$pending";
                 if ($unconfirmed) echo "<li data-role='list-divider'>Obekräftade bokningar</li>$unconfirmed";
                 if ($upcoming) echo "<li data-role='list-divider'>Kommande bokningar</li>$upcoming";
                 if ($completed) echo "<li data-role='list-divider'>Avslutade bokningar</li>$completed";
