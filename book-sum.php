@@ -495,10 +495,13 @@ EOF;
             case "month": $interval = new DateInterval("P1M"); break;
         }
         foreach ($booking->items() as $item) {
+            // Get start and end time for the original booked item
             $start = new DateTime("@{$item->start}");
             $end = new DateTime("@{$item->end}");
             for ($i=0; $i<$_REQUEST['count']; $i++) {
                 if (!$item->isAvailable($start->getTimestamp(), $end->getTimestamp())) $unavail[$i][] = htmlspecialchars($item->caption);
+                // From the 1st copy an onwards, use a generic item in order to also get collisions with the original one.
+                $item = new Item($item->id);
                 $start->add($interval);
                 $end->add($interval);
             }
