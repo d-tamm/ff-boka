@@ -73,10 +73,10 @@ class FFBoka {
     /**
      * Initialize framework with API address and database connection.
      * These will also be used in the inherited classes
-     * @param array(string) $api Array with connection details to FF's API,
+     * @param string[] $api Array with connection details to FF's API,
      *   with members authUrl, authKey, feedUrl, feedUserAss
      * @param PDO::Database $db
-     * @param array(string) $sectionAdmins Section level assignments giving sections admin access
+     * @param string[] $sectionAdmins Section level assignments giving sections admin access
      * @param string $timezone Timezone for e.g. freebusy display (Europe/Stockholm)
      */
     function __construct($api, $db, $sectionAdmins, $timezone) {
@@ -383,6 +383,26 @@ class FFBoka {
         return round($bytes, $precision) . " " . $units[$pow];
     }
     
+    /**
+     * Formats a date span as a read friendly string.
+     * mån 2020-08-24 kl 07:00-21:00
+     * mån 2020-08-24 kl 07:00 till tis 2020-08-25 kl 21:00
+     * @param int $start Unix timestamp of start time
+     * @param imt $end Unix timestamp of end time
+     * @param bool $includeWeekday Whether to include the weekday
+     * @return string
+     */
+    static function formatDateSpan(int $start, int $end, bool $includeWeekday=false) {
+        $wday = $includeWeekday ? "%a " : "";
+        if (strftime("%F", $start) == strftime("%F", $end)) {
+            // Start and end on same day
+            return strftime("$wday%F kl %H:00", $start) . "-". strftime("%H:00", $end);
+        } else {
+            // Start and end on different days
+            return strftime("$wday%F kl %H:00", $start) . " till " . strftime("%a %F kl %H:00", $end);
+        }
+    }
+
     /**
      * Add a new poll
      * @return \FFBoka\Poll

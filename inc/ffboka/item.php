@@ -92,7 +92,7 @@ class Item extends FFBoka {
      * @param Image $img
      */
     public function setFeaturedImage(Image $img) {
-        if ($img->itemId != $this->id) throw \Exception("Cannot set an image to featured image which does not belong to the item.");
+        if ($img->itemId != $this->id) throw new \Exception("Cannot set an image to featured image which does not belong to the item.");
         $this->imageId = $img->id;
     }
     

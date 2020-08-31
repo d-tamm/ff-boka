@@ -471,20 +471,6 @@ $(document).on('pagecreate', "#page-book-sum", function() {
 		}
 	});
 
-	/** User chose to create a booking series */
-	$(document).on('click', '#repeat-create', function(event) {
-	    $.mobile.loading("show", {});
-	    $.getJSON("book-sum.php", {
-	        action: "ajaxRepeatCreate",
-	        count: $('#repeat-count').val(),
-			type: repeatType
-	    }, function(data, status) {
-	        $.mobile.loading("hide", {});
-	        $('#series-panel').html(data.html).enhanceWithin();
-			alert("Bokningsserien har skapats.");
-	    });
-	});
-
     /**
      * User chose a new start date from date picker for booking items
      */
@@ -570,6 +556,13 @@ function repeatPreview(count, type) {
         else $('#repeat-preview').html(data.html);
 		$('#repeat-create').prop("disabled", false);
     });
+}
+
+/** User chose to create a booking series */
+function repeatCreate() {
+    var form = document.forms.formBooking;
+    form.elements.action.value = "repeatCreate";
+    form.submit();
 }
 
 /** Remove the booking from its booking series (but keep it) */

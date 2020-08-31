@@ -11,13 +11,13 @@ session_start();
 require(__DIR__."/inc/common.php");
 
 /**
- * Show a list of bookings belonging to this series 
+ * Show a list of bookings belonging to this series. If this is not (yet) a series, show form elements to create a series
  * @param \FFBoka\Booking $booking
  * @return HTML formatted list
  */
 function showBookingSeries(\FFBoka\Booking $booking) {
     if(is_null($booking->repeatId)) {
-        $ret = "<p style='margin:0;'>Skapa serie med <span style='display:inline-block; width:4em;'><input type='number' id='repeat-count' value='2' min='2' max='40'></span> tillfällen</p>
+        $ret = "<p style='margin:0;'>Skapa serie med <span style='display:inline-block; width:4em;'><input type='number' name='repeat-count' id='repeat-count' value='2' min='2' max='40'></span> tillfällen</p>
     	    <fieldset data-role='controlgroup' data-type='horizontal' data-mini='true'>
     	    	<legend>Upprepning varje</legend>
     	    	<label><input type='radio' name='repeat-type' value='day' onClick=\"repeatType=this.value;
@@ -29,7 +29,7 @@ repeatPreview($('#repeat-count').val(), repeatType);\" value='month'>månad</lab
     	    </fieldset>
             <div id='repeat-preview'><i>När du har valt antal och typ så kommer du här se ifall resurserna är tillgängliga vid respektive tillfälle.</i></div>
             <p><i>Icke-tillgängliga resurser kommer inte att bokas.</i></p>
-            <button disabled='disabled' class='ui-btn' id='repeat-create'>Skapa serien</button>";
+            <a href='#' disabled='disabled' class='ui-btn' id='repeat-create' onClick='repeatCreate()'>Skapa serien</a>";
 	} else {
 	    $ret = "<p>Den här bokningen är del av en bokningsserie.</p>";
         $series = $booking->getBookingSeries();
@@ -43,12 +43,48 @@ repeatPreview($('#repeat-count').val(), repeatType);\" value='month'>månad</lab
             $ret .= "</ul>";
         }
         $ret .= "<div data-role='controlgroup'>
-            <button onClick='unlinkBooking()' class='ui-btn ui-mini ui-icon-action ui-btn-icon-left'>Lyft ut det här tillfället</button>
-            <button onClick='unlinkSeries()' class='ui-btn ui-mini ui-icon-bars ui-btn-icon-left'>Lös upp serien</button>
-            <button onClick='deleteSeries()' class='ui-btn ui-mini ui-btn-c ui-icon-delete ui-btn-icon-left'>Radera serien</button>
+            <a href='#' onClick='unlinkBooking()' class='ui-btn ui-mini ui-icon-action ui-btn-icon-left'>Lyft ut det här tillfället</a>
+            <a href='#' onClick='unlinkSeries()' class='ui-btn ui-mini ui-icon-bars ui-btn-icon-left'>Lös upp serien</a>
+            <a href='#' onClick='deleteSeries()' class='ui-btn ui-mini ui-btn-c ui-icon-delete ui-btn-icon-left'>Radera serien</a>
             </div>";
 	}
     return $ret;
+}
+
+/**
+ * Save information related to the whole booking (user contact information, reference etc) from $_REQUEST array.
+ * Also, set the status of pending items.
+ * @param Booking $booking The booking where to save the information
+ * @param int[] $conflicts Array with conflicting item ids (unavailable, but hidden to user)
+ * @param int[] $unavail Array with unavailable item ids (unavailable, seen by user)
+ * @param User $user The user whose permissions shall be used for setting the status
+ */
+function saveBookingFields(Booking $booking, $conflicts, $unavail, User $user) {
+    $booking->ref = $_REQUEST['ref'];
+    $booking->commentCust = $_REQUEST['commentCust'];
+    if (isset($_REQUEST['commentIntern'])) $booking->commentIntern = $_REQUEST['commentIntern'];
+    $booking->extName = $_REQUEST['extName'];
+    $booking->extPhone = $_REQUEST['extPhone'];
+    $booking->extMail = $_REQUEST['extMail'];
+    // remove old answers previously saved with booking and save new answers to questions
+    $booking->clearAnswers();
+    if (isset($_REQUEST['questionId'])) {
+        foreach ($_REQUEST["questionId"] as $id) {
+            $question = new Question($id);
+            $booking->addAnswer($question->caption, implode(", ", isset($_REQUEST["answer-$id"]) ? $_REQUEST["answer-$id"] : array()));
+        }
+    }
+    // Set status of pending items
+    foreach ($booking->items() as $item) {
+        if ($item->status == FFBoka::STATUS_PENDING && !in_array($item->bookedItemId, $unavail)) {
+            if ($item->category()->getAccess($user) >= FFBoka::ACCESS_BOOK) {
+                $item->status = FFBoka::STATUS_CONFIRMED;
+            } else {
+                if (in_array($item->bookedItemId, $conflicts)) $item->status = FFBoka::STATUS_CONFLICT;
+                else $item->status = FFBoka::STATUS_PREBOOKED;
+            }
+        }
+    }
 }
 
 $currentUser = new User(isset($_SESSION['authenticatedUser']) ? $_SESSION['authenticatedUser'] : 0);
@@ -191,175 +227,76 @@ EOF;
         ]));
 
     case "confirmBooking":
-        $booking->ref = $_REQUEST['ref'];
-        $booking->commentCust = $_REQUEST['commentCust'];
-        if (isset($_REQUEST['commentIntern'])) $booking->commentIntern = $_REQUEST['commentIntern'];
-        $booking->extName = $_REQUEST['extName'];
-        $booking->extPhone = $_REQUEST['extPhone'];
-        $booking->extMail = $_REQUEST['extMail'];
-        // remove old answers previously saved with booking and save new answers to questions
-        $booking->clearAnswers();
-        if (isset($_REQUEST['questionId'])) {
-            foreach ($_REQUEST["questionId"] as $id) {
-                $question = new Question($id);
-                $booking->addAnswer($question->caption, implode(", ", isset($_REQUEST["answer-$id"]) ? $_REQUEST["answer-$id"] : array()));
-            }
+    case "repeatCreate":
+        saveBookingFields($booking, $conflicts, $unavail, $currentUser);
+        if (count($unavail)>0 || count($overlap)>0) {
+            if ($_REQUEST['action'] == "repeatCreate") $message .= "Serien kan inte skapas eftersom inte alla resurser i originalet är tillgängliga.";
+            break;
         }
-        if (count($unavail)>0 || count($overlap)>0) break;
-        $mailItems = "<tr><th>Resurs</th><th>Status</th><th>Datum</th><th></th></tr>";
-        // Set booking status of each item, and build confirmation string incl post-booking messages
-        $leastStatus = FFBoka::STATUS_CONFIRMED;
-        $rejectedItems = FALSE;
-        $messages = array();
-        $rawContData = array();
-        $adminsToNotify = array();
-        $attachments = array();
-        foreach ($booking->items() as $item) {
-            $cat = $item->category();
-            // remember contact data for item
-            $itemContact = $cat->contactData();
-            if ($itemContact) $rawContData[$itemContact][] = htmlspecialchars($cat->caption);
-            if ($item->status == FFBoka::STATUS_REJECTED) {
-                // For rejected items, we just list them, but do not notify admins or add postbook messages
-                $rejectedItems = TRUE;
-            } else {
-                // Remember postbook messages and build string of reference numbers (e.g. (1), (2))
-                $msgRef = "";
-                foreach ($cat->postbookMsgs() as $msg) {
-                    if (in_array($msg, $messages)) $msgRef .= " (".(array_search($msg, $messages)+1).")";
-                    else { $messages[] = $msg; $msgRef .= "(".count($messages).")"; }
+        $booking->sendNotifications($cfg['url']);
+        $result = $booking->sendConfirmation($cfg['url']);
+        if ($result !== TRUE) {
+            $message .= $result;
+        } elseif ($_REQUEST['action'] == "confirmBooking") {
+            unset($_SESSION['bookingId']);
+            header("Location: index.php?action=bookingConfirmed&mail=" . urlencode(is_null($booking->userId) ? $_REQUEST['extMail'] : $booking->user()->mail));
+            die();
+        } else {
+            // Create a booking series
+            // Get a new series ID and mark the current booking as part of this series
+            $booking->repeatId = $repeatId = $FF->getNextRepeatId();
+            // Create the copies
+            for ($i=1; $i<$_REQUEST['repeat-count']; $i++) {
+                switch ($_REQUEST['repeat-type']) {
+                    case "day": $interval = new DateInterval("P{$i}D"); break;
+                    case "week": $interval = new DateInterval("P{$i}W"); break;
+                    case "month": $interval = new DateInterval("P{$i}M"); break;
                 }
-                // Decide which status newly booked items shall get
-                if ($item->status == FFBoka::STATUS_PENDING) {
-                    if ($cat->getAccess($currentUser) >= FFBoka::ACCESS_BOOK) {
-                        $item->status = FFBoka::STATUS_CONFIRMED;
-                    } else {
-                        if (in_array($item->bookedItemId, $conflicts)) $item->status = FFBoka::STATUS_CONFLICT;
-                        else $item->status = FFBoka::STATUS_PREBOOKED;
-                    }
-                }
-                $leastStatus = $leastStatus & $item->status;
-                // Collect functional email addresses to notify
+                $booking->copy($interval);
+            }
+            // Send alerts
+            $adminsToNotify = array();
+            foreach ($booking->items() as $item) {
+                $cat = $item->category();
+                // Collect functional email addresses to notify:  array[userId][itemId1, itemId2...]
                 $alerts = $cat->sendAlertTo;
                 if ($alerts) {
-                    foreach (explode(",", $alerts) as $alert) {
-                        $alert = trim($alert);
-                        $adminsToNotify[$alert][] = $item->bookedItemId;
-                    }
+                    foreach (explode(",", $alerts) as $alert) $adminsToNotify[trim($alert)][] = $item->bookedItemId;
                 }
-                // collect admins to notify: array[userId][itemId1, itemId2...]
+                // collect admins to notify
                 foreach ($cat->admins(FFBoka::ACCESS_CONFIRM, TRUE) as $adm) {
                     $admin = new User($adm['userId']);
-                    switch ($admin->getNotifyAdminOnNewBooking($cat)) {
-                        case "confirmOnly":
-                            if ($item->status > FFBoka::STATUS_PREBOOKED) break;
-                        case "yes":
-                            $adminsToNotify[$adm['userId']][] = $item->bookedItemId;
-                    }
+                    if ($admin->getNotifyAdminOnNewBooking($cat) == "yes") $adminsToNotify[$adm['userId']][] = $item->bookedItemId;
                 }
             }
-            // Table with booked items
-            $mailItems .= "<tr>";
-            $mailItems .= "<td>" . htmlspecialchars($item->caption) . "</td>";
-            switch ($item->status) {
-                case FFBoka::STATUS_CONFIRMED: $mailItems .= "<td>bekräftat</td>"; break;
-                case FFBoka::STATUS_REJECTED: $mailItems .= "<td><b style='color:red;'>avböjt</b></td>"; break;
-                default: $mailItems .= "<td>väntar på bekräftelse</td>";
-            }
-            $mailItems .= "<td>" . strftime("%a %F kl %k:00", $item->start) . " till " . strftime("%a %F kl %k:00", $item->end) . "</td>";
-            $mailItems .= "<td>$msgRef</td>";
-            $mailItems .= "</tr>";
-            // Get attachments
-            foreach ($cat->files() as $file) {
-                if ($file->attachFile) $attachments[$file->md5] = array("path"=>"uploads/{$file->fileId}", "filename"=>$file->filename);
-            }
-        }
-        $contactData = "";
-        foreach ($rawContData as $cd=>$captions) {
-            $contactData .= "<p>Kontakt vid frågor angående " . implode(" och ", array_unique($captions)) . ":<br>$cd</p>";
-        }
-        $answers = $booking->answers();
-        if (count($answers)) {
-            $mailAnswers = "<p>Bokningsfrågor och dina svar:</p>"; 
-            foreach ($answers as $ans) $mailAnswers .= "<p>Fråga: {$ans->question}<br>Ditt svar: {$ans->answer}</p>";
-        }
-        if ($leastStatus==FFBoka::STATUS_CONFIRMED) {
-            $statusText = $rejectedItems ? "Din bokning har nu hanterats av bokningsansvarig, men det finns poster i bokningen som inte har kunnat bekräftas. Nedan ser du vilka av posterna som är bekräftade och vilka som har avvisats. Kolla i kommentarsfältet längre ner om handläggaren har lämnat mer information om detta." : "Alla poster i din bokning är bekräftade.";
-        } else {
-            $statusText = "Några poster i bokningen är preliminära och behöver bekräftas av ansvarig handläggare." . ($rejectedItems ? " OBS, det finns poster som har avvisats. Kolla i kommentarsfältet längre ner om handläggaren har lämnat mer information om detta." : "");
-        }
-        try {
-            sendmail(
-                is_null($booking->userId) ? $_REQUEST['extMail'] : $booking->user()->mail, // to
-                ($booking->confirmationSent ? "Uppdaterad bokningsbekräftelse" : "Bokningsbekräftelse") . " #{$booking->id} " . htmlspecialchars($booking->ref), // subject
-                "confirm_booking", // template name
-                array( // replace.
-                    "{{name}}"    => htmlspecialchars(is_null($booking->userId) ? $_REQUEST['extName'] : $booking->user()->name),
-                    "{{items}}"   => $mailItems,
-                    "{{messages}}"=> $messages ? "<li>".implode("</li><li>", $messages)."</li>" : "",
-                    "{{status}}"  => $statusText,
-                    "{{contactData}}" => $contactData,
-                    "{{answers}}" => $mailAnswers,
-                    "{{ref}}"     => htmlspecialchars($booking->ref),
-                    "{{commentCust}}" => $booking->commentCust ? str_replace("\n", "<br>", htmlspecialchars($booking->commentCust)) : "(ingen kommentar har lämnats)",
-                    "{{bookingLink}}" => "{$cfg['url']}book-sum.php?bookingId={$booking->id}&token={$booking->token}",
-                ),
-                $attachments
-            );
-        } catch(Exception $e) {
-            $message = "Kunde inte skicka bokningsbekräftelsen:" . $e;
-        }
-        // Send notifications to admins
-        if (is_null($booking->userId)) {
-            $contactData = "Detta är en gästbokning.<br>Namn: {$_REQUEST['extName']}<br>Telefon: {$_REQUEST['extPhone']}<br>Mejl: {$_REQUEST['extMail']}";
-        } else {
-            $contactData = "Namn: " . htmlspecialchars($booking->user()->name) . "<br>Telefon: " . htmlspecialchars($booking->user()->phone) . "<br>Mejl: " . htmlspecialchars($booking->user()->mail);
-        }
-        foreach ($adminsToNotify as $id=>$itemIds) {
-            if (is_numeric($id)) {
-                if ($id == $_SESSION['authenticatedUser']) continue; // Don't send notification to current user
-                $adm = new User($id);
-                $mail = $adm->mail;
-                $name = $adm->name;
-            } else {
-                $mail = $id;
-                $name = "";
-            }
-            if ($mail) { // can only send if admin has email address
-                $mailItems = "<tr><th>Resurs</th><th>Datum</th><th>Status</th></tr>";
-                foreach ($itemIds as $itemId) {
-                    $item = new Item($itemId, TRUE);
-                    $mailItems .= "<tr>";
-                    $mailItems .= "<td>" . htmlspecialchars($item->caption) . "</td>";
-                    $mailItems .= "<td>". strftime("%a %F kl %k:00", $item->start) . " till " . strftime("%a %F kl %k:00", $item->end) . "</td>";
-                    switch ($item->status) {
-                        case FFBoka::STATUS_CONFIRMED: $mailItems .= "<td>bekräftat</td>"; break;
-                        case FFBoka::STATUS_PREBOOKED: $mailItems .= "<td><b>obekräftat</b></td>"; break;
-                        case FFBoka::STATUS_CONFLICT: $mailItems .= "<td><b style='color:red'>krockar med befintlig bokning</b></td>"; break;
-                        case FFBoka::STATUS_REJECTED: $mailItems .= "<td>avvisat</td>"; break;
-                    }
-                    $mailItems .= "</tr>";
+            foreach ($adminsToNotify as $id=>$itemIds) {
+                if (is_numeric($id)) {
+                    if (isset($_SESSION['authenticatedUser']) && $id == $_SESSION['authenticatedUser']) continue; // Don't send notification to current user
+                    $adm = new User($id);
+                    $mail = $adm->mail;
+                    $name = $adm->name;
+                } else {
+                    $mail = $id;
+                    $name = "";
                 }
-                sendmail(
-                    $mail, // to
-                    $booking->confirmationSent ? "FF Uppdaterad bokning #{$booking->id}" : "FF Ny bokning #{$booking->id}", // subject
-                    "booking_alert",
-                    array(
-                        "{{name}}" => htmlspecialchars($name),
-                        "{{contactData}}" => $contactData,
-                        "{{items}}" => $mailItems,
-                        "{{ref}}"   => htmlspecialchars($booking->ref),
-                        "{{commentCust}}" => $booking->commentCust ? str_replace("\n", "<br>", htmlspecialchars($booking->commentCust)) : "(ingen kommentar har lämnats)",
-                        "{{bookingLink}}" => "{$cfg['url']}book-sum.php?bookingId={$booking->id}",
-                    )
-                );
+                if ($mail) { // can only send if admin has email address
+                    sendmail(
+                        $mail, // to
+                        "FF Återkommande bokning har skapats", // subject
+                        "alert_series_created",
+                        array(
+                            "{{name}}" => $name,
+                            "{{count}}" => $_REQUEST['repeat-count'],
+                            "{{user}}" => $booking->user()->name,
+                            "{{bookingLink}}" => "{$cfg['url']}book-sum.php?bookingId={$booking->id}",
+                        )
+                    );
+                }
             }
+            $message .= "Din bokning har nu sparats och bokningsserien har skapats. En bekräftelse har skickats till epostadressen {$booking->user()->mail}.";
         }
-        $booking->confirmationSent = TRUE;
-        unset($_SESSION['bookingId']);
-        header("Location: index.php?action=bookingConfirmed&mail=" . urlencode(is_null($booking->userId) ? $_REQUEST['extMail'] : $booking->user()->mail));
         break;
-        
+            
     case "ajaxDeleteBooking":
         header("Content-Type: application/json");
         // Check permissions: Only the original user and section admin can delete whole bookings
@@ -514,59 +451,6 @@ EOF;
             $start->add($interval);
         }
         die(json_encode([ "html" => "<ul>" . implode("", $html) . "</ul>" ]));
-        
-    case "ajaxRepeatCreate":
-        header("Content-Type: application/json");
-        // Mark the current booking as part of this series
-        $repeatId = $FF->getNextRepeatId();
-        $booking->repeatId = $repeatId;
-        // Create the copies
-        for ($i=1; $i<$_REQUEST['count']; $i++) {
-            switch ($_REQUEST['type']) {
-                case "day": $interval = new DateInterval("P{$i}D"); break;
-                case "week": $interval = new DateInterval("P{$i}W"); break;
-                case "month": $interval = new DateInterval("P{$i}M"); break;
-            }
-            $booking->copy($interval);
-        }
-        // Send alerts
-        $adminsToNotify = array();
-        foreach ($booking->items() as $item) {
-            $cat = $item->category();
-            // Collect functional email addresses to notify:  array[userId][itemId1, itemId2...]
-            $alerts = $cat->sendAlertTo;
-            if ($alerts) {
-                foreach (explode(",", $alerts) as $alert) $adminsToNotify[trim($alert)][] = $item->bookedItemId;
-            }
-            // collect admins to notify
-            foreach ($cat->admins(FFBoka::ACCESS_CONFIRM, TRUE) as $adm) {
-                $admin = new User($adm['userId']);
-                if ($admin->getNotifyAdminOnNewBooking($cat) == "yes") $adminsToNotify[$adm['userId']][] = $item->bookedItemId;
-            }
-        }
-        foreach ($adminsToNotify as $id=>$itemIds) {
-            if (is_numeric($id)) {
-                if (isset($_SESSION['authenticatedUser']) && $id == $_SESSION['authenticatedUser']) continue; // Don't send notification to current user
-                $adm = new User($id);
-                $mail = $adm->mail;
-                $name = $adm->name;
-            } else {
-                $mail = $id;
-                $name = "";
-            }
-            if ($mail) { // can only send if admin has email address
-                sendmail(
-                    $mail, // to
-                    "FF Återkommande bokning har skapats", // subject
-                    "alert_series_created",
-                    array(
-                        "{{name}}"    => $name,
-                        "{{bookingLink}}" => "{$cfg['url']}book-sum.php?bookingId={$booking->id}",
-                    )
-                );
-            }
-        }
-        die(json_encode([ "html" => showBookingSeries($booking) ]));
         
     case "ajaxUnlinkBooking":
         header("Content-Type: application/json");
@@ -723,7 +607,7 @@ EOF;
     }
     ?>
     
-    <form id='form-booking' action="book-sum.php" method='post' style='margin-top: 20px;'>
+    <form id='form-booking' name='formBooking' action="book-sum.php" method='post' style='margin-top: 20px;'>
         <input type="hidden" name="action" value="confirmBooking">
         
         <?php
@@ -804,14 +688,14 @@ EOF;
     
         <input type="submit" data-icon="carat-r" data-iconpos="right" data-theme="b" data-corners="false" value="<?= $booking->status()==FFBoka::STATUS_PENDING ? "Slutför bokningen" : "Spara ändringar" ?>" <?= count($overlap) ? " disabled='disabled'" : "" ?>>
         <a href="#" onClick="deleteBooking(<?= $currentUser->id ? $currentUser->id : 0 ?>, '<?= $cfg['url'] ?>');" class='ui-btn ui-btn-c ui-icon-delete ui-btn-icon-right'>Ta bort bokningen</a>
-    </form>
             
-    <?php if ($showRepeating) { ?>
-    <div data-role="collapsible" data-corners="false" <?= is_null($booking->repeatId) ? "" : "data-collapsed='false'" ?>>
-    	<h4>Återkommande bokningar</h4>
-    	<div id='series-panel'><?= showBookingSeries($booking) ?></div>
-    </div>
-<?php } ?>
+        <?php if ($showRepeating) { ?>
+            <div data-role="collapsible" data-corners="false" <?= is_null($booking->repeatId) ? "" : "data-collapsed='false'" ?>>
+                <h4>Återkommande bokningar</h4>
+                <div id='series-panel'><?= showBookingSeries($booking) ?></div>
+            </div>
+        <?php } ?>
+    </form>
             
     </div><!--/main-->
 

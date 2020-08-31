@@ -256,7 +256,174 @@ class Booking extends FFBoka {
         }
         return $b;
     }
-        
+
+    /**
+     * Send a confirmation email to the booking user.
+     * @param string $url The base URL of the installation, with trailing slash (https://domain.tld/installpath/).
+     * @return bool|string Returns TRUE on success, or an error message string on failure.
+     */
+    public function sendConfirmation(string $url) {
+        $itemList = "<tr><th>Resurs</th><th>Status</th><th>Datum</th><th></th></tr>"; // Header for table with booked items
+        $leastStatus = self::STATUS_CONFIRMED;
+        $rejectedItems = FALSE; // Whether there are rejected items in the booking or not
+        $messages = array(); // Postbook messages
+        $arContactData = array(); // array where the keys are contact data, and the values are the captions of the corresponding categories.
+        $attachments = array(); // array where the keys are md5 hashes of the file, and the values arrays with 'path' and 'filename' elements.
+        foreach ($this->items() as $item) {
+            $cat = $item->category();
+            // remember contact data for item
+            $itemContact = $cat->contactData();
+            if ($itemContact) $arContactData[$itemContact][] = $cat->caption;
+            if ($item->status == self::STATUS_REJECTED) {
+                // For rejected items, we just list them, but do not notify admins nor add postbook messages
+                $rejectedItems = TRUE;
+            } else {
+                $leastStatus = $leastStatus & $item->status;
+                // Collect postbook messages and reference numbers (e.g. (1), (2))
+                $msgRef = array();
+                foreach ($cat->postbookMsgs() as $msg) {
+                    if (!in_array($msg, $messages)) {
+                        // First time we see this message. Add it to message list
+                        $messages[] = $msg;
+                    }
+                    $msgRef[] = "(".(array_search($msg, $messages)+1).")";
+                }
+            }
+            // Add item to table with booked items
+            $itemList .= "<tr><td>" . htmlspecialchars($item->caption) . "</td>";
+            switch ($item->status) {
+                case self::STATUS_CONFIRMED: $itemList .= "<td>bekräftat</td>"; break;
+                case self::STATUS_REJECTED: $itemList .= "<td><b style='color:red;'>avböjt</b></td>"; break;
+                default: $itemList .= "<td>väntar på bekräftelse</td>";
+            }
+
+            $itemList .= "<td>" . self::formatDateSpan($item->start, $item->end, true) . "</td>";
+            $itemList .= "<td>" . implode(" ", $msgRef) . "</td>";
+            $itemList .= "</tr>";
+            // Add attachments to attachment list
+            foreach ($cat->files() as $file) {
+                if ($file->attachFile) $attachments[$file->md5] = array("path"=>"uploads/{$file->fileId}", "filename"=>$file->filename);
+            }
+        }
+        // Contact data
+        $contactData = "";
+        foreach ($arContactData as $cd=>$captions) {
+            $contactData .= "<p>Kontakt vid frågor angående " . htmlspecialchars(implode(" och ", array_unique($captions))) . ":<br>$cd</p>";
+        }
+        // Booking questions and answers
+        $arAnswers = $this->answers();
+        if (count($arAnswers)) {
+            $answers = "<p>Bokningsfrågor och dina svar:</p>"; 
+            foreach ($arAnswers as $answer) $answers .= "<p>Fråga: " . htmlspecialchars($answer->question) . "<br>Ditt svar: " . htmlspecialchars($answer->answer) . "</p>";
+        }
+        // Comment on booking status
+        if ($leastStatus==self::STATUS_CONFIRMED && $rejectedItems) {
+            $statusText = "Din bokning har nu hanterats av bokningsansvarig, men det finns poster i bokningen som inte har kunnat bekräftas. Nedan ser du vilka av posterna som är bekräftade och vilka som har avvisats. Kolla i kommentarsfältet längre ner om handläggaren har lämnat mer information om detta.";
+        } elseif ($leastStatus==self::STATUS_CONFIRMED) {
+            $statusText = "Alla poster i din bokning är bekräftade.";
+        } else {
+            $statusText = "Några poster i bokningen är preliminära och behöver bekräftas av ansvarig handläggare.";
+            if ($rejectedItems) $statusText .= " OBS, det finns poster som har avvisats. Kolla i kommentarsfältet längre ner om handläggaren har lämnat mer information om detta.";
+        }
+        try {
+            sendmail(
+                is_null($this->userId) ? $this->extMail : $this->user()->mail, // to
+                ($this->confirmationSent ? "Uppdaterad bokningsbekräftelse" : "Bokningsbekräftelse") . " #{$this->id} " . htmlspecialchars($this->ref), // subject
+                "confirm_booking", // template name
+                array( // replace array
+                    "{{name}}"    => htmlspecialchars(is_null($this->userId) ? $this->extName : $this->user()->name),
+                    "{{items}}"   => $itemList,
+                    "{{messages}}"=> count($messages) ? "<li>".implode("</li><li>", $messages)."</li>" : "",
+                    "{{status}}"  => $statusText,
+                    "{{contactData}}" => $contactData,
+                    "{{answers}}" => $answers,
+                    "{{ref}}"     => htmlspecialchars($this->ref),
+                    "{{commentCust}}" => $this->commentCust ? str_replace("\n", "<br>", htmlspecialchars($this->commentCust)) : "(ingen kommentar har lämnats)",
+                    "{{bookingLink}}" => "{$url}book-sum.php?bookingId={$this->id}&token={$this->token}",
+                ),
+                $attachments
+            );
+            $this->confirmationSent = true;
+        } catch(\Exception $e) {
+            return "Kunde inte skicka bokningsbekräftelsen:" . $e;
+        }
+        return true;
+    }
+
+
+    /**
+     * Send alerts about the booking to concerned admins
+     * @param string $url The base URL of the installation, with trailing slash (https://domain.tld/installpath/).
+     */
+    public function sendNotifications(string $url) {
+        $adminsToNotify = array(); // array where the keys are email addresses or user ids, and the values are arrays of booked item ids
+        // Some information about the booking user
+        if (is_null($this->userId)) {
+            $contactData = "Detta är en gästbokning.<br>Namn: " . htmlspecialchars($_REQUEST['extName']) . "<br>Telefon: " . htmlspecialchars($_REQUEST['extPhone']) . "<br>Mejl: " . htmlspecialchars($_REQUEST['extMail']);
+        } else {
+            $contactData = "Namn: " . htmlspecialchars($this->user()->name) . "<br>Telefon: " . htmlspecialchars($this->user()->phone) . "<br>Mejl: " . htmlspecialchars($this->user()->mail) . "<br>Medlemsnummer: {$this->userId}<br>Lokalavdelning: " . htmlspecialchars($this->user()->section->name);
+        }
+        // Collect all addresses to send notifications to
+        foreach ($this->items() as $item) {
+            $cat = $item->category();
+            if ($item->status !== self::STATUS_REJECTED) {
+                // Functional email addresses to notify in this category
+                if ($alerts = $cat->sendAlertTo) {
+                    foreach (explode(",", $alerts) as $alert) {
+                        $adminsToNotify[trim($alert)][] = $item->bookedItemId;
+                    }
+                }
+                // Admins to notify
+                foreach ($cat->admins(self::ACCESS_CONFIRM, TRUE) as $adm) {
+                    $admin = new User($adm['userId']);
+                    switch ($admin->getNotifyAdminOnNewBooking($cat)) {
+                        case "confirmOnly":
+                            if ($item->status > self::STATUS_PREBOOKED) break;
+                        case "yes":
+                            $adminsToNotify[$adm['userId']][] = $item->bookedItemId;
+                    }
+                }
+            }
+        }
+        foreach ($adminsToNotify as $id=>$itemIds) {
+            if (is_numeric($id)) { // Admin user
+                if ($id == $_SESSION['authenticatedUser']) continue; // Don't send notification to current user
+                $adm = new User($id);
+                $mail = $adm->mail;
+                if ($mail=="") continue; // user has not set his/her email address
+                $name = $adm->name;
+            } else {
+                $mail = $id;
+                $name = "";
+            }
+            $itemList = "<tr><th>Resurs</th><th>Datum</th><th>Status</th></tr>";
+            foreach ($itemIds as $itemId) {
+                $item = new Item($itemId, TRUE);
+                $itemList .= "<tr><td>" . htmlspecialchars($item->caption) . "</td>";
+                $itemList .= "<td>" . self::formatDateSpan($item->start, $item->end, true) . "</td>";
+                switch ($item->status) {
+                    case FFBoka::STATUS_CONFIRMED: $itemList .= "<td>bekräftat</td>"; break;
+                    case FFBoka::STATUS_PREBOOKED: $itemList .= "<td><b>obekräftat</b></td>"; break;
+                    case FFBoka::STATUS_CONFLICT: $itemList .= "<td><b style='color:red'>krockar med befintlig bokning</b></td>"; break;
+                }
+                $itemList .= "</tr>";
+            }
+            sendmail(
+                $mail, // to
+                $this->confirmationSent ? "FF Uppdaterad bokning #{$this->id}" : "FF Ny bokning #{$this->id}", // subject
+                "booking_alert", // template
+                array( // substitute array
+                    "{{name}}" => htmlspecialchars($name),
+                    "{{contactData}}" => $contactData,
+                    "{{items}}" => $itemList,
+                    "{{ref}}"   => htmlspecialchars($this->ref),
+                    "{{commentCust}}" => $this->commentCust ? str_replace("\n", "<br>", htmlspecialchars($this->commentCust)) : "(ingen kommentar har lämnats)",
+                    "{{bookingLink}}" => "{$url}book-sum.php?bookingId={$this->id}",
+                )
+            );
+        }
+    }
+
     /**
      * Get all bookings belonging to the same booking series.
      * @param bool $includeThis Whether to include this booking in the answer.
