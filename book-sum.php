@@ -656,6 +656,7 @@ EOF;
             <p class='ui-body ui-body-a'>
                 Bokningen görs för <?= $bookUser->contactData() ?><br>
                 Medlemsnummer: <?= $bookUser->id ?><br>
+                Lokalavdelning: <?= $bookUser->section->name ?><br>
             </p>
         <?php } else { ?>
             <div class='ui-body ui-body-a'>Ange dina kontaktuppgifter så vi kan nå dig vid frågor:<br>
