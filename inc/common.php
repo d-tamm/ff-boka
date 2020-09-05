@@ -5,6 +5,11 @@ spl_autoload_register(function($class) {
 });
 
 require_once __DIR__ . "/config.php";
+// Calculate the installation path
+$scheme = ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS']!=='off') ? "https" : "http");
+$instPath = realpath(__DIR__ . "/..");
+$docRoot = realpath($_SERVER['DOCUMENT_ROOT']);
+$cfg['url'] = $scheme . "://" . $_SERVER['SERVER_NAME'] . substr($instPath, strlen($docRoot));
 global $cfg;
 
 require __DIR__ . "/version.php";
@@ -229,6 +234,11 @@ function sendmail(string $to, string $subject, $template, $replace=NULL, $attach
         }
     }
     else $body = $template;
+
+    // Place mail into mail queue
+
+    // Trigger async sending of mail
+
     // Send mail
     try {
         $mail = new PHPMailer(true);

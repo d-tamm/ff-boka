@@ -6,6 +6,8 @@
  */
 namespace FFBoka;
 use PDO;
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
 
 /**
  * Class FFBoka
@@ -445,4 +447,57 @@ class FFBoka {
         if (is_null($row->lastId)) return 1;
         else return $row->lastId + 1;
     }
+
+
+    /**
+     * Queue an email asynchronous sending
+     * @param string $to
+     * @param string $subject
+     * @param string $template Name of template file to use, without extension. The file must be in the templates folder.
+     * If there is a file named $template.html, it will be used. Otherwise, $template will be used as the message body.
+     * @param array $replace Array of strings [search=>replace] to be replaced in the body|template
+     * @param string $fromName Clear text From name
+     * @param string $replyTo
+     * @param array $attachments Array of files [path=>filename] to attach. path is the absolute path to the 
+     * file, and filename is the name the file shall appear with in the email 
+     * @throws Exception if sending fails
+     * @return bool True on success
+     */
+    function queueMail(string $to, string $subject, $template, $replace=[], string $fromName='', string $replyTo='', $attachments=[]) {
+        if (is_readable(__DIR__."/../../templates/$template.html")) {
+            $body = file_get_contents(__DIR__."/../../templates/$template.html");
+        } else {
+            $body = $template;
+        }
+        // Replace placeholders
+        $body = str_replace(array_keys($replace), array_values($replace), $body);
+
+        // Place mail into mail queue
+        $stmt = self::$db->prepare("INSERT INTO mailq SET fromName=:fromName, to=:to, replyTo=:replyTo, subject=:subject, body=:body, attachments=:attachments");
+        $stmt->execute(array(
+            ":fromName" => $fromName,
+            ":to"       => $to,
+            ":replyTo"  => $replyTo,
+            ":subject"  => $subject,
+            ":body"     => $body,
+            ":attachments" => json_encode($attachments)
+        ));
+        $mailqId = self::$db->lastInsertId();
+
+        // Trigger async sending of mail
+        $path = realpath(__DIR__ . "/../..");
+        $docRoot = realpath($_SERVER['DOCUMENT_ROOT']);
+        $ssl = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS']!=='off') ? "ssl://" : "";
+        $fp = fsockopen($ssl . $_SERVER['SERVER_NAME'], $_SERVER['SERVER_PORT'], $errno, $errstr, 10);
+        if($fp) {   
+            $out = "GET " . substr($path, strlen($docRoot)) . "/sendmail.php?mailqId=" . $mailqId . " HTTP/1.1\r\n";
+            $out .= "Host: " . $_SERVER['SERVER_NAME'] . "\r\n";
+            $out .= "Connection: Close\r\n\r\n";      
+            fwrite($fp, $out); 
+            fclose($fp);
+        } else {
+            echo "error: $errstr ($errno)";
+        }
+    }
+
 }
