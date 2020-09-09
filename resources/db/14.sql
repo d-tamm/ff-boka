@@ -12,4 +12,4 @@ CREATE TABLE `mailq` (
     PRIMARY KEY (`mailqId`)
 ) ENGINE = InnoDB;
 
-UPDATE config SET value=11 WHERE name='db-version';
+UPDATE config SET value=14 WHERE name='db-version';

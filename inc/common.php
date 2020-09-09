@@ -10,6 +10,7 @@ $scheme = ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS']!=='off') ? "https" : 
 $instPath = realpath(__DIR__ . "/..");
 $docRoot = realpath($_SERVER['DOCUMENT_ROOT']);
 $cfg['url'] = $scheme . "://" . $_SERVER['SERVER_NAME'] . substr($instPath, strlen($docRoot));
+if (substr($cfg['url'], -1, 1) !== "/") $cfg['url'] = $cfg['url'] . "/";
 global $cfg;
 
 require __DIR__ . "/version.php";
@@ -198,82 +199,6 @@ function head(string $caption, string $baseUrl, $superAdmins=array()) {
     <?php
 }
 
-
-/**
- * Send an email based on a template file
- * @param string $to To address
- * @param string $subject
- * @param string $template Name of template file to use, without extension. The file must be in the templates folder.
- * If there is a file named $template.html, it will be used. Optionally, $template.txt will
- * be used as non-HTML body if it exists. Otherwise, the function will try to strip off the tags from the html file.
- * If no html file exists, $template will be used as message body.
- * @param array $replace [ search=>replace ] Array of strings to be replaced
- * @param array $attachments Array of files [path, filename] to attach. path is the absolute or relative path to the 
- * file, and filename is the name the file shall appear with in the email 
- * @throws Exception if sending fails
- * @return bool True on success
- */
-function sendmail(string $to, string $subject, $template, $replace=NULL, $attachments=NULL) {
-    global $cfg;
-    $from = $cfg['mailFrom'];
-    $fromName = $cfg['mailFromName'];
-    $replyTo = ""; 
-    $options = $cfg['SMTP'];
-    if (is_readable(__DIR__."/../templates/$template.html")) {
-        // Get template content
-        $body = file_get_contents(__DIR__."/../templates/$template.html");
-        $altBody = is_readable(__DIR__."/../templates/$template.txt")
-            ? file_get_contents(__DIR__."/../templates/$template.txt")
-            : str_replace(array("</p>", "<br>"), array("</p>\r\n\r\n", "\r\n"), strip_tags($body)); // TODO: this is probably buggy
-        // Replace placeholders
-        if (!is_null($replace)) {
-            foreach ($replace as $s=>$r) {
-                $body = str_replace($s, $r, $body);
-                $altBody = str_replace($s, $r, $altBody); // TODO: what about html code in $replace?
-            }
-        }
-    }
-    else $body = $template;
-
-    // Place mail into mail queue
-
-    // Trigger async sending of mail
-
-    // Send mail
-    try {
-        $mail = new PHPMailer(true);
-        $mail->XMailer = ' '; // Don't advertise that we are using PHPMailer
-        // Handle attachments
-        if (!is_null($attachments)) {
-            foreach ($attachments as $att) {
-                $mail->addAttachment($att['path'], $att['filename']);
-            }
-        }
-        //Server settings
-        $mail->SMTPDebug = 0;
-        $mail->isSMTP();
-        $mail->Host = $options['host'];
-        $mail->Port = $options['port'];
-        $mail->SMTPAuth = true;
-        $mail->Username = $options['user'];
-        $mail->Password = $options['pass'];
-        $mail->SMTPSecure = 'tls';   // Enable TLS encryption, `ssl` also accepted
-        // Message content
-        $mail->CharSet ="UTF-8";
-        $mail->setFrom($from, $fromName);
-        $mail->Sender = $options['user'];
-        $mail->addAddress($to);
-        if ($replyTo) $mail->addReplyTo($replyTo);
-        if (isset($altBody)) $mail->isHTML(true);
-        $mail->Subject = $subject;
-        $mail->Body = $body;
-        if (isset($altBody)) $mail->AltBody = $altBody;
-        if (!$mail->send()) throw new Exception($mail->ErrorInfo);
-        return true;
-    } catch (Exception $e) {
-        throw new \Exception("Mailer Error: ".$mail->ErrorInfo);
-    }
-}
 
 /**
  * Get html code for an embedded image tag. 

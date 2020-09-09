@@ -77,11 +77,11 @@ class FFBoka {
      * These will also be used in the inherited classes
      * @param string[] $api Array with connection details to FF's API,
      *   with members authUrl, authKey, feedUrl, feedUserAss
-     * @param PDO::Database $db
+     * @param PDO $db
      * @param string[] $sectionAdmins Section level assignments giving sections admin access
      * @param string $timezone Timezone for e.g. freebusy display (Europe/Stockholm)
      */
-    function __construct($api, $db, $sectionAdmins, $timezone) {
+    function __construct($api, PDO $db, $sectionAdmins, $timezone) {
         self::$apiAuthUrl = $api['authUrl'];
         self::$apiAuthKey = $api['authKey'];
         self::$apiFeedUserAss = $api['feedUrl'] . $api['feedUserAss'];
@@ -460,7 +460,7 @@ class FFBoka {
      * @param string $replyTo
      * @param array $attachments Array of files [path=>filename] to attach. path is the absolute path to the 
      * file, and filename is the name the file shall appear with in the email 
-     * @throws Exception if sending fails
+     * @throws Exception if creating the queue job fails
      * @return bool True on success
      */
     function queueMail(string $to, string $subject, $template, $replace=[], string $fromName='', string $replyTo='', $attachments=[]) {
@@ -473,15 +473,15 @@ class FFBoka {
         $body = str_replace(array_keys($replace), array_values($replace), $body);
 
         // Place mail into mail queue
-        $stmt = self::$db->prepare("INSERT INTO mailq SET fromName=:fromName, to=:to, replyTo=:replyTo, subject=:subject, body=:body, attachments=:attachments");
-        $stmt->execute(array(
+        $stmt = self::$db->prepare("INSERT INTO mailq SET fromName=:fromName, `to`=:to, replyTo=:replyTo, subject=:subject, body=:body, attachments=:attachments");
+        if (!$stmt->execute(array(
             ":fromName" => $fromName,
             ":to"       => $to,
             ":replyTo"  => $replyTo,
             ":subject"  => $subject,
             ":body"     => $body,
             ":attachments" => json_encode($attachments)
-        ));
+        ))) throw new \Exception("Failed to queue mail. " . $stmt->errorInfo()[2]);
         $mailqId = self::$db->lastInsertId();
 
         // Trigger async sending of mail
@@ -500,4 +500,56 @@ class FFBoka {
         }
     }
 
+    /**
+     * Send an email from the mail queue
+     * @param int $id mailqId of the message to send
+     * @param string $from From address to use
+     * @param string $fromName Cleartext from name to use if no from name is set in queue entry
+     * @param string $replyTo Reply-to address to use if not set in queue entry
+     * @param array $SMTPOptions Array with SMTP config, containing the keys: host, port, user, pass
+     * @throws Exception if sending fails
+     * @return bool True on success
+     */
+    function sendQueuedMail(int $id, string $from, string $fromName, string $replyTo, array $SMTPOptions) {
+        $stmt = self::$db->prepare("SELECT * FROM mailq WHERE mailqId=?");
+        if ($stmt->execute([ $id ])===false) throw new \Exception("Cannot read mail queue. " . $stmt->errorInfo()[2]);
+        $row = $stmt->fetch(PDO::FETCH_OBJ);
+        if ($row===false) throw new \Exception("There is no mail queue entry with this ID.");
+        if ($row->fromName) $fromName = $row->fromName;
+        if ($row->replyTo) $replyTo = $row->replyTo;
+        try {
+            $mail = new PHPMailer(true);
+            $mail->XMailer = ' '; // Don't advertise that we are using PHPMailer
+            // Add attachments
+            foreach (json_decode($row->attachments) as $att) {
+                $mail->addAttachment($att['path'], $att['filename']);
+            }
+            //Server settings
+            $mail->SMTPDebug = 0;
+            $mail->isSMTP();
+            $mail->Host = $SMTPOptions['host'];
+            $mail->Port = $SMTPOptions['port'];
+            $mail->SMTPAuth = true;
+            $mail->Username = $SMTPOptions['user'];
+            $mail->Password = $SMTPOptions['pass'];
+            $mail->SMTPSecure = 'tls';   // Enable TLS encryption, `ssl` also accepted
+            // Message content
+            $mail->CharSet ="UTF-8";
+            $mail->setFrom($from, $fromName);
+            $mail->Sender = $SMTPOptions['user'];
+            $mail->addAddress($row->to);
+            $mail->addReplyTo($replyTo);
+            $mail->isHTML(true);
+            $mail->Subject = $row->subject;
+            $mail->Body = $row->body;
+            $mail->AltBody = strip_tags(str_replace(array("</p>", "<br>"), array("</p>\r\n\r\n", "\r\n"), $row->body));
+            if (!$mail->send()) throw new Exception($mail->ErrorInfo);
+            $stmt = self::$db->prepare("DELETE FROM mailq WHERE mailqId=?");
+            $stmt->execute([ $id ]);
+            return true;
+        } catch (Exception $e) {
+            throw new \Exception("Mailer Error: ".$mail->ErrorInfo);
+        }
+
+    }
 }
