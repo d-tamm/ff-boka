@@ -280,10 +280,10 @@ EOF;
                     $name = "";
                 }
                 if ($mail) { // can only send if admin has email address
-                    sendmail(
+                    $FF->queueMail(
                         $mail, // to
-                        "FF Återkommande bokning har skapats", // subject
-                        "alert_series_created",
+                        "Återkommande bokning har skapats", // subject
+                        "alert_series_created", // template
                         array(
                             "{{name}}" => $name,
                             "{{count}}" => $_REQUEST['repeat-count'],
@@ -333,7 +333,7 @@ EOF;
         else $statusText = "Din bokning <i>" . htmlspecialchars($booking->ref) . "</i> har raderats av bokningsansvarig (" . htmlspecialchars($currentUser->name . ", " . $currentUser->mail) . "). Om detta är felaktigt, vänligen ta kontakt med " . htmlspecialchars($currentUser->name) . " omgående för att reda ut vad som har hänt.";
         if ($maxStatus > FFBoka::STATUS_PENDING) {
             try {
-                sendmail(
+                $FF->queueMail(
                     is_null($booking->userId) ? $booking->extMail : $booking->user()->mail, // to
                     "Bokning #{$booking->id} har raderats", // subject
                     "booking_deleted", // template name
@@ -364,11 +364,11 @@ EOF;
                     $name = "";
                 }
                 if ($mail) { // can only send if admin has email address
-                    sendmail(
+                    $FF->queueMail(
                         $mail, // to
                         "FF Bokning #{$booking->id} raderad", // subject
-                        "booking_deleted",
-                        array(
+                        "booking_deleted", // template
+                        array( // replace
                             "{{name}}"    => $name,
                             "{{items}}"   => $mailItems,
                             "{{status}}"  => "Bokningen nedan har raderats.",

@@ -326,7 +326,7 @@ class Booking extends FFBoka {
             if ($rejectedItems) $statusText .= " OBS, det finns poster som har avvisats. Kolla i kommentarsfältet längre ner om handläggaren har lämnat mer information om detta.";
         }
         try {
-            sendmail(
+            $this->queueMail(
                 is_null($this->userId) ? $this->extMail : $this->user()->mail, // to
                 ($this->confirmationSent ? "Uppdaterad bokningsbekräftelse" : "Bokningsbekräftelse") . " #{$this->id} " . htmlspecialchars($this->ref), // subject
                 "confirm_booking", // template name
@@ -354,8 +354,10 @@ class Booking extends FFBoka {
     /**
      * Send alerts about the booking to concerned admins
      * @param string $url The base URL of the installation, with trailing slash (https://domain.tld/installpath/).
+     * @return bool True if all notifications could be sent, otherwise false.
      */
     public function sendNotifications(string $url) {
+        $ret = true;
         $adminsToNotify = array(); // array where the keys are email addresses or user ids, and the values are arrays of booked item ids
         // Some information about the booking user
         if (is_null($this->userId)) {
@@ -408,20 +410,25 @@ class Booking extends FFBoka {
                 }
                 $itemList .= "</tr>";
             }
-            sendmail(
-                $mail, // to
-                $this->confirmationSent ? "FF Uppdaterad bokning #{$this->id}" : "FF Ny bokning #{$this->id}", // subject
-                "booking_alert", // template
-                array( // substitute array
-                    "{{name}}" => htmlspecialchars($name),
-                    "{{contactData}}" => $contactData,
-                    "{{items}}" => $itemList,
-                    "{{ref}}"   => htmlspecialchars($this->ref),
-                    "{{commentCust}}" => $this->commentCust ? str_replace("\n", "<br>", htmlspecialchars($this->commentCust)) : "(ingen kommentar har lämnats)",
-                    "{{bookingLink}}" => "{$url}book-sum.php?bookingId={$this->id}",
-                )
-            );
+            try {
+                $this->queueMail(
+                    $mail, // to
+                    $this->confirmationSent ? "FF Uppdaterad bokning #{$this->id}" : "FF Ny bokning #{$this->id}", // subject
+                    "booking_alert", // template
+                    array( // replace
+                        "{{name}}" => htmlspecialchars($name),
+                        "{{contactData}}" => $contactData,
+                        "{{items}}" => $itemList,
+                        "{{ref}}"   => htmlspecialchars($this->ref),
+                        "{{commentCust}}" => $this->commentCust ? str_replace("\n", "<br>", htmlspecialchars($this->commentCust)) : "(ingen kommentar har lämnats)",
+                        "{{bookingLink}}" => "{$url}book-sum.php?bookingId={$this->id}",
+                    )
+                );
+            } catch (\Exception $e) {
+                $ret = false;
+            }
         }
+        return $ret;
     }
 
     /**

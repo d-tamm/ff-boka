@@ -260,14 +260,14 @@ switch ($_REQUEST['action']) {
         default:
             $cat->setAccess($_GET['id'], $_GET['access']);
             if ($_GET['access'] >= FFBoka::ACCESS_CONFIRM && is_numeric($_GET['id'])) {
-                // New admin added. Send notification if not current user and if not an assignment group
+                // New admin added. Send notification if not same as current user and if not an assignment group
                 $adm = new User($_GET['id']);
                 if ($_GET['id'] != $currentUser->id && $adm->mail) {
-                    sendmail(
-                        $adm->mail,
-                        "Du är nu bokningsansvarig",
-                        "notify_new_admin",
-                        array(
+                    $FF->queueMail(
+                        $adm->mail, // to
+                        "Du är nu bokningsansvarig", // subject
+                        "notify_new_admin", // template
+                        array( // replace
                             "{{name}}"=>$adm->name,
                             "{{role}}"=>"bokningsansvarig för kategorin {$cat->caption}",
                             "{{link}}"=>$cfg['url'],

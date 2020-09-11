@@ -10,6 +10,7 @@ $scheme = ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS']!=='off') ? "https" : 
 $instPath = realpath(__DIR__ . "/..");
 $docRoot = realpath($_SERVER['DOCUMENT_ROOT']);
 $cfg['url'] = $scheme . "://" . $_SERVER['SERVER_NAME'] . substr($instPath, strlen($docRoot));
+if (substr($cfg['url'], -1, 1)!=="/") $cfg['url'] = $cfg['url'] . "/";
 global $cfg;
 
 require __DIR__ . "/version.php";

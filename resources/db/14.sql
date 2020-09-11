@@ -2,7 +2,6 @@
 
 CREATE TABLE `mailq` (
     `mailqId` INT UNSIGNED NOT NULL AUTO_INCREMENT,
-    `locked` TINYINT NOT NULL DEFAULT 0,
     `to` VARCHAR(255) NOT NULL DEFAULT '',
     `fromName` VARCHAR(255) NOT NULL DEFAULT '',
     `replyTo` VARCHAR(255) NOT NULL DEFAULT '',
@@ -12,4 +11,4 @@ CREATE TABLE `mailq` (
     PRIMARY KEY (`mailqId`)
 ) ENGINE = InnoDB;
 
-UPDATE config SET value=11 WHERE name='db-version';
+UPDATE config SET value=14 WHERE name='db-version';
