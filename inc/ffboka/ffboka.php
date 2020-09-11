@@ -77,7 +77,7 @@ class FFBoka {
      * These will also be used in the inherited classes
      * @param string[] $api Array with connection details to FF's API,
      *   with members authUrl, authKey, feedUrl, feedUserAss
-     * @param PDO::Database $db
+     * @param PDO $db
      * @param string[] $sectionAdmins Section level assignments giving sections admin access
      * @param string $timezone Timezone for e.g. freebusy display (Europe/Stockholm)
      */
@@ -458,9 +458,14 @@ class FFBoka {
      * @param array $replace Array of strings [search=>replace] to be replaced in the body|template
      * @param array $attachments Array of files [path=>filename] to attach. path is the absolute path to the 
      * file, and filename is the name the file shall appear with in the email 
+<<<<<<< HEAD
      * @param string $fromName Clear text From name
      * @param string $replyTo
      * @throws \Exception
+=======
+     * @throws Exception if creating the queue job fails
+     * @return bool True on success
+>>>>>>> 70033c7642931c4ea5d9885a0bb9fe13e2362d74
      */
     function queueMail(string $to, string $subject, $template, $replace=[], $attachments=[], string $fromName='', string $replyTo='') {
         if (is_readable(__DIR__."/../../templates/$template.html")) {
@@ -480,7 +485,7 @@ class FFBoka {
             ":subject"  => $subject,
             ":body"     => $body,
             ":attachments" => json_encode($attachments)
-        ))) throw new \Exception("Cannot create mail queue item in database. " . $stmt->errorInfo()[2]);
+        ))) throw new \Exception("Failed to queue mail. " . $stmt->errorInfo()[2]);
         $mailqId = self::$db->lastInsertId();
 
         // Trigger async sending of mail
@@ -500,75 +505,55 @@ class FFBoka {
     }
 
     /**
-     * Send a message from the mail queue.
-     * @param int $id The mailqId of the message to send
-     * @param string $from The sending email address
-     * @param string $fromName Clear text sender name to use if not specified in the queue
-     * @param string $replyTo Reply-to addres to use if none is specified in the queue
-     * @param array $SMTPOptions Array with connection options to SMTP server, with the following keys.
-     * @throws \Exception if $id is invalid.
+     * Send an email from the mail queue
+     * @param int $id mailqId of the message to send
+     * @param string $from From address to use
+     * @param string $fromName Cleartext from name to use if no from name is set in queue entry
+     * @param string $replyTo Reply-to address to use if not set in queue entry
+     * @param array $SMTPOptions Array with SMTP config, containing the keys: host, port, user, pass
+     * @throws Exception if sending fails
+     * @return bool True on success
      */
-    public function sendQueuedMail(int $id, string $from, string $fromName, string $replyTo, array $SMTPOptions) {
+    function sendQueuedMail(int $id, string $from, string $fromName, string $replyTo, array $SMTPOptions) {
         $stmt = self::$db->prepare("SELECT * FROM mailq WHERE mailqId=?");
-        $stmt->execute([ $id ]);
-        if (!($row = $stmt->fetch(PDO::FETCH_OBJ))) throw new \Exception("There is no queued mail with this ID.");
-        if ($row->fromName !== "") $fromName = $row->fromName;
-        if ($row->replyTo !== "") $replyTo = $row->replyTo;
-            $options = $cfg['SMTP'];
-            if (is_readable(__DIR__."/../templates/$template.html")) {
-                // Get template content
-                $body = file_get_contents(__DIR__."/../templates/$template.html");
-                $altBody = is_readable(__DIR__."/../templates/$template.txt")
-                    ? file_get_contents(__DIR__."/../templates/$template.txt")
-                    : str_replace(array("</p>", "<br>"), array("</p>\r\n\r\n", "\r\n"), strip_tags($body)); // TODO: this is probably buggy
-                // Replace placeholders
-                if (!is_null($replace)) {
-                    foreach ($replace as $s=>$r) {
-                        $body = str_replace($s, $r, $body);
-                        $altBody = str_replace($s, $r, $altBody); // TODO: what about html code in $replace?
-                    }
-                }
+        if ($stmt->execute([ $id ])===false) throw new \Exception("Cannot read mail queue. " . $stmt->errorInfo()[2]);
+        $row = $stmt->fetch(PDO::FETCH_OBJ);
+        if ($row===false) throw new \Exception("There is no mail queue entry with this ID.");
+        if ($row->fromName) $fromName = $row->fromName;
+        if ($row->replyTo) $replyTo = $row->replyTo;
+        try {
+            $mail = new PHPMailer(true);
+            $mail->XMailer = ' '; // Don't advertise that we are using PHPMailer
+            // Add attachments
+            foreach (json_decode($row->attachments) as $att) {
+                $mail->addAttachment($att['path'], $att['filename']);
             }
-            else $body = $template;
-        
-            // Place mail into mail queue
-        
-            // Trigger async sending of mail
-        
-            // Send mail
-            try {
-                $mail = new PHPMailer(true);
-                $mail->XMailer = ' '; // Don't advertise that we are using PHPMailer
-                // Handle attachments
-                if (!is_null($attachments)) {
-                    foreach ($attachments as $att) {
-                        $mail->addAttachment($att['path'], $att['filename']);
-                    }
-                }
-                //Server settings
-                $mail->SMTPDebug = 0;
-                $mail->isSMTP();
-                $mail->Host = $options['host'];
-                $mail->Port = $options['port'];
-                $mail->SMTPAuth = true;
-                $mail->Username = $options['user'];
-                $mail->Password = $options['pass'];
-                $mail->SMTPSecure = 'tls';   // Enable TLS encryption, `ssl` also accepted
-                // Message content
-                $mail->CharSet ="UTF-8";
-                $mail->setFrom($from, $fromName);
-                $mail->Sender = $options['user'];
-                $mail->addAddress($to);
-                if ($replyTo) $mail->addReplyTo($replyTo);
-                if (isset($altBody)) $mail->isHTML(true);
-                $mail->Subject = $subject;
-                $mail->Body = $body;
-                if (isset($altBody)) $mail->AltBody = $altBody;
-                if (!$mail->send()) throw new Exception($mail->ErrorInfo);
-                return true;
-            } catch (Exception $e) {
-                throw new \Exception("Mailer Error: ".$mail->ErrorInfo);
-            }
+            //Server settings
+            $mail->SMTPDebug = 0;
+            $mail->isSMTP();
+            $mail->Host = $SMTPOptions['host'];
+            $mail->Port = $SMTPOptions['port'];
+            $mail->SMTPAuth = true;
+            $mail->Username = $SMTPOptions['user'];
+            $mail->Password = $SMTPOptions['pass'];
+            $mail->SMTPSecure = 'tls';   // Enable TLS encryption, `ssl` also accepted
+            // Message content
+            $mail->CharSet ="UTF-8";
+            $mail->setFrom($from, $fromName);
+            $mail->Sender = $SMTPOptions['user'];
+            $mail->addAddress($row->to);
+            $mail->addReplyTo($replyTo);
+            $mail->isHTML(true);
+            $mail->Subject = $row->subject;
+            $mail->Body = $row->body;
+            $mail->AltBody = strip_tags(str_replace(array("</p>", "<br>"), array("</p>\r\n\r\n", "\r\n"), $row->body));
+            if (!$mail->send()) throw new Exception($mail->ErrorInfo);
+            $stmt = self::$db->prepare("DELETE FROM mailq WHERE mailqId=?");
+            $stmt->execute([ $id ]);
+            return true;
+        } catch (Exception $e) {
+            throw new \Exception("Mailer Error: ".$mail->ErrorInfo);
         }
-            }
+
+    }
 }
