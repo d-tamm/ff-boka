@@ -107,7 +107,7 @@ EOF;
             $currentUser->phone = $_POST['phone'];
             if ($_POST['mail'] !== $currentUser->mail) {
                 $token = $currentUser->setUnverifiedMail($_POST['mail']);
-                sendmail(
+                $FF->queueMail(
                     $_POST['mail'], // to
                     "Bekräfta din epostadress", // subject
                     "confirm_mail_address", // template name

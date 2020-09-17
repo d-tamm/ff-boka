@@ -456,14 +456,13 @@ class FFBoka {
      * @param string $template Name of template file to use, without extension. The file must be in the templates folder.
      * If there is a file named $template.html, it will be used. Otherwise, $template will be used as the message body.
      * @param array $replace Array of strings [search=>replace] to be replaced in the body|template
-     * @param string $fromName Clear text From name
-     * @param string $replyTo
      * @param array $attachments Array of files [path=>filename] to attach. path is the absolute path to the 
      * file, and filename is the name the file shall appear with in the email 
-     * @throws Exception if creating the queue job fails
-     * @return bool True on success
+     * @param string $fromName Clear text From name
+     * @param string $replyTo
+     * @throws \Exception
      */
-    function queueMail(string $to, string $subject, $template, $replace=[], string $fromName='', string $replyTo='', $attachments=[]) {
+    function queueMail(string $to, string $subject, $template, $replace=[], $attachments=[], string $fromName='', string $replyTo='') {
         if (is_readable(__DIR__."/../../templates/$template.html")) {
             $body = file_get_contents(__DIR__."/../../templates/$template.html");
         } else {
@@ -496,7 +495,7 @@ class FFBoka {
             fwrite($fp, $out); 
             fclose($fp);
         } else {
-            echo "error: $errstr ($errno)";
+            throw new \Exception("$errstr ($errno)");
         }
     }
 

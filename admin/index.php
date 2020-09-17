@@ -120,11 +120,11 @@ switch ($_REQUEST['action']) {
         } elseif ($section->addAdmin($_REQUEST['id'])) {
             $adm = new User($_REQUEST['id']);
             if ($_REQUEST['id'] != $currentUser->id && $adm->mail) {
-                sendmail(
-                    $adm->mail,
-                    "Du är nu administratör",
-                    "notify_new_admin",
-                    array(
+                $FF->queueMail(
+                    $adm->mail, // to
+                    "Du är nu administratör", // subject
+                    "notify_new_admin", // template
+                    array( // replace
                         "{{name}}"=>$adm->name,
                         "{{role}}"=>"lokalavdelnings-admin",
                         "{{link}}"=>$cfg['url'],
