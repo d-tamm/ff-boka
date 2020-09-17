@@ -458,14 +458,9 @@ class FFBoka {
      * @param array $replace Array of strings [search=>replace] to be replaced in the body|template
      * @param array $attachments Array of files [path=>filename] to attach. path is the absolute path to the 
      * file, and filename is the name the file shall appear with in the email 
-<<<<<<< HEAD
      * @param string $fromName Clear text From name
      * @param string $replyTo
      * @throws \Exception
-=======
-     * @throws Exception if creating the queue job fails
-     * @return bool True on success
->>>>>>> 70033c7642931c4ea5d9885a0bb9fe13e2362d74
      */
     function queueMail(string $to, string $subject, $template, $replace=[], $attachments=[], string $fromName='', string $replyTo='') {
         if (is_readable(__DIR__."/../../templates/$template.html")) {
