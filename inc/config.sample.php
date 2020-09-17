@@ -43,9 +43,6 @@ $cfg = array(
         "pass" => 'my smtp password',
     ),
 
-    // The URL of this installation, with trailing slash
-    "url" => "http://localhost/",
-    
     // Max size of images in pixels (longer side). If larger images are submitted, they will be downscaled.
     "maxImgSize" => 1024,
     // Max file size for images and attachments in bytes

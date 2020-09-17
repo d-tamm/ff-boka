@@ -3,4 +3,4 @@
 // is changed. The corresponding SQL code for the change must be stored in
 // resources/db/{$dbVersion}.sql and will be executed on the next invocation of
 // any page.
-$dbVersion = 13;
+$dbVersion = 14;
