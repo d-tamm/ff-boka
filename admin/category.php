@@ -10,7 +10,7 @@ global $cfg;
 $message = "";
 
 if (!isset($_SESSION['authenticatedUser'])) {
-    header("Location: {$cfg['url']}?action=sessionExpired&redirect=" . urlencode("admin/category.php"));
+    header("Location: {$cfg['url']}index.php?action=sessionExpired&redirect=" . urlencode("admin/category.php"));
     die();
 }
 if (!isset($_SESSION['sectionId'])) {
