@@ -341,7 +341,8 @@ table.alternate-rows tr:nth-child(even) {
 .desktop .col-caption span {
     cursor: pointer;
 }
-.desktop td.navbuttons a {
+.desktop td.navbuttons span {
+    cursor: pointer;
     font-size:150%;
     padding:5px;
     color:var(--FF-blue);

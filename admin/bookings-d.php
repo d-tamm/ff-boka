@@ -44,7 +44,7 @@ function showCat(Category $cat, User $user) {
                 echo "<h2>";
                 for ($elems = $cat->getPath(), $i = 1; $i < count($elems); $i++) {
                     if ($i > 1) echo " &rarr; ";
-                    if ($cat->showFor($user, FFBoka::ACCESS_CATADMIN)) echo "<a href='#' onClick=\"openSidePanelOrWindow('category.php?catId={$elems[$i]['id']}');\">{$elems[$i]['caption']}</a>";
+                    if ($cat->showFor($user, FFBoka::ACCESS_CATADMIN)) echo "<span style='cursor:pointer;' onClick=\"openSidePanelOrWindow('category.php?catId={$elems[$i]['id']}');\">{$elems[$i]['caption']}</span>";
                     else echo $elems[$i]['caption'];
                 }
                 echo "</h2>\n<table>\n";
@@ -298,10 +298,10 @@ switch ($_REQUEST['action']) {
         <h1><a href="index.php" title="Till startsidan"><i class='fas fa-home' style='color:white; margin-right:20px;'></i></a> Bokningar i <?= $section->name ?>, <span id='booking-adm-date'></span></h1>
         <table>
             <tr><td class='col-caption navbuttons'>
-                <a title="1 månad bakåt (vänsterpil)" href="#" onClick="scrollDate(-1);"><i class='fas fa-chevron-left'></i></a>
-                <a title="Gå till idag" href="#" onClick="startDate = new Date(new Date().setHours(0,0,0,0));scrollDate(0);"><i class='fas fa-calendar-day'></i></a>
-                <a title="1 månad framåt (högerpil)" href="#" onClick="scrollDate(1);"><i class='fas fa-chevron-right'></i></a>
-                <a title="Kolla efter nya bokningar NU" href="#" onClick="scrollDate(0);"><i class='fas fa-sync'></i></a>
+                <span title="1 månad bakåt (vänsterpil)" onClick="scrollDate(-1);"><i class='fas fa-chevron-left'></i></span>
+                <span title="Gå till idag" onClick="startDate = new Date(new Date().setHours(0,0,0,0));scrollDate(0);"><i class='fas fa-calendar-day'></i></span>
+                <span title="1 månad framåt (högerpil)" onClick="scrollDate(1);"><i class='fas fa-chevron-right'></i></span>
+                <span title="Kolla efter nya bokningar NU" onClick="scrollDate(0);"><i class='fas fa-sync'></i></span>
             </td>
             <td><div class='freebusy-bar' id='booking-adm-scale'></div></td></tr>
         </table>
