@@ -347,7 +347,7 @@ table.alternate-rows tr:nth-child(even) {
     padding:5px;
     color:var(--FF-blue);
 }
-.desktop td.navbuttons a:hover {
+.desktop td.navbuttons span:hover {
     color:white;
     background-color:var(--FF-blue);
 }
