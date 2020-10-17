@@ -91,24 +91,24 @@ function displayCatAccess($cat, $accLevels, $inherited=false) {
     if (!is_null($parent = $cat->parent())) $ret = displayCatAccess($parent, $accLevels, true);
     else $ret = "";
     if ($cat->accessExternal) {
-        if ($inherited) $ret .= "<li>Icke-medlemmar (ärvt från {$cat->caption})<p>{$accLevels[$cat->accessExternal]}</p></li>";
-        else $ret .= "<li><a href='#' class='ajax-input'>Icke-medlemmar<p>{$accLevels[$cat->accessExternal]}</p></a><a href='#' onclick=\"unsetAccess('accessExternal');\">Återkalla behörighet</a></li>";
+        if ($inherited) $ret .= "<li class='wrap'>Icke-medlemmar (ärvt från {$cat->caption})<p>{$accLevels[$cat->accessExternal]}</p></li>";
+        else $ret .= "<li class='wrap'><a href='#' class='ajax-input'>Icke-medlemmar<p>{$accLevels[$cat->accessExternal]}</p></a><a href='#' onclick=\"unsetAccess('accessExternal');\">Återkalla behörighet</a></li>";
     }
     if ($cat->accessMember) {
-        if ($inherited) $ret .= "<li>Medlem i valfri lokalavdelning (ärvt från {$cat->caption})<p>{$accLevels[$cat->accessMember]}</p></li>";
-        else $ret .= "<li><a href='#' class='ajax-input'>Medlem i valfri lokalavdelning<p>{$accLevels[$cat->accessMember]}</p></a><a href='#' onclick=\"unsetAccess('accessMember');\">Återkalla behörighet</a></li>";
+        if ($inherited) $ret .= "<li class='wrap'>Medlem i valfri lokalavdelning (ärvt från {$cat->caption})<p>{$accLevels[$cat->accessMember]}</p></li>";
+        else $ret .= "<li class='wrap'><a href='#' class='ajax-input'>Medlem i valfri lokalavdelning<p>{$accLevels[$cat->accessMember]}</p></a><a href='#' onclick=\"unsetAccess('accessMember');\">Återkalla behörighet</a></li>";
     }
     if ($cat->accessLocal) {
-        if ($inherited) $ret .= "<li>Lokal medlem (ärvt från {$cat->caption})<p>{$accLevels[$cat->accessLocal]}</p></li>";
-        else $ret .= "<li><a href='#' class='ajax-input'>Lokal medlem<p>{$accLevels[$cat->accessLocal]}</p></a><a href='#' onclick=\"unsetAccess('accessLocal');\">Återkalla behörighet</a></li>";
+        if ($inherited) $ret .= "<li class='wrap'>Lokal medlem (ärvt från {$cat->caption})<p>{$accLevels[$cat->accessLocal]}</p></li>";
+        else $ret .= "<li class='wrap'><a href='#' class='ajax-input'>Lokal medlem<p>{$accLevels[$cat->accessLocal]}</p></a><a href='#' onclick=\"unsetAccess('accessLocal');\">Återkalla behörighet</a></li>";
     }
     foreach ($cat->groupPerms() as $perm) {
-        if ($inherited) $ret .= "<li>{$perm['assName']} (ärvt från {$cat->caption})<p>{$accLevels[$perm['access']]}</p></li>";
-        else $ret .= "<li><a href='#' class='ajax-input'>{$perm['assName']}<p>{$accLevels[$perm['access']]}</p></a><a href='#' onclick=\"unsetAccess('{$perm['assName']}');\">Återkalla behörighet</a></li>";
+        if ($inherited) $ret .= "<li class='wrap'>{$perm['assName']} (ärvt från {$cat->caption})<p>{$accLevels[$perm['access']]}</p></li>";
+        else $ret .= "<li class='wrap'><a href='#' class='ajax-input'>{$perm['assName']}<p>{$accLevels[$perm['access']]}</p></a><a href='#' onclick=\"unsetAccess('{$perm['assName']}');\">Återkalla behörighet</a></li>";
     }
     foreach ($cat->admins() as $adm) {
-        if ($inherited) $ret .= "<li>{$adm['userId']} " . ($adm['name'] ? htmlspecialchars($adm['name']) : "(ingen persondata tillgänglig)") . " (ärvt från {$cat->caption})<p>{$accLevels[$adm['access']]}</p></li>";
-        else $ret .= "<li><a href='#' class='ajax-input'>{$adm['userId']} " . ($adm['name'] ? htmlspecialchars($adm['name']) : "(ingen persondata tillgänglig)") . "<p>{$accLevels[$adm['access']]}</p></a><a href='#' onclick=\"unsetAccess('{$adm['userId']}');\">Återkalla behörighet</a></li>";
+        if ($inherited) $ret .= "<li class='wrap'>{$adm['userId']} " . ($adm['name'] ? htmlspecialchars($adm['name']) : "(ingen persondata tillgänglig)") . " (ärvt från {$cat->caption})<p>{$accLevels[$adm['access']]}</p></li>";
+        else $ret .= "<li class='wrap'><a href='#' class='ajax-input'>{$adm['userId']} " . ($adm['name'] ? htmlspecialchars($adm['name']) : "(ingen persondata tillgänglig)") . "<p>{$accLevels[$adm['access']]}</p></a><a href='#' onclick=\"unsetAccess('{$adm['userId']}');\">Återkalla behörighet</a></li>";
     }
     if ($inherited) return $ret;
     if ($ret) return "<ul data-role='listview' data-inset='true' data-split-icon='delete' data-split-theme='c'>$ret</ul>";

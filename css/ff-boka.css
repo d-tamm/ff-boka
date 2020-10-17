@@ -111,8 +111,11 @@ table.alternate-rows tr:nth-child(even) {
     background-color:var(--FF-green) !important;
 }
 
-#assigned-cat-access a, #assigned-cat-access p {
-    /* Show whole assignment and access text even on small screens */
+.ui-listview > .wrap,
+.ui-listview > .wrap a,
+.ui-listview > .wrap p,
+.ui-listview > .wrap h2 {
+    /* Show whole text in list views even on small screens */
     white-space:normal;
 }
 

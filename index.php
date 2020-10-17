@@ -39,6 +39,10 @@ inloggningen, vänd dig i första hand till dem som har hand om inloggningen på
 </ul>
 <p>Läs gärna även hjälptexten på admin-sidan!</p>
 
+<h3>Global sökning</h3>
+<p>Här på startsidan kan du leta efter resurser i hela Sverige. Systemet letar då efter kategorier med
+matchande namn och där du har behörighet att boka. Sökningen går inte ner på resursnivå.</p>
+
 <h3>Säkerhet och integritet</h3>
 <p>Vi jobbar aktivt med säkerheten och integriteten på sajten:</p>
 <ul>
@@ -114,6 +118,16 @@ inloggningen, vänd dig i första hand till dem som har hand om inloggningen på
             $poll = new Poll($_REQUEST['pollId']);
             $poll->addVote($_REQUEST['choiceId'], $_SESSION['authenticatedUser']);
             die(json_encode([ "status" => "OK" ]));
+        case "ajaxGlobalSearch":
+            if (isset($_SESSION['authenticatedUser'])) {
+                header("Content-Type: application/json");
+                $user = new User($_SESSION['authenticatedUser']);
+                $ret = $user->findResource($_GET['q']);
+                die(json_encode([ "sections"=>$ret, "status"=>"OK" ]));
+            } else {
+                header("HTTP/1.0 401 Unauthorized");
+                die();
+            }
     }
 }
 
@@ -257,29 +271,34 @@ if (isset($_REQUEST['message'])) $message = ($message ? "$message<br>" : "") . $
             }
             if ($otherSections) echo "<select onChange=\"location.href='book-part.php?sectionId='+this.value;\"><option>Boka i annan lokalavdelning</option>$otherSections</select>"; ?>
 
-        <?php
-        // Show a list of all sections where user has admin role
-        foreach ($FF->getAllSections() as $section) {
-            if ($section->showFor($currentUser, FFBoka::ACCESS_CATADMIN) ||
-                @array_intersect($_SESSION['assignments'][$section->id], $cfg['sectionAdmins'])) {
-                echo "<a href='admin/?sectionId={$section->id}' class='ui-btn ui-btn-icon-right ui-icon-gear' data-transition='slideup'>Admin " . htmlspecialchars($section->name) . "</a>";
-            }
-        }
+            <?php
+            // Show a list of all sections where user has admin role
+            foreach ($FF->getAllSections() as $section) {
+                if ($section->showFor($currentUser, FFBoka::ACCESS_CATADMIN) ||
+                    @array_intersect($_SESSION['assignments'][$section->id], $cfg['sectionAdmins'])) {
+                    echo "<a href='admin/?sectionId={$section->id}' class='ui-btn ui-btn-icon-right ui-icon-gear' data-transition='slideup'>Admin " . htmlspecialchars($section->name) . "</a>";
+                }
+            } ?>
 
-        if ($cfg['testSystem']===TRUE) { ?><br>
-        <form class="ui-body ui-body-a">
-            <p>Under testfasen kan du ge dig själv administratörs-behörighet i valfri lokalavdelning för att testa alla funktioner.</p>
-            <input type="hidden" name="action" value="make me admin">
-            <select name="sectionId">
-                <option>Välj lokalavdelning</option><?php
-                $stmt = $db->query("SELECT * FROM sections ORDER BY name");
-                while ($row = $stmt->fetch(PDO::FETCH_OBJ)) {
-                    echo "<option value='{$row->sectionId}'>{$row->name}</option>";
-                } ?>
-            </select>
-            <input data-theme="b" type="submit" data-corners="false" value="Gör mig till admin">
-        </form><?php
-        }
+            <form class="ui-filterable">
+                <input id="search-autocomplete-input" data-type="search" placeholder="Leta efter resurser...">
+            </form>
+            <ul id="search-autocomplete" data-role="listview" data-filter="true" data-input="#search-autocomplete-input" data-inset="true"></ul>
+
+            <?php if ($cfg['testSystem']===TRUE) { ?><br>
+            <form class="ui-body ui-body-a">
+                <p>Under testfasen kan du ge dig själv administratörs-behörighet i valfri lokalavdelning för att testa alla funktioner.</p>
+                <input type="hidden" name="action" value="make me admin">
+                <select name="sectionId">
+                    <option>Välj lokalavdelning</option><?php
+                    $stmt = $db->query("SELECT * FROM sections ORDER BY name");
+                    while ($row = $stmt->fetch(PDO::FETCH_OBJ)) {
+                        echo "<option value='{$row->sectionId}'>{$row->name}</option>";
+                    } ?>
+                </select>
+                <input data-theme="b" type="submit" data-corners="false" value="Gör mig till admin">
+            </form><?php
+            }
         
         } ?>
         
