@@ -386,9 +386,12 @@ class User extends FFBoka {
     /**
      * Look for categories with similar captions as the specified search string.
      * @param string $search The string to search for
-     * @return array[] Array with section IDs as keys. The array values are arrays with "name" (section name),
-     * "distance" and "matches" keys, where distance is the composed geographic and least comparison distance,
-     * and matches is a string with comma-separated matches. The return array is sorted by distance, ascending.
+     * @return array[] Array of arrays with the following keys:
+     *    name (section name),
+     *    id (section ID),
+     *    distance (the composed geographic and least comparison distance),
+     *    matches (a string with comma-separated matches.
+     * The return array is sorted by distance, ascending.
      */
     public function findResource(string $search) {
         // Get home position as radians
@@ -409,11 +412,16 @@ class User extends FFBoka {
                 $dLon2 = pow(cos($homeLat) * ($homeLon - $lon), 2);
                 $dLat2 = pow($homeLat - $lat, 2);
                 $dist += (int) (6300 * sqrt($dLon2 + $dLat2)); // add distance in km
-                $ret[$sec->id] = [ "name"=>$sec->name, "distance"=>$dist, "matches"=>implode(", ", $matches) ];
+                $ret[] = [
+                    "name"=>$sec->name,
+                    "id"=>$sec->id,
+                    "distance"=>$dist,
+                    "matches"=>implode(", ", $matches)
+                ];
             }
         }
         // Sort sections by calculated distance
-        uasort($ret, function($a, $b) {
+        usort($ret, function($a, $b) {
             return $a['distance'] - $b['distance'];
         });
         return $ret;
