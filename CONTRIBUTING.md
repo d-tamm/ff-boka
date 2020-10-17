@@ -135,11 +135,12 @@ och [composer](https://getcomposer.org).
   * `sudo apt install phpx.x-sqlite`
   * Aktivera i php.ini
   * Starta om apache `service apache2 restart`
-* Installera följande i undermappen inc:
+* Installera följande i undermappen vendor:
   * JQueryUI (ladda ner från deras hemsida, packa upp arkivet och flytta mappen så att
     t.ex. jquery-ui.css ligger på vendor/jquery-ui-1.12.1/jquery-ui.css)
   * FontAwesome: ladda ner från deras hemsida (host yourself), packa upp, skapa en mapp
     `fontawesome` i mappen `vendor`, och flytta dit mapparna `css` och `webfonts` från arkivet.
+  * OpenLayers: ladda ner från deras hemsida och lägg innehållet av zip-filen (4 filer) i `vendor/openlayers`.
 * Säkerställ att webbservern har läsrättigheter på alla mappar, och att du har skrivrättigheter.
 * Kopiera filen `inc/config.sample.php` till `inc/config.php` och se över innehållet. För att få kopplingen
   till Friluftsfrämjandets API (för inloggningen), fråga på Slack. Vi vill inte lägga ut detaljerna här.

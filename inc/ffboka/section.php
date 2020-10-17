@@ -41,11 +41,39 @@ class Section extends FFBoka {
             return $this->id;
         case "name":
             return $this->name;
+        case "lat":
+        case "lon":
+            $stmt = self::$db->query("SELECT $name FROM sections WHERE sectionId={$this->id}");
+            $row = $stmt->fetch(PDO::FETCH_OBJ);
+            return $row->$name;
         default:
             throw new \Exception("Use of undefined Section property $name");
         }
     }
-    
+
+        /**
+     * Setter function for section properties
+     * @param string $name Property name
+     * @param int|string|NULL $value Property value
+     * @return string Set value on success, false on failure.
+     */
+    public function __set($name, $value) {
+        switch ($name) {
+            case "lon":
+            case "lat":
+                if (is_numeric($value)) {
+                    $stmt = self::$db->prepare("UPDATE sections SET $name=:value WHERE sectionId={$this->id}");
+                    $stmt->bindValue(":value", $value);
+                    if (!$stmt->execute()) die ($stmt->errorInfo()[2]);
+                    return $value;
+                }
+                break;
+            default:
+                throw new \Exception("Trying to set undefined Section property $name");
+        }
+        return false;
+    }
+
     /**
      * Gets all admin members IDs of the section.
      * @return int[] Admin member IDs
@@ -164,5 +192,22 @@ class Section extends FFBoka {
             $ret[] = new Item($row->bookedItemId, TRUE);
         }
         return $ret;
+    }
+
+    /**
+     * Looks for categories with captions which are similar to the search string.
+     * @param string $search The term to look for
+     * @param User $user Used to determine the applicable access rights. Only categories where the user has access will be searched.
+     * @param int[] $matches Will be populated with an array containing matching category captions as keys and the corresponding distance as value.
+     * @return int Returns the least distance from a perfect match (0).
+     */
+    public function contains(string $search, User $user, &$matches) {
+        $minDistance = 100000;
+        foreach ($this->getMainCategories() as $cat) {
+            if ($cat->showFor($user)) {
+                $minDistance = min($minDistance, $cat->contains($search, $user, $matches));
+            }
+        }
+        return $minDistance;
     }
 }

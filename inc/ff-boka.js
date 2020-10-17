@@ -45,6 +45,32 @@ function openBookingAdmin(baseUrl, sectionId) {
 // ========== index.php ==========
 $(document).on('pagecreate', "#page-start", function(e) {
     // bind events
+
+    /** Global search */
+    $( "#search-autocomplete" ).on( "filterablebeforefilter", function ( e, data ) {
+        var $ul = $( this ),
+            $input = $( data.input ),
+            value = $input.val(),
+            html = "";
+        $ul.html( "" );
+        if ( value && value.length > 2 ) {
+            $ul.html( "<li><div class='ui-loader'><span class='ui-icon ui-icon-loading'></span></div></li>" );
+            $ul.listview( "refresh" );
+            $.getJSON("index.php", { action: "ajaxGlobalSearch", q: value }, function(data, status) {
+                if (data.status == "OK") {
+                    $.each( data.sections, function ( secId, sec ) {
+                        html += "<li class='wrap' data-filtertext='" + value + "'><a href='book-part.php?sectionId=" + secId + "'><h2>zsdfgasd gsdfg sdfg sdfg sdf" + sec.name + "</h2><p>" + sec.matches + "</p></a></li>";
+                    });
+                    if (data.sections.length==0) {
+                        html += "<li class='wrap'>Sökningen på <b>" + value + "</b> gav ingen träff. Försök formulera om din sökning.</li>";
+                    }
+                } else html += "<li class='wrap'>Sökningen misslyckades.</li>";
+                $ul.html( html );
+                $ul.listview( "refresh" );
+                $ul.trigger( "updatelayout");
+            });
+        }
+    });
 });
 
 $(document).on('pageshow', "#page-start", function() {

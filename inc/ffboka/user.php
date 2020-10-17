@@ -349,7 +349,7 @@ class User extends FFBoka {
      * @return string the token used to preliminarily save the address
      */
     public function setUnverifiedMail(string $mail) {
-        return self::createToken("change mail address", $this->id, $mail);
+        return $this->createToken("change mail address", $this->id, $mail);
     }
     
     /**
@@ -381,5 +381,41 @@ class User extends FFBoka {
         $stmt = self::$db->query("SELECT polls.pollId FROM polls WHERE (expires IS NULL OR expires > NOW()) AND pollId NOT IN (SELECT pollId FROM poll_answers WHERE userId={$this->id}) LIMIT 1");
         if ($row = $stmt->fetch(\PDO::FETCH_OBJ)) return new \FFBoka\Poll($row->pollId);
         else return NULL;
+    }
+
+    /**
+     * Look for categories with similar captions as the specified search string.
+     * @param string $search The string to search for
+     * @return array[] Array with section IDs as keys. The array values are arrays with "name" (section name),
+     * "distance" and "matches" keys, where distance is the composed geographic and least comparison distance,
+     * and matches is a string with comma-separated matches. The return array is sorted by distance, ascending.
+     */
+    public function findResource(string $search) {
+        // Get home position as radians
+        $homeSec = $this->section;
+        $homeLat = pi() * $homeSec->lat / 180;
+        $homeLon = pi() * $homeSec->lon / 180;
+        $ret = array();
+        foreach ($this->getAllSections() as $sec) {
+            $matches = array();
+            $dist = $sec->contains($search, $this, $matches);
+            if ($dist < 500) {
+                // Sort matches after relevance and take the 3 best matches
+                asort($matches);
+                $matches = array_keys(array_slice($matches, 0, 3));
+                // Get section's position as radians and calculate geographic distance.
+                $lat = pi() * $sec->lat / 180;
+                $lon = pi() * $sec->lon / 180;
+                $dLon2 = pow(cos($homeLat) * ($homeLon - $lon), 2);
+                $dLat2 = pow($homeLat - $lat, 2);
+                $dist += (int) (6300 * sqrt($dLon2 + $dLat2)); // add distance in km
+                $ret[$sec->id] = [ "name"=>$sec->name, "distance"=>$dist, "matches"=>implode(", ", $matches) ];
+            }
+        }
+        // Sort sections by calculated distance
+        uasort($ret, function($a, $b) {
+            return $a['distance'] - $b['distance'];
+        });
+        return $ret;
     }
 }

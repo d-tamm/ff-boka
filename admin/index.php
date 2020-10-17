@@ -141,11 +141,20 @@ switch ($_REQUEST['action']) {
         }
         
     case "ajaxRemoveSectionAdmin":
-        if ($userAccess < FFBoka::ACCESS_SECTIONADMIN) die("Ajja bajja!");
+        if ($userAccess < FFBoka::ACCESS_SECTIONADMIN) { header("HTTP/1.0 403 Forbidden"); die("Forbidden"); }
         header("Content-Type: application/json");
         if ($section->removeAdmin($_REQUEST['id'])) die(json_encode(["html"=>adminList($section, $currentUser->id)]));
         else die(json_encode(["error"=>"Kan inte ta bort LA-administratören."]));
         
+    case "ajaxSetLocation":
+        if ($userAccess < FFBoka::ACCESS_SECTIONADMIN) { header("HTTP/1.0 403 Forbidden"); die("Forbidden"); }
+        header("Content-Type: application/json");
+        //if (FALSE === ($section->lat = $_GET['lat'])) die(json_encode([ "error"=> "Kan inte spara."] ));
+        $section->lat = $_GET['lat'];
+        //if (FALSE === ($section->lon = $_GET['lon'])) die(json_encode([ "error"=> "Kan inte spara."] ));
+        $section->lon = $_GET['lon'];
+        die(json_encode([ "lat"=>$section->lat, "lon"=>$section->lon ]));
+
     case "ajaxGetQuestion":
         header("Content-Type: text/plain");
         $question = new Question($_REQUEST['id']);
@@ -325,10 +334,15 @@ unset($_SESSION['catId']);
         </div>
 
         <div data-role="collapsible">
-            <h2>Övrigt</h2>
+            <h2 onclick="$('#sec-map').attr('src', 'map.php?sectionId=<?= $section->id ?>');">Övrigt</h2>
             <h3>Direktlänk</h3>
             <p>Om du vill länka direkt till lokalavdelningens bokningssida kan du använda följande länk:</p>
             <p><a href="<?= $cfg['url'] . "boka-" . urlencode($section->name) ?>"><?= $cfg['url'] . "boka-" . $section->name ?></a></p>
+
+            <h3>Geografiskt läge</h3>
+            <p>Kartan nedan visar lokalavdelningens geografiska läge. Det används t.ex. vid sökning från startsidan för att sortera resultatet efter geografiskt avstånd. Du kan justera positionen genom att klicka på kartan.</p>
+
+            <iframe id="sec-map" width="100%" height="450" frameborder="0" marginheight="0" marginwidth="0" src="" style="border: 1px solid grey"></iframe>
         </div>
         <?php } ?>
 

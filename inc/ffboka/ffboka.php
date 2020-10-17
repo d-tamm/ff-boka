@@ -114,8 +114,7 @@ class FFBoka {
                 ));
             }
         }
-        if ($verbose) echo "All sections updated.\n";
-        if ($verbose) echo "Deleting outdated records...";
+        if ($verbose) echo "All sections updated from API.\n Deleting outdated section records...";
         $numDeleted = self::$db->exec("DELETE FROM sections WHERE TIMESTAMPDIFF(SECOND, `timestamp`, NOW())>100");
         if ($verbose) echo " $numDeleted records deleted.\n";
     }

@@ -552,4 +552,33 @@ class Category extends FFBoka {
             throw new \Exception("Failed to create item.");
         }
     }
+
+    /**
+     * Look for search string in category caption and child categories accessible to the given user.
+     * @param string $search The search string
+     * @param User $user Used to determine access rights. Only categories where the user has read access will be searched.
+     * @param int[] $matches Will be populated with an array containing matching category captions as keys and the corresponding distance as value.
+     * @return int The distance for a similar match. 0=perfect match.
+     */
+    public function contains(string $search, User $user, &$matches) {
+        $minDistance = 100000;
+        foreach ($this->children() as $child) {
+            if ($child->showFor($user)) {
+                $minDistance = min($minDistance, $child->contains($search, $user, $matches));
+            }
+        }
+        if ($this->getAccess($user) >= self::ACCESS_READASK) {
+            $pos = stripos($this->caption, $search);
+            if ($pos === false) { // No direct match. Calculate Levenshtein distance with low delete cost.
+                $dist = levenshtein($this->caption, $search, 200, 200, 20);
+            } elseif ($pos === 0) { // Best match: caption starts with $search
+                $dist = 0;
+            } else { // Medium match: caption contains $search
+                $dist = 50;
+            }
+            $matches[$this->caption] = $dist;
+            $minDistance = min($minDistance, $dist);
+        }
+        return $minDistance;
+    }
 }
