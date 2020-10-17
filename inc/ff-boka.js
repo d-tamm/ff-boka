@@ -59,7 +59,7 @@ $(document).on('pagecreate', "#page-start", function(e) {
             $.getJSON("index.php", { action: "ajaxGlobalSearch", q: value }, function(data, status) {
                 if (data.status == "OK") {
                     $.each( data.sections, function ( secId, sec ) {
-                        html += "<li class='wrap' data-filtertext='" + value + "'><a href='book-part.php?sectionId=" + secId + "'><h2>zsdfgasd gsdfg sdfg sdfg sdf" + sec.name + "</h2><p>" + sec.matches + "</p></a></li>";
+                        html += "<li class='wrap' data-filtertext='" + value + "'><a href='book-part.php?sectionId=" + secId + "'><h2>" + sec.name + "</h2><p>" + sec.matches + "</p></a></li>";
                     });
                     if (data.sections.length==0) {
                         html += "<li class='wrap'>Sökningen på <b>" + value + "</b> gav ingen träff. Försök formulera om din sökning.</li>";
