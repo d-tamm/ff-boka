@@ -402,7 +402,7 @@ class User extends FFBoka {
         foreach ($this->getAllSections() as $sec) {
             $matches = array();
             $dist = $sec->contains($search, $this, $matches);
-            if ($dist < 500) {
+            if ($dist < 400) {
                 // Sort matches after relevance and take the 3 best matches
                 asort($matches);
                 $matches = array_keys(array_slice($matches, 0, 3));
