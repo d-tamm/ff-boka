@@ -486,7 +486,8 @@ class FFBoka {
         $path = realpath(__DIR__ . "/../..");
         $docRoot = realpath($_SERVER['DOCUMENT_ROOT']);
         $ssl = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS']!=='off') ? "ssl://" : "";
-        $fp = fsockopen($ssl . $_SERVER['SERVER_NAME'], $_SERVER['SERVER_PORT'], $errno, $errstr, 10);
+        $port = ($_SERVER['HTTP_X_LOOPIA_SSL'] === "on" ? 443 : $_SERVER['SERVER_PORT']); // Workaround for Loopia who have a misconfigured server lying about the port
+        $fp = fsockopen($ssl . $_SERVER['SERVER_NAME'], $port, $errno, $errstr, 10);
         if($fp) {   
             $out = "GET " . substr($path, strlen($docRoot)) . "/sendmail.php?mailqId=" . $mailqId . " HTTP/1.1\r\n";
             $out .= "Host: " . $_SERVER['SERVER_NAME'] . "\r\n";
