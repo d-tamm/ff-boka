@@ -1,6 +1,6 @@
 <?php
 require "../inc/common.php";
-$sections = $FF->getAllSections($_GET['sectionId']);
+$sections = $FF->getAllSections($_GET['sectionId'], "n2s");
 $homeSec = array_shift($sections);
 $color = "blue";
 

@@ -165,10 +165,17 @@ class FFBoka {
     /**
      * Get a list of all sections in FF
      * @param int $showFirst If set, this section will be returned as the first element
+     * @param string $sort Can be "name" (sorted alphabetically) or "n2s" (sorted north to south)
      * @return Section[] Array of sections in alphabetical order
      */
-    public function getAllSections(int $showFirst=0) {
-        $stmt = self::$db->prepare("SELECT sectionId FROM sections ORDER BY sectionId!=?, name");
+    public function getAllSections(int $showFirst=0, string $sort="name") {
+        switch ($sort) {
+            case "n2s":
+                $stmt = self::$db->prepare("SELECT sectionId FROM sections ORDER BY sectionId!=?, `lat` DESC");
+                break;
+            default:
+                $stmt = self::$db->prepare("SELECT sectionId FROM sections ORDER BY sectionId!=?, `name`");
+        }
         $stmt->execute(array($showFirst));
         $sections = array();
         while ($row = $stmt->fetch(PDO::FETCH_OBJ)) {
