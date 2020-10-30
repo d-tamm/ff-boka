@@ -66,6 +66,7 @@ function saveBookingFields(Booking $booking, $conflicts, $unavail, User $user) {
     $booking->extName = $_REQUEST['extName'];
     $booking->extPhone = $_REQUEST['extPhone'];
     $booking->extMail = $_REQUEST['extMail'];
+    $booking->okShowContactData = $_REQUEST['okShowContactData'];
     // remove old answers previously saved with booking and save new answers to questions
     $booking->clearAnswers();
     if (isset($_REQUEST['questionId'])) {
@@ -674,7 +675,11 @@ EOF;
                 </div>
             </div>
         <?php } ?>
-        
+
+        <label>
+            <input type="checkbox" data-mini="true" required name="okShowContactData" value="1"><span class="required">Mina kontaktuppgifter får visas för andra inloggade användare i samband med bokningen</span>
+        </label>
+
         <div class="ui-field-contain">
             <label for="book-sum-ref">Referens:</label>
             <input name="ref" id="book-sum-ref" placeholder="visas i din bokningsöversikt" value="<?= $booking->ref ?>">

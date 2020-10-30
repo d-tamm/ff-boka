@@ -61,6 +61,7 @@ class Booking extends FFBoka {
             case "extMail":
             case "token":
             case "confirmationSent":
+            case "okShowContactData":
                 $stmt = self::$db->query("SELECT $name FROM bookings WHERE bookingId={$this->id}");
                 $row = $stmt->fetch(PDO::FETCH_OBJ);
                 return $row->$name;
@@ -68,6 +69,12 @@ class Booking extends FFBoka {
                 $stmt = self::$db->query("SELECT SUM(price) price FROM booked_items WHERE bookingId={$this->id} AND NOT price IS NULL");
                 $row = $stmt->fetch(PDO::FETCH_OBJ);
                 return $row->price;
+            case "userName":
+                return is_null($this->userId) ? $this->extName : $this->user()->name;
+            case "userPhone":
+                return is_null($this->userId) ? $this->extPhone : $this->user()->phone;
+            case "userMail":
+                return is_null($this->userId) ? $this->extMail : $this->user()->mail;
             default:
                 throw new \Exception("Use of undefined Booking property $name");
         }
@@ -91,6 +98,7 @@ class Booking extends FFBoka {
             case "extPhone":
             case "extMail":
             case "confirmationSent":
+            case "okShowContactData":
                 $stmt = self::$db->prepare("UPDATE bookings SET $name=:name WHERE bookingId={$this->id}");
                 if ($name=="repeatId") $stmt->bindValue(":name", $value, \PDO::PARAM_INT);
                 else $stmt->bindValue(":name", $value);

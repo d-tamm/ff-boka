@@ -199,7 +199,8 @@ class Item extends FFBoka {
                 AND status>0
                 $timeConstraint
             ORDER BY start");
-        $stmt->execute(array( ":days"=>$days ));
+        if ($days) $stmt->execute(array( ":days"=>$days ));
+        else $stmt->execute(array());
         return $stmt->fetchAll(\PDO::FETCH_OBJ);
     }
     
