@@ -185,19 +185,16 @@ END;
             $html .= "<div class='item-image'><img src='image.php?type=itemImage&id={$img->id}'><label>" . htmlspecialchars($img->caption) . "</label></div>";
         }
         if ($cat->getAccess($currentUser)>=FFBoka::ACCESS_PREBOOK) { // show coming bookings for this item
-            $bookings = $item->upcomingBookings();
-            $html .= "<div class='ui-body ui-body-a'><h3>Kommande bokningar</h3>\n";
-            if (count($bookings)) {
-                $html .= "<ul>\n";
-                foreach ($bookings as $b) {
-                    $booking = new Booking($b->bookingId);
-                    $html .= "<li>" . strftime("%a %e/%-m %R", $b->start) . " till " . strftime("%a %e/%-m %R", $b->end);
-                    if ($b->okShowContactData===1) $html .= "<br>Bokad av " . htmlspecialchars($b->userName) . " (" . htmlspecialchars($b->userPhone . ", " . $b->userMail) . ")"; else $html .= "xxx".$b->userId."z";
-                    $html .= "</li>\n";
-                }
-                $html .= "</ul>\n";
-            } else $html .= "<p>Det finns inga kommande bokningar.</p>";
-            $html .= "</div>\n";
+            $html .= "<div class='ui-body ui-body-a'><h3>Kommande bokningar</h3>\n<ul>\n";
+            $bookedItems = $item->upcomingBookings();
+            foreach ($bookedItems as $bi) {
+                $b = $bi->booking();
+                $html .= "<li>" . strftime("%a %e/%-m %R", $bi->start) . " till " . strftime("%a %e/%-m %R", $bi->end);
+                if ($b->okShowContactData===1 && $_SESSION['authenticatedUser']) $html .= "<br>Bokad av " . htmlspecialchars($b->userName . " (" . $b->userPhone . ", " . $b->userMail . ")");
+                $html .= "</li>\n";
+            }
+            if (!count($bookedItems)) $html .= "<li><i>Det finns inga kommande bokningar.</i></li>";
+            $html .= "</ul>\n</div>\n";
         }
         $html .= "<a href='#' data-rel='back' class='ui-btn ui-icon-delete ui-btn-icon-left'>Stäng inforutan</a>";
         die(json_encode([
