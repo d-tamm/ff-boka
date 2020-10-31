@@ -260,12 +260,12 @@ if (isset($_REQUEST['message'])) $message = ($message ? "$message<br>" : "") . $
     <div data-role='collapsibleset' data-inset='false'>
         <?php if (isset($_SESSION['authenticatedUser'])) {
             // Show link for booking in user's home section
-            $section = new Section($currentUser->sectionId);
-            if ($section->showFor($currentUser)) echo "<a href='book-part.php?sectionId={$section->id}' class='ui-btn ui-btn-icon-right ui-icon-home' style='white-space:normal;'>Boka resurser i " . htmlspecialchars($section->name) . "</a>";
+            $homeSection = new Section($currentUser->sectionId);
+            if ($homeSection->showFor($currentUser)) echo "<a href='book-part.php?sectionId={$homeSection->id}' class='ui-btn ui-btn-icon-right ui-icon-home' style='white-space:normal;'>Boka resurser i " . htmlspecialchars($homeSection->name) . "</a>";
             // Show a list of all sections with categories where user may book resources
             $otherSections = "";
             foreach ($FF->getAllSections() as $section) {
-                if ($section->showFor($currentUser) && count($section->getMainCategories())) {
+                if ($section->showFor($currentUser) && count($section->getMainCategories()) && $section->id != $homeSection->id) {
                     $otherSections .= "<option value='{$section->id}'>" . htmlspecialchars($section->name) . "</option>";
                 }
             }
