@@ -30,6 +30,7 @@ use FFBoka\User;
 
 // Connect to database
 $db = connectDb($cfg['dbhost'], $cfg['dbname'], $cfg['dbuser'], $cfg['dbpass'], $dbVersion, $cfg['dbport']);
+// Switch off strict mode
 $db->exec("SET SESSION sql_mode = ''");
 
 // Create FF object
