@@ -54,7 +54,7 @@ matchande namn och där du har behörighet att boka. Sökningen går inte ner p�
 <h3>Personuppgifter och GDPR</h3>
 <p>Det ligger i sakens natur att vi måste hantera vissa personuppgifter för att kunna bedriva bokningssystemet. De uppgifter som sparas om dig i systemet är:</p>
 <ul>
-    <li>De <a href='userdata.php'>kontaktuppgifter</a> som du själv har angett vid registreringen (namn, telefon och mejl). De behövs för att plattformen ska kunna fungera. T.ex. används din epost-adress för att kunna skicka bekräftelser och påminnelser om bokningar. Kontaktuppgifterna kan även användas om det uppstår frågor om någon bokning.</li>
+    <li>De <a href='userdata.php'>kontaktuppgifter</a> som du själv har angett vid registreringen (namn, telefon och mejl). De behövs för att plattformen ska kunna fungera. T.ex. används din epost-adress för att kunna skicka bekräftelser och påminnelser om bokningar. Kontaktuppgifterna visas för inloggade användare i samband med dina bokningar, så att administratörer eller användare med föregående/efterföljande bokningar kan ta kontakt med dig om det uppstår frågor. Kontaktuppgifterna visas inte för gäster.</li>
     <li>Om du gör en bokning kommer all data som du lämnar med bokningen vara tillgänglig för respektive materialansvarig/bokningsadmin. Informationen visas inte för andra användare.</li>
     <li>Informationen om dina bokningar sparas i två år. Om du raderar ditt konto tas all information om dig bort omedelbart.</li>
     <li>Vi delar aldrig dina uppgifter med tredje part. De används enbart inom resursbokningssystemet.</li>

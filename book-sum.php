@@ -189,6 +189,10 @@ helst ändra dem (även efter att du avslutat bokningen) genom att gå till <a h
 <p>Om du bokar som gäst ska du här skriva in ditt namn och dina kontaktuppgifter så vi kan
 nå dig vid frågor. I bokningsbekräftelsen kommer du att få en länk till bokningen så att du
 kan komma tillbaka och uppdatera den.</p>
+<p>Dina kontaktuppgifter kommer att vara synliga för andra inloggade användare, i syfte att
+ni ska kunna ta kontakt med varandra för eventuell samordning mellan bokningar, hantering av
+kvarglömda saker mm. Därför måste du bekräfta att du tillåter att dina kontaktuppgifter visas
+för andra. Informationen visas inte för gäster.</p>
 
 <h3>Referens</h3>
 <p>Här kan du skriva in en valfri kort beskrivande text, så att du lättare kan se vad bokningen
@@ -677,7 +681,7 @@ EOF;
         <?php } ?>
 
         <label>
-            <input type="checkbox" data-mini="true" required name="okShowContactData" value="1"><span class="required">Mina kontaktuppgifter får visas för andra inloggade användare i samband med bokningen</span>
+            <input type="checkbox" data-mini="true" required name="okShowContactData" value="1"><span class="required">Jag medger att mina kontaktuppgifter visas för andra inloggade användare i samband med bokningen</span>
         </label>
 
         <div class="ui-field-contain">
