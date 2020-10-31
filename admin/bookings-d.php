@@ -96,15 +96,15 @@ switch ($_REQUEST['action']) {
                 'minStatus'=>FFBoka::STATUS_CONFLICT,
                 'adminView'=>TRUE
             ]);
-            foreach ($item->upcomingBookings(0) as $b) {
-                switch ($b->status) {
+            foreach ($item->upcomingBookings(0) as $bi) {
+                switch ($bi->status) {
                 case FFBoka::STATUS_CONFLICT:
-                    $conflicts[] = "<span class='freebusy-busy conflict' style='display:inline-block; width:1em;'>&nbsp;</span> <a class='link-unconfirmed' href='#' data-booking-id='{$b->bookingId}'>{$item->caption} (" . trim(strftime("%e %b", $b->start)) . ")</a><br>";
-                    $maxBookedItemId = max($maxBookedItemId, $b->bookedItemId);
+                    $conflicts[] = "<span class='freebusy-busy conflict' style='display:inline-block; width:1em;'>&nbsp;</span> <a class='link-unconfirmed' href='#' data-booking-id='{$bi->booking()->id}'>{$item->caption} (" . trim(strftime("%e %b", $bi->start)) . ")</a><br>";
+                    $maxBookedItemId = max($maxBookedItemId, $bi->bookedItemId);
                     break;
                 case FFBoka::STATUS_PREBOOKED:
-                    $unconfirmed[] = "<span class='freebusy-busy unconfirmed' style='display:inline-block; width:1em;'>&nbsp;</span> <a class='link-unconfirmed' href='#' data-booking-id='{$b->bookingId}'>{$item->caption} (" . trim(strftime("%e %b", $b->start)) . ")</a><br>";
-                    $maxBookedItemId = max($maxBookedItemId, $b->bookedItemId);
+                    $unconfirmed[] = "<span class='freebusy-busy unconfirmed' style='display:inline-block; width:1em;'>&nbsp;</span> <a class='link-unconfirmed' href='#' data-booking-id='{$bi->booking()->id}'>{$item->caption} (" . trim(strftime("%e %b", $bi->start)) . ")</a><br>";
+                    $maxBookedItemId = max($maxBookedItemId, $bi->bookedItemId);
                     break;
                 }
             }
