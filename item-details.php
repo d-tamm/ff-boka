@@ -56,8 +56,8 @@ if ($access < FFBoka::ACCESS_READASK) {
         echo "<div class='ui-body ui-body-a'><h3>Kommande bokningar</h3>\n<ul>\n";
         foreach ($bookedItems as $bi) {
             $b = $bi->booking();
-            echo "<li>" . strftime("%a %e/%-m %R", $bi->start) . " till " . strftime("%a %e/%-m %R", $bi->end);
-            if ($b->okShowContactData===1 && $_SESSION['authenticatedUser']) $html .= "<br>Bokad av " . htmlspecialchars($b->userName . " (" . $b->userPhone . ", " . $b->userMail . ")");
+            echo "<li>" . FFBoka::formatDateSpan($bi->start, $bi->end, true);
+            if ($b->okShowContactData==1 && $_SESSION['authenticatedUser']) echo "<br>Bokad av " . htmlspecialchars($b->userName . " (" . $b->userPhone . ", " . $b->userMail . ")");
             echo "</li>\n";
         }
         if (!count($bookedItems)) echo "<li>Det finns inga kommande bokningar i systemet.</li>\n";

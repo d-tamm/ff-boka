@@ -189,8 +189,8 @@ END;
             $bookedItems = $item->upcomingBookings();
             foreach ($bookedItems as $bi) {
                 $b = $bi->booking();
-                $html .= "<li>" . strftime("%a %e/%-m %R", $bi->start) . " till " . strftime("%a %e/%-m %R", $bi->end);
-                if ($b->okShowContactData===1 && $_SESSION['authenticatedUser']) $html .= "<br>Bokad av " . htmlspecialchars($b->userName . " (" . $b->userPhone . ", " . $b->userMail . ")");
+                $html .= "<li>" . FFBoka::formatDateSpan($bi->start, $bi->end, true);
+                if ($b->okShowContactData==1 && $_SESSION['authenticatedUser']) $html .= "<br>Bokad av " . htmlspecialchars($b->userName . " (" . $b->userPhone . ", " . $b->userMail . ")");
                 $html .= "</li>\n";
             }
             if (!count($bookedItems)) $html .= "<li><i>Det finns inga kommande bokningar.</i></li>";
