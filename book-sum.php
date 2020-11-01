@@ -681,7 +681,7 @@ EOF;
         <?php } ?>
 
         <label>
-            <input type="checkbox" data-mini="true" required name="okShowContactData" value="1"><span class="required">Jag medger att mina kontaktuppgifter visas för andra inloggade användare i samband med bokningen</span>
+            <input type="checkbox" data-mini="true" required name="okShowContactData" value="1" <?= $booking->okShowContactData==1 ? "checked" : "" ?>><span class="required">Jag medger att mina kontaktuppgifter visas för andra inloggade användare i samband med bokningen</span>
         </label>
 
         <div class="ui-field-contain">
