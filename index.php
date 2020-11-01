@@ -54,7 +54,7 @@ matchande namn och där du har behörighet att boka. Sökningen går inte ner p�
 <h3>Personuppgifter och GDPR</h3>
 <p>Det ligger i sakens natur att vi måste hantera vissa personuppgifter för att kunna bedriva bokningssystemet. De uppgifter som sparas om dig i systemet är:</p>
 <ul>
-    <li>De <a href='userdata.php'>kontaktuppgifter</a> som du själv har angett vid registreringen (namn, telefon och mejl). De behövs för att plattformen ska kunna fungera. T.ex. används din epost-adress för att kunna skicka bekräftelser och påminnelser om bokningar. Kontaktuppgifterna kan även användas om det uppstår frågor om någon bokning.</li>
+    <li>De <a href='userdata.php'>kontaktuppgifter</a> som du själv har angett vid registreringen (namn, telefon och mejl). De behövs för att plattformen ska kunna fungera. T.ex. används din epost-adress för att kunna skicka bekräftelser och påminnelser om bokningar. Kontaktuppgifterna visas för inloggade användare i samband med dina bokningar, så att administratörer eller användare med föregående/efterföljande bokningar kan ta kontakt med dig om det uppstår frågor. Kontaktuppgifterna visas inte för gäster.</li>
     <li>Om du gör en bokning kommer all data som du lämnar med bokningen vara tillgänglig för respektive materialansvarig/bokningsadmin. Informationen visas inte för andra användare.</li>
     <li>Informationen om dina bokningar sparas i två år. Om du raderar ditt konto tas all information om dig bort omedelbart.</li>
     <li>Vi delar aldrig dina uppgifter med tredje part. De används enbart inom resursbokningssystemet.</li>
@@ -260,12 +260,12 @@ if (isset($_REQUEST['message'])) $message = ($message ? "$message<br>" : "") . $
     <div data-role='collapsibleset' data-inset='false'>
         <?php if (isset($_SESSION['authenticatedUser'])) {
             // Show link for booking in user's home section
-            $section = new Section($currentUser->sectionId);
-            if ($section->showFor($currentUser)) echo "<a href='book-part.php?sectionId={$section->id}' class='ui-btn ui-btn-icon-right ui-icon-home' style='white-space:normal;'>Boka resurser i " . htmlspecialchars($section->name) . "</a>";
+            $homeSection = new Section($currentUser->sectionId);
+            if ($homeSection->showFor($currentUser)) echo "<a href='book-part.php?sectionId={$homeSection->id}' class='ui-btn ui-btn-icon-right ui-icon-home' style='white-space:normal;'>Boka resurser i " . htmlspecialchars($homeSection->name) . "</a>";
             // Show a list of all sections with categories where user may book resources
             $otherSections = "";
             foreach ($FF->getAllSections() as $section) {
-                if ($section->showFor($currentUser) && count($section->getMainCategories())) {
+                if ($section->showFor($currentUser) && count($section->getMainCategories()) && $section->id != $homeSection->id) {
                     $otherSections .= "<option value='{$section->id}'>" . htmlspecialchars($section->name) . "</option>";
                 }
             }

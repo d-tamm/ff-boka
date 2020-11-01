@@ -180,7 +180,7 @@ class Item extends FFBoka {
     /**
      * Get all bookings for the next time
      * @param int $days Number of days in future to return bookings for. If set to 0, all (even past) bookings are returned
-     * @return array of objects { bookingId, bookedItemId, unixtimestamp start, unixtimestamp end, status }
+     * @return Item[] Array of bookedItems.
      */
     public function upcomingBookings(int $days=60) {
         // Get freebusy information.
@@ -189,18 +189,20 @@ class Item extends FFBoka {
             )";
         else $timeConstraint = "";
         $stmt = self::$db->prepare("
-            SELECT bookingId, bookedItemId, UNIX_TIMESTAMP(start)-bufferAfterBooking*3600 AS start, UNIX_TIMESTAMP(end)+bufferAfterBooking*3600 AS end, status
+            SELECT bookedItemId
             FROM booked_items
-            INNER JOIN bookings USING (bookingId)
-            INNER JOIN items USING (itemId)
-            INNER JOIN categories USING (catId)
             WHERE
                 itemId={$this->id}
                 AND status>0
                 $timeConstraint
             ORDER BY start");
-        $stmt->execute(array( ":days"=>$days ));
-        return $stmt->fetchAll(\PDO::FETCH_OBJ);
+        if ($days) $stmt->execute(array( ":days"=>$days ));
+        else $stmt->execute(array());
+        $ret = array();
+        while ($row = $stmt->fetch(PDO::FETCH_OBJ)) {
+            $ret[] = new Item($row->bookedItemId, TRUE);
+        }
+        return $ret;
     }
     
     /**

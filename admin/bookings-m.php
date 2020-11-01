@@ -77,11 +77,11 @@ if (isset($_REQUEST['action'])) {
                     'minStatus'=>FFBoka::STATUS_CONFLICT,
                     'adminView'=>TRUE
                 ]);
-                foreach ($item->upcomingBookings(0) as $b) {
+                foreach ($item->upcomingBookings(0) as $bi) {
                     switch ($b->status) {
                         case FFBoka::STATUS_CONFLICT:
                         case FFBoka::STATUS_PREBOOKED:
-                            $unconfirmed[] = "<li><a href='../book-sum.php?bookingId={$b->bookingId}' target='_blank'><span class='freebusy-busy " . ($b->status==FFBoka::STATUS_CONFLICT ? "conflict" : "unconfirmed") . "' style='display:inline-block; width:1em;'>&nbsp;</span> {$item->caption} (" . trim(strftime("%e %b", $b->start)) . ")</a></li>";
+                            $unconfirmed[] = "<li><a href='../book-sum.php?bookingId={$bi->booking()->id}' target='_blank'><span class='freebusy-busy " . ($bi->status==FFBoka::STATUS_CONFLICT ? "conflict" : "unconfirmed") . "' style='display:inline-block; width:1em;'>&nbsp;</span> {$item->caption} (" . trim(strftime("%e %b", $bi->start)) . ")</a></li>";
                             break;
                     }
                 }
