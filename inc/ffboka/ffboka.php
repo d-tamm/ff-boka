@@ -114,9 +114,9 @@ class FFBoka {
                 ));
             }
         }
-        if ($verbose) echo "All sections updated from API.\n Deleting outdated section records...";
+        if ($verbose) echo "All sections updated from API.\n\nDeleting outdated section records...";
         $numDeleted = self::$db->exec("DELETE FROM sections WHERE TIMESTAMPDIFF(SECOND, `timestamp`, NOW())>100");
-        if ($verbose) echo " $numDeleted records deleted.\n";
+        if ($verbose) echo " $numDeleted records deleted.\n\n";
     }
     
     /**
@@ -147,10 +147,10 @@ class FFBoka {
                 }
             }
         }
-        if ($verbose) echo "All assignments are updated.\n";
+        if ($verbose) echo "All assignments are updated.\n\n";
         if ($verbose) echo "Deleting all (outdated) records not affected by the update...";
         $numDeleted = self::$db->exec("DELETE FROM assignments WHERE sort>0 AND TIMESTAMPDIFF(SECOND, timestamp, NOW())>100");
-        if ($verbose) echo "$numDeleted records deleted.\n";
+        if ($verbose) echo "$numDeleted records deleted.\n\n";
     }
     
     /**
@@ -456,7 +456,7 @@ class FFBoka {
 
 
     /**
-     * Queue an email asynchronous sending
+     * Queue an email for delayed sending. Create a mail queue entry to be processed by cron.
      * @param string $to
      * @param string $subject
      * @param string $template Name of template file to use, without extension. The file must be in the templates folder.
@@ -466,7 +466,8 @@ class FFBoka {
      * file, and filename is the name the file shall appear with in the email 
      * @param string $fromName Clear text From name
      * @param string $replyTo
-     * @throws \Exception
+     * @return int Returns the ID of the created mail queue item.
+     * @throws \Exception if creation of mail queue item fails.
      */
     function queueMail(string $to, string $subject, $template, $replace=[], $attachments=[], string $fromName='', string $replyTo='') {
         if (is_readable(__DIR__."/../../templates/$template.html")) {
@@ -487,75 +488,59 @@ class FFBoka {
             ":body"     => $body,
             ":attachments" => json_encode($attachments)
         ))) throw new \Exception("Failed to queue mail. " . $stmt->errorInfo()[2]);
-        $mailqId = self::$db->lastInsertId();
-
-        // Trigger async sending of mail
-        $path = realpath(__DIR__ . "/../..");
-        $docRoot = realpath($_SERVER['DOCUMENT_ROOT']);
-        $ssl = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS']!=='off') ? "ssl://" : "";
-        $port = ($_SERVER['HTTP_X_LOOPIA_SSL'] === "on" ? 443 : $_SERVER['SERVER_PORT']); // Workaround for Loopia who have a misconfigured server lying about the port
-        $fp = fsockopen($ssl . $_SERVER['SERVER_NAME'], $port, $errno, $errstr, 10);
-        if($fp) {   
-            $out = "GET " . substr($path, strlen($docRoot)) . "/sendmail.php?mailqId=" . $mailqId . " HTTP/1.1\r\n";
-            $out .= "Host: " . $_SERVER['SERVER_NAME'] . "\r\n";
-            $out .= "Connection: Close\r\n\r\n";      
-            fwrite($fp, $out); 
-            fclose($fp);
-        } else {
-            throw new \Exception("$errstr ($errno)");
-        }
+        return self::$db->lastInsertId();
     }
 
     /**
-     * Send an email from the mail queue
-     * @param int $id mailqId of the message to send
+     * Send all emails from the mail queue
      * @param string $from From address to use
      * @param string $fromName Cleartext from name to use if no from name is set in queue entry
      * @param string $replyTo Reply-to address to use if not set in queue entry
      * @param array $SMTPOptions Array with SMTP config, containing the keys: host, port, user, pass
      * @throws Exception if sending fails
-     * @return bool True on success
      */
-    function sendQueuedMail(int $id, string $from, string $fromName, string $replyTo, array $SMTPOptions) {
-        $stmt = self::$db->prepare("SELECT * FROM mailq WHERE mailqId=?");
-        if ($stmt->execute([ $id ])===false) throw new \Exception("Cannot read mail queue. " . $stmt->errorInfo()[2]);
-        $row = $stmt->fetch(PDO::FETCH_OBJ);
-        if ($row===false) throw new \Exception("There is no mail queue entry with this ID.");
-        if ($row->fromName) $fromName = $row->fromName;
-        if ($row->replyTo) $replyTo = $row->replyTo;
-        try {
-            $mail = new PHPMailer(true);
-            $mail->XMailer = ' '; // Don't advertise that we are using PHPMailer
-            // Add attachments
-            foreach (json_decode($row->attachments) as $att) {
-                $mail->addAttachment($att['path'], $att['filename']);
+    function sendQueuedMails(string $from, string $fromName, string $replyTo, array $SMTPOptions) {
+        $stmt = self::$db->query("SELECT * FROM mailq");
+        $rows = $stmt->fetchAll(PDO::FETCH_OBJ);
+        if (count($rows)) echo "Sending mails from mail queue...\n";
+        else echo "No mails in the mail queue.\n\n";
+        foreach ($rows as $row) {
+            if ($row->fromName) $fromName = $row->fromName;
+            if ($row->replyTo) $replyTo = $row->replyTo;
+            try {
+                $mail = new PHPMailer(true);
+                $mail->XMailer = ' '; // Don't advertise that we are using PHPMailer
+                // Add attachments
+                foreach (json_decode($row->attachments) as $att) {
+                    $mail->addAttachment($att['path'], $att['filename']);
+                }
+                //Server settings
+                $mail->SMTPDebug = 0;
+                $mail->isSMTP();
+                $mail->Host = $SMTPOptions['host'];
+                $mail->Port = $SMTPOptions['port'];
+                $mail->SMTPAuth = true;
+                $mail->Username = $SMTPOptions['user'];
+                $mail->Password = $SMTPOptions['pass'];
+                $mail->SMTPSecure = 'tls';   // Enable TLS encryption, `ssl` also accepted
+                // Message content
+                $mail->CharSet ="UTF-8";
+                $mail->setFrom($from, $fromName);
+                $mail->Sender = $SMTPOptions['user'];
+                $mail->addAddress($row->to);
+                $mail->addReplyTo($replyTo);
+                $mail->isHTML(true);
+                $mail->Subject = $row->subject;
+                $mail->Body = $row->body;
+                $mail->AltBody = strip_tags(str_replace(array("</p>", "<br>"), array("</p>\r\n\r\n", "\r\n"), $row->body));
+                if (!$mail->send()) throw new Exception($mail->ErrorInfo);
+                $stmt = self::$db->prepare("DELETE FROM mailq WHERE mailqId=?");
+                $stmt->execute([ $row->mailqId ]);
+                echo "Mail sent to {$row->to}\n";
+            } catch (Exception $e) {
+                throw new \Exception("Mailer Error: ".$mail->ErrorInfo);
             }
-            //Server settings
-            $mail->SMTPDebug = 0;
-            $mail->isSMTP();
-            $mail->Host = $SMTPOptions['host'];
-            $mail->Port = $SMTPOptions['port'];
-            $mail->SMTPAuth = true;
-            $mail->Username = $SMTPOptions['user'];
-            $mail->Password = $SMTPOptions['pass'];
-            $mail->SMTPSecure = 'tls';   // Enable TLS encryption, `ssl` also accepted
-            // Message content
-            $mail->CharSet ="UTF-8";
-            $mail->setFrom($from, $fromName);
-            $mail->Sender = $SMTPOptions['user'];
-            $mail->addAddress($row->to);
-            $mail->addReplyTo($replyTo);
-            $mail->isHTML(true);
-            $mail->Subject = $row->subject;
-            $mail->Body = $row->body;
-            $mail->AltBody = strip_tags(str_replace(array("</p>", "<br>"), array("</p>\r\n\r\n", "\r\n"), $row->body));
-            if (!$mail->send()) throw new Exception($mail->ErrorInfo);
-            $stmt = self::$db->prepare("DELETE FROM mailq WHERE mailqId=?");
-            $stmt->execute([ $id ]);
-            return true;
-        } catch (Exception $e) {
-            throw new \Exception("Mailer Error: ".$mail->ErrorInfo);
         }
-
+        if (count($rows)) echo "All mails from queue sent.\n\n";
     }
 }

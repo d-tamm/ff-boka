@@ -5,23 +5,30 @@ use FFBoka\FFBoka;
 
 /**
  * Cron tasks for resource booking system
- * To be called once every 60 minutes via cron or webcron
+ * To be called regularly via cron or webcron. Since the sending of emails is handled here,
+ * call this at least every 5 minutes or so.
  */
 
 require(__DIR__."/inc/common.php");
 global $db, $cfg, $FF;
 
+$stmt = $db->query("SELECT value FROM config WHERE name='last hourly cron run'");
+$row = $stmt->fetch(PDO::FETCH_OBJ);
+$last = new DateTime("@".$row->value);
+$since = $last->diff(new DateTime(), true);
+printf("Executing cron jobs for resource booking system.\nLast cron execution was %s ago.\n\n", $since->format("%H:%I:%S"));
 /**
- * Hourly cron jobs (executed whenever this script is called)
+ * Cron jobs executed whenever this script is called
  */
-echo "Executing hourly jobs...\n";
-// Get missing user agents
-fetchUA($db);
-// Keep login API alive
-//$FF->authenticateUser("0", "0");
+echo "Executing frequent jobs...\n";
+
+// Send queued mails
+$FF->sendQueuedMails($cfg['mailFrom'], $cfg['mailFromName'], $cfg['mailReplyTo'], $cfg['SMTP']);
+
 // Record last execution time
 $db->exec("UPDATE config SET value=UNIX_TIMESTAMP() WHERE name='last hourly cron run'");
-echo "Hourly jobs finished.\n\n";
+echo "Frequent jobs finished.\n\n";
+
 
 /**
  * Daily cron jobs
@@ -31,11 +38,15 @@ $row = $stmt->fetch(PDO::FETCH_OBJ);
 $midnight = new DateTime("midnight");
 if ((int)$row->value < $midnight->getTimestamp() && date("G") >= $cfg['cronDaily']) {
     echo "Time to execute daily jobs...\n";
-    // ...
+
+    // Lookup one missing (new) user agent (if there is any)
+    fetchUA($db);
+
     // Record last execution time
     $db->exec("UPDATE config SET value=UNIX_TIMESTAMP() WHERE name='last daily cron run'");
     echo "Daily jobs finished.\n\n";
 }
+
 
 /**
  * Weekly cron jobs
@@ -44,12 +55,12 @@ $stmt = $db->query("SELECT value FROM config WHERE name='last weekly cron run'")
 $row = $stmt->fetch(PDO::FETCH_OBJ);
 $monday = new DateTime("monday this week");
 if ((int)$row->value < $monday->getTimestamp() && date("N") >= $cfg['cronWeekly']) {
-    echo "Time to execute weekly jobs...\n";
+    echo "Time to execute weekly jobs...\n\n";
     
     $FF->updateSectionList(TRUE);
     $FF->updateAssignmentList(TRUE);
 
-    // Update incomplete user agents
+    // Update some incomplete user agents
     fetchUA($db, 5);
     
     // Record last execution time
@@ -64,11 +75,11 @@ $stmt = $db->query("SELECT value FROM config WHERE name='last monthly cron run'"
 $row = $stmt->fetch(PDO::FETCH_OBJ);
 $first = new DateTime("first day of");
 if ((int)$row->value < $first->getTimestamp() && date("j") >= $cfg['cronMonthly']) {
-    echo "Time to execute monthly jobs...\n";
+    echo "Time to execute monthly jobs...\n\n";
 
     echo "Deleting expired persistent login tokens... ";
     $numDeleted = $db->exec("DELETE FROM persistent_logins WHERE expires < NOW()");
-    echo "$numDeleted tokens deleted.\n";
+    echo "$numDeleted tokens deleted.\n\n";
     
     echo "Deleting records from cat_admin_noalert which do not any more belong to a user with admin rights...\n";
     $stmt = $db->query("SELECT * FROM cat_admin_noalert");
@@ -80,7 +91,7 @@ if ((int)$row->value < $first->getTimestamp() && date("j") >= $cfg['cronMonthly'
             $db->exec("DELETE FROM cat_admin_noalert WHERE userId={$row->userId} AND catId={$row->catId}");
         }
     }
-    echo "Done.\n";
+    echo "Done.\n\n";
     
     echo "Garbage collection: Remove orphaned full size images...\n";
     // TODO: remove orphaned attachment files
@@ -102,7 +113,7 @@ if ((int)$row->value < $first->getTimestamp() && date("j") >= $cfg['cronMonthly'
             }
         }
     }
-    echo "Done.\n";
+    echo "Done.\n\n";
     
     // Record last execution time
     $db->exec("UPDATE config SET value=UNIX_TIMESTAMP() WHERE name='last monthly cron run'");
@@ -113,16 +124,16 @@ if ((int)$row->value < $first->getTimestamp() && date("j") >= $cfg['cronMonthly'
 /**
  * Resolve some userAgents if missing any
  * @param PDO $db
- * @param int $updateIncomplete If >0, this many incomplete posts are queried for update
+ * @param int $updateIncomplete If set and >0, this many incomplete posts are queried for update. Otherwise, 1 new post is looked up.
  */
 function fetchUA(PDO $db, int $updateIncomplete = 0) {
     if ($updateIncomplete>0) $stmt = $db->query("SELECT userAgent, uaHash FROM user_agents WHERE platform='' OR platform_version='' OR platform_bits='' OR version='' OR device_type='' LIMIT $updateIncomplete");
-    elseif ($updateIncomplete==0) $stmt = $db->query("SELECT userAgent, uaHash FROM user_agents WHERE browser='' LIMIT 1");
-    else return;
-    if ($stmt->rowCount()) {
-        echo "Resolving user agents\n";
+    else $stmt = $db->query("SELECT userAgent, uaHash FROM user_agents WHERE browser='' LIMIT 1");
+    $rows = $stmt->fetchAll(PDO::FETCH_OBJ);
+    if (count($rows)) {
+        echo "Resolving user agents:\n";
         $stmt1 = $db->prepare("UPDATE user_agents SET browser=:browser, version=:version, platform=:platform, platform_version=:platform_version, platform_bits=:platform_bits, device_type=:device_type WHERE uaHash=:uaHash");
-        while ($row = $stmt->fetch(PDO::FETCH_OBJ)) {
+        foreach ($rows as $row) {
             echo "Resolving {$row->userAgent}\n";
             $options = array(
                 'http' => array(
@@ -150,5 +161,7 @@ function fetchUA(PDO $db, int $updateIncomplete = 0) {
                 echo "Failed to resolve user agent: {$row->userAgent}\n";
             }
         }
+        echo "\n";
     }
+    else "No user agents to resolve.\n\n";
 }
