@@ -512,7 +512,7 @@ class FFBoka {
                 $mail->XMailer = ' '; // Don't advertise that we are using PHPMailer
                 // Add attachments
                 foreach (json_decode($row->attachments) as $att) {
-                    $mail->addAttachment($att['path'], $att['filename']);
+                    $mail->addAttachment(dirname(__FILE__) . "/../../" . $att->path, $att->filename);
                 }
                 //Server settings
                 $mail->SMTPDebug = 0;
