@@ -129,6 +129,12 @@ case "savePoll":
 }
 }
 
+// Check last cron execution
+$stmt = $db->query("SELECT value FROM config WHERE name='last hourly cron run'");
+$row = $stmt->fetch(PDO::FETCH_OBJ);
+$lastCron = (int)$row->value;
+$cronDelayed = ($lastCron==0 || $lastCron < time()-3600);
+
 ?><!DOCTYPE html>
 <html>
 <head>
@@ -176,15 +182,11 @@ case "savePoll":
 
     <div data-role="collapsibleset" data-inset="false">
         
-        <div data-role="collapsible">
+        <div data-role="collapsible" <?= $cronDelayed ? " data-collapsed='false'" : "" ?>>
             <h2>Systeminfo</h2>
-            <h3>Cron <?php
-            $stmt = $db->query("SELECT value FROM config WHERE name='last hourly cron run'");
-            $row = $stmt->fetch(PDO::FETCH_OBJ);
-            $last = (int)$row->value;
-            if ($last==0 || $last < time()-3600) echo "<span style='color:var(--FF-orange);'>■</span>";
-            else echo "<span style='color:var(--FF-green);'>■</span>"; ?></h3>
-            <p><?= $last==0 ? "Cron har aldrig utförts" : "Cron utfördes senast för " . (int)((time()-$last)/60) . " minuter sedan" ?>.</p>
+            <?= $cronDelayed ? "<div style='float:left; font-size:3em; color:var(--FF-orange);'>⚠ </div>" : "" ?>
+            <h3>Cron <span style='color:var(<?= $cronDelayed ? "--FF-orange" : "--FF-green" ?>);'>■</span></h3>
+            <p><?= $lastCron==0 ? "Cron har aldrig utförts" : "Cron utfördes senast för " . (int)((time()-$lastCron)/60) . " minuter sedan" ?>.</p>
             
             <h3>Statistik</h3>
 			<?php
