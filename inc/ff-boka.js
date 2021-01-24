@@ -42,6 +42,42 @@ function openBookingAdmin(baseUrl, sectionId) {
     }
 }
 
+
+/* Cookie functions, taken from w3schools.com */
+/**
+ * setCookie: Set a cookie in root
+ * @param string cname The name of the cookie
+ * @param string cvalue The value to set
+ * @param int exdays Expire after x days.
+ */
+function setCookie(cname, cvalue, exdays) {
+    var d = new Date();
+    d.setTime(d.getTime() + (exdays * 24 * 60 * 60 * 1000));
+    var expires = "expires="+d.toUTCString();
+    document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/;SameSite=Strict";
+}
+  
+/**
+ * getCookie: read an existing cookie
+ * @param {*} cname The name of the cookie
+ * @return Returns the value of the cookie. If the cookie does not exist, returns an empty string.
+ */
+function getCookie(cname) {
+    var name = cname + "=";
+    var ca = document.cookie.split(';');
+    for(var i = 0; i < ca.length; i++) {
+        var c = ca[i];
+        while (c.charAt(0) == ' ') {
+            c = c.substring(1);
+        }
+        if (c.indexOf(name) == 0) {
+            return c.substring(name.length, c.length);
+        }
+    }
+    return "";
+}
+  
+
 // ========== index.php ==========
 $(document).on('pagecreate', "#page-start", function(e) {
     // bind events
