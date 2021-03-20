@@ -69,6 +69,8 @@ matchande namn och där du har behörighet att boka. Sökningen går inte ner p�
             if (isset($_SESSION['impersonate_realUserId'])) {
                 $_SESSION['authenticatedUser'] = $_SESSION['impersonate_realUserId'];
                 unset($_SESSION['impersonate_realUserId']);
+                $currentUser = new User($_SESSION['authenticatedUser']);
+                $currentUser->getAssignments();
                 header("Location: {$cfg['url']}admin/superadmin.php");
                 die();
             }
@@ -193,6 +195,11 @@ if (isset($_REQUEST['t'])) {
 
 if (isset($_SESSION['authenticatedUser'])) {
     $currentUser = new User($_SESSION['authenticatedUser']);
+    // Redirect impersonated Ordförande etc on first login
+    if ($_SESSION['impersonate_realUserId'] && isset($_GET['login']) && count(array_intersect($_SESSION['assignments'][$currentUser->section->id], $cfg['sectionAdmins']))>0 && count($currentUser->section->getAdmins())==0) {
+        header("Location: admin/index.php?sectionId=" . $currentUser->section->id . "&expand=admins");
+        die();
+    }
     if (isset($_REQUEST['logout'])) {
         // Remove persistent login cookie
         $currentUser->removePersistentLogin();

@@ -49,6 +49,8 @@ case "ajaxImpersonate":
     if (is_numeric($_REQUEST['userId'])) {
         $_SESSION['impersonate_realUserId'] = $_SESSION['authenticatedUser'];
         $_SESSION['authenticatedUser'] = $_REQUEST['userId'];
+        $currentUser = new User($_SESSION['authenticatedUser']);
+        $currentUser->getAssignments();
         die(json_encode([ "userId" => $_SESSION['authenticatedUser'] ]));
     } else {
         die(json_encode([ "error" => "Du ska ange ett numeriskt medlemsnummer." ]));

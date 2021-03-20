@@ -1558,7 +1558,7 @@ $(document).on('pagecreate', "#page-super-admin", function() {
 	$("#admin-impersonate-start").on("click", function() {
 		$.getJSON("?action=ajaxImpersonate&userId=" + $("#admin-impersonate-userId").val(), function(data,status) {
 			if (data.error) alert(data.error);
-			else location.href = "index.php";
+			else location.href = "../index.php?login";
 		});
 	});
 	
