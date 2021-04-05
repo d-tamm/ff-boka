@@ -190,6 +190,16 @@ $cronDelayed = ($lastCron==0 || $lastCron < time()-3600);
             <h3>Cron <span style='color:var(<?= $cronDelayed ? "--FF-orange" : "--FF-green" ?>);'>■</span></h3>
             <p><?= $lastCron==0 ? "Cron har aldrig utförts" : "Cron utfördes senast för " . (int)((time()-$lastCron)/60) . " minuter sedan" ?>.</p>
             
+            <h3>Installerade moduler</h3>
+            <ul><?php
+                echo class_exists("PDO") ? "" : "<li style='color:red;'><strong>PDO saknas.</strong> Behövs för databasen</li>";
+                echo extension_loaded("pdo_mysql") ? "" : "<li style='color:red;'><strong>pdo_mysql saknas.</strong> Behövs för databasen</li>";
+                echo class_exists("ZipArchive") ? "" : "<li style='color:red;'><strong>Zip saknas.</strong> Används t.ex. vid uppgradering</li>";
+                echo class_exists("\PHPMailer\PHPMailer\PHPMailer") ? "" : "<li style='color:red;'><strong>PHPMailer saknas.</strong> Används för att skicka mejl</li>";
+                foreach (get_loaded_extensions() as $ext) echo "<li>$ext</li>\n";
+                ?>
+            </ul>
+
             <h3>Statistik</h3>
 			<?php
 			// Show some statistics
