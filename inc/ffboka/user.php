@@ -208,16 +208,19 @@ class User extends FFBoka {
     }
     
     /**
-     * Remove cookie and database post for persistent login
-     * @param string $userAgent If set, will remove the cookie belonging to that user agent (device),
-     * otherwise user agent for the current connection is used
+     * Remove cookie and database post for persistent login ("Remember me")
+     * @param string $selector If set, will remove the persistent login containing this selector,
+     * otherwise the login on the current connection is removed
      * @throws \Exception if database post cannot be deleted
      */
-    public function removePersistentLogin(string $userAgent="") {
-        // Removes cookie and database token for persistent login ("Remember me")
-        if ($userAgent == "") $userAgent = $_SERVER['HTTP_USER_AGENT'];
-        if ($userAgent == $_SERVER['HTTP_USER_AGENT']) {
-            // We are on the same device as the cookie. Remove it.
+    public function removePersistentLogin(string $selector="") {
+        $currentSelector = explode(":", $_COOKIE['remember'])[0];
+        if ($selector == "") {
+            if ($currentSelector == "") return false; // No information available on which login to remove
+            $selector = $currentSelector;
+        }
+        if ($selector == $currentSelector) {
+            // We are on the same device as the cookie. Remove it from the device.
             setcookie(
                 'remember',
                 '',
@@ -228,11 +231,11 @@ class User extends FFBoka {
                 true  // http-only
             );
         }
-        $stmt = self::$db->prepare("DELETE FROM persistent_logins WHERE userId=:userId AND userAgent=:userAgent");
-        if (!$stmt->execute(array(
-            ":userId"=>$this->id,
-            ":userAgent"=>$userAgent
-        ))) throw new \Exception($stmt->errorInfo()[2]);
+        $stmt = self::$db->prepare("DELETE FROM persistent_logins WHERE userId=:userId AND selector=:selector");
+        if (!$stmt->execute([
+            ":selector"=>$selector,
+            ":userId"=>$this->id
+        ])) throw new \Exception($stmt->errorInfo()[2]);
     }
     
     /**
