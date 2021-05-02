@@ -821,6 +821,31 @@ var questionId, questionType;
 
 $(document).on('pagecreate', "#page-admin-section", function() {
     // bind events
+    $("#admin-stat-div").on("collapsibleexpand", function(ev,ui) {
+        console.log("expand");
+        /* Create statistics chart */
+        var dataPoints = [];
+    
+        var chart = new CanvasJS.Chart("stats", {
+            zoomEnabled: true,
+            data: [{
+                type: "line",
+                dataPoints: dataPoints
+            }]
+        });
+    
+        function addStatData(data) {
+            var dps = data.price_usd;
+            for (var i = 0; i < dps.length; i++) {
+                dataPoints.push({
+                    x: new Date(dps[i][0]),
+                    y: dps[i][1]
+                });
+            }
+            chart.render();
+        }
+        $.getJSON("https://canvasjs.com/data/gallery/php/bitcoin-price.json", addStatData);
+    });
     
     /**
      * Get suggestions for users when adding section admin
@@ -867,7 +892,7 @@ $(document).on('pageshow', "#page-admin-section", function() {
     showQuestionOptions("");
     questionId = 0;
     questionType = "";
-    getQuestions();
+    getQuestions(); 
 });
 
 /**

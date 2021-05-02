@@ -200,7 +200,10 @@ switch ($_REQUEST['action']) {
         header("Content-Type: application/json");
         $question = new Question($_REQUEST['id']);
         die(json_encode($question->delete()));
-}
+
+    case "ajaxGetStats":
+        die();
+    }
 }
 
 // First admin login from a section? Give some hints on how to get started.
@@ -331,6 +334,13 @@ unset($_SESSION['catId']);
             <ul id="ul-sec-admins" data-role="listview" data-split-icon="delete" data-split-theme="c" data-inset="true">
                 <?= adminList($section, $currentUser->id) ?>
             </ul>
+        </div>
+
+        <div id='admin-stat-div' data-role="collapsible">
+            <h2>Statistik</h2>
+            <div>
+                <div id='stats' style='height:300px; width:100%;'></div>
+            </div>
         </div>
 
         <div data-role="collapsible">
