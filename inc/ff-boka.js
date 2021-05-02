@@ -1694,6 +1694,9 @@ function removePersistentLogin(elem, selector) {
         case "OK":
             elem.remove();
             break;
+        case "error":
+            alert(data.error);
+            break;
         }
     });
 }
