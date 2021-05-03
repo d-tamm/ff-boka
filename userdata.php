@@ -147,7 +147,11 @@ EOF;
         
     case "ajaxRemovePersistentLogin":
         header("Content-Type: application/json");
-        $currentUser->removePersistentLogin($_REQUEST['userAgent']);
+        try {
+            $currentUser->removePersistentLogin($_REQUEST['selector']);
+        } catch (\Exception $e) {
+            die(json_encode([ "status"=>"error", "error"=>"Något har gått fel. Kan inte logga ut denna inloggning." ]));
+        }
         die(json_encode([ "status"=>"OK" ]));
 }
 }
@@ -247,7 +251,7 @@ if (isset($_GET['first_login'])) $message = "Välkommen till resursbokningen! In
             $logins = $currentUser->persistentLogins();
             if ($logins) {
                 foreach ($logins as $login) {
-                    echo "<li class='wrap'><a href='#' style='white-space:normal; font-weight:normal;'>" . htmlspecialchars(resolveUserAgent($login->userAgent, $db)) . ($login->selector == explode(":", $_COOKIE['remember'])[0] ? " <i>(den här inloggningen)</i>" : "") . "<br>Förfaller " . strftime("%F", $login->expires) . "</a><a href='#' onClick=\"removePersistentLogin(this.parentElement, '" . htmlspecialchars($login->userAgent) . "');\" title='ta bort inloggningen'></a></li>";
+                    echo "<li class='wrap'><a href='#' style='white-space:normal; font-weight:normal;'>" . htmlspecialchars(resolveUserAgent($login->userAgent, $db)) . ($login->selector == explode(":", $_COOKIE['remember'])[0] ? " <i>(den här inloggningen)</i>" : "") . "<br>Förfaller " . strftime("%F", $login->expires) . "</a><a href='#' onClick=\"removePersistentLogin(this.parentElement, '" . htmlspecialchars($login->selector) . "');\" title='Logga ut'></a></li>";
                 }
             } else echo "<li style='white-space:normal'>Just nu har du inte några sådana permanenta inloggningar.</li>";
             ?>
