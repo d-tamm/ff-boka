@@ -436,7 +436,7 @@ class Booking extends FFBoka {
                         "{{bookingLink}}" => "{$url}book-sum.php?bookingId={$this->id}",
                     ),
                     [], // attachments
-                    $clientName, // fromName
+                    "", // fromName
                     $clientMail //replyTo
                 );
             } catch (\Exception $e) {
