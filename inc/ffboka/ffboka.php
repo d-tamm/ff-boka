@@ -505,8 +505,6 @@ class FFBoka {
         if (count($rows)) echo "Sending mails from mail queue...\n";
         else echo "No mails in the mail queue.\n\n";
         foreach ($rows as $row) {
-            if ($row->fromName) $fromName = $row->fromName;
-            if ($row->replyTo) $replyTo = $row->replyTo;
             try {
                 $mail = new PHPMailer(true);
                 $mail->XMailer = ' '; // Don't advertise that we are using PHPMailer
@@ -525,10 +523,10 @@ class FFBoka {
                 $mail->SMTPSecure = 'tls';   // Enable TLS encryption, `ssl` also accepted
                 // Message content
                 $mail->CharSet ="UTF-8";
-                $mail->setFrom($from, $fromName);
+                $mail->setFrom($from, $row->fromName ? $row->fromName : $fromName);
                 $mail->Sender = $SMTPOptions['user'];
                 $mail->addAddress($row->to);
-                $mail->addReplyTo($replyTo);
+                $mail->addReplyTo($row->replyTo ? $row->replyTo : $replyTo);
                 $mail->isHTML(true);
                 $mail->Subject = $row->subject;
                 $mail->Body = $row->body;
