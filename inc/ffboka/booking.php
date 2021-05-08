@@ -370,8 +370,12 @@ class Booking extends FFBoka {
         // Some information about the booking user
         if (is_null($this->userId)) {
             $contactData = "Detta är en gästbokning.<br>Namn: " . htmlspecialchars($_REQUEST['extName']) . "<br>Telefon: " . htmlspecialchars($_REQUEST['extPhone']) . "<br>Mejl: " . htmlspecialchars($_REQUEST['extMail']);
+            $clientMail = $_REQUEST['extMail'];
+            $clientName = $_REQUEST['extName'];
         } else {
             $contactData = "Namn: " . htmlspecialchars($this->user()->name) . "<br>Telefon: " . htmlspecialchars($this->user()->phone) . "<br>Mejl: " . htmlspecialchars($this->user()->mail) . "<br>Medlemsnummer: {$this->userId}<br>Lokalavdelning: " . htmlspecialchars($this->user()->section->name);
+            $clientMail = $this->user()->mail;
+            $clientName = $this->user()->name;
         }
         // Collect all addresses to send notifications to
         foreach ($this->items() as $item) {
@@ -430,7 +434,10 @@ class Booking extends FFBoka {
                         "{{ref}}"   => htmlspecialchars($this->ref),
                         "{{commentCust}}" => $this->commentCust ? str_replace("\n", "<br>", htmlspecialchars($this->commentCust)) : "(ingen kommentar har lämnats)",
                         "{{bookingLink}}" => "{$url}book-sum.php?bookingId={$this->id}",
-                    )
+                    ),
+                    [], // attachments
+                    "", // fromName
+                    $clientMail //replyTo
                 );
             } catch (\Exception $e) {
                 $ret = false;
