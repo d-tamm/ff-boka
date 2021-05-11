@@ -867,7 +867,7 @@ $(document).on('pageshow', "#page-admin-section", function() {
     showQuestionOptions("");
     questionId = 0;
     questionType = "";
-    getQuestions(); 
+    getQuestions();
 });
 
 /**
