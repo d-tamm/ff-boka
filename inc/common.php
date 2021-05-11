@@ -147,7 +147,6 @@ function htmlHeaders(string $title, string $baseUrl, string $mode="mobile") {
         const STATUS_PREBOOKED = <?= FFBoka::STATUS_PREBOOKED ?>;
         const STATUS_CONFIRMED = <?= FFBoka::STATUS_CONFIRMED ?>;
     </script>
-    <script src="https://canvasjs.com/assets/script/jquery.canvasjs.min.js"></script>
     <script src="<?= $baseUrl ?>inc/ff-boka.js"></script>
     <?php
 }
