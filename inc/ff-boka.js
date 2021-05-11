@@ -821,31 +821,6 @@ var questionId, questionType;
 
 $(document).on('pagecreate', "#page-admin-section", function() {
     // bind events
-    $("#admin-stat-div").on("collapsibleexpand", function(ev,ui) {
-        console.log("expand");
-        /* Create statistics chart */
-        var dataPoints = [];
-    
-        var chart = new CanvasJS.Chart("stats", {
-            zoomEnabled: true,
-            data: [{
-                type: "line",
-                dataPoints: dataPoints
-            }]
-        });
-    
-        function addStatData(data) {
-            var dps = data.price_usd;
-            for (var i = 0; i < dps.length; i++) {
-                dataPoints.push({
-                    x: new Date(dps[i][0]),
-                    y: dps[i][1]
-                });
-            }
-            chart.render();
-        }
-        $.getJSON("https://canvasjs.com/data/gallery/php/bitcoin-price.json", addStatData);
-    });
     
     /**
      * Get suggestions for users when adding section admin
@@ -1562,6 +1537,34 @@ function deleteImage(id) {
         });
     }
 }
+
+
+// ========== admin/usage.php ==========
+$(document).on('pagecreate', "#page-admin-usage", function() {
+    // Bind events
+});
+
+$(document).on('pageshow', "#page-admin-usage", function() {
+    // Show message if there is any
+    if ($("#msg-page-admin-usage").html()) {
+        setTimeout(function() {
+            $("#popup-msg-page-super-admin").popup('open');
+        }, 500); // We need some delay here to make this work on Chrome.
+    }
+
+    $("#stat-details").DataTable({
+        "info":false,
+        "searching":false,
+        "order": [[0, 'asc'], [1, 'asc']],
+        language: { url:'//cdn.datatables.net/plug-ins/1.10.24/i18n/Swedish.json' },
+        "columns": [
+            null,
+            null,
+            {"orderSequence": ["desc", "asc"]},
+            {"orderSequence": ["desc", "asc"]},
+        ]
+    });
+});
 
 
 //========== superadmin.php ==========

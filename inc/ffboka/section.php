@@ -186,7 +186,7 @@ class Section extends FFBoka {
      * @return \FFBoka\Item[]
      */
     public function getUnconfirmedItems() {
-        $stmt = self::$db->exec("SELECT bookedItemId FROM bookings INNER JOIN booked_items USING (bookingId) WHERE status>" . \FFBoka\FFBoka::STATUS_PENDING . " AND status<" . \FFBoka\FFBoka::STATUS_CONFIRMED . " AND sectionId={$this->id}");
+        $stmt = self::$db->query("SELECT bookedItemId FROM bookings INNER JOIN booked_items USING (bookingId) WHERE status>" . \FFBoka\FFBoka::STATUS_PENDING . " AND status<" . \FFBoka\FFBoka::STATUS_CONFIRMED . " AND sectionId={$this->id}");
         $ret = array();
         while ($row = $stmt->fetch(\PDO::FETCH_OBJ)) {
             $ret[] = new Item($row->bookedItemId, TRUE);
@@ -209,5 +209,39 @@ class Section extends FFBoka {
             }
         }
         return $minDistance;
+    }
+
+    /**
+     * Returns some statistics on bookings in this section
+     * @param $year If given, will return all bookings during that year. Otherwise, returns all bookings for all years.
+     * @param $month If given, will return all bookings placed that month. Otherwise, returns all bookings for the whole year(s)
+     * @return array An array with the following members:
+     *  int bookings - totoal number of bookings in this section
+     *  int items - total number of items in those bookings
+     *  int duration - total time as a sum of all items [hours]
+     */
+    public function usageOverview($year=null, $month=null) {
+        // Sanitize parameters
+        if (!is_null($year)) $year = (int)$year;
+        if (!is_null($month)) $month = (int)$month;
+        // Number of bookings
+        $stmt = self::$db->query("SELECT COUNT(*) bookings FROM bookings WHERE sectionId={$this->id}" . (is_null($year) ? "" : " AND YEAR(timestamp)=$year") . (is_null($month) ? "" : " AND MONTH(timestamp)=$month"));
+        $row = $stmt->fetch(PDO::FETCH_OBJ);
+        $ret = array( "bookings" => $row->bookings );
+        // Number of booked items, and total length of booked items
+        $stmt = self::$db->query("SELECT COUNT(*) items, SUM(UNIX_TIMESTAMP(end)-UNIX_TIMESTAMP(start))/3600 duration FROM bookings INNER JOIN booked_items USING (bookingId) WHERE sectionId={$this->id}" . (is_null($year) ? "" : " AND YEAR(timestamp)=$year") . (is_null($month) ? "" : " AND MONTH(timestamp)=$month"));
+        $row = $stmt->fetch(PDO::FETCH_OBJ);
+        $ret["items"] = $row->items;
+        $ret["duration"] = (int)$row->duration;
+        return $ret;
+    }
+
+    public function usageDetails($year=null, $month=null) {
+        $query = "SELECT catId, categories.caption category, items.itemId, items.caption item, COUNT(booked_items.bookedItemId) bookings, SUM(UNIX_TIMESTAMP(`end`)-UNIX_TIMESTAMP(`start`))/3600 duration FROM items INNER JOIN categories USING (catId) LEFT JOIN booked_items ON items.itemId=booked_items.itemId";
+        if (!is_null($year)) $query .= " AND YEAR(`start`)=$year";
+        if (!is_null($month)) $query .= " AND MONTH(`start`)=$month";
+        $query .= " WHERE sectionId={$this->id} GROUP BY itemId";
+        $stmt = self::$db->query($query);
+        return $stmt->fetchAll(PDO::FETCH_OBJ);
     }
 }

@@ -70,8 +70,8 @@ function findCatsWithoutAdmin(Category $cat, &$catsWithoutAdmin) {
             }
         }
     }
-    
 }
+
 $catsWithoutAdmin = array();
 if ($userAccess >= FFBoka::ACCESS_CATADMIN) {
     foreach ($section->getMainCategories() as $cat) {
@@ -200,9 +200,6 @@ switch ($_REQUEST['action']) {
         header("Content-Type: application/json");
         $question = new Question($_REQUEST['id']);
         die(json_encode($question->delete()));
-
-    case "ajaxGetStats":
-        die();
     }
 }
 
@@ -336,15 +333,32 @@ unset($_SESSION['catId']);
             </ul>
         </div>
 
-        <div id='admin-stat-div' data-role="collapsible">
-            <h2>Statistik</h2>
-            <div>
-                <div id='stats' style='height:300px; width:100%;'></div>
-            </div>
-        </div>
-
         <div data-role="collapsible">
             <h2 onclick="$('#sec-map').attr('src', 'map.php?sectionId=<?= $section->id ?>');">Övrigt</h2>
+            <table style="width:100%; max-width:30em;">
+                <tr>
+                    <th align='left'>Användning</th><?php
+                    $data = [];
+                    for($i=0; $i<=3; $i++) {
+                        echo "<th align='right'>". (strftime("%Y") - $i) ."</th>";
+                        $data[] = $section->usageOverview(strftime("%Y") - $i);
+                    } ?>
+                </tr>
+                <tr>
+                    <td>Antal bokningar</td><?php
+                    for($i=0; $i<=3; $i++) echo "<td align='right'>". $data[$i]['bookings'] ."</td>"; ?>
+                </tr>
+                <tr>
+                    <td>Bokade resurser</td><?php 
+                    for($i=0; $i<=3; $i++) echo "<td align='right'>". $data[$i]['items'] ."</td>"; ?>
+                </tr>
+                <tr>
+                    <td>Total bokad tid (h)</td><?php 
+                    for($i=0; $i<=3; $i++) echo "<td align='right'>". $data[$i]['duration'] ."</td>"; ?>
+                </tr>
+            </table>
+            <a href='usage.php' data-ajax='false' class="ui-btn">Mer användningsstatistik</a>
+
             <h3>Direktlänk</h3>
             <p>Om du vill länka direkt till lokalavdelningens bokningssida kan du använda följande länk:</p>
             <p><a href="<?= $cfg['url'] . "boka-" . urlencode($section->name) ?>"><?= $cfg['url'] . "boka-" . $section->name ?></a></p>
