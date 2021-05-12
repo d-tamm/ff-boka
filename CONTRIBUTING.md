@@ -146,6 +146,7 @@ och [composer](https://getcomposer.org).
   till Friluftsfrämjandets API (för inloggningen), fråga på Slack. Vi vill inte lägga ut detaljerna här.
 * Med webbläsaren, gå till din installations startsida, t.ex. http://localhost, för att installera
   databasen. Du behöver ladda om sidan några gånger tills allt är klart.
+* Du behöver också ställa in t.ex. cron för att regelbundet anropa skriptet cron.php. Annars skickas inte några mejl ut från systemet.
 
 # Engagera dig
 All hjälp är välkommen! Vi behöver folk som ger inspel till önskad funktion, programmering, layout, tester...
