@@ -8,7 +8,7 @@ All hjälp är välkommen! Vi behöver folk som ger inspel till önskad funktion
 [Se hur du kommer igång](CONTRIBUTING.md).
 
 # Demo/testplattform
-Vi har en [testplattform med aktuell kod](https://boka.tamm-tamm.de) där vi vidareutvecklar plattformen. Snart kommer vi även lansera det "riktiga" systemet på https://boka.friluftsframjandet.se.
+Vi har en [testplattform med aktuell kod](https://boka.tamm-tamm.de) där vi vidareutvecklar plattformen. Produktionssystemet finns på https://boka.friluftsframjandet.se.
 
 # Licens
 Projektet görs som [öppen källkod](LICENSE) för att komma till störst möjliga nytta.
