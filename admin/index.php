@@ -335,26 +335,34 @@ unset($_SESSION['catId']);
 
         <div data-role="collapsible">
             <h2 onclick="$('#sec-map').attr('src', 'map.php?sectionId=<?= $section->id ?>');">Övrigt</h2>
+
+            <h3>Användning</h3>
+            <ul>
+                <li><strong><?= $section->registeredUsers ?></strong> registrerade användare</li>
+                <li><strong><?= $section->activeUsers ?></strong> aktiva användare senaste 12 månader</li>
+                <li><strong><?= $section->activeItems ?></strong> aktiva resurser i <strong><?= $section->numberOfCategories ?></strong> kategorier</li>
+                <li><strong><?= $section->inactiveItems ?></strong> icke-aktiva resurser</li>
+            </ul>
             <table style="width:100%; max-width:30em;">
                 <tr>
-                    <th align='left'>Användning</th><?php
+                    <th align='left'>Bokningar</th><?php
                     $data = [];
                     for($i=0; $i<=3; $i++) {
-                        echo "<th align='right'>". (strftime("%Y") - $i) ."</th>";
                         $data[] = $section->usageOverview(strftime("%Y") - $i);
+                        echo "<th align='right'>". (strftime("%Y") - $i) ."</th>";
                     } ?>
                 </tr>
                 <tr>
                     <td>Antal bokningar</td><?php
-                    for($i=0; $i<=3; $i++) echo "<td align='right'>". $data[$i]['bookings'] ."</td>"; ?>
+                    for($i=0; $i<=3; $i++) echo "<td align='right'>". $data[$i]->bookings ."</td>"; ?>
                 </tr>
                 <tr>
                     <td>Bokade resurser</td><?php 
-                    for($i=0; $i<=3; $i++) echo "<td align='right'>". $data[$i]['items'] ."</td>"; ?>
+                    for($i=0; $i<=3; $i++) echo "<td align='right'>". $data[$i]->bookedItems ."</td>"; ?>
                 </tr>
                 <tr>
                     <td>Total bokad tid (h)</td><?php 
-                    for($i=0; $i<=3; $i++) echo "<td align='right'>". $data[$i]['duration'] ."</td>"; ?>
+                    for($i=0; $i<=3; $i++) echo "<td align='right'>". $data[$i]->duration ."</td>"; ?>
                 </tr>
             </table>
             <a href='usage.php' data-ajax='false' class="ui-btn">Mer användningsstatistik</a>

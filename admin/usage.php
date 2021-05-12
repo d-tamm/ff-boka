@@ -95,8 +95,8 @@ $sum = $section->usageOverview($year);
         <tfoot>
             <tr>
                 <td colspan=2 style="font-weight:bold;">Summa bokningar <?= $year ?></td>
-                <td style="text-align:center;"><?= $sum['bookings'] ?></td>
-                <td style="text-align:center;"><?= $sum['duration'] ?></td>
+                <td style="text-align:center;"><?= $sum->bookings ?></td>
+                <td style="text-align:center;"><?= $sum->duration ?></td>
             </tr>
         </tfoot>
     </table>
