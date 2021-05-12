@@ -1539,6 +1539,34 @@ function deleteImage(id) {
 }
 
 
+// ========== admin/usage.php ==========
+$(document).on('pagecreate', "#page-admin-usage", function() {
+    // Bind events
+});
+
+$(document).on('pageshow', "#page-admin-usage", function() {
+    // Show message if there is any
+    if ($("#msg-page-admin-usage").html()) {
+        setTimeout(function() {
+            $("#popup-msg-page-super-admin").popup('open');
+        }, 500); // We need some delay here to make this work on Chrome.
+    }
+
+    $("#stat-details").DataTable({
+        "info":false,
+        "searching":false,
+        "order": [[0, 'asc'], [1, 'asc']],
+        language: { url:'//cdn.datatables.net/plug-ins/1.10.24/i18n/Swedish.json' },
+        "columns": [
+            null,
+            null,
+            {"orderSequence": ["desc", "asc"]},
+            {"orderSequence": ["desc", "asc"]},
+        ]
+    });
+});
+
+
 //========== superadmin.php ==========
 $(document).on('pagecreate', "#page-super-admin", function() {
     // Bind events

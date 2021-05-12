@@ -6,6 +6,7 @@
  */
 namespace FFBoka;
 use PDO;
+use stdClass;
 
 /**
  * Class Section
@@ -46,6 +47,26 @@ class Section extends FFBoka {
             $stmt = self::$db->query("SELECT $name FROM sections WHERE sectionId={$this->id}");
             $row = $stmt->fetch(PDO::FETCH_OBJ);
             return $row->$name;
+        case "registeredUsers": // number of registered users in this section
+            $stmt = self::$db->query("SELECT COUNT(*) users FROM users WHERE sectionID={$this->id}");
+            $row = $stmt->fetch(PDO::FETCH_OBJ);
+            return $row->users;
+        case "activeUsers": // number of users which have been active during the last 12 months
+            $stmt = self::$db->query("SELECT COUNT(*) activeUsers FROM users WHERE sectionID={$this->id} AND ADDDATE(lastLogin, INTERVAL 12 MONTH)>NOW()");
+            $row = $stmt->fetch(PDO::FETCH_OBJ);
+            return $row->activeUsers;
+        case "activeItems": // number of active items
+            $stmt = self::$db->query("SELECT COUNT(*) items FROM items INNER JOIN categories USING (catId) WHERE sectionId={$this->id} AND active=1");
+            $row = $stmt->fetch(PDO::FETCH_OBJ);
+            return $row->items;
+        case "inactiveItems": // number of inactive items
+            $stmt = self::$db->query("SELECT COUNT(*) items FROM items INNER JOIN categories USING (catId) WHERE sectionId={$this->id} AND active=0");
+            $row = $stmt->fetch(PDO::FETCH_OBJ);
+            return $row->items;
+        case "numberOfCategories":
+            $stmt = self::$db->query("SELECT COUNT(*) cats FROM categories WHERE sectionId={$this->id}");
+            $row = $stmt->fetch(PDO::FETCH_OBJ);
+            return $row->cats;
         default:
             throw new \Exception("Use of undefined Section property $name");
         }
@@ -186,7 +207,7 @@ class Section extends FFBoka {
      * @return \FFBoka\Item[]
      */
     public function getUnconfirmedItems() {
-        $stmt = self::$db->exec("SELECT bookedItemId FROM bookings INNER JOIN booked_items USING (bookingId) WHERE status>" . \FFBoka\FFBoka::STATUS_PENDING . " AND status<" . \FFBoka\FFBoka::STATUS_CONFIRMED . " AND sectionId={$this->id}");
+        $stmt = self::$db->query("SELECT bookedItemId FROM bookings INNER JOIN booked_items USING (bookingId) WHERE status>" . \FFBoka\FFBoka::STATUS_PENDING . " AND status<" . \FFBoka\FFBoka::STATUS_CONFIRMED . " AND sectionId={$this->id}");
         $ret = array();
         while ($row = $stmt->fetch(\PDO::FETCH_OBJ)) {
             $ret[] = new Item($row->bookedItemId, TRUE);
@@ -209,5 +230,52 @@ class Section extends FFBoka {
             }
         }
         return $minDistance;
+    }
+
+    /**
+     * Returns usage totals for this section
+     * @param int $year If given, will return all bookings during that year. Otherwise, returns all bookings for all years.
+     * @param int $month [1..12] If given, will return all bookings placed that month. Otherwise, returns all bookings for the whole year(s)
+     * @return stdClass An object with the following members:
+     *  bookings - totoal number of bookings in this section
+     *  bookedItems - total number of items in those bookings
+     *  duration - total time as a sum of all items [hours]
+     */
+    public function usageOverview($year=null, $month=null) {
+        // Sanitize parameters
+        if (!is_null($year)) $year = (int)$year;
+        if (!is_null($month)) $month = (int)$month;
+        $ret = new stdClass;
+        // Number of bookings
+        $stmt = self::$db->query("SELECT COUNT(*) bookings FROM bookings WHERE sectionId={$this->id}" . (is_null($year) ? "" : " AND YEAR(timestamp)=$year") . (is_null($month) ? "" : " AND MONTH(timestamp)=$month"));
+        $row = $stmt->fetch(PDO::FETCH_OBJ);
+        $ret->bookings = $row->bookings;
+        // Number of booked items, and total length of booked items
+        $stmt = self::$db->query("SELECT COUNT(*) bookedItems, SUM(UNIX_TIMESTAMP(end)-UNIX_TIMESTAMP(start))/3600 duration FROM bookings INNER JOIN booked_items USING (bookingId) WHERE sectionId={$this->id}" . (is_null($year) ? "" : " AND YEAR(timestamp)=$year") . (is_null($month) ? "" : " AND MONTH(timestamp)=$month"));
+        $row = $stmt->fetch(PDO::FETCH_OBJ);
+        $ret->bookedItems = $row->bookedItems;
+        $ret->duration = (int)$row->duration;
+        return $ret;
+    }
+
+    /**
+     * Returns usage details for the section
+     * @param int $year If set, will return statistics for that year only. Otherwise, returns statistics for all years.
+     * @param int $month If set, will return statistics for bookings in that month only; otherwise for the whole year.
+     * @return array of objects, one object for each resource in this section, with the following members:
+     *  * catId (category ID)
+     *  * category (category caption)
+     *  * itemId (item ID)
+     *  * item (item caption)
+     *  * bookings (number of times the item has been booked)
+     *  * duration (total number of hours the item has been booked)
+     */
+    public function usageDetails($year=null, $month=null) {
+        $query = "SELECT catId, categories.caption category, items.itemId, items.caption item, COUNT(booked_items.bookedItemId) bookings, SUM(UNIX_TIMESTAMP(`end`)-UNIX_TIMESTAMP(`start`))/3600 duration FROM items INNER JOIN categories USING (catId) LEFT JOIN booked_items ON items.itemId=booked_items.itemId";
+        if (!is_null($year)) $query .= " AND YEAR(`start`)=$year";
+        if (!is_null($month)) $query .= " AND MONTH(`start`)=$month";
+        $query .= " WHERE sectionId={$this->id} GROUP BY itemId";
+        $stmt = self::$db->query($query);
+        return $stmt->fetchAll(PDO::FETCH_OBJ);
     }
 }
