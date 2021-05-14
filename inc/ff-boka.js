@@ -1156,7 +1156,7 @@ $(document).on('pagecreate', "#page-admin-category", function() {
 	                    html += "<li style='cursor:pointer;' title='Sätt " + val['name'] + " som kontaktperson' onClick=\"setCatProp('contactUserId', " + val['userId'] + ");\">" + val['userId'] + " " + (val['name'] ? val['name'] : "(ingen persondata tillgänglig)") + "</li>";
 	                });
 	                if (data.length==0) {
-	                    if (Number(value)) html += "<li style='cursor:pointer;' title='Lägg till medlem med medlemsnummer " + Number(value) + " som kontaktperson' onClick=\"setCatProp('contactUserId', " + Number(value) + ");\">" + Number(value) + " (ny användare)</li>";
+	                    if (Number(value)) html += "<li style='cursor:pointer;' title='Sätt medlem med medlemsnummer " + Number(value) + " som kontaktperson' onClick=\"setCatProp('contactUserId', " + Number(value) + ");\">" + Number(value) + " (ny användare)</li>";
 	                    else html += "<li>Sökningen på <i>" + value + "</i> gav ingen träff</li>";
 	                }
 	                $ul.html( html );
@@ -1285,6 +1285,8 @@ $(document).on('pagecreate', "#page-admin-category", function() {
 });
 
 $(document).on('pageshow', "#page-admin-category", function() {
+    setCatProp("onlyGetContactData", "");
+
     // Show message if there is any
     if ($("#msg-page-admin-category").html()) {
         setTimeout(function() {
@@ -1308,7 +1310,7 @@ function unsetAccess(id) {
 }
 
 /**
- * Saves a category property
+ * Saves a category property and updates the contact data display
  * @param name Name of the property
  * @param val Value of the property
  */
@@ -1321,16 +1323,24 @@ function setCatProp(name, val) {
 	}).done(function(data, status) {
         $.mobile.loading("hide", {});
         if (data.status=="OK") {
+            switch (data.contactType) {
+                case "inherited": $("#cat-contact-data-caption").html("Kontaktuppgifterna från överordnad kategori används:"); break;
+                case "user": $("#cat-contact-data-caption").html("Så här visas kontaktuppgifterna (länkat till medlemsuppgifter):"); break;
+                case "manual": $("#cat-contact-data-caption").html("Så här visas kontaktuppgifterna (enligt inmatningen ovan):"); break;
+                case "unset": $("#cat-contact-data-caption").html("Inga kontaktuppgifter visas. Om du vill visa kontaktuppgifter, ställ in dem ovan."); break;
+            }
             $("#cat-contact-data").html(data.contactData);
             $("#cat-contactName").val(data.contactName);
             $("#cat-contactPhone").val(data.contactPhone);
             $("#cat-contactMail").val(data.contactMail);
             $("#cat-contact-autocomplete-input").val("");
             $("#cat-contact-autocomplete").html("");
-            if (data.contactUserId) $("#btn-unset-contact-user").show();
+            if (data.contactType=="user") $("#btn-unset-contact-user").show();
             else $("#btn-unset-contact-user").hide();
-            $("#cat-saved-indicator").addClass("saved");
-            setTimeout(function(){ $("#cat-saved-indicator").removeClass("saved"); }, 2500);
+            if (name != "onlyGetContactData") {
+                $("#cat-saved-indicator").addClass("saved");
+                setTimeout(function(){ $("#cat-saved-indicator").removeClass("saved"); }, 2500);
+            }
         } else {
             alert("Kan inte spara ändringen :(");
         }

@@ -29,7 +29,8 @@ function displayCat(Category $cat, $user, $fbStart, $fileTypes=[]) {
         }
         echo " data-inset='false'>";
         echo "<h3><div class='cat-list-img'>" . embedImage($cat->thumb) . "</div>" . htmlspecialchars($cat->caption) . "</h3>";
-        echo $cat->prebookMsg ? "<p>" . str_replace("\n", "<br>", htmlspecialchars($cat->prebookMsg)) . "</p>" : "";
+        if ($cat->prebookMsg) echo "<p>" . str_replace("\n", "<br>", htmlspecialchars($cat->prebookMsg)) . "</p>";
+        if ($cat->showContactWhenBooking && $cat->contactData()) echo "<p class='contact-data'>Vid frågor, kontakta:<br>{$cat->contactData()}</p>";
         $files = "";
         foreach ($cat->files() as $file) {
             if ($file->displayLink) {
