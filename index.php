@@ -336,15 +336,6 @@ if (isset($_REQUEST['message'])) $message = ($message ? "$message<br>" : "") . $
         </form>
     <?php } ?>
     
-	<div class='ui-body ui-body-a'>
-		<?php
-		$stmt = $db->query("SELECT COUNT(DISTINCT sectionId) sections FROM sections JOIN categories USING (sectionId) JOIN items USING (catId)");
-		$rowSec = $stmt->fetch(PDO::FETCH_OBJ);
-		$stmt = $db->query("SELECT COUNT(*) items FROM items WHERE active");
-		$rowItems = $stmt->fetch(PDO::FETCH_OBJ);
-		echo "Resursbokningen används av {$rowSec->sections} lokalavdelningar som tillsammans har lagt upp {$rowItems->items} resurser."; ?> 
-	</div>
-
     <h3>Senaste nytt</h3>
     <ul data-role="listview" data-inset="true">
         <?php
@@ -358,8 +349,20 @@ if (isset($_REQUEST['message'])) $message = ($message ? "$message<br>" : "") . $
         }
         ?>
     </ul>
-    <p align='right'><a href="news.php">Fler nyheter finns i nyhetsarkivet</a></p>
+    <p align='right'><a href="news.php">Visa fler nyheter</a></p>
 
+    <div class="ui-body ui-body-a">
+        <?php
+		$stmt = $db->query("SELECT COUNT(DISTINCT sectionId) sections FROM sections JOIN categories USING (sectionId) JOIN items USING (catId)");
+		$rowSec = $stmt->fetch(PDO::FETCH_OBJ);
+		$stmt = $db->query("SELECT COUNT(*) items FROM items WHERE active");
+		$rowItems = $stmt->fetch(PDO::FETCH_OBJ); ?> 
+        <h3>Om resursbokningen</h3>
+        <p>Resursbokningen på <?= $cfg['url'] ?> är Friluftsfrämjandets plattform för att hantera resurser som olika lokalföreningar har, såsom kanoter, stugor och mycket annat. Tänk om du vill boka kajaksläpet med 12 kajaker, paddlar, flytvästar, kapell mm. Det blir många resurser som ska in i bokningen, och vi har inte hittat något befintligt system där detta går att göra på ett smidigt sätt. Därför har vi skapat vårt eget system. Det ska vara enkelt att tillgängliggöra våra resurser till våra medlemmar och även till externa!</p>
+        <p>Plattformen är optimerad för användning i mobilen eftersom det är där den används mest. Den fungerar lika bra i datorn, men är inte så bra på att använda stora skärmar.</p>
+        <p>Systemet utvecklas av volontärer inom Friluftsfrämjandet. Du kan komma i kontakt med oss på <?= obfuscatedMaillink("resursboknings@friluftsframjandet.se") ?> samt via <a href="https://github.com/d-tamm/ff-boka/">Github</a> där källkoden ligger och där vi hanterar buggar och nya funktioner. Som ledare med FF-adress kan du också hitta oss i Teams-gruppen "Resursbokning".</p>
+        <p>Resursbokningen används för närvarande av <?= $rowSec->sections ?> lokalavdelningar som tillsammans har lagt upp <?= $rowItems->items ?> resurser.</p>
+    </div>
     </div><!--/main-->
 
 </div><!--/page-->
