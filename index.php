@@ -336,28 +336,30 @@ if (isset($_REQUEST['message'])) $message = ($message ? "$message<br>" : "") . $
         </form>
     <?php } ?>
     
-    	<h3>Senaste nytt</h3>
-    	<ul data-role="listview" data-inset="true">
-    		<?php
-    		$stmt = $db->query("SELECT * FROM news ORDER BY date DESC LIMIT 3");
-    		while ($row = $stmt->fetch(PDO::FETCH_OBJ)) {
-    		    echo "<li>
-    		    <h3>{$row->caption}</h3>
-    		    <p style='white-space:normal;'>{$row->body}</p>
-    		    <p class='ui-li-aside'><strong>{$row->date}</strong></p>
-    		    </li>";
-    		}
-    		?>
-    	</ul>
-
-	<p>
+	<div class='ui-body ui-body-a'>
 		<?php
 		$stmt = $db->query("SELECT COUNT(DISTINCT sectionId) sections FROM sections JOIN categories USING (sectionId) JOIN items USING (catId)");
 		$rowSec = $stmt->fetch(PDO::FETCH_OBJ);
 		$stmt = $db->query("SELECT COUNT(*) items FROM items WHERE active");
 		$rowItems = $stmt->fetch(PDO::FETCH_OBJ);
-		echo "Just nu finns det {$rowItems->items} resurser från {$rowSec->sections} lokalavdelningar i systemet."; ?> 
-	</p>    
+		echo "Resursbokningen används av {$rowSec->sections} lokalavdelningar som tillsammans har lagt upp {$rowItems->items} resurser."; ?> 
+	</div>
+
+    <h3>Senaste nytt</h3>
+    <ul data-role="listview" data-inset="true">
+        <?php
+        $stmt = $db->query("SELECT * FROM news ORDER BY date DESC LIMIT 3");
+        while ($row = $stmt->fetch(PDO::FETCH_OBJ)) {
+            echo "<li>
+            <h3>{$row->caption}</h3>
+            <p style='white-space:normal;'>{$row->body}</p>
+            <p class='ui-li-aside'><strong>{$row->date}</strong></p>
+            </li>";
+        }
+        ?>
+    </ul>
+    <p align='right'><a href="news.php">Fler nyheter finns i nyhetsarkivet</a></p>
+
     </div><!--/main-->
 
 </div><!--/page-->
