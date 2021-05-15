@@ -159,8 +159,11 @@ switch ($_REQUEST['action']) {
     <dt>Text i bokningsbekräftelse</dt><dd>Som ovan, men visas istället i meddelandet som användaren får som bokningsbekräftelse. Det är ett bra ställe för att nämna var nyckeln ska hämtas, regler kring slutstädning mm.</dd>
     <dt>Bufferttid</dt><dd>Ibland behöver man lite tid mellan bokningarna, t.ex. för städning av stugor eller översyn av utrustning. Här kan du ställa in antalet timmar före/efter befintliga bokningar som är spärrade för nya bokningar. <i>OBS: Denna inställning gäller bara för resurser i den här kategorin och ärvs inte till underordnade kategorier!</i></dd>
     <dt>Bokningsmeddelanden</dt><dd>När nya bokningar görs i kategorin skickas normalt ett meddelande till bokningsansvariga (se nedan), som dock kan välja att stänga av dessa meddelanden i sina personliga inställningar. Om du vill att bokningsmeddelanden dessutom ska skickas till en eller flera funktionella epostadresser kan du lägga in dem här. Separera flera adresser med ett kommatecken.</dd>  
-    <dt>Kontaktuppgifter</dt><dd>Skickas med bokningarna i denna kategori, så att användarna kan vända sig till någon vid problem. Du kan antingen sätta namn, telefon och epost själv, eller välja en medlem som kontaktperson. Om du väljer en medlem så används  kontaktuppgifterna till denne när bokningen görs, dvs ändringar som medlemmen gör i sina kontaktuppgifter tillämpas även här.</dd> 
 </dl>
+
+<h3>Kontaktuppgifter</h3>
+<p>Kontaktuppgifterna skickas alltid med bokningsbekräftelsen (ifall några anges), så att användarna kan vända sig till någon vid problem. Du kan även välja att visa kontaktuppgifterna redan i bokningsflödet.</p>
+<p>Du kan antingen sätta namn, telefon och epost manuellt, eller välja en medlem som kontaktperson. Om du väljer en medlem så används de vid varje tidpunkt gällande kontaktuppgifter till denne, dvs eventuella ändringar som medlemmen gör i sina kontaktuppgifter återspeglas här. Om inget anges här, men kategorin har en överordnad kategori så ärvs den överordnade kategorins kontaktuppgifter.</p> 
 
 <h3>Underkategorier</h3>
 <p>Vid komplex verksamhet kan det vara intressant att organisera resurserna på flera nivåer, t.ex. med <tt>Kanoter</tt> som huvudkategori och <tt>Kajaker</tt> och <tt>Kanadensare</tt> som underordnade kategorier. Du kan skapa så många nivåer som du behöver, eller bara använda den översta nivån.</p>
@@ -217,17 +220,20 @@ switch ($_REQUEST['action']) {
             case "contactName":
             case "contactPhone":
             case "contactMail":
+            case "showContactWhenBooking":
             case "caption":
             case "parentId":
             case "prebookMsg":
             case "postbookMsg":
             case "bufferAfterBooking":
-                header("Content-Type: application/json");
                 if ($_REQUEST['value']=="NULL") $cat->{$_REQUEST['name']} = null;
                 else $cat->{$_REQUEST['name']} = $_REQUEST['value'];
+                // Yes, continue. No break here.
+            case "onlyGetContactData":
+                header("Content-Type: application/json");
                 die(json_encode([
                     "status" => "OK",
-                    "contactUserId" => $cat->contactUserId,
+                    "contactType" => $cat->contactType,
                     "contactData" => $cat->contactData(),
                     "contactName" => $cat->contactName,
                     "contactPhone" => $cat->contactPhone,
@@ -425,9 +431,13 @@ unset ($_SESSION['itemId']);
             
             <label for="cat-sendAlertTo">Förutom till bokningsansvariga, skicka meddelande om nya bokningar till:</label>
                 <input name="sendAlertTo" id="cat-sendAlertTo" placeholder="t.ex. kanoter@gmail.com, emil@yahoo.com" value="<?= htmlspecialchars($cat->sendAlertTo) ?>">
-            <hr>
 
-            <h3>Kontaktuppgifter</h3>
+            <button class="ui-btn ui-btn-c" id="delete-cat">Radera kategorin</button>
+        </div>
+
+        <div data-role="collapsible" style="position:relative;">
+            <h2>Kontaktuppgifter</h2>
+
             <div class="ui-field-contain">
                 <label for="cat-contactName">Namn:</label>
                 <input name="contactName" id="cat-contactName" placeholder="Namn" value="<?= htmlspecialchars($cat->contactName) ?>">
@@ -441,14 +451,19 @@ unset ($_SESSION['itemId']);
                 <input name="contactMail" id="cat-contactMail" placeholder="Epost" value="<?= htmlspecialchars($cat->contactMail) ?>">
             </div>
 
-            <button id='btn-unset-contact-user' title='Ta bort kontaktperson' onClick="setCatProp('contactUserId', 'NULL');" style='position:absolute; right:1em; display:<?= is_null($cat->contactUserId) ? "none" : "block" ?>;' class='ui-btn ui-icon-delete ui-btn-icon-notext'>Ta bort</button>
-            <div id="cat-contact-data"><?= $cat->contactData() ?></div>
-                <input id="cat-contact-autocomplete-input" data-type="search" placeholder="Välj medlem som kontaktperson...">
-                <ul id="cat-contact-autocomplete" data-role="listview" data-filter="true" data-input="#cat-contact-autocomplete-input" data-inset="true"></ul>
+            <input id="cat-contact-autocomplete-input" data-type="search" placeholder="Eller välj medlem som kontaktperson...">
+            <ul id="cat-contact-autocomplete" data-role="listview" data-filter="true" data-input="#cat-contact-autocomplete-input" data-inset="true"></ul>
+            
+            <fieldset data-role="controlgroup" data-mini="true">
+                <label><input type="checkbox" name="showContactWhenBooking" value="1" onClick="setCatProp('showContactWhenBooking', this.checked ? 1 : 0);" id="cat-showContactWhenBooking" <?= $cat->showContactWhenBooking ? "checked='true'" : "" ?>>Visa i bokningsflödet</label>
+                <label><input type="checkbox" checked="true" disabled="true">Skicka med i bokningsbekräftelser</label>
+            </fieldset>
 
-            <button class="ui-btn ui-btn-c" id="delete-cat">Radera kategorin</button>
-
-            <br>
+            <div class="ui-body ui-body-a">
+                <button id='btn-unset-contact-user' title='Ta bort kontaktperson' onClick="setCatProp('contactUserId', 'NULL');" style='position:absolute; right:1em; display:<?= is_null($cat->contactUserId) ? "none" : "block" ?>;' class='ui-btn ui-icon-delete ui-btn-icon-notext'>Ta bort</button>
+                <p><i><span id="cat-contact-data-caption"></span></i></p>
+                <p id="cat-contact-data"></p>
+            </div>
         </div>
         <?php } ?>
         

@@ -58,6 +58,7 @@ class Category extends FFBoka {
             case "contactPhone":
             case "contactMail":
             case "contactUserId":
+            case "showContactWhenBooking":
             case "accessExternal":
             case "accessMember":
             case "accessLocal":
@@ -113,21 +114,17 @@ class Category extends FFBoka {
                 return $this->id;
             case "sectionId":
                 return $this->sectionId;
-            case "contactUserId": // can be inherited from parent
-                if (!$this->id) return "";
-                $stmt = self::$db->query("SELECT contactUserId, contactName, contactPhone, contactMail FROM categories WHERE catId={$this->id}");
-                $row = $stmt->fetch(PDO::FETCH_ASSOC);
-                if (is_null($row['contactUserId']) && $row['contactName']=="" && $row['contactPhone']=="" && $row['contactMail']=="" && $this->parentId) return $this->parent()->contactUserId;
-                else return $row['contactUserId'];
             case "parentId":
             case "caption":
             case "prebookMsg":
             case "postbookMsg":
             case "bufferAfterBooking":
             case "sendAlertTo":
+            case "contactUserId": // don't care about inherited IDs
             case "contactName":
             case "contactPhone":
             case "contactMail":
+            case "showContactWhenBooking":
             case "thumb":
             case "accessExternal":
             case "accessMember":
@@ -135,8 +132,13 @@ class Category extends FFBoka {
             case "hideForExt":
                 if (!$this->id) return "";
                 $stmt = self::$db->query("SELECT $name FROM categories WHERE catId={$this->id}");
-                $row = $stmt->fetch(PDO::FETCH_ASSOC);
-                return $row[$name];
+                $row = $stmt->fetch(PDO::FETCH_OBJ);
+                return $row->$name;
+            case "contactType":
+                if (!is_null($this->contactUserId)) return "user";
+                if ($this->contactName!="" || $this->contactPhone!="" || $this->contactMail!="") return "manual";
+                if (is_null($this->parentId) || $this->parent()->contactType=="unset") return "unset";
+                return "inherited";
             case "itemCount":
                 if (!$this->id) return 0;
                 $stmt = self::$db->query("SELECT itemId FROM items WHERE catId={$this->id}");
@@ -194,21 +196,22 @@ class Category extends FFBoka {
 
     /**
      * Get HTML formatted, safe string with contact information
-     * @return string If member is set as contact user, the member's data is returned, otherwise the name, mail and phone set in category
+     * @return string If member is set as contact user, the member's data is returned, otherwise the name,
+     *      mail and phone set in category. If nothing is set, the parent's contact data is returned.
      */
     public function contactData() {
         if (is_null($this->contactUserId)) {
             if ($this->contactName=="" && $this->contactPhone=="" && $this->contactMail=="" && !is_null($this->parentId)) return $this->parent()->contactData();
             $ret = array();
             if ($this->contactName) $ret[] = htmlspecialchars($this->contactName);
-            if ($this->contactPhone) $ret[] = htmlspecialchars($this->contactPhone);
-            if ($this->contactMail) $ret[] = htmlspecialchars($this->contactMail);
+            if ($this->contactPhone) $ret[] = "☎ " . htmlspecialchars($this->contactPhone);
+            if ($this->contactMail) $ret[] = "✉ " . htmlspecialchars($this->contactMail);
             return implode("<br>", $ret);
         } else {
             return $this->contactUser()->contactData();
         }
     }
-    
+
     /**
      * Get the parent category if exists
      * @return \FFBoka\Category|NULL
