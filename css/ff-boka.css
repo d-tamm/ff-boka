@@ -227,7 +227,8 @@ table.alternate-rows tr:nth-child(even) {
 .freebusy-weekend {
     background-color: var(--FF-weekend);
 }
-.contact-data {
+#page-book-part .contact-data {
+    font-size:70%;
     margin-left:1em;
     padding-left:1ex;
     border-left:3px solid var(--FF-green);
