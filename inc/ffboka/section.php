@@ -204,13 +204,17 @@ class Section extends FFBoka {
     
     /**
      * Return all unconfirmed items in the section
+     * @param User $user If set, only return items which this user can confirm
      * @return \FFBoka\Item[]
      */
-    public function getUnconfirmedItems() {
+    public function getUnconfirmedItems(User $user=null) {
         $stmt = self::$db->query("SELECT bookedItemId FROM bookings INNER JOIN booked_items USING (bookingId) WHERE status>" . \FFBoka\FFBoka::STATUS_PENDING . " AND status<" . \FFBoka\FFBoka::STATUS_CONFIRMED . " AND sectionId={$this->id}");
         $ret = array();
         while ($row = $stmt->fetch(\PDO::FETCH_OBJ)) {
-            $ret[] = new Item($row->bookedItemId, TRUE);
+            $item = new Item($row->bookedItemId, TRUE);
+            if (is_null($user) || $item->category()->getAccess($user) >= FFBoka::ACCESS_CONFIRM) {
+                $ret[] = $item;
+            }
         }
         return $ret;
     }
