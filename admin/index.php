@@ -245,7 +245,9 @@ unset($_SESSION['catId']);
     }
     ?>
 
-    <a class='ui-btn ui-btn-b ui-icon-calendar ui-btn-icon-left' href='#' onClick="openBookingAdmin('<?= $cfg['url'] ?>', <?= $section->id ?>);" data-ajax='false'>Öppna bokningsadmin</a>
+    <?php
+    $unconfirmed = count($section->getUnconfirmedItems($currentUser)); ?>
+    <a class='ui-btn <?= $unconfirmed ? "ui-btn-c" : "ui-btn-b" ?> ui-icon-calendar ui-btn-icon-left' title='<?= $unconfirmed ? "Öppna bokningsadministratören" : "" ?>' href='#' onClick="openBookingAdmin('<?= $cfg['url'] ?>', <?= $section->id ?>);" data-ajax='false'><?= $unconfirmed ? ($unconfirmed==1 ? "1 obekräftad bokning" : "$unconfirmed obekräftade bokningar") : "Öppna bokningsadmin" ?></a>
 
     <div data-role="collapsibleset" data-inset="false">
 

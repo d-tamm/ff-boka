@@ -283,7 +283,8 @@ if (isset($_REQUEST['message'])) $message = ($message ? "$message<br>" : "") . $
             foreach ($FF->getAllSections() as $section) {
                 if ($section->showFor($currentUser, FFBoka::ACCESS_CATADMIN) ||
                     @array_intersect($_SESSION['assignments'][$section->id], $cfg['sectionAdmins'])) {
-                    echo "<a href='admin/?sectionId={$section->id}' class='ui-btn ui-btn-icon-right ui-icon-gear' data-transition='slideup'>Admin " . htmlspecialchars($section->name) . "</a>";
+                        $unconfirmed = count($section->getUnconfirmedItems($currentUser));
+                        echo "<a href='admin/?sectionId={$section->id}' class='ui-btn ui-btn-icon-right " . ($unconfirmed ? "ui-btn-c ui-icon-alert" : "ui-icon-gear") . "' data-transition='slideup' title='" . ($unconfirmed ? "Det finns obekräftade bokningar" : "Öppna administrationssidan") . "'>Admin " . htmlspecialchars($section->name) . ($unconfirmed ? " ($unconfirmed)" : "") . "</a>";
                 }
             } ?>
 
