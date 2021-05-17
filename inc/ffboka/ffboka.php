@@ -534,9 +534,9 @@ class FFBoka {
                 if (!$mail->send()) throw new Exception($mail->ErrorInfo);
                 $stmt = self::$db->prepare("DELETE FROM mailq WHERE mailqId=?");
                 $stmt->execute([ $row->mailqId ]);
-                echo "Mail sent to {$row->to}\n";
+                echo "Mail #{$row->mailqId} has been sent to " . substr($row->to, 0, 2) . "..." . substr($row->to, strpos($row->to, "@")) . "\n";
             } catch (Exception $e) {
-                throw new \Exception("Mailer Error: ".$mail->ErrorInfo);
+                echo "ERROR: Cannot send mail #{$row->mailqId}. " . $mail->ErrorInfo;
             }
         }
         if (count($rows)) echo "All mails from queue sent.\n\n";

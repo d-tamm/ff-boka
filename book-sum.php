@@ -238,6 +238,10 @@ EOF;
             if ($_REQUEST['action'] == "repeatCreate") $message .= "Serien kan inte skapas eftersom inte alla resurser i originalet är tillgängliga.";
             break;
         }
+        if ($booking->extMail && !filter_var($booking->extMail, FILTER_VALIDATE_EMAIL)) {
+            $message = "Epostadressen har ett ogiltigt format.";
+            break;
+        };
         $booking->sendNotifications($cfg['url']);
         $result = $booking->sendConfirmation($cfg['url']);
         if ($result !== TRUE) {

@@ -94,6 +94,10 @@ EOF;
     case "save user data":
         // User shall supply name, mail and phone
         if ($_POST['name'] && $_POST['mail'] && $_POST['phone']) {
+            if (!filter_var($_POST['mail'], FILTER_VALIDATE_EMAIL)) {
+                $message = "Epostadressen är ogiltig.";
+                break;
+            }
             $result = $FF->authenticateUser($currentUser->id, $_POST['password']);
             if ($result===FALSE) {
                 $message = "Kan inte verifiera lösenordet just nu. Vänligen försök igen senare.";
