@@ -201,15 +201,15 @@ $cronDelayed = ($lastCron==0 || $lastCron < time()-3600);
             </ul>
 
             <h3>Statistik</h3>
-			<?php
+			<ul><?php
 			// Show some statistics
 			$stmt = $db->query("SELECT COUNT(*) users FROM users");
 			$row = $stmt->fetch(PDO::FETCH_OBJ);
-			echo "<ul><li>{$row->users} registrerade användare</li>";
+			echo "<li>{$row->users} registrerade användare</li>";
 		
 			$stmt = $db->query("SELECT COUNT(*) users FROM users WHERE mail!=''");
 			$row = $stmt->fetch(PDO::FETCH_OBJ);
-			echo "<ul><li>{$row->users} aktiverade användare</li>";
+			echo "<li>{$row->users} aktiverade användare</li>";
 			
 			$stmt = $db->query("SELECT COUNT(DISTINCT sectionId) sections FROM sections JOIN categories USING (sectionId) JOIN items USING (catId)");
 			$row = $stmt->fetch(PDO::FETCH_OBJ);
@@ -217,7 +217,8 @@ $cronDelayed = ($lastCron==0 || $lastCron < time()-3600);
 
 			$stmt = $db->query("SELECT COUNT(*) items FROM items");
 			$row = $stmt->fetch(PDO::FETCH_OBJ);
-			echo "<li>{$row->items} resurser upplagda</li></ul>"; ?>
+			echo "<li>{$row->items} resurser upplagda</li>"; ?>
+		</ul>
         </div>
 
         <div data-role="collapsible">
