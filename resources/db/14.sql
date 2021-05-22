@@ -9,6 +9,6 @@ CREATE TABLE `mailq` (
     `body` TEXT NOT NULL DEFAULT '',
     `attachments` TEXT NOT NULL DEFAULT '' COMMENT 'json object with filename -> absolute_file_paths members',
     PRIMARY KEY (`mailqId`)
-) ENGINE = InnoDB;
+) ENGINE = InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_swedish_ci;
 
 UPDATE config SET value=14 WHERE name='db-version';

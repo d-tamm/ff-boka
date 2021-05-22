@@ -5,13 +5,13 @@ CREATE TABLE `polls` (
 	`choices` VARCHAR(1000) NOT NULL DEFAULT '[]',
 	`votes` VARCHAR(255) NOT NULL DEFAULT '[]',
 	PRIMARY KEY (`pollId`)
-) ENGINE = InnoDB; 
+) ENGINE = InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_swedish_ci; 
 
 CREATE TABLE `poll_answers` (
 	`pollId` INT UNSIGNED NOT NULL,
 	`userId` INT UNSIGNED NOT NULL,
 	FOREIGN KEY (`userId`) REFERENCES `users`(`userId`) ON DELETE CASCADE ON UPDATE CASCADE,
 	FOREIGN KEY (`pollId`) REFERENCES `polls`(`pollId`) ON DELETE CASCADE ON UPDATE CASCADE 
-) ENGINE = InnoDB;
+) ENGINE = InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_swedish_ci;
 
 UPDATE config SET value=10 WHERE name='db-version';

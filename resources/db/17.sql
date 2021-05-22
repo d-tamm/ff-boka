@@ -7,7 +7,7 @@ CREATE TABLE `stats` (
     `key` VARCHAR(255) NOT NULL DEFAULT '',
     `value` TEXT NOT NULL DEFAULT '',
     PRIMARY KEY (`statId`)
-) ENGINE = InnoDB;
+) ENGINE = InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_swedish_ci;
 
 INSERT INTO `news` (`newsId`, `date`, `caption`, `body`) VALUES (NULL, CURRENT_DATE(), 'Användningsstatistik', 'Du som är administratör kan nu få en överblick över hur bokningssystemet används i din lokalavdelning. Kolla i Övrigt-fliken på admin-sidan.'); 
 

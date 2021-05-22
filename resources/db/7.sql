@@ -16,6 +16,6 @@ CREATE TABLE `cat_files`(
   PRIMARY KEY(`fileId`),
   UNIQUE (`md5`, `catId`),
   FOREIGN KEY(`catId`) REFERENCES `categories`(`catId`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE = InnoDB;
+) ENGINE = InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_swedish_ci;
 
 UPDATE config SET value=7 WHERE name='db-version';
