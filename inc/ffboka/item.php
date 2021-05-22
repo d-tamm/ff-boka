@@ -318,7 +318,7 @@ class Item extends FFBoka {
         $stmt->execute(array(":start"=>$start));
         // Get freebusy information.
         $stmt = self::$db->query("
-            SELECT bookingId, bookedItemId, status, commentCust, price, token, bufferAfterBooking, DATE_SUB(start, INTERVAL bufferAfterBooking HOUR) start, UNIX_TIMESTAMP(start) unixStart, DATE_ADD(end, INTERVAL bufferAfterBooking HOUR) end, UNIX_TIMESTAMP(end) unixEnd, users.name username 
+            SELECT bookingId, bookedItemId, status, ref, price, token, bufferAfterBooking, DATE_SUB(start, INTERVAL bufferAfterBooking HOUR) start, UNIX_TIMESTAMP(start) unixStart, DATE_ADD(end, INTERVAL bufferAfterBooking HOUR) end, UNIX_TIMESTAMP(end) unixEnd, users.name username, extName 
             FROM booked_items 
             INNER JOIN bookings USING (bookingId) 
             INNER JOIN items USING (itemId) 
@@ -352,7 +352,7 @@ class Item extends FFBoka {
                 if ($row->price) $class .= " has-price";
             }
             $title = strftime("%F kl %H:00", $row->unixStart) . " till " . strftime("%F kl %H:00", $row->unixEnd);
-            if ($adminView) $title .= "\n" . htmlspecialchars($row->username) . "\n" . htmlspecialchars($row->commentCust) . (is_null($row->price) ? "\nInget pris satt" : "\nPris: {$row->price} kr");
+            if ($adminView) $title .= "\n" . htmlspecialchars($row->extName ? $row->extName : $row->username) . "\n" . htmlspecialchars($row->ref) . (is_null($row->price) ? "\nInget pris satt" : "\nPris: {$row->price} kr");
             $ret .= "<div class='$class' data-booking-id='{$row->bookingId}' data-booked-item-id='{$row->bookedItemId}' " . ($includeTokens ? "data-token='{$row->token}' " : "") . "style='left:" . number_format(($row->unixStart - $start) / $secs * 100, 2) . "%; width:" . number_format(($row->unixEnd - $row->unixStart) / $secs * 100, 2) . "%;' title='$title'></div>";
         }
         if ($scale) $ret .= self::freebusyScale(false, $days);
