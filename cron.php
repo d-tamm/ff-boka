@@ -80,6 +80,10 @@ if ((int)$row->value < $first->getTimestamp() && date("j") >= $cfg['cronMonthly'
     echo "Deleting expired persistent login tokens... ";
     $numDeleted = $db->exec("DELETE FROM persistent_logins WHERE expires < NOW()");
     echo "$numDeleted tokens deleted.\n\n";
+
+    echo "Deleting other expired tokens... ";
+    $numDeleted = $db->exec("DELETE FROM tokens WHERE DATE_ADD(timestamp, INTERVAL ttl SECOND)<NOW()");
+    echo "$numDeleted tokens deleted.\n\n";
     
     echo "Deleting records from cat_admin_noalert which do not any more belong to a user with admin rights...\n";
     $stmt = $db->query("SELECT * FROM cat_admin_noalert");
