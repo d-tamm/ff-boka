@@ -30,9 +30,9 @@ inloggningen, vänd dig i första hand till dem som har hand om inloggningen på
 <h3>Kom igång med din lokalavdelning</h3>
 <ul>
     <li>Uppdragen <b>" . ($allAss ? implode("</b>, <b>", $allAss) . "</b> och <b>" : "") . $oneAss . "</b> från aktivitetshanteraren har alltid administratörsbehörighet i tillhörande lokalavdelning. För att komma igång med att använda resursbokningen i din lokalavdelning måste någon av dessa logga in först.</li>
-    <li>När du har loggat in ska du se en knapp \"Admin [din LA]\". Klicka på den.</li>
-    <li>På adminsidan, öppna avsnittet Administratörer och lägg till de personer som framöver ska ta hand om resursbokningen i lokalavdelningen (LA-administratör). Detta är den högsta behörighetsnivån och används för att skapa grundstrukturen och administrera behörigheten i kategorierna.</li>
-    <li>Från den här punkten kan du som är " . ($allAss ? implode(", ", $allAss) . " eller " : "") . $oneAss . " lämna över ansvaret till dina LA-administratörer.</li>
+    <li>När du har loggat in med en av dessa roller hamnar du direkt i administrationsdelen för din lokalavdelning (gäller bara så länge ni inte har skapat någon administratör).</li>
+    <li>På adminsidan i avsnittet Administratörer, lägg till de personer som framöver ska ta hand om resursbokningen i lokalavdelningen (LA-administratör). Detta är den högsta behörighetsnivån och används för att skapa grundstrukturen och administrera behörigheten i kategorierna. OBS: När du söker efter personer som ska bli admin och som alrig har loggat in i systemet ska du använda deras medlemsnummer. Att söka efter namn går först när de har skapat sin användarprofil.</li>
+    <li>Från den här punkten kan du som är " . ($allAss ? implode(", ", $allAss) . " eller " : "") . $oneAss . " lämna över ansvaret till dina LA-administratörer. Om du själv ska administrera bokningen så måste du göra dig själv till admin!</li>
     <li>LA-administratören kan nu fortsätta med att lägga upp kategorier. Beroende på hur omfattande verksamhet ni har kan ni välja att lägga alla kategorier direkt på huvudnivån, eller skapa underkategorier. Ni kan använda så många nivåer som ni vill.</li>
     <li>För varje kategori kan behörigheter ställas in för att styra dels vem som ska kunna boka utrustningen, och dels vem som ska ta hand om resurserna (kategoriansvarig) och inkomna bokningar (bokningsansvarig). Inställningar som görs i en överordnad kategori gäller även dess underkategorier.</li>
     <li>Kategoriansvarig eller LA-administratör kan slutligen lägga upp resurserna.</li>
