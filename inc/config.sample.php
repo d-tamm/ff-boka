@@ -96,6 +96,9 @@ $cfg = array(
     "cronWeekly" => 7, // Day of week, Monday=1, Sunday=7
     "cronMonthly" => 1, // Day of month, 1...31
 
+    // Name and location of log file. If not set, logging will be directed to the php log file.
+    "logFile" => "",
+
     // Welcome messages on landing page
     "welcomeMsg" => "<p class='ui-body ui-body-b'>Välkommen till Friluftsfrämjandets nya resursbokningssystem! Om du behöver hjälp, klicka på <b>?</b> uppe till höger.</p>",
     "welcomeMsgLoggedIn" => "<p class='ui-body ui-body-b'>Återkoppla gärna till utvecklarna med synpunkter och önskemål! Bara på det viset kan vi möta lokalavdelningarnas behov på bästa sätt.</p>",
