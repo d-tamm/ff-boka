@@ -502,8 +502,8 @@ class FFBoka {
     function sendQueuedMails(string $from, string $fromName, string $replyTo, array $SMTPOptions) {
         $stmt = self::$db->query("SELECT * FROM mailq");
         $rows = $stmt->fetchAll(PDO::FETCH_OBJ);
-        if (count($rows)) echo "Sending mails from mail queue...\n";
-        else echo "No mails in the mail queue.\n\n";
+        if (count($rows)) logger("Sending mails from mail queue...");
+        else logger("Sending mails: No mails in the mail queue.");
         foreach ($rows as $row) {
             try {
                 $mail = new PHPMailer(true);
@@ -534,11 +534,11 @@ class FFBoka {
                 if (!$mail->send()) throw new Exception($mail->ErrorInfo);
                 $stmt = self::$db->prepare("DELETE FROM mailq WHERE mailqId=?");
                 $stmt->execute([ $row->mailqId ]);
-                echo "Mail #{$row->mailqId} has been sent to " . substr($row->to, 0, 2) . "..." . substr($row->to, strpos($row->to, "@")) . "\n";
+                logger("Mail #{$row->mailqId} has been sent to {$row->to}");
             } catch (Exception $e) {
-                echo "ERROR: Cannot send mail #{$row->mailqId}. " . $mail->ErrorInfo;
+                logger("Cannot send mail #{$row->mailqId} to {$row->to}. " . $mail->ErrorInfo, "WARN");
             }
         }
-        if (count($rows)) echo "All mails from queue sent.\n\n";
+        if (count($rows)) logger("All mails from queue sent.");
     }
 }

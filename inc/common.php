@@ -278,21 +278,22 @@ function resolveUserAgent(string $userAgent, PDO $db, string $format='%browser% 
 /**
  * Log messages to file.
  * @param string $message The message to log.
- * @param string $target Filename to log to. If empty or non-writable, the system log is used.
  * @param string $channel Will be prefixed to the message. Defaults to INFO.
  */
-function logger(string $message, string $target="", string $channel="INFO") {
+function logger(string $message, string $channel="INFO") {
+    global $cfg;
     // check write permissions on parent directory
-    if ($target!=="" && is_writable(dirname($target))) { // custom log file
+    if ($cfg['logFile'] && is_writable(dirname($cfg['logFile']))) { // custom log file
+        $logFile = $cfg['logFile'];
         // Log rotation
-        if (filesize($target) > 1024*1024) {
-            error_log(strftime("%F %T") . " INFO Log rotation. Closing this log file.\n", 3, $target);
-            rename($target, "$target.1");
-            error_log(strftime("%F %T") . " INFO Start of new log file.\n", 3, $target);
+        if (filesize($logFile) > ($cfg['logMaxSize'] ? $cfg['logMaxSize'] : 1024*1024)) {
+            error_log(strftime("%F %T") . " INFO Log rotation. Closing this log file.\n", 3, $logFile);
+            rename($logFile, "$logFile.1");
+            error_log(strftime("%F %T") . " INFO Start of new log file.\n", 3, $logFile);
         }
     } else { // system log file
-        $target = "";
+        $logFile = "";
     }
-    if ($target === "") error_log("ff-boka $channel $message\n");
-    else error_log(strftime("%F %T") . " $channel $message\n", 3, $target);
+    if ($logFile === "") error_log("ff-boka $channel $message\n");
+    else error_log(strftime("%F %T") . " $channel $message\n", 3, $logFile);
 }

@@ -98,6 +98,8 @@ $cfg = array(
 
     // Name and location of log file. If not set, logging will be directed to the php log file.
     "logFile" => "",
+    // Max log file size in bytes. Defaults to 1 MB if not set.
+    "logMaxSize" => 1024*1024,
 
     // Welcome messages on landing page
     "welcomeMsg" => "<p class='ui-body ui-body-b'>Välkommen till Friluftsfrämjandets nya resursbokningssystem! Om du behöver hjälp, klicka på <b>?</b> uppe till höger.</p>",
