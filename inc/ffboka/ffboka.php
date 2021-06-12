@@ -510,7 +510,7 @@ class FFBoka {
     function sendQueuedMails(string $from, string $fromName, string $replyTo, array $SMTPOptions) {
         $stmt = self::$db->query("SELECT * FROM mailq");
         $rows = $stmt->fetchAll(PDO::FETCH_OBJ);
-        if (count($rows)) logger("Sending mails from mail queue...");
+        if (count($rows)) logger(__METHOD__." Sending mails from mail queue...");
         foreach ($rows as $row) {
             try {
                 $mail = new PHPMailer(true);
