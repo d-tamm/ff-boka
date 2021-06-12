@@ -108,7 +108,7 @@ function connectDb(string $host, string $dbname, string $user, string $pass, int
             $stmt = $db->query("SELECT value FROM config WHERE name='db-version'");
             $ver = $stmt->fetch(PDO::FETCH_OBJ);
             if ($ver->value == $curVer) {
-                logger("Database upgraded to version $curVer");
+                logger(__METHOD__." Database upgraded to version $curVer");
                 echo "<p>Successful upgrade to version $curVer.</p>";
             } else {
                 logger(__METHOD__." Database versions do not match after upgrade.", E_ERROR);
