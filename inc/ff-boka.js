@@ -1221,7 +1221,7 @@ $(document).on('pagecreate', "#page-admin-category", function() {
     $(document).off("change", ".cat-access-level").on("change", ".cat-access-level", function() {
         $.mobile.loading("show", {});
         $("#cat-access-levels").hide();
-        $("#cat-access-id").val("").selectmenu("refresh");
+        $("select.cat-access-id").val("").selectmenu("refresh");
         $("#cat-adm-autocomplete-input").val("");
         $("#cat-adm-autocomplete").html("");
         $.getJSON("?action=ajaxSetAccess&id="+encodeURIComponent(chosenAccessId)+"&access="+this.value, function(data, status) {
