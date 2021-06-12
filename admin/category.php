@@ -239,7 +239,9 @@ switch ($_REQUEST['action']) {
                     "contactPhone" => $cat->contactPhone,
                     "contactMail" => $cat->contactMail
                 ]));
-            default: die(json_encode([ "status"=>"error", "error"=>"Unknown field name." ]));
+            default:
+                logger("Trying to set unknown category property via ajax.", "ERROR");
+                die(json_encode([ "status"=>"error", "error"=>"Unknown field name." ]));
         }
         
     case "ajaxSetImage":

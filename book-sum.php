@@ -99,6 +99,7 @@ if (isset($_SESSION['bookingId'])) {
     try {
         $booking = new Booking($_SESSION['bookingId']);
     } catch (Exception $e) {
+        logger(__METHOD__." User {$currentUser->id} tried to access invalid booking {$_SESSION['bookingId']}", E_WARNING);
         unset($_SESSION['bookingId']);
         header("Location: index.php?action=bookingNotFound");
         die();
@@ -127,6 +128,7 @@ if (!(
         }
     }
     if (!$isAdmin) {
+        logger(__METHOD__." Non-admin user {$currentUser->id} tried to access other user's booking {$_SESSION['bookingId']}.", E_WARNING);
         unset($_SESSION['bookingId']);
         header("Location: index.php?action=accessDenied&to=" . urlencode("bokningen.") . "&redirect=" . urlencode("book-sum.php?bookingId={$_REQUEST['bookingId']}"));
         die();
@@ -310,6 +312,7 @@ EOF;
         header("Content-Type: application/json");
         // Check permissions: Only the original user and section admin can delete whole bookings
         if ($section->getAccess($currentUser) < FFBoka::ACCESS_SECTIONADMIN && (!isset($_SESSION['authenticatedUser']) || $booking->userId !== $_SESSION['authenticatedUser']) && $_SESSION['token'] != $booking->token) {
+            logger(__METHOD__." User {$currentUser->id} tried to delete booking {$booking->id} without appropriate permissions.", E_WARNING);
             die(json_encode([ "error"=>"Du har inte behörighet att ta bort bokningen. :-P" ]));
         }
         // Send confirmation to user

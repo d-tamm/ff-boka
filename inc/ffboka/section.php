@@ -18,7 +18,8 @@ class Section extends FFBoka {
     
     /**
      * On section instantiation, get static properties.
-     * @param int $id Section ID. If ID does not exist in database, id property in returned object will be unset.
+     * @param int $id Section ID.
+     * @throws \Exception if $id is invalid.
      */
     function __construct($id){
         $stmt = self::$db->prepare("SELECT sectionId, name FROM sections WHERE sectionId=?");
@@ -27,6 +28,7 @@ class Section extends FFBoka {
             $this->id = $row->sectionId;
             $this->name = $row->name;
         } else {
+            logger(__METHOD__." Tried to instantiate section with invalid ID $id.", E_WARNING);
             throw new \Exception("Cannot instantiate section. Section with ID $id not found in database.");
         }
     }
@@ -68,6 +70,7 @@ class Section extends FFBoka {
             $row = $stmt->fetch(PDO::FETCH_OBJ);
             return $row->cats;
         default:
+            logger(__METHOD__." Use of undefined Section propterty $name.", E_ERROR);
             throw new \Exception("Use of undefined Section property $name");
         }
     }
@@ -85,11 +88,12 @@ class Section extends FFBoka {
                 if (is_numeric($value)) {
                     $stmt = self::$db->prepare("UPDATE sections SET $name=:value WHERE sectionId={$this->id}");
                     $stmt->bindValue(":value", $value);
-                    if (!$stmt->execute()) die ($stmt->errorInfo()[2]);
-                    return $value;
+                    if ($stmt->execute()) return $value;
+                    logger(__METHOD__." Failed to set Section property $name to $value. " . $stmt->errorInfo()[2], E_ERROR);
                 }
                 break;
             default:
+                logger(__METHOD__." Use of undefined Section propterty $name.", E_ERROR);
                 throw new \Exception("Trying to set undefined Section property $name");
         }
         return false;
@@ -113,7 +117,9 @@ class Section extends FFBoka {
         $user = new User($userId); // This will add user to database if not already there.
         if (!$user->id) return FALSE;
         $stmt = self::$db->prepare("INSERT INTO section_admins SET sectionId={$this->id}, userId=?");
-        return $stmt->execute(array($userId));
+        if($stmt->execute(array($userId))) return true;
+        logger(__METHOD__." Failed to add amin. " . $stmt->errorInfo()[2], E_ERROR);
+        return false;
     }
     
     /**
@@ -123,7 +129,9 @@ class Section extends FFBoka {
      */
     public function removeAdmin($userId) {
         $stmt = self::$db->prepare("DELETE FROM section_admins WHERE sectionId={$this->id} AND userId=?");
-        return $stmt->execute(array($userId));
+        if($stmt->execute(array($userId))) return true;
+        logger(__METHOD__." Failed to revoke admin access. " . $stmt->errorInfo()[2], E_ERROR);
+        return false;
     }
     
     /**
@@ -150,6 +158,7 @@ class Section extends FFBoka {
         if ($stmt->execute()) {
             return new Category(self::$db->lastInsertId());
         } else {
+            logger(__METHOD__." Failed to create category. " . $stmt->errorInfo()[2], E_ERROR);
             throw new \Exception("Failed to create category. " . $stmt->errorInfo()[2]);
         }
     }
@@ -185,8 +194,9 @@ class Section extends FFBoka {
      * @return boolean|\FFBoka\Question
      */
     public function addQuestion() {
-        if (!self::$db->exec("INSERT INTO questions SET sectionId={$this->id}")) return FALSE;
-        return new Question(self::$db->lastInsertId());
+        if (self::$db->exec("INSERT INTO questions SET sectionId={$this->id}")) return new Question(self::$db->lastInsertId());
+        logger(__METHOD__." Failed to add Question. " . self::$db->errorInfo()[2], E_ERROR);
+        return FALSE;
     }
     
     /**

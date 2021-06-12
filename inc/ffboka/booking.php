@@ -31,9 +31,11 @@ class Booking extends FFBoka {
                 $this->sectionId = $row->sectionId;
                 $this->userId = $row->userId;
             } else {
+                logger(__METHOD__." Failed to instantiate Booking with ID $id.", E_WARNING);
                 throw new \Exception("Can't instatiate Booking with ID $id.");
             }
         } else {
+            logger(__METHOD__." Tried to instatiate a Booking without ID.", E_ERROR);
             throw new \Exception("Can't instatiate Booking without ID.");
         }
     }
@@ -41,7 +43,7 @@ class Booking extends FFBoka {
     /**
      * Getter function for Booking properties
      * @param string $name Name of the property to retrieve
-     * @throws \Exception
+     * @throws \Exception if undefined property is given
      * @return number|string|NULL
      */
     public function __get($name) {
@@ -76,6 +78,7 @@ class Booking extends FFBoka {
             case "userMail":
                 return is_null($this->userId) ? $this->extMail : $this->user()->mail;
             default:
+                logger(__METHOD__." Use of undefined Booking property $name", E_ERROR);
                 throw new \Exception("Use of undefined Booking property $name");
         }
     }
@@ -103,8 +106,10 @@ class Booking extends FFBoka {
                 if ($name=="repeatId") $stmt->bindValue(":name", $value, \PDO::PARAM_INT);
                 else $stmt->bindValue(":name", $value);
                 if ($stmt->execute()) return $value;
+                logger(__METHOD__." Failed to set Booking property $name to $value. " . $stmt->errorInfo()[2], E_ERROR);
                 break;
             default:
+                logger(__METHOD__." Use of undefined Booking property $name", E_ERROR);
                 throw new \Exception("Use of undefined Booking property $name");
         }
         return false;
@@ -123,7 +128,7 @@ class Booking extends FFBoka {
      * @return \FFBoka\Section
      */
     public function section() {
-            return new Section($this->sectionId);
+        return new Section($this->sectionId);
     }
 
     /**
@@ -154,17 +159,19 @@ class Booking extends FFBoka {
     public function addItem(int $itemId) {
         $stmt = self::$db->prepare("INSERT INTO booked_items SET bookingId={$this->id}, itemId=?");
         if ($stmt->execute(array( $itemId ))) return new Item(self::$db->lastInsertId(), TRUE);
-        else return FALSE;
+        logger(__METHOD__." Failed to add item $itemId to booking {$this->id}. " . $stmt->errorInfo()[2], E_ERROR);
+        return FALSE;
     }
 
     /**
      * Remove an item from the booking
      * @param int $bookedItemId Booking ID of the item to be removed
-     * @return bool True on success
+     * @return bool True on success, false on failure
      */
     public function removeItem(int $bookedItemId) {
         $stmt = self::$db->prepare("DELETE FROM booked_items WHERE bookedItemId=?");
-        return $stmt->execute(array( $bookedItemId ));
+        if ($stmt->execute(array( $bookedItemId ))) return true;
+        logger(__METHOD__." Failed to remove item $bookedItemId from booking {$this->id}. " . $stmt->errorInfo()[2], E_ERROR);
     }
     
     /**
@@ -188,16 +195,17 @@ class Booking extends FFBoka {
      */
     public function addAnswer(string $question, string $answer) {
         $stmt = self::$db->prepare("INSERT INTO booking_answers SET bookingId={$this->id}, question=:question, answer=:answer");
-        if (!$stmt->execute(array(
+        if ($stmt->execute(array(
             ":question"=>$question,
             ":answer"=>$answer,
-        ))) return FALSE;
-        return self::$db->lastInsertId();
+        ))) return self::$db->lastInsertId();
+        logger(__METHOD__." Failed to add answer to booking question. " . $stmt->errorInfo()[2], E_ERROR);
+        return false;
     }
     
     /**
      * Deletes all answers to booking questions
-     * @return bool TRUE on success
+     * @return int Number of answers deleted
      */
     public function clearAnswers() {
         return self::$db->exec("DELETE FROM booking_answers WHERE bookingId={$this->id}");
@@ -353,7 +361,8 @@ class Booking extends FFBoka {
             );
             $this->confirmationSent = true;
         } catch(\Exception $e) {
-            return "Kunde inte skicka bokningsbekräftelsen:" . $e;
+            logger(__METHOD__." Failed to send booking confirmation. " . $e->getMessage(), E_WARNING);
+            return "Kunde inte skicka bokningsbekräftelsen:" . $e->getMessage();
         }
         return true;
     }
@@ -440,6 +449,7 @@ class Booking extends FFBoka {
                     $clientMail //replyTo
                 );
             } catch (\Exception $e) {
+                logger(__METHOD__." Failed to send booking notification to $mail. " . $e->getMessage(), E_WARNING);
                 $ret = false;
             }
         }

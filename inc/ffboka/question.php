@@ -28,9 +28,11 @@ class Question extends FFBoka {
                 $this->id = $row->questionId;
                 $this->sectionId = $row->sectionId;
             } else {
+                logger(__METHOD__." Tried to instatiate Question with invalid id $id.", E_ERROR);
                 throw new \Exception("Can't instatiate Question with ID $id.");
             }
         } else {
+            logger(__METHOD__." Tried to instatiate Question without ID.", E_ERROR);
             throw new \Exception("Can't instatiate Question without ID.");
         }
     }
@@ -56,6 +58,7 @@ class Question extends FFBoka {
                 $row = $stmt->fetch(PDO::FETCH_OBJ);
                 return json_decode($row->$name);
             default:
+                logger(__METHOD__." Use of undefined Question propterty $name.", E_ERROR);
                 throw new \Exception("Use of undefined Question property $name");
         }
     }
@@ -95,8 +98,10 @@ class Question extends FFBoka {
             case "options":
                 $stmt = self::$db->prepare("UPDATE questions SET $name=? WHERE questionId={$this->id}");
                 if ($stmt->execute(array($value))) return $value;
+                logger(__METHOD__." Failed to set Question property $name to $value. " . $stmt->errorInfo()[2], E_ERROR);
                 break;
             default:
+                logger(__METHOD__." Use of undefined Question propterty $name.", E_ERROR);
                 throw new \Exception("Use of undefined Question property $name");
         }
         return false;
@@ -107,6 +112,8 @@ class Question extends FFBoka {
      * @return bool Success
      */
     public function delete() {
-        return self::$db->exec("DELETE FROM questions WHERE questionId={$this->id}");
+        if (self::$db->exec("DELETE FROM questions WHERE questionId={$this->id}")) return true;
+        logger(__METHOD__." Failed to delete question. " . self::$db->errorInfo()[2], E_ERROR);
+        return false;
     }
 }

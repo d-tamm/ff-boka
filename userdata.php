@@ -152,7 +152,7 @@ EOF;
     case "ajaxRemovePersistentLogin":
         header("Content-Type: application/json");
         try {
-            $currentUser->removePersistentLogin($_REQUEST['selector']);
+            if (!$currentUser->removePersistentLogin($_REQUEST['selector'])) die(json_encode([ "status"=>"error", "error"=>"Kunde inte utföra begäran."]));
         } catch (\Exception $e) {
             die(json_encode([ "status"=>"error", "error"=>"Något har gått fel. Kan inte logga ut denna inloggning." ]));
         }

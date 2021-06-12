@@ -68,6 +68,7 @@ class Item extends FFBoka {
                 if (!$this->id) throw new \Exception("Cannot set property $name on dummy item.");
                 $stmt = self::$db->prepare("UPDATE items SET $name=? WHERE itemId={$this->id}");
                 if ($stmt->execute(array($value))) return $value;
+                logger(__METHOD__." Failed to set Item property $name to $value. " . $stmt->errorInfo()[2], E_ERROR);
                 break;
                 
             case "price":
@@ -78,10 +79,11 @@ class Item extends FFBoka {
                     if (($name=="start" || $name=="end") && is_numeric($value)) $stmt = self::$db->prepare("UPDATE booked_items SET $name=FROM_UNIXTIME(?) WHERE bookedItemId={$this->bookedItemId}");
                     else $stmt = self::$db->prepare("UPDATE booked_items SET $name=? WHERE bookedItemId={$this->bookedItemId}");
                     if ($stmt->execute(array($value))) return $this->$name;
-                    else return FALSE;
+                    logger(__METHOD__." Failed to set Item property $name to $value. " . $stmt->errorInfo()[2], E_ERROR);
                 } else throw new \Exception("Cannot set $name property on item without bookedItemId.");
                 
             default:
+                logger(__METHOD__." Use of undefined Item property $name", E_WARNING);
                 throw new \Exception("Use of undefined Item property $name");
         }
         return false;
@@ -90,9 +92,13 @@ class Item extends FFBoka {
     /**
      * Set the representative image of the item
      * @param Image $img
+     * @throws \Exception if the image does not belong to the item
      */
     public function setFeaturedImage(Image $img) {
-        if ($img->itemId != $this->id) throw new \Exception("Cannot set an image to featured image which does not belong to the item.");
+        if ($img->itemId == $this->id) {
+            logger(__METHOD__." Trying to set an image to be the featured image of an item it does not belong to.", E_WARNING);
+            throw new \Exception("Cannot set an image to featured image which does not belong to the item.");
+        }
         $this->imageId = $img->id;
     }
     
@@ -128,9 +134,12 @@ class Item extends FFBoka {
                     else $stmt = self::$db->query("SELECT $name FROM booked_items WHERE bookedItemId={$this->bookedItemId}");
                     $row = $stmt->fetch(PDO::FETCH_OBJ);
                     return $row->$name;
-                } else throw new \Exception("Cannot get $name property on item without bookedItemId.");
-
+                } else {
+                    logger(__METHOD__." Trying to get item property $name for item which is not a booked item.", E_WARNING);
+                    throw new \Exception("Cannot get $name property on item without bookedItemId.");
+                }
             default:
+                logger(__METHOD__." Use of undefined Item property $name", E_WARNING);
                 throw new \Exception("Use of undefined Item property $name");
         }
     }
@@ -160,12 +169,13 @@ class Item extends FFBoka {
     /**
      * Move the item to another category
      * @param Category $cat Category to move the item to.
+     * @return bool True on success, false on failure
      */
     public function moveToCat(Category $cat) {
-        $stmt = self::$db->prepare("UPDATE items SET catId=:catId WHERE itemId={$this->id}");
-        $stmt->execute(array(
-            ":catId" => $cat->id
-        ));
+        $stmt = self::$db->prepare("UPDATE items SET catId=? WHERE itemId={$this->id}");
+        if ($stmt->execute([ $cat->id ])) return true;
+        logger(__METHOD__." Failed to move item {$this->id} to category {$cat->id}. " . $stmt->errorInfo()[2], E_ERROR);
+        return false;
     }
 
     /**
@@ -215,14 +225,14 @@ class Item extends FFBoka {
         if (self::$db->exec("DELETE FROM items WHERE itemId={$this->id}")) {
             return TRUE;
         } else {
+            logger(__METHOD__." Failed to delete item. ".self::$db->errorInfo()[2], E_ERROR);
             throw new \Exception("Failed to delete item.");
         }
     }
     
     /**
      * Remove bookedItem from its booking
-     * @throws \Exception
-     * @return boolean True on success
+     * @return boolean True on success, false on failure
      */
     public function removeFromBooking() {
         if (self::$db->exec("DELETE FROM booked_items WHERE bookedItemId={$this->bookedItemId}")) {
@@ -230,7 +240,8 @@ class Item extends FFBoka {
             unset($this->bookingId);
             return TRUE;
         } else {
-            throw new \Exception("Failed to remove item from booking.");
+            logger(__METHOD__." Failed to remove item from booking. ".self::$db->errorInfo()[2], E_ERROR);
+            return false;
         }
     }
     
@@ -248,12 +259,12 @@ class Item extends FFBoka {
         $newItem->description = $this->description;
         // copy the associated item images
         foreach ($this->images() as $image) {
-            self::$db->exec("INSERT INTO item_images (itemId, thumb, caption) SELECT {$newItem->id}, thumb, caption FROM item_images WHERE imageId={$image->id}");
+            if (!self::$db->exec("INSERT INTO item_images (itemId, thumb, caption) SELECT {$newItem->id}, thumb, caption FROM item_images WHERE imageId={$image->id}")) logger(__METHOD__." Failed to copy item image. " . self::$db->errorInfo()[2], E_ERROR);
             $newImageId = self::$db->lastInsertId();
             // Copy full size image file
             copy(__DIR__ . "/../../img/item/{$image->id}", __DIR__ . "/../../img/item/$newImageId");
             if ($image->id == $this->imageId) { // set featured image
-                self::$db->exec("UPDATE items SET imageId=$newImageId WHERE itemId={$newItem->id}");
+                if (!self::$db->exec("UPDATE items SET imageId=$newImageId WHERE itemId={$newItem->id}")) logger(__METHOD__." Failed to set featured image in copied item. " . self::$db->errorInfo()[2], E_ERROR);
             }
         }
         return $newItem;
@@ -268,6 +279,7 @@ class Item extends FFBoka {
         if (self::$db->exec("INSERT INTO item_images SET itemId={$this->id}")) {
             return new Image(self::$db->lastInsertId());
         } else {
+            logger(__METHOD__." Failed to create item image. ".self::$db->errorInfo()[2], E_ERROR);
             throw new \Exception("Failed to create item image.");
         }
     }
@@ -286,7 +298,7 @@ class Item extends FFBoka {
     }
     
     /**
-     * Get the representative image of the item 
+     * Get the featured image of the item 
      * @return \FFBoka\Image
      */
     public function getFeaturedImage() {
