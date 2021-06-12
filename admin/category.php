@@ -516,47 +516,52 @@ unset ($_SESSION['itemId']);
         <?php if ($cat->getAccess($currentUser) >= FFBoka::ACCESS_CATADMIN) { ?>
         <div data-role="collapsible" class="ui-filterable" data-collapsed="<?= $_REQUEST['expand']=="access" ? "false" : "true" ?>">
             <h2>Behörigheter</h2>
-            <fieldset data-role="controlgroup" id="cat-access-ids" data-mini="true">
+            <p><i>Här styr du vem som kan boka, och vem som kan administrera kategorin.</i></p>
+            <div id="cat-access-ids">
                 <p>1. Välj grupp eller enskild medlem:</p>
-                <select class='cat-access-id' name='id'>
-                	<option value=''>Välj grupp...</option>
-                	<option value='accessExternal'>Icke-medlemmar</option>
-                	<option value='accessMember'>Medlem i valfri LA</option>
-                	<option value='accessLocal'>Lokal medlem</option>
-                	<optgroup label="Lokal medlem med uppdrag:"></optgroup>
-                	<?php
-                	foreach ($FF->getAllAssignments() as $ass) {
-                	    echo "<option value='$ass'>" . htmlspecialchars($ass) . "</option>";
-                	}
-                	?>
-                </select>
-                <input id="cat-adm-autocomplete-input" data-type="search" placeholder="... eller enskild medlem...">
-                <ul id="cat-adm-autocomplete" data-role="listview" data-filter="true" data-input="#cat-adm-autocomplete-input" data-inset="true"></ul>
-            </fieldset>
+                <fieldset data-role="controlgroup" data-mini="true">
+                    <select class='cat-access-id' name='id'>
+                        <option value=''>Välj grupp...</option>
+                        <option value='accessExternal'>Icke-medlemmar</option>
+                        <option value='accessMember'>Medlem i valfri LA</option>
+                        <option value='accessLocal'>Lokal medlem</option>
+                        <optgroup label="Lokal medlem med uppdrag:"></optgroup>
+                        <?php
+                        foreach ($FF->getAllAssignments() as $ass) {
+                            echo "<option value='$ass'>" . htmlspecialchars($ass) . "</option>";
+                        }
+                        ?>
+                    </select>
+                    <input id="cat-adm-autocomplete-input" data-type="search" placeholder="... eller enskild medlem...">
+                    <ul id="cat-adm-autocomplete" data-role="listview" data-filter="true" data-input="#cat-adm-autocomplete-input" data-inset="true"></ul>
+                </fieldset>
+            </div>
             
-            <fieldset data-role="controlgroup" data-mini="true" id="cat-access-levels" style="display:none;">
+            <div id="cat-access-levels" style="display:none;">
                 <p>2. Välj behörighetsnivå här:</p>
-                <label>
-                    <input type="radio" class="cat-access-level" name="cat-access" value="<?= FFBoka::ACCESS_READASK ?>">
-                    <?= $cfg['catAccessLevels'][FFBoka::ACCESS_READASK] ?>
-                </label>
-                <label>
-                    <input type="radio" class="cat-access-level" name="cat-access" value="<?= FFBoka::ACCESS_PREBOOK ?>">
-                    <?= $cfg['catAccessLevels'][FFBoka::ACCESS_PREBOOK] ?>
-                </label>
-                <label>
-                    <input type="radio" class="cat-access-level" name="cat-access" value="<?= FFBoka::ACCESS_BOOK ?>">
-                    <?= $cfg['catAccessLevels'][FFBoka::ACCESS_BOOK] ?>
-                </label>
-                <label>
-                    <input type="radio" class="cat-access-level cat-access-level-adm" name="cat-access" value="<?= FFBoka::ACCESS_CONFIRM ?>">
-                    <?= $cfg['catAccessLevels'][FFBoka::ACCESS_CONFIRM] ?>
-                </label>
-                <label>
-                    <input type="radio" class="cat-access-level cat-access-level-adm" name="cat-access" value="<?= FFBoka::ACCESS_CATADMIN ?>">
-                    <?= $cfg['catAccessLevels'][FFBoka::ACCESS_CATADMIN] ?>
-                </label>
-            </fieldset>
+                <fieldset data-role="controlgroup" data-mini="true">
+                    <label>
+                        <input type="radio" class="cat-access-level" name="cat-access" value="<?= FFBoka::ACCESS_READASK ?>">
+                        <?= $cfg['catAccessLevels'][FFBoka::ACCESS_READASK] ?>
+                    </label>
+                    <label>
+                        <input type="radio" class="cat-access-level" name="cat-access" value="<?= FFBoka::ACCESS_PREBOOK ?>">
+                        <?= $cfg['catAccessLevels'][FFBoka::ACCESS_PREBOOK] ?>
+                    </label>
+                    <label>
+                        <input type="radio" class="cat-access-level" name="cat-access" value="<?= FFBoka::ACCESS_BOOK ?>">
+                        <?= $cfg['catAccessLevels'][FFBoka::ACCESS_BOOK] ?>
+                    </label>
+                    <label>
+                        <input type="radio" class="cat-access-level cat-access-level-adm" name="cat-access" value="<?= FFBoka::ACCESS_CONFIRM ?>">
+                        <?= $cfg['catAccessLevels'][FFBoka::ACCESS_CONFIRM] ?>
+                    </label>
+                    <label>
+                        <input type="radio" class="cat-access-level cat-access-level-adm" name="cat-access" value="<?= FFBoka::ACCESS_CATADMIN ?>">
+                        <?= $cfg['catAccessLevels'][FFBoka::ACCESS_CATADMIN] ?>
+                    </label>
+                </fieldset>
+            </div>
 
             <p>Tilldelade behörigheter:</p>
             <div id="assigned-cat-access"><?= displayCatAccess($cat, $cfg['catAccessLevels']) ?></div>
@@ -569,6 +574,7 @@ unset ($_SESSION['itemId']);
             <h2>Bokningsfrågor</h2>
             <?php
             if ($questions = showQuestions($cat, $section)) {
+                echo "<p><i>Klicka på frågorna som ska visas i bokningsflödet. Frågor med blå bakgrund är aktiverade. Klicka en gång till för att göra frågan obligatorisk (<span class='required'></span>). Klicka en tredje gång för att avaktivera frågan.</i></p>";
                 echo "<ul data-role='listview' data-inset='true' id='cat-questions'>$questions</ul>";
             } else {
                 echo "<p><i>Inga frågor har lagts upp i din lokalavdelning än. Om du vill att någon fråga ska visas vid bokning i denna kategori, be LA-administratören att lägga upp frågan. Detta ska göras på LA-nivå. När detta har gjorts kommer upplagda frågor att dyka upp här så du kan välja ut de frågor som ska visas med din kategori.</i></p>";
