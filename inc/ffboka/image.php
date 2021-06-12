@@ -49,21 +49,20 @@ class Image extends FFBoka {
         if (!file_exists(__DIR__."/../../img/item")) {
             if (!mkdir(__DIR__."/../../img/item", 0777, true)) {
                 logger(__METHOD__." Failed to create folder for item images " . realpath(__DIR__."/../../img/item"), E_ERROR);
-                return "Kan inte skapa mapp för resursbilder på ./img/item. Set till att servern har skrivåtkomst. Kontakta systemadministratören.";
+                return "Kan inte spara bilden. Kontakta systemadministratören.";
             }
         }
         $images = $this->imgFileToString($imgFile, $maxSize, $thumbSize, $maxFileSize);
-        if ($images['error']) return $images['error'];
+        if (isset($images['error'])) return $images['error'];
         // Save thumbnail to database
         $stmt = self::$db->prepare("UPDATE item_images SET thumb=? WHERE imageID={$this->id}");
         if (!$stmt->execute(array($images['thumb']))) {
             logger(__METHOD__." Failed to save thumbnail. " . $stmt->errorInfo()[2], E_ERROR);
-            return "Kan inte spara miniaturbilden i databasen. Kontakta systemadministratören.";
         }
         // Save full size image to file system
         if (file_put_contents(__DIR__ . "/../../img/item/{$this->id}", $images['image'])===FALSE) {
             logger(__METHOD__." Failed to save full size image to " . realpath(__DIR__."/../../img/item/{$this->id}"), E_ERROR);
-            return "Kan inte spara originalbilden som fil. Kontakta systemadministratören.";
+            return "Kan inte spara bilden. Kontakta systemadministratören.";
         }
         return TRUE;
     }

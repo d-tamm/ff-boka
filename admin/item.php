@@ -139,7 +139,8 @@ EOF;
             $image = $item->addImage();
             $res = $image->setImage($_FILES['image'], $cfg['maxImgSize'], 80, $cfg['uploadMaxFileSize']);
             if ($res!==TRUE) {
-                die(json_encode($res));
+                $image->delete();
+                die(json_encode([ "error"=>$res ]));
             }
             // Set as featured image if it is the first one for this item
             if (!$item->imageId) $item->imageId = $image->id;

@@ -284,14 +284,13 @@ class FFBoka {
      * @param int $maxSize Image will be scaled down if any dimension is bigger than this. 0=no limit
      * @param int $thumbSize Size of the thumbnail.
      * @param int $maxFileSize If file is bigger than this, it will be rejected. 0=no limit
-     * @throws \Exception If file is not an uploaded file.
      * @return ['image'=>string, 'thumb'=>string, 'error'=>string] String representations
      *  of a full-size and a thumbnail version of the image.
      */
     protected function imgFileToString($file, $maxSize=0, $thumbSize=80, $maxFileSize=0) {
         if (!is_uploaded_file($file['tmp_name'])) {
             logger(__METHOD__." Trying to set image to a file which is not an uploaded file.", E_WARNING);
-            throw new \Exception("Error: Image file must be an uploaded file.");
+            return [ "error"=>"Ogiltig begäran." ];
         }
         // reject files that are too big
         if ($maxFileSize) {
