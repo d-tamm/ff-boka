@@ -50,6 +50,7 @@ class Image extends FFBoka {
             if (!mkdir(__DIR__."/../../img/item", 0777, true)) {
                 logger(__METHOD__." Failed to create folder for item images " . realpath(__DIR__."/../../img/item"), E_ERROR);
                 return "Kan inte skapa mapp för resursbilder på ./img/item. Set till att servern har skrivåtkomst. Kontakta systemadministratören.";
+            }
         }
         $images = $this->imgFileToString($imgFile, $maxSize, $thumbSize, $maxFileSize);
         if ($images['error']) return $images['error'];
