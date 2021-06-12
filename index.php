@@ -146,10 +146,11 @@ if (isset($_POST['login'])) {
             $message = "Kan inte få kontakt med inloggningsservern. Vänligen försök igen senare. Om problemet kvarstår, kontakta systemadmin.";
         }
         elseif ($result['authenticated']) {
+            logger(__METHOD__." User {$result['userId']} logged in with {$_POST['id']}.");
             $_SESSION['authenticatedUser'] = $result['userId'];
             $u = new User($_SESSION['authenticatedUser'], $result['section']);
             $u->getAssignments();
-            if (!$u->updateLastLogin()) die("Cannot update user.");
+            $u->updateLastLogin();
             $stmt = $db->prepare("INSERT INTO logins (ip, login, userId, success, userAgent) VALUES (INET_ATON('{$_SERVER['REMOTE_ADDR']}'), ?, {$result['userId']}, 1, '{$_SERVER['HTTP_USER_AGENT']}')");
             $stmt->execute(array($_POST['id']));
             // If requested, set persistent login cookie
@@ -163,11 +164,13 @@ if (isset($_POST['login'])) {
             }
             // Redirect Ordförande etc on first login
             if (count(array_intersect($_SESSION['assignments'][$u->section->id], $cfg['sectionAdmins']))>0 && count($u->section->getAdmins())==0) {
+                logger(__METHOD__." First login for section {$u->section->id}");
                 header("Location: admin/index.php?sectionId=" . $u->section->id . "&expand=admins");
                 die();
             }
         } else {
             // Password wrong.
+            logger(__METHOD__." User failed to login with {$_POST['id']}.");
             $message = "Fel medlemsnummer eller lösenord.";
             $stmt = $db->prepare("INSERT INTO logins (ip, login, success, userAgent) VALUES (INET_ATON('{$_SERVER['REMOTE_ADDR']}'), ?, 0, '{$_SERVER['HTTP_USER_AGENT']}')");
             $stmt->execute(array($_POST['id']));
@@ -186,9 +189,11 @@ if (isset($_REQUEST['t'])) {
                 $user->mail = $token->data;
                 $FF->deleteToken($token->token);
                 $message="Grattis! Din epostadress {$token->data} är nu aktiverad.";
+                logger(__METHOD__." User {$token->forId} activated new email address.");
                 break;
         }
     } catch (Exception $e) {
+        logger(__METHOD__." User failed to use token. " . $e->getMessage());
         $message = $e->getMessage();
     }
 }

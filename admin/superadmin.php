@@ -128,6 +128,20 @@ case "savePoll":
     $expand = "polls";
     break;
 
+case "currentLog":
+    header('Content-Type: text/html');
+    if (is_readable("../".$cfg['logFile']) && !is_dir("../".$cfg['logFile'])) {
+        echo "<p>Show <a href='?action=currentLog&level=1'>ERRORs</a> <a href='?action=currentLog&level=2'>WARNINGs</a> <a href='?action=currentLog&level=8'>NOTICEs</a></p>";
+        $file = file("../".$cfg['logFile']);
+        switch ($_GET['level']) {
+            case E_NOTICE: $reg = "NOTICE|WARNING|ERROR"; break;
+            case E_WARNING: $reg = "WARNING|ERROR"; break;
+            default: $reg = "ERROR";
+        }
+        echo "<pre>" . implode(preg_grep("/ ($reg) /", $file)) . "</pre>";
+    }
+    else echo "Det går inte att visa loggfilen.";
+    die();
 }
 }
 
@@ -190,6 +204,12 @@ $cronDelayed = ($lastCron==0 || $lastCron < time()-3600);
             <h3>Cron <span style='color:var(<?= $cronDelayed ? "--FF-orange" : "--FF-green" ?>);'>■</span></h3>
             <p><?= $lastCron==0 ? "Cron har aldrig utförts" : "Cron utfördes senast för " . (int)((time()-$lastCron)/60) . " minuter sedan" ?>.</p>
             
+            <?php
+            if (is_readable("../".$cfg['logFile']) && !is_dir("../".$cfg['logFile'])) { ?>
+            <h3>Systemlogg</h3>
+            <a target="_blank" class="ui-btn ui-btn-a" href="?action=currentLog">Visa systemloggen</a>
+            <?php } ?>
+
             <h3>Installerade moduler</h3>
             <ul><?php
                 echo class_exists("PDO") ? "" : "<li style='color:red;'><strong>PDO saknas.</strong> Behövs för databasen</li>";

@@ -24,6 +24,7 @@ class Poll extends FFBoka {
         if ($row = $stmt->fetch(PDO::FETCH_OBJ)) {
             $this->id = $row->pollId;
         } else {
+            logger(__METHOD__." Trying to instatiate non-existing poll with id $id", E_WARNING);
             throw new \Exception("Poll with ID $id does not exist.");
         }
     }
@@ -51,16 +52,20 @@ class Poll extends FFBoka {
                     $this->setVotes(array_fill(0, count($this->choices), 0));
                     return $value;
                 }
+                logger(__METHOD__." Failed to set Poll property $name to $value. " . $stmt->errorInfo()[2], E_ERROR);
                 break;
             case "expires":
                 if (is_null($value)) {
-                    return (self::$db->exec("UPDATE polls SET $name=NULL WHERE pollId={$this->id}") !== FALSE);
+                    if(self::$db->exec("UPDATE polls SET $name=NULL WHERE pollId={$this->id}") !== FALSE) return true;
+                    logger(__METHOD__." Failed to set Poll property $name to $value. " . self::$db->errorInfo()[2], E_ERROR);
                 } else {
                     $stmt = self::$db->prepare("UPDATE polls SET $name=? WHERE pollId={$this->id}");
                     if ($stmt->execute(array($value))) return $value;
+                    logger(__METHOD__." Failed to set Poll property $name to $value. " . $stmt->errorInfo()[2], E_ERROR);
                 }
                 break;
             default:
+                logger(__METHOD__." Use of undefined Poll property $name.", E_WARNING);
                 throw new \Exception("Use of undefined Poll property $name");
         }
         return false;
@@ -90,6 +95,7 @@ class Poll extends FFBoka {
             case "voteMax":
                 return max($this->votes);
             default:
+                logger(__METHOD__." Use of undefined Poll property $name.", E_WARNING);
                 throw new \Exception("Use of undefined poll property $name");
         }
     }
@@ -106,6 +112,7 @@ class Poll extends FFBoka {
         $votes = $this->votes;
         if (is_null($offset)) $offset = count($choices);
         if ($offset < 0 || $offset > count($choices)) {
+            logger(__METHOD__." Offset $offset for new poll choice out of bounds.", E_WARNING);
             throw new \Exception("Offset $offset out of bounds.");
         }
         array_splice($choices, $offset, 0, $choice);
@@ -125,6 +132,7 @@ class Poll extends FFBoka {
         $choices = $this->choices;
         $votes = $this->votes;
         if ($offset < 0 || $offset >= count($choices)) {
+            logger(__METHOD__." Offset $offset to remove poll chooice out of bounds.", E_WARNING);
             throw new \Exception("Offset $offset out of bounds.");
         }
         array_splice($choices, $offset, 1);
@@ -151,20 +159,23 @@ class Poll extends FFBoka {
     public function addVote(int $choice, int $userId) {
         $votes = $this->votes;
         if ($choice < 0 || $choice >= count($votes)) {
+            logger(__METHOD__." Choice number $choice out of bounds.", E_WARNING);
             throw new \Exception("Choice number $choice out of bounds.");
         }
         $votes[$choice]++;
         $this->setVotes($votes);
         // Record that this user has voted
-        self::$db->exec("INSERT INTO poll_answers SET pollId={$this->id}, userId=$userId");
+        if (!self::$db->exec("INSERT INTO poll_answers SET pollId={$this->id}, userId=$userId")) logger(__METHOD__." Failed to record that user has voted. " . self::$db->errorInfo()[2], E_ERROR);
     }
     
     /**
      * Delete the poll and all answers
-     * @return int|bool Returns 1 if successful, 0 or false on error
+     * @return bool Returns true if successful, false on error
      */
     public function delete() {
-        return self::$db->exec("DELETE FROM polls WHERE pollId={$this->id}");
+        if (self::$db->exec("DELETE FROM polls WHERE pollId={$this->id}")) return true;
+        logger(__METHOD__." Failed to delete poll. " . self::$db->errorInfo()[2], E_ERROR);
+        return false;
     }
     
     /**

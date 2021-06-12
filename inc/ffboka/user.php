@@ -66,6 +66,7 @@ class User extends FFBoka {
                 $row = $stmt->fetch(PDO::FETCH_OBJ);
                 return $row->$name;
             default:
+                logger(__METHOD__." Use of invalid User property $name.", E_ERROR);
                 throw new \Exception("Use of undefined User property $name");
         }
     }
@@ -84,9 +85,11 @@ class User extends FFBoka {
             case "sectionId":
                 $stmt = self::$db->prepare("UPDATE users SET $name=? WHERE userId={$this->id}");
                 if ($stmt->execute(array($value))) return $value;
+                logger(__METHOD__." Failed to set User property $name to $value. " . $stmt->errorInfo()[2], E_ERROR);
                 break;
             default:
-                throw new \Exception("Use of undefined category property $name");
+                logger(__METHOD__." Use of undefined User property $name.", E_ERROR);
+                throw new \Exception("Use of undefined User property $name");
         }
         return false;
     }
@@ -101,6 +104,7 @@ class User extends FFBoka {
         if (self::$apiFeedUserAss) { // API URL for assignments is set. Try to get user's assignments
             $data = @file_get_contents(self::$apiFeedUserAss . $this->id);
             if ($data === FALSE) { // no answer
+                logger(__METHOD__." Failed to get assignments from API.", E_WARNING);
                 $_SESSION['assignments'][0][] = "Kunde inte läsa in uppdrag från API.";
             } else { // Got an answer
                 $data = json_decode($data);
@@ -126,7 +130,13 @@ class User extends FFBoka {
      * @return boolean TRUE on success, FALSE otherwise
      */
     public function delete() {
-        if (self::$db->exec("DELETE FROM users WHERE userID={$this->id}") !== FALSE) return TRUE;
+        $name = $this->name;
+        $id = $this->id;
+        if (self::$db->exec("DELETE FROM users WHERE userID={$this->id}") !== FALSE) {
+            logger(__METHOD__." Deleted user $name, #$id.");
+            return TRUE;
+        }
+        logger(__METHOD__." Failed to delete user $name. " . self::$db->errorInfo()[2], E_ERROR);
         return FALSE;
     }
     
@@ -136,6 +146,7 @@ class User extends FFBoka {
      */
     public function updateLastLogin() {
         if (self::$db->exec("UPDATE users SET lastLogin=NULL WHERE userId='{$this->id}'") !== FALSE) return TRUE;
+        logger(__METHOD__." Failed to update last login. " . self::$db->errorInfo()[2], E_ERROR);
         return FALSE;
     }
     
@@ -168,7 +179,6 @@ class User extends FFBoka {
      * Create a cookie and db post to remember the logged-in user even when session has expired.
      * The cookie is valid for the currently used device only.
      * @param int $ttl How long the cookie shall be valid (seconds)
-     * @throws \Exception if DB post cannot be created
      * @return boolean TRUE on success, FALSE on failure to create cookie
      */
     public function createPersistentLogin(int $ttl) {
@@ -196,7 +206,10 @@ class User extends FFBoka {
             "userAgent"=>$_SERVER['HTTP_USER_AGENT'],
             ":selector"=>$selector,
             ":authenticator"=>hash('sha256', $authenticator),
-        ))) throw new \Exception($stmt->errorInfo()[2]);
+        ))) {
+            logger(__METHOD__." Failed to save persistent login cookie to db. " . $stmt->errorInfo()[2], E_ERROR);
+            return false;
+        }
         
         // Save userAgent string to database
         $stmt = self::$db->prepare("INSERT IGNORE INTO user_agents SET uaHash=:hash, userAgent=:ua");
@@ -236,7 +249,10 @@ class User extends FFBoka {
         if (!$stmt->execute([
             ":selector"=>$selector,
             ":userId"=>$this->id
-        ])) throw new \Exception($stmt->errorInfo()[2]);
+        ])) {
+            logger(__METHOD__." Failed to remove persistent login from database. " . $stmt->errorInfo()[2], E_ERROR);
+            throw new \Exception($stmt->errorInfo()[2]);
+        }
     }
     
     /**
@@ -331,10 +347,17 @@ class User extends FFBoka {
      */
     public function setNotifyAdminOnNewBooking(int $catId, string $value) {
         if ($value=="yes") {
-            if (self::$db->exec("DELETE FROM cat_admin_noalert WHERE userId={$this->id} AND catId=$catId")===FALSE) return FALSE;
+            if (self::$db->exec("DELETE FROM cat_admin_noalert WHERE userId={$this->id} AND catId=$catId")===FALSE) {
+                logger(__METHOD__." Failed to remove admin notification optout for userId {$this->id} and catId $catId. " . self::$db->errorInfo()[2], E_ERROR);
+                return FALSE;
+            }
         } elseif ($value=="no" || $value=="confirmOnly") {
-            if (self::$db->exec("INSERT INTO cat_admin_noalert SET userId={$this->id}, catId=$catId, notify='$value' ON DUPLICATE KEY UPDATE notify='$value'")===FALSE) return FALSE;
+            if (self::$db->exec("INSERT INTO cat_admin_noalert SET userId={$this->id}, catId=$catId, notify='$value' ON DUPLICATE KEY UPDATE notify='$value'")===FALSE) {
+                logger(__METHOD__." Failed to add admin notification optout for userId {$this->id} and catId $catId, value $value." . self::$db->errorInfo()[2], E_ERROR);
+                return FALSE;
+            }
         } else {
+            logger(__METHOD__." Trying to set admin notification to invalid value ($value).", E_ERROR);
             throw new \Exception("$value is not a valid value for admin notification.");
         }
         $cat = new Category($catId);
@@ -344,7 +367,6 @@ class User extends FFBoka {
             if ($u->getNotifyAdminOnNewBooking($cat)!='no') $remaining++;
         }
         return $remaining;
-        
     }
     
     /**
@@ -374,7 +396,9 @@ class User extends FFBoka {
      */
     public function cancelUnverifiedMail(string $mail) {
         $stmt = self::$db->prepare("DELETE FROM tokens WHERE forId={$this->id} AND useFor='change mail address' AND data=:data");
-        return $stmt->execute(array(":data"=>$mail));
+        if ($stmt->execute(array(":data"=>$mail))) return true;
+        logger(__METHOD__." Failed to delete record. " . $stmt->errorInfo()[2], E_ERROR);
+        return false;
     }
     
     /**

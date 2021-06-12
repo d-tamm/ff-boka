@@ -96,61 +96,55 @@ class FFBoka {
 
     /**
      * Get an updated list of all sections from API.
-     * @param bool $verbose If TRUE, outputs some diagnostic text.
      */
-    public function updateSectionList(bool $verbose=FALSE) {
-        if ($verbose) echo "Getting updated section list from API...\n";
+    public function updateSectionList() {
+        logger(__METHOD__." Getting updated section list from API...");
         $data = json_decode(file_get_contents(self::$apiFeedSec));
         // We may not remove and re-add entries because that would cause linked records in other
         // tables to be removed. So we need to use ON DUPLICATE KEY clause and keep track of last change date.
         $stmt = self::$db->prepare("INSERT INTO sections SET sectionID=:sectionID, name=:name1, timestamp=NULL ON DUPLICATE KEY UPDATE name=:name2, timestamp=NULL");
         foreach ($data->results as $section) {
             if ($section->cint_nummer && $section->cint_name) {
-                if ($verbose) echo "Updating section {$section->cint_nummer} {$section->cint_name}\n";
-                $stmt->execute(array(
+                if (!$stmt->execute(array(
                     ":sectionID" => $section->cint_nummer,
                     ":name1" => $section->cint_name,
                     ":name2" => $section->cint_name,
-                ));
+                ))) logger(__METHOD__." Failed to update section {$section->cint_nummer} {$section->cint_name}. " . self::$db->errorInfo()[2], E_ERROR);                ;
             }
         }
-        if ($verbose) echo "All sections updated from API.\n\nDeleting outdated section records...";
         $numDeleted = self::$db->exec("DELETE FROM sections WHERE TIMESTAMPDIFF(SECOND, `timestamp`, NOW())>100");
-        if ($verbose) echo " $numDeleted records deleted.\n\n";
+        logger(__METHOD__." Deleted $numDeleted outdated section records.");
     }
     
     /**
      * Get an updated list of all assignments from API.
-     * @param bool $verbose If TRUE, outputs some diagnostic text.
      */
-    public function updateAssignmentList(bool $verbose=FALSE) {
-        if ($verbose) echo "Update assignments from API...\n";
+    public function updateAssignmentList() {
+        logger(__METHOD__." Updating assignments from API...");
         $data = json_decode(file_get_contents(self::$apiFeedAllAss));
         // We may not remove and re-add entries because that would break linked records in other
         // tables. So we need to use ON DUPLICATE KEY clause and keep track of last change date.
         $stmt = self::$db->prepare("INSERT INTO assignments SET assName=:assName, sort=:sort, timestamp=NULL ON DUPLICATE KEY UPDATE timestamp=NULL");
         foreach ($data->results as $ass) {
             if ($ass->cint_name && $ass->cint_assignment_party_type->value && $ass->cint_assignment_party_type->value == FFBoka::TYPE_SECTION) {
-                if ($verbose) echo "Add assignment {$ass->cint_name}\n";
+                logger(__METHOD__." Adding assignment {$ass->cint_name}");
                 if (!$stmt->execute(array(
                     ":assName"   => $ass->cint_name,
                     ":sort" => 2
-                ))) echo "ERROR: Failed to add assignment: ".$stmt->errorInfo()[2];
+                ))) logger(__METHOD__." Failed to add assignment: " . $stmt->errorInfo()[2], E_ERROR);
                 if (strpos($ass->cint_name, ":") !== FALSE) {
                     // This is a sub-assignment to a principal assignment (e.g. Ledare: Mulle).
                     // Save the principal assignment with the string left of the colon.
-                    if ($verbose) echo "Add principal assignment for {$ass->cint_name}\n";
+                    logger(__METHOD__." Adding principal assignment for {$ass->cint_name}");
                     if (!$stmt->execute(array(
                         ":assName"   => substr($ass->cint_name, 0, strpos($ass->cint_name, ":")),
                         ":sort" => 1
-                    ))) echo "ERROR: Failed to add assignment: " . $stmt->errorInfo()[2];
+                    ))) logger(__METHOD__." Failed to add assignment: " . $stmt->errorInfo()[2], E_ERROR);
                 }
             }
         }
-        if ($verbose) echo "All assignments are updated.\n\n";
-        if ($verbose) echo "Deleting all (outdated) records not affected by the update...";
         $numDeleted = self::$db->exec("DELETE FROM assignments WHERE sort>0 AND TIMESTAMPDIFF(SECOND, timestamp, NOW())>100");
-        if ($verbose) echo "$numDeleted records deleted.\n\n";
+        logger(__METHOD__." $numDeleted outdated assignment records deleted.");
     }
     
     /**
@@ -215,8 +209,8 @@ class FFBoka {
             $userId = $matches[2].$matches[3];
             // Convert to member number via API
             $data = json_decode(@file_get_contents(self::$apiFeedSocnr . $userId));
-            //die("Personnummer: $userId, svar:".print_r($data, true));
             if ($data === FALSE) {
+                logger(__METHOD__." Cannot authenticate user. No contact to API.", E_ERROR);
                 return FALSE;
             } elseif ($data->results) {
                 $userId = $data->results[0]->cint_username;
@@ -228,6 +222,9 @@ class FFBoka {
             $stmt = self::$db->prepare("SELECT userId FROM users WHERE mail=? LIMIT 1");
             $stmt->execute(array($userId));
             if ($row = $stmt->fetch(\PDO::FETCH_OBJ)) $userId = $row->userId;
+            else {
+                return array("authenticated" => false, "section" => NULL);
+            }
         }
         // Check password via API and get home section
         $options = array(
@@ -241,7 +238,10 @@ class FFBoka {
         );
         $context  = stream_context_create($options);
         $result = @file_get_contents(self::$apiAuthUrl, false, $context);
-        if ($result === FALSE) return FALSE;
+        if ($result === FALSE) {
+            logger(__METHOD__." Can't verify password via API. No answer from API.", E_ERROR);
+            return FALSE;
+        }
         $result = json_decode($result);
         return array(
             "authenticated"=>$result->isMember,
@@ -254,7 +254,7 @@ class FFBoka {
     /**
      * Get a list of all users without creating User objects.
      * This avoids sending many queries to the API
-     * @return array[[int id, string name], ...]
+     * @return [[int id, string name], ...]
      */
     public function getAllUsers() {
         $stmt = self::$db->query("SELECT userId, name FROM users ORDER BY name");
@@ -265,7 +265,7 @@ class FFBoka {
     /**
      * Get all users complying to a search term. Name and member ID will be searched.
      * @param string|int $q Search term
-     * @return array[[int id, string name], ...] Returns an array with IDs and names rather than User objects, avoiding many API requests
+     * @return [[int id, string name], ...] Returns an array with IDs and names rather than User objects, avoiding many API requests
      */
     public function findUser($q) {
         $stmt = self::$db->prepare("SELECT userId, name FROM users WHERE userId LIKE ? OR name LIKE ?");
@@ -290,6 +290,7 @@ class FFBoka {
      */
     protected function imgFileToString($file, $maxSize=0, $thumbSize=80, $maxFileSize=0) {
         if (!is_uploaded_file($file['tmp_name'])) {
+            logger(__METHOD__." Trying to set image to a file which is not an uploaded file.", E_WARNING);
             throw new \Exception("Error: Image file must be an uploaded file.");
         }
         // reject files that are too big
@@ -300,7 +301,10 @@ class FFBoka {
         $src = @imagecreatefromstring(file_get_contents($file['tmp_name']));
         if (!$src) return array("error"=>"Filformatet stöds inte. Försök med en jpg- eller png-bild.");
         $size = @getimagesize($file['tmp_name']);
-        if (!$size) return array("error"=>"Kan inte läsa filformatet.");
+        if (!$size) {
+            logger("Failed to load image for resizing.", E_WARNING);
+            return array("error"=>"Kan inte läsa filformatet.");
+        }
         $ratio = $size[0]/$size[1];
         if ($maxSize && ($size[0]>$maxSize || $size[1]>$maxSize)) { // Resize
             if ($ratio > 1) { // portrait
@@ -349,6 +353,7 @@ class FFBoka {
             ":useFor"=>$useFor,
             ":forId"=>$forId,
         ))) {
+            logger(__METHOD__." Failed to create token. " . $stmt->errorInfo()[2], E_ERROR);
             throw new \Exception($stmt->errorInfo()[2]);
         }
         return($token);
@@ -487,7 +492,10 @@ class FFBoka {
             ":subject"  => $subject,
             ":body"     => $body,
             ":attachments" => json_encode($attachments)
-        ))) throw new \Exception("Failed to queue mail. " . $stmt->errorInfo()[2]);
+        ))) {
+            logger(__METHOD__." Failed to queue mail. " . $stmt->errorInfo()[2], E_ERROR);
+            throw new \Exception("Failed to queue mail. " . $stmt->errorInfo()[2]);
+        }
         return self::$db->lastInsertId();
     }
 
@@ -503,7 +511,6 @@ class FFBoka {
         $stmt = self::$db->query("SELECT * FROM mailq");
         $rows = $stmt->fetchAll(PDO::FETCH_OBJ);
         if (count($rows)) logger("Sending mails from mail queue...");
-        else logger("Sending mails: No mails in the mail queue.");
         foreach ($rows as $row) {
             try {
                 $mail = new PHPMailer(true);
@@ -531,14 +538,15 @@ class FFBoka {
                 $mail->Subject = $row->subject;
                 $mail->Body = $row->body;
                 $mail->AltBody = strip_tags(str_replace(array("</p>", "<br>"), array("</p>\r\n\r\n", "\r\n"), $row->body));
-                if (!$mail->send()) throw new Exception($mail->ErrorInfo);
-                $stmt = self::$db->prepare("DELETE FROM mailq WHERE mailqId=?");
-                $stmt->execute([ $row->mailqId ]);
-                logger("Mail #{$row->mailqId} has been sent to {$row->to}");
+                if (!$mail->send()) {
+                    logger(__METHOD__." Failed to send mail #{$row->mailqId} to {$row->to}. " . $mail->ErrorInfo, E_WARNING);
+                    throw new Exception($mail->ErrorInfo);
+                }
+                $stmt = self::$db->exec("DELETE FROM mailq WHERE mailqId={$row->mailqId}");
+                logger(__METHOD__." Mail #{$row->mailqId} has been sent to {$row->to}");
             } catch (Exception $e) {
-                logger("Cannot send mail #{$row->mailqId} to {$row->to}. " . $mail->ErrorInfo, "WARN");
+                logger(__METHOD__." Failed to send mail #{$row->mailqId} to {$row->to}. " . $mail->ErrorInfo, E_WARNING);
             }
         }
-        if (count($rows)) logger("All mails from queue sent.");
     }
 }

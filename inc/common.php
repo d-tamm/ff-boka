@@ -62,6 +62,7 @@ function connectDb(string $host, string $dbname, string $user, string $pass, int
     try {
         $db = new PDO("mysql:host=$host;port=$port;dbname=$dbname;charset=utf8", $user, $pass);
     } catch (PDOException $e) {
+        logger(__METHOD__." Can't connect to database. " . $db->errorInfo()[2], E_ERROR);
         die("<html><body><h1>Can't Connect to Database</h1><p>If this is a fresh installation, create a database named <tt>$dbname</tt> on host <tt>$host</tt>, and create a user named <tt>$user</tt> with complete access to that database. Set the user's password in <tt>config.php</tt>. You can also change the database and user name there.</p><p>When done, <a href='javascript:location.reload();'>reload this page</a> to continue installation.</p></body></html>");
     }
     $stmt = $db->query("SELECT value FROM config WHERE name='db-version'");
@@ -69,21 +70,27 @@ function connectDb(string $host, string $dbname, string $user, string $pass, int
         // No tables? Try to install base skeleton
         echo(str_pad("<html><body><h1>Empty Database Found</h1><p>The database seems to be empty. Trying to install base skeleton. Please wait...</p>",4096)); flush();
         if ($db->exec(file_get_contents(__DIR__ . "/../resources/db/skeleton.sql"))===FALSE) {
+            logger(__METHOD__." Failed to install db base skeleton.", E_ERROR);
             die("<p>It seems that this did not work. :(</p>");
         }
+        logger(__METHOD__." Base database skeleton installed.");
         die("<p>Finished.</p><p>You may <a href='javascript:location.reload();'>reload this page</a> to continue.</p></body></html>");
     }
     // Continue checking the db version
     $row = $stmt->fetch(PDO::FETCH_OBJ);
     $curVer = (int)$row->value;
     if ($curVer > $reqVer) {
+        logger(__METHOD__." Wrong database version found.", E_ERROR);
         die("<html><body><h1>Wrong Database Version</h1><p>The current database version (v $curVer) is higher than the expected one (v $reqVer). I cannot downgrade the database.</p></body></html>");
     } elseif ($curVer < $reqVer) {
         echo(str_pad("<html><body><h1>Database Upgrade</h1><p>The current database version (v $curVer) is lower than the expected one (v $reqVer). I will now try to upgrade the database to v $reqVer. Please wait...</p>", 4096)); flush();
         while ($curVer < $reqVer) {
             // Check that upgrade sql file exists
             $curVer++;
-            if (!is_readable(__DIR__ . "/../resources/db/$curVer.sql")) die("<p><b>Oops... Cannot find database upgrade file to v $curVer.</b> Please take contact with the maintainers of the repository who should have supplied the file /resources/db/$curVer.sql.</p><p><a href='javascript:location.reload();'>Retry</a></p></body></html>");
+            if (!is_readable(__DIR__ . "/../resources/db/$curVer.sql")) {
+                logger(__METHOD__." Cannot find database upgrade file.", E_ERROR);
+                die("<p><b>Oops... Cannot find database upgrade file to v $curVer.</b> Please take contact with the maintainers of the repository who should have supplied the file /resources/db/$curVer.sql.</p><p><a href='javascript:location.reload();'>Retry</a></p></body></html>");
+            }
             echo(str_pad("<h3>Upgrading from v " . ($curVer-1) . " to v $curVer...</h3>", 4096)); flush();
             // If exists, include php code related to db upgrade
             if (is_readable(__DIR__ . "/../resources/db/$curVer.php")) {
@@ -94,14 +101,17 @@ function connectDb(string $host, string $dbname, string $user, string $pass, int
             }
             // Apply SQL upgrade
             if ($db->exec(file_get_contents(__DIR__ . "/../resources/db/$curVer.sql"))===FALSE) {
+                logger(__METHOD__." Failed to install database upgrade. " . $db->errorInfo()[2], E_ERROR);
                 die("<p><b>It seems that this did not work. :(</b></p>");
             }
             // Double check success by checking DB version number
             $stmt = $db->query("SELECT value FROM config WHERE name='db-version'");
             $ver = $stmt->fetch(PDO::FETCH_OBJ);
             if ($ver->value == $curVer) {
+                logger(__METHOD__." Database upgraded to version $curVer");
                 echo "<p>Successful upgrade to version $curVer.</p>";
             } else {
+                logger(__METHOD__." Database versions do not match after upgrade.", E_ERROR);
                 echo "<p><b>Upgrade to version $curVer has failed.</b></p>";
             }
         }
@@ -278,9 +288,9 @@ function resolveUserAgent(string $userAgent, PDO $db, string $format='%browser% 
 /**
  * Log messages to file.
  * @param string $message The message to log.
- * @param string $channel Will be prefixed to the message. Defaults to INFO.
+ * @param int $level Will be prefixed to the message. Either E_NOTICE, E_WARNING or E_ERROR
  */
-function logger(string $message, string $channel="INFO") {
+function logger(string $message, int $level=E_NOTICE) {
     global $cfg;
     // check write permissions on parent directory
     if ($cfg['logFile'] && is_writable(dirname($cfg['logFile']))) { // custom log file
@@ -294,6 +304,11 @@ function logger(string $message, string $channel="INFO") {
     } else { // system log file
         $logFile = "";
     }
-    if ($logFile === "") error_log("ff-boka $channel $message\n");
-    else error_log(strftime("%F %T") . " $channel $message\n", 3, $logFile);
+    switch ($level) {
+        case E_WARNING: $sLevel = "WARNING"; break;
+        case E_ERROR: $sLevel = "ERROR"; break;
+        default: $sLevel = "NOTICE";
+    }
+    if ($logFile === "") error_log("ff-boka $sLevel $message\n");
+    else error_log(strftime("%F %T") . " $sLevel $message\n", 3, $logFile);
 }

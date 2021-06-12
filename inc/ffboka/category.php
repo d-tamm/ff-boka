@@ -18,6 +18,7 @@ class Category extends FFBoka {
     /**
      * Initialize category with ID and get some static properties.
      * @param int $id ID of requested category. If 0|FALSE|"" returns a dummy cateogory with id=0.
+     * @throws \Exception if $id is given but not valid.
      */
     public function __construct($id){
         if ($id) { // Try to return an existing category from database
@@ -27,6 +28,7 @@ class Category extends FFBoka {
                 $this->id = $row->catId;
                 $this->sectionId = $row->sectionId;
             } else {
+                logger(__METHOD__." Tried to get non-existing category with ID $id", E_ERROR);
                 throw new \Exception("Can't instatiate category with ID $id.");
             }
         } else { // Return an empty object without link to database
@@ -73,8 +75,10 @@ class Category extends FFBoka {
                 $stmt = self::$db->prepare("UPDATE categories SET $name=:value WHERE catId={$this->id}");
                 $stmt->bindValue(":value", $value); // Use bindValue so contactUserId can be set to null
                 if ($stmt->execute()) return $value;
+                logger(__METHOD__." Failed to set Category property $name. " . $stmt->errorInfo()[2], E_ERROR);
                 break;
             default:
+                logger(__METHOD__." Use of undefined Category property $name.", E_ERROR);
                 throw new \Exception("Use of undefined Category property $name");
         }
         return false;
@@ -89,15 +93,24 @@ class Category extends FFBoka {
      * @return boolean|string True on success, error message on failure
      */
     public function setImage($imgFile, $maxSize=0, $thumbSize=80, $maxFileSize=0) {
-        if (!$this->id) return "Cannot set image on dummy category.";
+        if (!$this->id) {
+            logger(__METHOD__." Trying to set image on dummy category.", E_ERROR);
+            return "Cannot set image on dummy category.";
+        }
         if (!file_exists(__DIR__."/../../img/cat")) {
-            if (!mkdir(__DIR__."/../../img/cat", 0777, true)) return "Kan inte spara bilden. Kan inte skapa mappen för kategoribilder (./img/cat). Kontakta administratören.";
+            if (!mkdir(__DIR__."/../../img/cat", 0777, true)) {
+                logger(__METHOD__." Failed to create directory to save category image.", E_ERROR);
+                return "Kan inte spara bilden. Kan inte skapa mappen för kategoribilder (./img/cat). Kontakta administratören.";
+            }
         }
         $images = $this->imgFileToString($imgFile, $maxSize, $thumbSize, $maxFileSize);
         if ($images['error']) return $images['error'];
         // Save thumb to database
         $stmt = self::$db->prepare("UPDATE categories SET thumb=? WHERE catID={$this->id}");
-        if (!$stmt->execute(array($images['thumb']))) return "Kan inte spara miniaturbilden i databasen.";
+        if (!$stmt->execute(array($images['thumb']))) {
+            logger(__METHOD__." Failed to save thumbnail to database. " . $stmt->errorInfo()[2], E_ERROR);
+            return "Kan inte spara miniaturbilden i databasen.";
+        }
         // Save full size image to file system
         if (file_put_contents(__DIR__ . "/../../img/cat/{$this->id}", $images['image'])===FALSE) return "Kan inte spara originalbilden på ./img/cat. Är mappen skrivskyddad? Kontakta administratören.";
         return TRUE;
@@ -144,6 +157,7 @@ class Category extends FFBoka {
                 $stmt = self::$db->query("SELECT itemId FROM items WHERE catId={$this->id}");
                 return $stmt->rowCount();
             default:
+                logger(__METHOD__." Use of undefined Category property $name.", E_ERROR);
                 throw new \Exception("Use of undefined Category property $name");
         }
     }
@@ -231,6 +245,7 @@ class Category extends FFBoka {
         if (self::$db->exec("DELETE FROM categories WHERE catId={$this->id}")) {
             return TRUE;
         } else {
+            logger(__METHOD__." Failed to delete category {$this->id}.", E_ERROR);
             throw new \Exception("Failed to delete category.");
         }
     }
@@ -262,7 +277,9 @@ class Category extends FFBoka {
         $stmt = self::$db->prepare("INSERT INTO cat_questions SET questionId=:questionId, catId={$this->id}, required=:required ON DUPLICATE KEY UPDATE required=VALUES(required)");
         $stmt->bindValue("questionId", $id, \PDO::PARAM_INT);
         $stmt->bindValue(":required", $required, \PDO::PARAM_BOOL);
-        return ($stmt->execute());
+        if ($stmt->execute()) return true;
+        logger(__METHOD__." Failed to add question $id to category {$this->id}. " . $stmt->errorInfo()[2], E_ERROR);
+        return false;
     }
     
     /**
@@ -272,7 +289,9 @@ class Category extends FFBoka {
      */
     public function removeQuestion(int $id) {
         $stmt = self::$db->prepare("DELETE FROM cat_questions WHERE questionId=? AND catId={$this->id}");
-        return $stmt->execute(array($id));
+        if ($stmt->execute(array($id))) return true;
+        logger(__METHOD__." Failed to remove question $id from category {$this->id}. " . $stmt->errorInfo()[2], E_ERROR);
+        return false;
     }
     
     
@@ -281,15 +300,21 @@ class Category extends FFBoka {
      * @param $_FILES[x] $file A member of the $_FILES array
      * @param array $allowedFileTypes Associative array of $extension=>$icon_filename pairs.
      * @param int $maxSize The maximum accepted file size in bytes. Defaults to 0 (no limit)
-     * @throws \Exception if trying to upload files with unallowed file types
+     * @throws \Exception if trying to upload files with unallowed file types, too big files, or if this is a dummy category.
      * @return int ID of the added file
      */
     public function addFile($file, $allowedFileTypes, int $maxSize=0) {
-        if (!$this->id) die("Cannot add file to dummy category.");
+        if (!$this->id) {
+            logger(__METHOD__." Cannot add file to dummy category.", E_ERROR);
+            throw new \Exception("Internt fel.");
+        }
         if ($maxSize && filesize($file['tmp_name'])>$maxSize) { 
             throw new \Exception("Filen är för stor. Största tillåtna storleken är " . self::formatBytes($maxSize) . ".");
         }
-        if (!is_uploaded_file($file['tmp_name'])) throw new \Exception("This is not an uploaded file.");
+        if (!is_uploaded_file($file['tmp_name'])) {
+            logger(__METHOD__." Trying to set non-uploaded file as attachment.", E_WARNING);
+            throw new \Exception("This is not an uploaded file.");
+        }
         $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
         if (!array_key_exists($ext, $allowedFileTypes)) {
             throw new \Exception("Du kan inte ladda upp filer av typen $ext. Bara följande filtyper tillåts: " . implode(", ", array_keys($allowedFileTypes)));
@@ -304,9 +329,15 @@ class Category extends FFBoka {
         $newId = self::$db->lastInsertId();
         // Move file
         if (!is_dir(__DIR__."/../../uploads")) {
-            if (!mkdir(__DIR__."/../../uploads")) die("Cannot create directory for uploaded files.");
+            if (!mkdir(__DIR__."/../../uploads")) {
+                logger(__METHOD__." Failed to create directory for uploaded files.", E_ERROR);
+                throw new \Exception("Kan inte spara filen. Kontakta systemadministratören.");
+            }
         }
-        if (!move_uploaded_file($file['tmp_name'], __DIR__."/../../uploads/$newId")) throw new \Exception("Kunde inte spara filen.");
+        if (!move_uploaded_file($file['tmp_name'], __DIR__."/../../uploads/$newId")) {
+            logger(__METHOD__." Failed to save uploaded file.", E_ERROR);
+            throw new \Exception("Kunde inte spara filen.");
+        }
         return $newId;
     }
     
@@ -315,8 +346,8 @@ class Category extends FFBoka {
      * @param int $fileId
      * @param string $name The name of the property to set. Must be one of caption|filename|displayLink|attachFile
      * @param mixed $value The value of the property to set
-     * @throws \Exception if trying to set a property with another name than listed above.
-     * @return int|bool Number of changed rows, or FALSE on failure
+     * @throws \Exception if trying to set an invalid property.
+     * @return bool True on success, or FALSE on failure
      */
     public function setFileProp(int $fileId, string $name, $value) {
         switch ($name) {
@@ -328,9 +359,12 @@ class Category extends FFBoka {
             if ($name=="displayLink" || $name=="attachFile") $stmt->bindValue(":$name", $value, \PDO::PARAM_BOOL);
             else $stmt->bindValue(":$name", $value, \PDO::PARAM_STR);
             $stmt->bindValue(":fileId", $fileId, \PDO::PARAM_INT);
-            return $stmt->execute();
+            if ($stmt->execute()) return true;
+            logger(__METHOD__." Failed to set File property $name on file $fileId. " . $stmt->errorInfo()[2], E_ERROR);
+            return false;
             break;
         default: 
+            logger(__METHOD__." Trying to set invalid property $name on file attachment {$this->id}", E_ERROR);
             throw new \Exception("Cannot set property $name on file attachment.");
         }
     }
@@ -338,11 +372,15 @@ class Category extends FFBoka {
     /**
      * Delete an uploaded category attachment file 
      * @param int $fileId ID of the file to be deleted
-     * @return bool|int Number of deleted records, False on failure
+     * @return bool True on success, False on failure
      */
     function removeFile(int $fileId) {
-        if (!unlink(__DIR__."/../../uploads/$fileId")) return FALSE;
-        return self::$db->exec("DELETE FROM cat_files WHERE catId={$this->id} AND fileId=$fileId");
+        if (unlink(__DIR__."/../../uploads/$fileId")) {
+            if (self::$db->exec("DELETE FROM cat_files WHERE catId={$this->id} AND fileId=$fileId")) return true;
+            logger(__METHOD__." Failed to delete attachment record $fileId from DB. " . self::$db->errorInfo()[2], E_WARNING);
+        }
+        logger(__METHOD__." Failed to unlink attachment file " . realpath(__DIR__."/../../uploads/$fileId"), E_WARNING);
+        return FALSE;
     }
     
     /**
@@ -419,7 +457,9 @@ class Category extends FFBoka {
                 // Revoke permission for user group with assignment
                 $stmt = self::$db->prepare("DELETE FROM cat_perms WHERE catId={$this->id} AND assName=?");
             }
-            return $stmt->execute(array($id));
+            if ($stmt->execute([ $id ])) return true;
+            logger(__METHOD__." Failed to revoke access. " . $stmt->errorInfo()[2], E_ERROR);
+            return false;
         }
         if (is_numeric($id)) {
             // Set permission for single user
@@ -428,10 +468,8 @@ class Category extends FFBoka {
             // Set permission for user group with assignment
             $stmt = self::$db->prepare("INSERT INTO cat_perms SET catId={$this->id}, assName=:id, access=:access ON DUPLICATE KEY UPDATE access=VALUES(access)");
         }
-        return $stmt->execute(array(
-            ":id"=>$id,
-            ":access"=>$access,
-        ));
+        if ($stmt->execute([ ":id"=>$id, ":access"=>$access ])) return true;
+        logger(__METHOD__." Failed to set access. " . $stmt->errorInfo()[2], E_ERROR);
     }
     
     /**
@@ -552,6 +590,7 @@ class Category extends FFBoka {
         if (self::$db->exec("INSERT INTO items SET catId={$this->id}, caption='Ny resurs'")) {
             return new Item(self::$db->lastInsertId());
         } else {
+            logger(__METHOD__." Failed to add item to category {$this->id}. " . self::$db->errorInfo()[2], E_ERROR);
             throw new \Exception("Failed to create item.");
         }
     }
