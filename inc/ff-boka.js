@@ -1367,12 +1367,15 @@ function setCatProp(name, val) {
             $("#cat-contactMail").val(data.contactMail);
             $("#cat-contact-autocomplete-input").val("");
             $("#cat-contact-autocomplete").html("");
+            if (name=="contactMail") $("#cat-contactMailInvalid").hide();
             if (data.contactType=="user") $("#btn-unset-contact-user").show();
             else $("#btn-unset-contact-user").hide();
             if (name != "onlyGetContactData") {
                 $("#cat-saved-indicator").addClass("saved");
                 setTimeout(function(){ $("#cat-saved-indicator").removeClass("saved"); }, 2500);
             }
+        } else if (data.status=="contactMailInvalid") {
+            $("#cat-contactMailInvalid").show();
         } else {
             alert("Kan inte spara ändringen :(");
         }

@@ -226,6 +226,13 @@ switch ($_REQUEST['action']) {
             case "prebookMsg":
             case "postbookMsg":
             case "bufferAfterBooking":
+                if ($_REQUEST['name']=="contactMail") {
+                    // check if this is a valid email address
+                    if ($_REQUEST['value']!=="" && !filter_var($_REQUEST['value'], FILTER_VALIDATE_EMAIL)) {
+                        header("Content-Type: application/json");
+                        die(json_encode([ "status"=>"contactMailInvalid" ]));
+                    }
+                }
                 if ($_REQUEST['value']=="NULL") $cat->{$_REQUEST['name']} = null;
                 else $cat->{$_REQUEST['name']} = $_REQUEST['value'];
                 // Yes, continue. No break here.
@@ -474,6 +481,7 @@ unset ($_SESSION['itemId']);
             <div class="ui-field-contain">
                 <label for="cat-contactMail">Epost:</label>
                 <input name="contactMail" id="cat-contactMail" placeholder="Epost" value="<?= htmlspecialchars($cat->contactMail) ?>">
+                <span style="font-size:small; color:red; <?= ($cat->contactMail=="" || filter_var($cat->contactMail, FILTER_VALIDATE_EMAIL)) ? "display:none;" : "" ?>" id="cat-contactMailInvalid">Epostadressen är felaktig och sparades inte.</span>
             </div>
 
             <input id="cat-contact-autocomplete-input" data-type="search" placeholder="Eller välj medlem som kontaktperson...">
