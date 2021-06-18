@@ -158,7 +158,7 @@ switch ($_REQUEST['action']) {
     <dt>Text vid bokning</dt><dd>Denna text kommer att visas i samband med kategorin medans man bokar resurser. Det är alltså information som gäller för alla resurser i den här kategorin, samt för underordnade kategorier, och som du vill att den visas i bokningsflödet även om användaren inte öppnar detaljsidan för resurserna. Det kan t.ex. vara särskilda bokningsregler som gäller, eller en påminnelse om att även boka relaterad utrustning som inte ingår per automatik.</dd>
     <dt>Text i bokningsbekräftelse</dt><dd>Som ovan, men visas istället i meddelandet som användaren får som bokningsbekräftelse. Det är ett bra ställe för att nämna var nyckeln ska hämtas, regler kring slutstädning mm.</dd>
     <dt>Bufferttid</dt><dd>Ibland behöver man lite tid mellan bokningarna, t.ex. för städning av stugor eller översyn av utrustning. Här kan du ställa in antalet timmar före/efter befintliga bokningar som är spärrade för nya bokningar. <i>OBS: Denna inställning gäller bara för resurser i den här kategorin och ärvs inte till underordnade kategorier!</i></dd>
-    <dt>Bokningsmeddelanden</dt><dd>När nya bokningar görs i kategorin skickas normalt ett meddelande till bokningsansvariga (se nedan), som dock kan välja att stänga av dessa meddelanden i sina personliga inställningar. Om du vill att bokningsmeddelanden dessutom ska skickas till en eller flera funktionella epostadresser kan du lägga in dem här. Separera flera adresser med ett kommatecken.</dd>  
+    <dt>Bokningsmeddelanden</dt><dd>När nya bokningar görs i kategorin skickas normalt ett meddelande till bokningsansvariga (se nedan), som dock kan välja att stänga av dessa meddelanden i sina personliga inställningar. Om du vill att bokningsmeddelanden dessutom ska skickas till en eller flera funktionella epostadresser kan du lägga in dem här.</dd>  
 </dl>
 
 <h3>Kontaktuppgifter</h3>
@@ -226,6 +226,13 @@ switch ($_REQUEST['action']) {
             case "prebookMsg":
             case "postbookMsg":
             case "bufferAfterBooking":
+                if ($_REQUEST['name']=="contactMail") {
+                    // check if this is a valid email address
+                    if ($_REQUEST['value']!=="" && !filter_var($_REQUEST['value'], FILTER_VALIDATE_EMAIL)) {
+                        header("Content-Type: application/json");
+                        die(json_encode([ "status"=>"contactMailInvalid" ]));
+                    }
+                }
                 if ($_REQUEST['value']=="NULL") $cat->{$_REQUEST['name']} = null;
                 else $cat->{$_REQUEST['name']} = $_REQUEST['value'];
                 // Yes, continue. No break here.
@@ -243,7 +250,30 @@ switch ($_REQUEST['action']) {
                 logger("Trying to set unknown category property via ajax.", "ERROR");
                 die(json_encode([ "status"=>"error", "error"=>"Unknown field name." ]));
         }
-        
+
+    case "ajaxAddAlert":
+        header("Content-Type: application/json");
+        // Validate input
+        if (filter_var($_GET['sendAlertTo1'], FILTER_VALIDATE_EMAIL) === false) {
+            die(json_encode([ "status"=>"error", "error"=>"{$_GET['sendAlertTo1']} är ingen giltig epostadress." ]));
+        }
+        if ($alerts = $cat->sendAlertTo) $alerts = explode(", ", $alerts);
+        else $alerts = [];
+        $alerts[] = $_GET['sendAlertTo1'];
+        $cat->sendAlertTo = implode(", ", $alerts);
+        die(json_encode([ "status" => "OK" ]));
+
+    case "ajaxDeleteAlert":
+        header("Content-Type: application/json");
+        $alerts = explode(", ", $cat->sendAlertTo);
+        if (($key = array_search($_GET['sendAlertTo1'], $alerts)) !== false) {
+            unset($alerts[$key]);
+            $cat->sendAlertTo = implode(", ", $alerts);
+            die(json_encode([ "status"=>"OK" ]));
+        }
+        logger(__METHOD__." Tried to remove non-existent sendAlertTo-address.");
+        die(json_encode([ "status"=>"error" ]));
+
     case "ajaxSetImage":
         if ($cat->getAccess($currentUser) < FFBoka::ACCESS_CATADMIN) {
             http_response_code(403);
@@ -431,8 +461,8 @@ unset ($_SESSION['itemId']);
                 <input name="bufferAfterBooking" type="number" min="0" id="cat-bufferAfterBooking" placeholder="Buffertid mellan bokingnar" value="<?= $cat->bufferAfterBooking ?>">
             </div>
             
-            <label for="cat-sendAlertTo">Förutom till bokningsansvariga, skicka meddelande om nya bokningar till:</label>
-                <input name="sendAlertTo" id="cat-sendAlertTo" placeholder="t.ex. kanoter@gmail.com, emil@yahoo.com" value="<?= htmlspecialchars($cat->sendAlertTo) ?>">
+            <label for="cat-sendAlertTo">Förutom till bokningsansvariga (se nedan under Behörigheter), skicka aviseringar om nya bokningar även till följande adresser:</label>
+            <div data-tags-input-name="sendAlertTo" id="cat-sendAlertTo"><?= htmlspecialchars($cat->sendAlertTo) ?></div>
 
             <button class="ui-btn ui-btn-c" id="delete-cat">Radera kategorin</button>
         </div>
@@ -451,6 +481,7 @@ unset ($_SESSION['itemId']);
             <div class="ui-field-contain">
                 <label for="cat-contactMail">Epost:</label>
                 <input name="contactMail" id="cat-contactMail" placeholder="Epost" value="<?= htmlspecialchars($cat->contactMail) ?>">
+                <span style="font-size:small; color:red; <?= ($cat->contactMail=="" || filter_var($cat->contactMail, FILTER_VALIDATE_EMAIL)) ? "display:none;" : "" ?>" id="cat-contactMailInvalid">Epostadressen är felaktig och sparades inte.</span>
             </div>
 
             <input id="cat-contact-autocomplete-input" data-type="search" placeholder="Eller välj medlem som kontaktperson...">
@@ -596,6 +627,7 @@ unset ($_SESSION['itemId']);
     </div><!--/collapsibleset-->
     </div><!--/main-->
 
+    <script src="../inc/tagging.js"></script>
 </div><!--/page-->
 </body>
 </html>

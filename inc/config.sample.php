@@ -96,8 +96,8 @@ $cfg = array(
     "cronWeekly" => 7, // Day of week, Monday=1, Sunday=7
     "cronMonthly" => 1, // Day of month, 1...31
 
-    // Name and location of log file. If not set, logging will be directed to the php log file.
-    "logFile" => "",
+    // Name and location of log file. Use an absolute path. If not set, logging will be directed to the php log file.
+    "logFile" => __DIR__."/../../ff-boka.log",
     // Max log file size in bytes. Defaults to 1 MB if not set.
     "logMaxSize" => 1024*1024,
 
