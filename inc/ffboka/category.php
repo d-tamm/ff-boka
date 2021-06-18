@@ -65,7 +65,10 @@ class Category extends FFBoka {
             case "accessMember":
             case "accessLocal":
             case "hideForExt":
-                if (!$this->id) throw new \Exception("Cannot set property $name on dummy category.");
+                if (!$this->id) {
+                    logger(__METHOD__." Cannot set property $name on dummy category.", E_ERROR);
+                    return false;
+                }
                 // For contact data, only allow either member as contact person, or single data
                 if ($name=="contactName" || $name=="contactPhone" || $name=="contactMail") {
                     self::$db->exec("UPDATE categories SET contactUserId=NULL WHERE catId={$this->id}");

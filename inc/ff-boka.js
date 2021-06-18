@@ -1033,6 +1033,7 @@ function removeAdmin(userId, currentUserId, name) {
 
 // ========== admin/category.php ==========
 var chosenAccessId;
+var t, $tag_box;
 
 $(document).on('pagecreate', "#page-admin-category", function() {
     // bind events
@@ -1074,14 +1075,6 @@ $(document).on('pagecreate', "#page-admin-category", function() {
     $(document).off('input', "#cat-bufferAfterBooking").on('input', "#cat-bufferAfterBooking", function() {
         clearTimeout(toutSetValue);
         toutSetValue = setTimeout(setCatProp, 1000, "bufferAfterBooking", this.value);
-    });
-
-    /**
-     * Set send-alert-to
-     */
-    $(document).off('input', "#cat-sendAlertTo").on('input', "#cat-sendAlertTo", function() {
-        clearTimeout(toutSetValue);
-        toutSetValue = setTimeout(setCatProp, 1000, "sendAlertTo", this.value);
     });
 
     /**
@@ -1286,6 +1279,45 @@ $(document).on('pagecreate', "#page-admin-category", function() {
 
 $(document).on('pageshow', "#page-admin-category", function() {
     setCatProp("onlyGetContactData", "");
+
+    t = $("#cat-sendAlertTo").tagging({
+        "forbidden-chars": ["<", ">", " ", ","],
+        "edit-on-delete": false,
+        "tag-char": "✉"
+    });
+    $sendAlertTo = t[0]; // This is the $tag_box object of the first captured div
+
+    $sendAlertTo.on( "add:after", function ( elem, text, tagging ) {
+        $.mobile.loading("show", {});
+        $.getJSON("category.php", {
+            action: "ajaxAddAlert", 
+            sendAlertTo1: text
+        }).done(function(data, status) {
+            $.mobile.loading("hide", {});
+            if (data.status=="error") {
+                $("#cat-sendAlertTo").tagging("remove", text);
+                alert(data.error);
+            } else {
+                $("#cat-saved-indicator").addClass("saved");
+                setTimeout(function(){ $("#cat-saved-indicator").removeClass("saved"); }, 2500);
+            }
+        });
+    });
+    $sendAlertTo.on( "remove:after", function( elem, text, tagging) {
+        $.mobile.loading("show", {});
+        $.getJSON("category.php", {
+            action: "ajaxDeleteAlert", 
+            sendAlertTo1: text
+        }).done(function(data, status) {
+            $.mobile.loading("hide", {});
+            if (data.status=="error") {
+            } else {
+                $("#cat-saved-indicator").addClass("saved");
+                setTimeout(function(){ $("#cat-saved-indicator").removeClass("saved"); }, 2500);
+            }
+        });
+    });
+      
 
     // Show message if there is any
     if ($("#msg-page-admin-category").html()) {

@@ -392,7 +392,7 @@ class Booking extends FFBoka {
             if ($item->status !== self::STATUS_REJECTED) {
                 // Functional email addresses to notify in this category
                 if ($alerts = $cat->sendAlertTo) {
-                    foreach (explode(",", $alerts) as $alert) {
+                    foreach (explode(", ", $alerts) as $alert) {
                         $adminsToNotify[trim($alert)][] = $item->bookedItemId;
                     }
                 }
