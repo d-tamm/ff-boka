@@ -304,6 +304,10 @@ class Booking extends FFBoka {
                     }
                     $msgRef[] = "(".(array_search($msg, $messages)+1).")";
                 }
+                if ($msg = $item->postbookMsg) {
+                    if (!in_array($msg, $messages)) $messages[] = $msg;
+                    $msgRef[] = "(".(array_search($msg, $messages)+1).")";
+                }
             }
             // Add item to table with booked items
             $itemList .= "<tr><td>" . htmlspecialchars($item->caption) . "</td>";
