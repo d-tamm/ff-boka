@@ -61,7 +61,7 @@ if (isset($_REQUEST['message'])) $message = $_REQUEST['message'];
  */
 function findCatsWithoutAdmin(Category $cat, &$catsWithoutAdmin) {
     $admins = $cat->admins(FFBoka::ACCESS_CONFIRM);
-    if (count($admins)==0) {
+    if (count($admins)==0 && $cat->sendAlertTo=="") {
         if (count($cat->items())>0) {
             $catsWithoutAdmin[$cat->id] = $cat->caption;
         } else {
