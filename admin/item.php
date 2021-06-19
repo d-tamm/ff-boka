@@ -118,6 +118,7 @@ EOF;
         switch ($_REQUEST['name']) {
             case "caption":
             case "description":
+            case "postbookMsg":
             case "active":
             case "note":
             case "imageId":
@@ -126,6 +127,7 @@ EOF;
                 else $item->{$_REQUEST['name']} = $_REQUEST['value'];
                 die(json_encode(["status"=>"OK"]));
         }
+        logger(__METHOD__." Tried to set invalid item property {$_REQUEST['name']}.", E_WARNING);
         break;
         
     case "ajaxDeleteItem":
@@ -213,6 +215,11 @@ EOF;
         <div class="ui-field-contain">
             <label for="item-description">Beskrivning:</label>
             <textarea name="description" class="ajax-input" id="item-description" placeholder="Beskrivning"><?= htmlspecialchars($item->description) ?></textarea>
+        </div>
+
+        <div class="ui-field-contain">
+            <label for="item-postbookMsg">Text som ska skickas med bokningsbekräftelsen:</label>
+            <textarea name="postbookMsg" class="ajax-input" id="item-postbookMsg" placeholder="T.ex. kod till hänglås"><?= htmlspecialchars($item->postbookMsg) ?></textarea>
         </div>
         
         <label><input type="checkbox" name="active" value="1" id="item-active" <?= $item->active ? "checked='true'" : "" ?>>Aktiv (kan bokas)</label>

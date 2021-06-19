@@ -130,9 +130,9 @@ case "savePoll":
 
 case "currentLog":
     header('Content-Type: text/html');
-    if (is_readable("../".$cfg['logFile']) && !is_dir("../".$cfg['logFile'])) {
+    if (is_readable($cfg['logFile']) && !is_dir($cfg['logFile'])) {
         echo "<p>Show <a href='?action=currentLog&level=1'>ERRORs</a> <a href='?action=currentLog&level=2'>WARNINGs</a> <a href='?action=currentLog&level=8'>NOTICEs</a></p>";
-        $file = file("../".$cfg['logFile']);
+        $file = file($cfg['logFile']);
         switch ($_GET['level']) {
             case E_NOTICE: $reg = "NOTICE|WARNING|ERROR"; break;
             case E_WARNING: $reg = "WARNING|ERROR"; break;
@@ -205,7 +205,7 @@ $cronDelayed = ($lastCron==0 || $lastCron < time()-3600);
             <p><?= $lastCron==0 ? "Cron har aldrig utförts" : "Cron utfördes senast för " . (int)((time()-$lastCron)/60) . " minuter sedan" ?>.</p>
             
             <?php
-            if (is_readable("../".$cfg['logFile']) && !is_dir("../".$cfg['logFile'])) { ?>
+            if (is_readable($cfg['logFile']) && !is_dir($cfg['logFile'])) { ?>
             <h3>Systemlogg</h3>
             <a target="_blank" class="ui-btn ui-btn-a" href="?action=currentLog">Visa systemloggen</a>
             <?php } ?>
