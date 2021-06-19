@@ -1469,6 +1469,14 @@ $(document).on('pagecreate', "#page-admin-item", function() {
     });
 
     /**
+     * Set timeout for saving item postbook message
+     */
+     $("#item-postbookMsg").on('input', function() {
+        clearTimeout(toutSetValue);
+        toutSetValue = setTimeout(setItemProp, 1000, "postbookMsg", this.value);
+    });
+
+    /**
      * Save item active state
      */
     $("#item-active").click(function() {

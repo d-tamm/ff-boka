@@ -62,6 +62,7 @@ class Item extends FFBoka {
                 return $value;
             case "caption":
             case "description":
+            case "postbookMsg":
             case "active":
             case "note":
             case "imageId":
@@ -117,6 +118,7 @@ class Item extends FFBoka {
                 
             case "caption":
             case "description":
+            case "postbookMsg":
             case "active":
             case "note":
             case "imageId":
