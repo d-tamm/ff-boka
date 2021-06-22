@@ -276,7 +276,7 @@ if (isset($_GET['first_login'])) $message = "Välkommen till resursbokningen! In
                 </div>
                 <div class="ui-field-contain">
                     <label for="userdata-mail" class="required">Epost:</label>
-                    <input type="email" name="mail" id="userdata-mail" required placeholder="Epost" value="<?= htmlspecialchars($currentUser->mail) ?>">
+                    <input type="email" name="mail" id="userdata-mail" required autocomplete="off" placeholder="Epost" value="<?= htmlspecialchars($currentUser->mail) ?>">
                     <?php
                     $newMails = $currentUser->getUnverifiedMails();
                     if ($newMails) {
