@@ -836,11 +836,11 @@ $(document).on('pagecreate', "#page-admin-section", function() {
             $ul.listview( "refresh" );
             $.getJSON("index.php", {action: "ajaxFindUser", q: value}, function(data, status) {
                 $.each( data, function ( i, val ) {
-                    html += "<li style='cursor:pointer;' title='Lägg till " + val.name + " som LA-admin' onClick='addAdmin(" + val.userId + ");'>" + val.userId + " " + (val.name ? val.name : "(ingen persondata tillgänglig)") + "</li>";
+                    html += "<li style='cursor:pointer;' title='Lägg till " + val.name + " som LA-admin' onClick='addAdmin(" + val.userId + ");'>" + val.userId + " " + (val.name ? val.name : "(inget namn tillgängligt)") + "</li>";
                 });
                 if (data.length==0) {
-                    if (Number(value)) html += "<li style='cursor:pointer;' title='Lägg till medlem med medlemsnummer " + Number(value) + " som LA-admin' onClick='addAdmin(" + Number(value) + ");'>" + Number(value) + " (ny användare)</li>";
-                    else html += "<li>Sökningen på <i>" + value + "</i> gav ingen träff</li>";
+                    if (Number(value)) html += "<li style='cursor:pointer;' title='Lägg till medlem med medlemsnummer " + Number(value) + " som LA-admin' onClick='addAdmin(" + Number(value) + ");'>" + Number(value) + " (skapa ny användare)</li>";
+                    else html += "<li>Sökningen på <i>" + value + "</i> gav ingen träff. Testa ange medlemsnummer istället.</li>";
                 }
                 $ul.html( html );
                 $ul.listview( "refresh" );
