@@ -1368,6 +1368,10 @@ function setCatProp(name, val) {
             $("#cat-contact-autocomplete-input").val("");
             $("#cat-contact-autocomplete").html("");
             if (name=="contactMail") $("#cat-contactMailInvalid").hide();
+            if (name=="caption") {
+                $("#page-caption").text(val);
+                $("#cat-breadcrumb-last").text(val);
+            }
             if (data.contactType=="user") $("#btn-unset-contact-user").show();
             else $("#btn-unset-contact-user").hide();
             if (name != "onlyGetContactData") {
