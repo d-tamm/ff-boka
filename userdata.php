@@ -119,6 +119,7 @@ EOF;
                         "{{name}}" => $currentUser->name,
                         "{{new_mail}}" => $_POST['mail'],
                         "{{link}}" => "{$cfg['url']}index.php?t=$token",
+                        "{{expires}}" => strftime("%c", time()+86400),
                     )
                 );
                 $message = "Dina kontaktuppgifter har sparats. Ett meddelande har skickats till adressen {$_POST['mail']}. Använd länken i mejlet för att aktivera den nya adressen.<br><br>Hittar du inte mejlet? Kolla i skräpkorgen!";
