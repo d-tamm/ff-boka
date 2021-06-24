@@ -214,7 +214,7 @@ if (isset($_SESSION['authenticatedUser'])) {
         session_destroy();
         session_write_close();
         setcookie(session_name(), "", 0, "/");
-    } elseif (!$currentUser->name || !$currentUser->mail || !$currentUser->phone) {
+    } elseif (!isset($_REQUEST['t']) && (!$currentUser->name || !$currentUser->mail || !$currentUser->phone)) {
         // We are missing contact details for this user. Redirect to page where he/she must supply them.
         // (We don't allow to use the system without contact data.)
         header("Location: userdata.php?first_login=1");

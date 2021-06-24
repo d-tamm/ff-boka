@@ -119,6 +119,7 @@ EOF;
                         "{{name}}" => $currentUser->name,
                         "{{new_mail}}" => $_POST['mail'],
                         "{{link}}" => "{$cfg['url']}index.php?t=$token",
+                        "{{expires}}" => strftime("%c", time()+86400),
                     )
                 );
                 $message = "Dina kontaktuppgifter har sparats. Ett meddelande har skickats till adressen {$_POST['mail']}. Använd länken i mejlet för att aktivera den nya adressen.<br><br>Hittar du inte mejlet? Kolla i skräpkorgen!";
@@ -130,12 +131,6 @@ EOF;
         } else {
             $message = "Fyll i namn, epostadress och mobilnummer, tack.";
         }
-        break;
-        
-    case "cancelMailChange":
-        if ($currentUser->cancelUnverifiedMail($_REQUEST['mail'])) $message = "Processen att byta epostadress till {$_REQUEST['mail']} har nu avbrutits.";
-        else $message="Något har gått fel. Kontakta systemadmin.";
-        $_REQUEST['expand'] = "contact";
         break;
         
     case "ajaxSetNotificationOptout":
@@ -275,17 +270,17 @@ if (isset($_GET['first_login'])) $message = "Välkommen till resursbokningen! In
                     <input type="text" name="name" id="userdata-name" required placeholder="Namn" value="<?= htmlspecialchars(isset($_POST['name']) ? $_POST['name'] : $currentUser->name) ?>">
                 </div>
                 <div class="ui-field-contain">
-                    <label for="userdata-mail" class="required">Epost:</label>
-                    <input type="email" name="mail" id="userdata-mail" required placeholder="Epost" value="<?= htmlspecialchars($currentUser->mail) ?>">
-                    <?php
-                    $newMails = $currentUser->getUnverifiedMails();
-                    if ($newMails) {
-                        echo "Du har ett pågående ärende att byta din epostadress. Ett meddelande med en aktiveringslänk har skickats till den nya adressen. Kolla i din skräppostmapp om du inte hittar mejlet. Om du behöver en ny aktiveringslänk kan du åter skriva den nya adressen i fältet ovan. Klicka på den nya adressen nedan för att avbryta processen och behålla nuvarande epostadress.";
-                        foreach ($newMails as $newMail) {
-                            echo "<br><a href='?action=cancelMailChange&mail=" . htmlspecialchars($newMail) . "' data-ajax='false' style='float:none;'>" . htmlspecialchars($newMail) . "</a>";
-                        }
-                    }
-                    ?>
+                    <label>Epost:</label>
+                    <span><?= htmlspecialchars($currentUser->mail ? $currentUser->mail : "(ingen epostadress angiven)") ?></span>
+                </div>
+                <?php
+                if ($newMail = $currentUser->getUnverifiedMail()) {
+                    echo "<p class='ui-body ui-body-a'><small>Du har ett pågående ärende att byta din epostadress till <b>$newMail</b>. Ett meddelande med aktiveringslänk har skickats till den nya adressen. Kolla i din skräppostmapp om du inte hittar mejlet. Behöver du en ny kod? Skriv in adressen igen i fältet nedan!</small><br>";
+                }
+                ?>
+                <div class="ui-field-contain">
+                    <label for="userdata-mail">Ändra epost till:</label>
+                    <input type="email" name="mail" id="userdata-mail" autocomplete="off" placeholder="Knappa in din (nya) epostadress här" value="">
                 </div>
                 <div class="ui-field-contain">
                     <label for="userdata-phone" class="required">Telefon:</label>

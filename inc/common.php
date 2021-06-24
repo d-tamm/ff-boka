@@ -190,7 +190,7 @@ function head(string $caption, string $baseUrl, $superAdmins=array()) {
     </div><!-- /panel -->
     
     <div data-role="header">
-        <H1><?= $caption ?></H1>
+        <H1 id="page-caption"><?= $caption ?></H1>
         <a href='#navpanel' data-rel='popup' data-transition='pop' data-role='button' data-icon='bars' data-iconpos='notext' class='ui-btn-left ui-nodisc-icon ui-alt-icon'>Meny</a>
         <a href='javascript:showHelp();' data-transition='slide' data-rel='popup' data-role='button' data-icon='help' data-iconpos='notext' class='ui-btn-right ui-nodisc-icon ui-alt-icon'>Hjälp</a>
         <?php

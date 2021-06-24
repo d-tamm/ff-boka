@@ -83,6 +83,9 @@ identifiera resurserna.</p>
 <p><b>Beskrivningen</b> kan vara en längre text. Här kan du samla all information om 
 resursen som kan vara användbar för användaren. Texten visas bara i resursens detailjvy, inte
 i listor.</p>
+<p><b>Text i bokningsbekräftelse:</b> Du kan lägga in en text som skickas med i den bekräftelse
+som användaren får när hen har lagt en bokning. Fungerar på samma sätt som motsvarande
+fält på kategorinivå.</p>
 <p>Med <b>Aktiv (kan bokas)</b> bestämmer du om resursen ska visas för bokning. Det kan 
 vara användbart under tiden du lägger upp resursen tills all information är på plats, eller 
 när en resurs inte är tillgänglig på grund av skada, förlust mm.</p>

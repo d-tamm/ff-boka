@@ -420,7 +420,9 @@ unset ($_SESSION['itemId']);
             <p><?php
             foreach ($cat->getPath() as $p) {
                 if ($p['id']) echo " &rarr; ";
-                echo "<a data-transition='slide' data-direction='reverse' href='" . ($p['id'] ? "category.php?catId={$p['id']}" : "index.php") . "'>" . htmlspecialchars($p['caption']) . "</a>";
+                echo "<a data-transition='slide' data-direction='reverse' href='" . ($p['id'] ? "category.php?catId={$p['id']}" : "index.php") . "'";
+                if ($p['id']==$cat->id) echo " id='cat-breadcrumb-last'";
+                echo ">" . htmlspecialchars($p['caption']) . "</a>";
             }?></p>
 
             <div class="ui-field-contain">

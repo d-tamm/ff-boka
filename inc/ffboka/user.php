@@ -375,29 +375,18 @@ class User extends FFBoka {
      * @return string the token used to preliminarily save the address
      */
     public function setUnverifiedMail(string $mail) {
+        // Delete any previous tokens for same user
+        self::$db->exec("DELETE FROM tokens WHERE useFor='change mail address' AND forId={$this->id}");
         return $this->createToken("change mail address", $this->id, $mail);
     }
     
     /**
-     * Check whether the user has a pending change of the email address.
-     * @return string[] Array of strings with the new email addresses
+     * Check whether the user has a pending, non-expired change of the email address.
+     * @return false|string Email address if there is a pending change, otherwise false.
      */
-    public function getUnverifiedMails() {
-        $stmt = self::$db->query("SELECT data FROM tokens WHERE forId={$this->id} AND useFor='change mail address'");
-        $ret = array();
-        while ($row = $stmt->fetch(PDO::FETCH_OBJ)) $ret[] = $row->data;
-        return $ret;
-    }
-    
-    /**
-     * Cancel any pending email change process
-     * @param string $mail The new email address to cancel
-     * @return bool True on success, false on error
-     */
-    public function cancelUnverifiedMail(string $mail) {
-        $stmt = self::$db->prepare("DELETE FROM tokens WHERE forId={$this->id} AND useFor='change mail address' AND data=:data");
-        if ($stmt->execute(array(":data"=>$mail))) return true;
-        logger(__METHOD__." Failed to delete record. " . $stmt->errorInfo()[2], E_ERROR);
+    public function getUnverifiedMail() {
+        $stmt = self::$db->query("SELECT data FROM tokens WHERE forId={$this->id} AND useFor='change mail address' AND DATE_ADD(timestamp, INTERVAL ttl SECOND)>NOW()");
+        if ($row = $stmt->fetch(PDO::FETCH_OBJ)) return $row->data;
         return false;
     }
     

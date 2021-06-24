@@ -339,7 +339,7 @@ class FFBoka {
      * @param string $useFor Key designating what the token shall be used for
      * @param int $forId Entity ID the token shall be valid for
      * @param string $data Additional data
-     * @param number $ttl TTL for the token
+     * @param int $ttl TTL for the token in seconds
      * @throws \Exception if database operation fails
      * @return string The generated token
      */
