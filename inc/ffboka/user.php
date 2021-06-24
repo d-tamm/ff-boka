@@ -375,6 +375,8 @@ class User extends FFBoka {
      * @return string the token used to preliminarily save the address
      */
     public function setUnverifiedMail(string $mail) {
+        // Delete any previous tokens for same user
+        self::$db->exec("DELETE FROM tokens WHERE useFor='change mail address' AND forId={$this->id}");
         return $this->createToken("change mail address", $this->id, $mail);
     }
     
