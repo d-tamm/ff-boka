@@ -149,7 +149,7 @@ if ((int)$row->value < $first->getTimestamp() && date("j") >= $cfg['cronMonthly'
  * @param int $updateIncomplete If set and >0, this many incomplete posts are queried for update. Otherwise, 1 new post is looked up.
  */
 function fetchUA(PDO $db, int $updateIncomplete = 0) {
-    if ($updateIncomplete>0) $stmt = $db->query("SELECT userAgent, uaHash FROM user_agents WHERE platform='' OR platform_version='' OR platform_bits='' OR version='' OR device_type='' LIMIT $updateIncomplete");
+    if ($updateIncomplete>0) $stmt = $db->query("SELECT userAgent, uaHash FROM user_agents WHERE platform='' OR platform_version='' OR platform_bits='' OR version='' OR device_type='' ORDER BY RAND() LIMIT $updateIncomplete");
     else $stmt = $db->query("SELECT userAgent, uaHash FROM user_agents WHERE browser='' LIMIT 1");
     $rows = $stmt->fetchAll(PDO::FETCH_OBJ);
     if (count($rows)) {
