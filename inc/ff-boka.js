@@ -1750,6 +1750,10 @@ $(document).on('pageshow', "#page-userdata", function() {
             $("#popup-msg-page-userdata").popup('open');
         }, 500); // We need some delay here to make this work on Chrome.
     }
+    // Make email input writable
+    setTimeout(function() {
+        $("#userdata-mail").removeAttr('readonly');
+    }, 500);
 });
 
 /**

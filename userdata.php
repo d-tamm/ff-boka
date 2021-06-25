@@ -147,7 +147,7 @@ EOF;
     case "ajaxRemovePersistentLogin":
         header("Content-Type: application/json");
         try {
-            if (!$currentUser->removePersistentLogin($_REQUEST['selector'])) die(json_encode([ "status"=>"error", "error"=>"Kunde inte utföra begäran."]));
+            if ($currentUser->removePersistentLogin($_REQUEST['selector'])===false) die(json_encode([ "status"=>"error", "error"=>"Kunde inte utföra begäran."]));
         } catch (\Exception $e) {
             die(json_encode([ "status"=>"error", "error"=>"Något har gått fel. Kan inte logga ut denna inloggning." ]));
         }
@@ -280,7 +280,7 @@ if (isset($_GET['first_login'])) $message = "Välkommen till resursbokningen! In
                 ?>
                 <div class="ui-field-contain">
                     <label for="userdata-mail">Ändra epost till:</label>
-                    <input type="email" name="mail" id="userdata-mail" autocomplete="off" placeholder="Knappa in din (nya) epostadress här" value="">
+                    <input type="email" name="mail" id="userdata-mail" autocomplete="off" readonly="true" placeholder="Knappa in din (nya) epostadress här" value=""><!-- This field will be set to writable by Javascript, which prevents autofilling -->
                 </div>
                 <div class="ui-field-contain">
                     <label for="userdata-phone" class="required">Telefon:</label>
