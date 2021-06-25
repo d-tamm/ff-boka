@@ -177,7 +177,7 @@ function fetchUA(PDO $db, int $updateIncomplete = 0) {
                     ":uaHash" => $row->uaHash
                 ));
                 // Increase lookup counter which will lower the priority of this post next time
-                $db->exec("UPDATE user_agents SET lookups=lookups+1 WHERE uaHash={$row->uaHash}");
+                $db->exec("UPDATE user_agents SET lookups=lookups+1 WHERE uaHash='{$row->uaHash}'");
             } else {
                 logger(__METHOD__." Failed to resolve user agent: {$row->userAgent}", E_WARNING);
             }
