@@ -149,8 +149,8 @@ if ((int)$row->value < $first->getTimestamp() && date("j") >= $cfg['cronMonthly'
  * @param int $updateIncomplete If set and >0, this many incomplete posts are queried for update. Otherwise, 1 new post is looked up.
  */
 function fetchUA(PDO $db, int $updateIncomplete = 0) {
-    if ($updateIncomplete>0) $stmt = $db->query("SELECT userAgent, uaHash FROM user_agents WHERE platform='' OR platform_version='' OR platform_bits='' OR version='' OR device_type='' ORDER BY RAND() LIMIT $updateIncomplete");
-    else $stmt = $db->query("SELECT userAgent, uaHash FROM user_agents WHERE browser='' LIMIT 1");
+    if ($updateIncomplete>0) $stmt = $db->query("SELECT userAgent, uaHash FROM user_agents WHERE platform='' OR platform_version='' OR platform_bits='' OR version='' OR device_type='' ORDER BY lookups LIMIT $updateIncomplete");
+    else $stmt = $db->query("SELECT userAgent, uaHash FROM user_agents WHERE browser='' ORDER BY lookups LIMIT 1");
     $rows = $stmt->fetchAll(PDO::FETCH_OBJ);
     if (count($rows)) {
         $stmt1 = $db->prepare("UPDATE user_agents SET browser=:browser, version=:version, platform=:platform, platform_version=:platform_version, platform_bits=:platform_bits, device_type=:device_type WHERE uaHash=:uaHash");
@@ -176,6 +176,8 @@ function fetchUA(PDO $db, int $updateIncomplete = 0) {
                     ":device_type" => $result->device_type,
                     ":uaHash" => $row->uaHash
                 ));
+                // Increase lookup counter which will lower the priority of this post next time
+                $db->exec("UPDATE user_agents SET lookups=lookups+1 WHERE uaHash={$row->uaHash}");
             } else {
                 logger(__METHOD__." Failed to resolve user agent: {$row->userAgent}", E_WARNING);
             }
