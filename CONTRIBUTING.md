@@ -19,8 +19,7 @@
 ## Jag vill inte läsa mycket, jag har bara en fråga
 Om du bara har en fråga, skicka inte in en buggrapport. Du kan istället ställa den på våra följande kanaler:
 
-* Vi finns på Slack, och om du har en friluftsframjandet.se-adress kan du själv 
-[ansluta dig här](https://join.slack.com/t/ff-boka/signup).
+* Vi finns på Teams. Leta efter teamet Resursbokning. Du behöver ha en friluftsframjandet.se-adress som alla ledare kan få.
 * Eller skicka ett mejl till daniel.tamm(at)friluftsframjandet.se.
 
 ## Hur kan jag bidra?
@@ -31,7 +30,7 @@ När du hittar fel i systemet är det av stor hjälp för utvecklarna att få en
 * Innan du skickar in din buggrapport, gör en sökning på befintliga rapporterade buggar.
 Kanske någon annan redan har rapporterat samma bugg?
 
-* Ta kontakt med oss på Slack (se ovan) och diskutera ditt ärende med oss. Detta är jätteviktigt för
+* Ta kontakt med oss på Teams (se ovan) och diskutera ditt ärende med oss. Detta är viktigt för
   att du ska hamna rätt och ökar chanserna avsevärt att ditt bidrag kommer att implementeras.
 
 * Vi använder [GitHubs Issues](https://github.com/d-tamm/ff-boka/issues) för att hantera buggar.
@@ -54,7 +53,7 @@ Vi blir jätteglada om du vill bidra med utvecklingen av systemet! All hjälp ka
 Här kommer några tipps för att komma igång:
 * Sätt upp en egen utvecklingsmiljö. Se [Installera lokalt](#installera-lokalt).
 * Optionalt, men bra att ha för att underlätta och undvika onödiga fel när du knackar kod:
-  installera en IDE, t.ex. Eclipse
+  installera en IDE, t.ex. Eclipse eller Visual Studio Code.
 * Kolla i bugglistan efter buggar med flaggan `Good first issue` som borde kunna lösas med några få raders kod.
 * Lär dig grunderna i Git. I princip innebär ett bidrag följande steg:
   * Klona förrådet.
@@ -152,4 +151,4 @@ och [composer](https://getcomposer.org).
 
 # Engagera dig
 All hjälp är välkommen! Vi behöver folk som ger inspel till önskad funktion, programmering, layout, tester...
-Börja med att ta kontakt med oss: Vi finns på Slack, och om du har en friluftsframjandet.se-adress kan du själv [ansluta dig här](https://join.slack.com/t/ff-boka/signup). Eller skicka ett mejl till daniel.tamm(at)friluftsframjandet.se.
+Börja med att ta kontakt med oss: Vi finns på Teams (Resursbokning, se ovan). Eller skicka ett mejl till daniel.tamm(at)friluftsframjandet.se.
