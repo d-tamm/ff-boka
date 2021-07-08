@@ -337,13 +337,17 @@ switch ($_REQUEST['action']) {
     
     <div id='legend'>
         <h3>Teckenförklaring</h3>
-        <p>
+        <div style="display:inline-block; margin-right:40px;">
             <span class='freebusy-free' style='display:inline-block; width:2em;'>&nbsp;</span> tillgänglig tid<br>
             <span class='freebusy-busy' style='display:inline-block; width:2em;'>&nbsp;</span> bokad tid<br>
+            <span class='freebusy-busy has-price' style='position:relative; display:inline-block; width:2em;'>&nbsp;</span> obetald bokning<br>
+            <span class='freebusy-busy has-price paid' style='position:relative; display:inline-block; width:2em;'>&nbsp;</span> betald bokning<br>
+        </div>
+        <div style="display:inline-block;">
             <span class='freebusy-busy unconfirmed' style='display:inline-block; width:2em;'>&nbsp;</span> obekräftad bokning<br>
             <span class='freebusy-busy conflict' style='display:inline-block; width:2em;'>&nbsp;</span> obekräftad bokning som krockar med annan befintlig bokning<br>
             <span class='freebusy-blocked' style='display:inline-block; width:2em;'>&nbsp;</span> ej bokbar tid<br>
-        </p>
+        </div>
     </div>
 </div>
 </body>
