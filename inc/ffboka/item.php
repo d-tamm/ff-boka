@@ -334,7 +334,7 @@ class Item extends FFBoka {
         $stmt->execute(array(":start"=>$start));
         // Get freebusy information.
         $stmt = self::$db->query("
-            SELECT bookingId, bookedItemId, status, ref, price, token, bufferAfterBooking, DATE_SUB(start, INTERVAL bufferAfterBooking HOUR) start, UNIX_TIMESTAMP(start) unixStart, DATE_ADD(end, INTERVAL bufferAfterBooking HOUR) end, UNIX_TIMESTAMP(end) unixEnd, users.name username, extName 
+            SELECT bookingId, bookedItemId, status, ref, price, paid, token, bufferAfterBooking, DATE_SUB(start, INTERVAL bufferAfterBooking HOUR) start, UNIX_TIMESTAMP(start) unixStart, DATE_ADD(end, INTERVAL bufferAfterBooking HOUR) end, UNIX_TIMESTAMP(end) unixEnd, users.name username, extName 
             FROM booked_items 
             INNER JOIN bookings USING (bookingId) 
             INNER JOIN items USING (itemId) 
@@ -365,7 +365,12 @@ class Item extends FFBoka {
             if ($adminView) {
                 if ($row->status==FFBoka::STATUS_PREBOOKED) $class .= " unconfirmed";
                 if ($row->status==FFBoka::STATUS_CONFLICT) $class .= " conflict";
-                if ($row->price) $class .= " has-price";
+                if ($row->price) {
+                    $class .= " has-price";
+                    $stmtPrice = self::$db->query("SELECT SUM(price) price FROM booked_items WHERE bookingId={$row->bookingId} AND NOT price IS NULL");
+                    $rowPrice = $stmtPrice->fetch(PDO::FETCH_OBJ);
+                    if ($rowPrice->price == $row->paid) $class .= " paid";
+                }
             }
             $title = strftime("%F kl %H:00", $row->unixStart) . " till " . strftime("%F kl %H:00", $row->unixEnd);
             if ($adminView) $title .= "\n" . htmlspecialchars($row->extName ? $row->extName : $row->username) . "\n" . htmlspecialchars($row->ref) . (is_null($row->price) ? "\nInget pris satt" : "\nPris: {$row->price} kr");

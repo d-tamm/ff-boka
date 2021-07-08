@@ -197,6 +197,10 @@ table.alternate-rows tr:nth-child(even) {
     top: 1px;
     content:"💰";
 }
+.freebusy-busy.has-price.paid::after {
+    content:"✔";
+    color:white;
+}
 .freebusy-blocked {
     background: var(--FF-blocked);
     z-index: 3;
