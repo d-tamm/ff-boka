@@ -259,6 +259,8 @@ class Item extends FFBoka {
         if (preg_match('/(.*\(?)([0-9]+)(\)?)$/', $this->caption, $matches)) $newItem->caption = $matches[1] . ($matches[2]+1) . $matches[3];
         else $newItem->caption = $this->caption . " (kopia)";
         $newItem->description = $this->description;
+        $newItem->postbookMsg = $this->postbookMsg;
+        $newItem->note = $this->note;
         // copy the associated item images
         foreach ($this->images() as $image) {
             if (!self::$db->exec("INSERT INTO item_images (itemId, thumb, caption) SELECT {$newItem->id}, thumb, caption FROM item_images WHERE imageId={$image->id}")) logger(__METHOD__." Failed to copy item image. " . self::$db->errorInfo()[2], E_ERROR);
