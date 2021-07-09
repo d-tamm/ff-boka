@@ -1572,6 +1572,7 @@ $(document).on('pageshow', "#page-admin-item", function() {
 function setItemProp(name, val) {
     $.getJSON("item.php", {action: "setItemProp", name: name, value: val}, function(data, status) {
         if (data.status=="OK") {
+            if (name=="caption") $("#page-caption").text(val);
             $("#item-saved-indicator").addClass("saved");
             setTimeout(function(){ $("#item-saved-indicator").removeClass("saved"); }, 2500);
         } else {
