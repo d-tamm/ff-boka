@@ -1361,6 +1361,7 @@ function setCatProp(name, val) {
                 case "manual": $("#cat-contact-data-caption").html("Så här visas kontaktuppgifterna (enligt inmatningen ovan):"); break;
                 case "unset": $("#cat-contact-data-caption").html("Inga kontaktuppgifter visas. Om du vill visa kontaktuppgifter, ställ in dem ovan."); break;
             }
+            $("#cat-breadcrumb").html(data.breadcrumb);
             $("#cat-contact-data").html(data.contactData);
             $("#cat-contactName").val(data.contactName);
             $("#cat-contactPhone").val(data.contactPhone);

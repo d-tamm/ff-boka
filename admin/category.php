@@ -30,6 +30,22 @@ if (!$cat->showFor($currentUser, FFBoka::ACCESS_CATADMIN)) {
 }
 
 /**
+ * Return the breadcrumb (path to this category)
+ * @param Category $cat
+ * @return string HTML-formatted breadcrumb with clickable links to its elements
+ */
+function breadcrumb(Category $cat) {
+    $ret = "";
+    foreach ($cat->getPath() as $p) {
+        if ($p['id']) $ret .= " &rarr; ";
+        $ret .= "<a data-transition='slide' data-direction='reverse' href='" . ($p['id'] ? "category.php?catId={$p['id']}" : "index.php") . "'";
+        if ($p['id']==$cat->id) $ret .= " id='cat-breadcrumb-last'";
+        $ret .= ">" . htmlspecialchars($p['caption']) . "</a>";
+    }
+    return $ret;
+}
+
+/**
  * Echoes a category tree as "select" options
  * @param Category $parent Output the tree from here downwards
  * @param Category $currentCat Do not include this category, but preselect option for this category's parent
@@ -244,7 +260,8 @@ switch ($_REQUEST['action']) {
                     "contactData" => $cat->contactData(),
                     "contactName" => $cat->contactName,
                     "contactPhone" => $cat->contactPhone,
-                    "contactMail" => $cat->contactMail
+                    "contactMail" => $cat->contactMail,
+                    "breadcrumb" => breadcrumb($cat)
                 ]));
             default:
                 logger("Trying to set unknown category property via ajax.", "ERROR");
@@ -417,13 +434,7 @@ unset ($_SESSION['itemId']);
         <div data-role="collapsible" <?= $_GET['action']==="new" ? "data-collapsed='false'" : "" ?>>
             <h2>Allmänt</h2>
 
-            <p><?php
-            foreach ($cat->getPath() as $p) {
-                if ($p['id']) echo " &rarr; ";
-                echo "<a data-transition='slide' data-direction='reverse' href='" . ($p['id'] ? "category.php?catId={$p['id']}" : "index.php") . "'";
-                if ($p['id']==$cat->id) echo " id='cat-breadcrumb-last'";
-                echo ">" . htmlspecialchars($p['caption']) . "</a>";
-            }?></p>
+            <p id="cat-breadcrumb"><?= breadcrumb($cat) ?></p>
 
             <div class="ui-field-contain">
                 <label for="cat-caption" class="required">Rubrik:</label>
