@@ -445,7 +445,7 @@ unset ($_SESSION['itemId']);
             </div>
 
             <p>Bild att visa med kategorin:</p>
-            <img src="../image.php?type=category&id=<?= $cat->id ?>" id="cat-img-preview"<?= $cat->thumb ? "" : " style='display:none;'" ?>>
+            <img src="../image.php?type=category&id=<?= $cat->id ?>&<?= time() ?>" id="cat-img-preview"<?= $cat->thumb ? "" : " style='display:none;'" ?>>
             <div class="ui-field-contain">
                 <label for="file-cat-img">Ladda upp ny bild:</label>
                 <input type="file" name="image" id="file-cat-img">
