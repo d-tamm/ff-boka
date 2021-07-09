@@ -369,7 +369,7 @@ class Item extends FFBoka {
                     $class .= " has-price";
                     $stmtPrice = self::$db->query("SELECT SUM(price) price FROM booked_items WHERE bookingId={$row->bookingId} AND NOT price IS NULL");
                     $rowPrice = $stmtPrice->fetch(PDO::FETCH_OBJ);
-                    if ($rowPrice->price == $row->paid) $class .= " paid";
+                    if ($rowPrice->price <= $row->paid) $class .= " paid";
                 }
             }
             $title = strftime("%F kl %H:00", $row->unixStart) . " till " . strftime("%F kl %H:00", $row->unixEnd);
