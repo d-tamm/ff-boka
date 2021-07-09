@@ -519,7 +519,7 @@ unset ($_SESSION['itemId']);
                         echo "<span class='ui-li-count'>{$child->itemCount}</span></a></li>\n";
                     }
                 }
-                if ($cat->getAccess($currentUser) >= FFBoka::ACCESS_CATADMIN) echo "<li><a data-transition='slide' href='category.php?action=new'>Lägg till underkategori</a></li>";
+                if ($cat->getAccess($currentUser) >= FFBoka::ACCESS_CATADMIN) echo "<li><a data-transition='slide' href='category.php?action=new&" . time() . "'>Lägg till underkategori</a></li>";
                 ?>
             </ul>
             <br>
