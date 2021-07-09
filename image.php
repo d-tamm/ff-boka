@@ -2,7 +2,7 @@
 session_start();
 require(__DIR__."/inc/common.php");
 
-// TODO: authenticate
+session_cache_limiter('nocache');
 
 switch ($_GET['type']) {
 case "category":
