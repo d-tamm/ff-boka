@@ -1355,13 +1355,13 @@ function setCatProp(name, val) {
 	}).done(function(data, status) {
         $.mobile.loading("hide", {});
         if (data.status=="OK") {
+            if (name=="parentId") { location.href="?"+Math.round(Math.random()*100000); return false; }
             switch (data.contactType) {
                 case "inherited": $("#cat-contact-data-caption").html("Kontaktuppgifterna från överordnad kategori används:"); break;
                 case "user": $("#cat-contact-data-caption").html("Så här visas kontaktuppgifterna (länkat till medlemsuppgifter):"); break;
                 case "manual": $("#cat-contact-data-caption").html("Så här visas kontaktuppgifterna (enligt inmatningen ovan):"); break;
                 case "unset": $("#cat-contact-data-caption").html("Inga kontaktuppgifter visas. Om du vill visa kontaktuppgifter, ställ in dem ovan."); break;
             }
-            $("#cat-breadcrumb").html(data.breadcrumb);
             $("#cat-contact-data").html(data.contactData);
             $("#cat-contactName").val(data.contactName);
             $("#cat-contactPhone").val(data.contactPhone);
