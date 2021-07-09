@@ -1355,6 +1355,7 @@ function setCatProp(name, val) {
 	}).done(function(data, status) {
         $.mobile.loading("hide", {});
         if (data.status=="OK") {
+            if (name=="parentId") { location.href="?"+Math.round(Math.random()*100000); return false; }
             switch (data.contactType) {
                 case "inherited": $("#cat-contact-data-caption").html("Kontaktuppgifterna från överordnad kategori används:"); break;
                 case "user": $("#cat-contact-data-caption").html("Så här visas kontaktuppgifterna (länkat till medlemsuppgifter):"); break;

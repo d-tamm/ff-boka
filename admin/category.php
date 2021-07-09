@@ -240,6 +240,7 @@ switch ($_REQUEST['action']) {
                 header("Content-Type: application/json");
                 die(json_encode([
                     "status" => "OK",
+                    "catId" => $cat->id,
                     "contactType" => $cat->contactType,
                     "contactData" => $cat->contactData(),
                     "contactName" => $cat->contactName,
@@ -417,13 +418,14 @@ unset ($_SESSION['itemId']);
         <div data-role="collapsible" <?= $_GET['action']==="new" ? "data-collapsed='false'" : "" ?>>
             <h2>Allmänt</h2>
 
-            <p><?php
+            <p id="cat-breadcrumb"><?php
             foreach ($cat->getPath() as $p) {
                 if ($p['id']) echo " &rarr; ";
                 echo "<a data-transition='slide' data-direction='reverse' href='" . ($p['id'] ? "category.php?catId={$p['id']}" : "index.php") . "'";
                 if ($p['id']==$cat->id) echo " id='cat-breadcrumb-last'";
                 echo ">" . htmlspecialchars($p['caption']) . "</a>";
-            }?></p>
+            } ?>
+            </p>
 
             <div class="ui-field-contain">
                 <label for="cat-caption" class="required">Rubrik:</label>
