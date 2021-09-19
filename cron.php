@@ -63,6 +63,7 @@ if ((int)$row->value < $monday->getTimestamp() && date("N") >= $cfg['cronWeekly'
     
     // Record last execution time
     $db->exec("UPDATE config SET value=UNIX_TIMESTAMP() WHERE name='last weekly cron run'");
+    logger(__METHOD__." Weekly jobs finished.");
 }
 
 /**
@@ -97,7 +98,7 @@ if ((int)$row->value < $first->getTimestamp() && date("j") >= $cfg['cronMonthly'
         if (!is_dir($file)) {
             $stmt = $db->query("SELECT catId FROM categories WHERE catId=" . basename($file));
             if ($stmt->rowCount()==0) {
-                if (unlink($file)) logger("Removed category image $file");
+                if (unlink($file)) logger(__METHOD__."Removed category image $file");
                 else logger(__METHOD__." Failed to remove orphaned category image $file", E_ERROR);
             }
         }
@@ -106,7 +107,7 @@ if ((int)$row->value < $first->getTimestamp() && date("j") >= $cfg['cronMonthly'
         if (!is_dir($file)) {
             $stmt = $db->query("SELECT imageId FROM item_images WHERE imageId=" . basename($file));
             if ($stmt->rowCount()==0) {
-                if (unlink($file)) logger("Removed item image $file");
+                if (unlink($file)) logger(__METHOD__."Removed item image $file");
                 else logger(__METHOD__." Failed to remove orphaned item image $file", E_ERROR);
             }
         }
