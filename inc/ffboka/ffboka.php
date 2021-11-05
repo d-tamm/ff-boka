@@ -112,8 +112,11 @@ class FFBoka {
                 ))) logger(__METHOD__." Failed to update section {$section->cint_nummer} {$section->cint_name}. " . self::$db->errorInfo()[2], E_ERROR);                ;
             }
         }
-        $numDeleted = self::$db->exec("DELETE FROM sections WHERE TIMESTAMPDIFF(SECOND, `timestamp`, NOW())>100");
-        logger(__METHOD__." Deleted $numDeleted outdated section records.");
+        // Check for outdated records
+        $stmt = self::$db->query("SELECT `sectionID`, `name` FROM sections WHERE TIMESTAMPDIFF(SECOND, `timestamp`, NOW())>100");
+        while ($row = $stmt->fetch(PDO::FETCH_OBJ)) {
+            logger(__METHOD__." Section {$row->name} ({$row->sectionID}) has not been updated from API and may need to be removed manually.", E_WARNING);
+        }
     }
     
     /**
@@ -143,8 +146,11 @@ class FFBoka {
                 }
             }
         }
-        $numDeleted = self::$db->exec("DELETE FROM assignments WHERE sort>0 AND TIMESTAMPDIFF(SECOND, timestamp, NOW())>100");
-        logger(__METHOD__." $numDeleted outdated assignment records deleted.");
+        // Check for outdated records
+        $stmt = self::$db->query("SELECT assName FROM assignments WHERE sort>0 AND TIMESTAMPDIFF(SECOND, timestamp, NOW())>100");
+        while ($row = $stmt->fetch(PDO::FETCH_OBJ)) {
+            logger(__METHOD__." Assignment {$row->assName} has not been updated from API and may need to be removed manually.", E_WARNING);
+        }
     }
     
     /**
