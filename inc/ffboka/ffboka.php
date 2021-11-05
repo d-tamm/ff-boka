@@ -106,7 +106,6 @@ class FFBoka {
         $stmt = self::$db->prepare("INSERT INTO sections SET sectionID=:sectionID, name=:name1, timestamp=NULL ON DUPLICATE KEY UPDATE name=:name2, timestamp=NULL");
         foreach ($data->results as $section) {
             if ($section->cint_nummer && $section->cint_name) {
-                logger(__METHOD__." Adding/updating section {$section->cint_name}");
                 if (!$stmt->execute(array(
                     ":sectionID" => $section->cint_nummer,
                     ":name1" => $section->cint_name,
@@ -133,7 +132,6 @@ class FFBoka {
         $stmt = self::$db->prepare("INSERT INTO assignments SET assName=:assName, sort=:sort, timestamp=NULL ON DUPLICATE KEY UPDATE timestamp=NULL");
         foreach ($data->results as $ass) {
             if ($ass->cint_name && $ass->cint_assignment_party_type->value && $ass->cint_assignment_party_type->value == FFBoka::TYPE_SECTION) {
-                logger(__METHOD__." Adding/updating assignment {$ass->cint_name}");
                 if (!$stmt->execute(array(
                     ":assName"   => $ass->cint_name,
                     ":sort" => 2
@@ -141,7 +139,6 @@ class FFBoka {
                 if (strpos($ass->cint_name, ":") !== FALSE) {
                     // This is a sub-assignment to a principal assignment (e.g. Ledare: Mulle).
                     // Save the principal assignment with the string left of the colon.
-                    logger(__METHOD__." Adding/updating principal assignment for {$ass->cint_name}");
                     if (!$stmt->execute(array(
                         ":assName"   => substr($ass->cint_name, 0, strpos($ass->cint_name, ":")),
                         ":sort" => 1
