@@ -100,6 +100,7 @@ class FFBoka {
     public function updateSectionList() {
         logger(__METHOD__." Getting updated section list from API...");
         $data = json_decode(file_get_contents(self::$apiFeedSec));
+        logger(__METHOD__." API returned " . count($data->results) . " sections.");
         // We may not remove and re-add entries because that would cause linked records in other
         // tables to be removed. So we need to use ON DUPLICATE KEY clause and keep track of last change date.
         $stmt = self::$db->prepare("INSERT INTO sections SET sectionID=:sectionID, name=:name1, timestamp=NULL ON DUPLICATE KEY UPDATE name=:name2, timestamp=NULL");
@@ -126,6 +127,7 @@ class FFBoka {
     public function updateAssignmentList() {
         logger(__METHOD__." Updating assignments from API...");
         $data = json_decode(file_get_contents(self::$apiFeedAllAss));
+        logger(__METHOD__." API returned " . count($data->results) . " assignments.");
         // We may not remove and re-add entries because that would break linked records in other
         // tables. So we need to use ON DUPLICATE KEY clause and keep track of last change date.
         $stmt = self::$db->prepare("INSERT INTO assignments SET assName=:assName, sort=:sort, timestamp=NULL ON DUPLICATE KEY UPDATE timestamp=NULL");
