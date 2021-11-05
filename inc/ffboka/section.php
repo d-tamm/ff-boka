@@ -111,14 +111,14 @@ class Section extends FFBoka {
     /**
      * Add admin access for user.
      * @param $userId int UserID of new admin
-     * @return bool TRUE on success, FALSE on failure.
+     * @return bool TRUE on success, FALSE on failure (e.g. if the user already is admin).
      */
     public function addAdmin($userId){
         $user = new User($userId); // This will add user to database if not already there.
         if (!$user->id) return FALSE;
         $stmt = self::$db->prepare("INSERT INTO section_admins SET sectionId={$this->id}, userId=?");
         if($stmt->execute(array($userId))) return true;
-        logger(__METHOD__." Failed to add amin. " . $stmt->errorInfo()[2], E_ERROR);
+        logger(__METHOD__." Failed to add admin, probably because he/she already is admin. " . $stmt->errorInfo()[2], E_WARNING);
         return false;
     }
     
