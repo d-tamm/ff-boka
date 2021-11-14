@@ -92,14 +92,13 @@ if ((int)$row->value < $first->getTimestamp() && date("j") >= $cfg['cronMonthly'
         }
     }
     
-    logger(__METHOD__." Garbage collection: Remove orphaned full size images...");
-    // TODO: remove orphaned attachment files
+    logger(__METHOD__." Garbage collection: Delete orphaned full size images...");
     foreach (glob(__DIR__ . "/img/cat/*") as $file) {
         if (!is_dir($file)) {
             $stmt = $db->query("SELECT catId FROM categories WHERE catId=" . basename($file));
             if ($stmt->rowCount()==0) {
-                if (unlink($file)) logger(__METHOD__."Removed category image $file");
-                else logger(__METHOD__." Failed to remove orphaned category image $file", E_ERROR);
+                if (unlink($file)) logger(__METHOD__." Deleted category image $file");
+                else logger(__METHOD__." Failed to delete orphaned category image $file", E_ERROR);
             }
         }
     }
@@ -107,8 +106,17 @@ if ((int)$row->value < $first->getTimestamp() && date("j") >= $cfg['cronMonthly'
         if (!is_dir($file)) {
             $stmt = $db->query("SELECT imageId FROM item_images WHERE imageId=" . basename($file));
             if ($stmt->rowCount()==0) {
-                if (unlink($file)) logger(__METHOD__."Removed item image $file");
-                else logger(__METHOD__." Failed to remove orphaned item image $file", E_ERROR);
+                if (unlink($file)) logger(__METHOD__." Deleted item image $file");
+                else logger(__METHOD__." Failed to delete orphaned item image $file", E_ERROR);
+            }
+        }
+    }
+    foreach (glob(__DIR__ . "/uploads/*") as $file) {
+        if (!is_dir($file)) {
+            $stmt = $db->query("SELECT fileId FROM cat_files WHERE fileId=" . basename($file));
+            if ($stmtm->rowCount()==0) {
+                if (unlink($file)) logger(__METHOD__." Deleted attachment file $file");
+                else logger(__METHOD__." Failed to delete orphaned attachment file $file", E_ERROR);
             }
         }
     }
