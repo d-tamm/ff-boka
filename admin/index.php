@@ -120,7 +120,7 @@ switch ($_REQUEST['action']) {
         } elseif ($section->addAdmin($_REQUEST['id'])) {
             $adm = new User($_REQUEST['id']);
             if ($_REQUEST['id'] != $currentUser->id && $adm->mail) {
-                $FF->queueMail(
+                $FF->sendMail(
                     $adm->mail, // to
                     "Du är nu administratör", // subject
                     "notify_new_admin", // template
@@ -132,7 +132,9 @@ switch ($_REQUEST['action']) {
                         "{{superadmin-name}}"=>$currentUser->name,
                         "{{superadmin-mail}}"=>$currentUser->mail,
                         "{{superadmin-phone}}"=>$currentUser->phone
-                    )
+                    ),
+                    [], // attachments
+                    $cfg['mail']
                 );
             }
             die(json_encode([ "html"=>adminList($section, $currentUser->id), "currentUserId"=>$currentUser->id ]));

@@ -302,7 +302,7 @@ switch ($_REQUEST['action']) {
                 // New admin added. Send notification if not same as current user and if not an assignment group
                 $adm = new User($_GET['id']);
                 if ($_GET['id'] != $currentUser->id && $adm->mail) {
-                    $FF->queueMail(
+                    $FF->sendMail(
                         $adm->mail, // to
                         "Du är nu bokningsansvarig", // subject
                         "notify_new_admin", // template
@@ -314,7 +314,9 @@ switch ($_REQUEST['action']) {
                             "{{superadmin-name}}"=>$currentUser->name,
                             "{{superadmin-mail}}"=>$currentUser->mail,
                             "{{superadmin-phone}}"=>$currentUser->phone
-                        )
+                        ),
+                        [], // attachments
+                        $cfg['mail']
                     );
                 } elseif ($_GET['id'] != $currentUser->id) $message = "OBS! Vi har inte någon epostadress till denna användare och kan inte meddela hen om den nya rollen. Därför ska du informera hen på annat sätt. Se gärna också till att hen loggar in och lägger upp sin epostadress för att kunna få meddelanden om nya bokningar.";
             }
