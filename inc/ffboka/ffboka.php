@@ -510,48 +510,73 @@ class FFBoka {
      * @param string $fromName Cleartext from name to use if no from name is set in queue entry
      * @param string $replyTo Reply-to address to use if not set in queue entry
      * @param array $SMTPOptions Array with SMTP config, containing the keys: host, port, user, pass
-     * @throws Exception if sending fails
      */
-    function sendQueuedMails(string $from, string $fromName, string $replyTo, array $SMTPOptions) {
+    public function sendQueuedMails(string $from, string $fromName, string $replyTo, array $SMTPOptions) {
         $stmt = self::$db->query("SELECT * FROM mailq");
         $rows = $stmt->fetchAll(PDO::FETCH_OBJ);
         if (count($rows)) logger(__METHOD__." Sending mails from mail queue...");
         foreach ($rows as $row) {
-            try {
-                $mail = new PHPMailer(true);
-                $mail->XMailer = ' '; // Don't advertise that we are using PHPMailer
-                // Add attachments
-                foreach (json_decode($row->attachments) as $att) {
-                    $mail->addAttachment(dirname(__FILE__) . "/../../" . $att->path, $att->filename);
-                }
-                //Server settings
-                $mail->SMTPDebug = 0;
-                $mail->isSMTP();
-                $mail->Host = $SMTPOptions['host'];
-                $mail->Port = $SMTPOptions['port'];
-                $mail->SMTPAuth = true;
-                $mail->Username = $SMTPOptions['user'];
-                $mail->Password = $SMTPOptions['pass'];
-                $mail->SMTPSecure = 'tls';   // Enable TLS encryption, `ssl` also accepted
-                // Message content
-                $mail->CharSet ="UTF-8";
-                $mail->setFrom($from, $row->fromName ? $row->fromName : $fromName);
-                $mail->Sender = $SMTPOptions['user'];
-                $mail->addAddress($row->to);
-                $mail->addReplyTo($row->replyTo ? $row->replyTo : $replyTo);
-                $mail->isHTML(true);
-                $mail->Subject = $row->subject;
-                $mail->Body = $row->body;
-                $mail->AltBody = strip_tags(str_replace(array("</p>", "<br>"), array("</p>\r\n\r\n", "\r\n"), $row->body));
-                if (!$mail->send()) {
-                    logger(__METHOD__." Failed to send mail #{$row->mailqId} to {$row->to}. " . $mail->ErrorInfo, E_WARNING);
-                    throw new Exception($mail->ErrorInfo);
-                }
-                $stmt = self::$db->exec("DELETE FROM mailq WHERE mailqId={$row->mailqId}");
-                logger(__METHOD__." Mail #{$row->mailqId} has been sent to {$row->to}");
-            } catch (Exception $e) {
-                logger(__METHOD__." Failed to send mail #{$row->mailqId} to {$row->to}. " . $mail->ErrorInfo, E_WARNING);
-            }
+            $this->sendMail(
+                $from, // From
+                $row->fromName ? $row->fromName : $fromName, // From name
+                $row->replyTo ? $row->replyTo : $replyTo, // Reply To
+                $row->to, // To
+                $row->subject, // Subject
+                $row->body, // Body
+                $SMTPOptions, // SMTP Options
+                json_decode($row->attachments) // attachments
+            ) && self::$db->exec("DELETE FROM mailq WHERE mailqId={$row->mailqId}");
         }
+    }
+
+    /**
+     * Send an email now.
+     * @param string $from From address to use
+     * @param string $fromName Cleartext From name to use
+     * @param string $replyTo Reply-to address to use
+     * @param string $to Address where to send the mail
+     * @param string $subject
+     * @param string $body
+     * @param array $SMTPOptions Array with SMTP config, containing the keys: host, port, user, pass
+     * @param array $attachments optional Array of attachments with the members 'path' (relative to boka root) and 'filename'
+     * @return bool True on success, false if mail could not be sent.
+     */
+    public function sendMail(string $from, string $fromName, string $replyTo, string $to, string $subject, string $body, array $SMTPOptions, array $attachments=[]) {
+        try {
+            $mail = new PHPMailer(true);
+            $mail->XMailer = ' '; // Don't advertise that we are using PHPMailer
+            // Add attachments
+            foreach ($attachments as $att) {
+                $mail->addAttachment(__DIR__ . "/../../" . $att['path'], $att['filename']);
+            }
+            //Server settings
+            $mail->SMTPDebug = 0;
+            $mail->isSMTP();
+            $mail->Host = $SMTPOptions['host'];
+            $mail->Port = $SMTPOptions['port'];
+            $mail->SMTPAuth = true;
+            $mail->Username = $SMTPOptions['user'];
+            $mail->Password = $SMTPOptions['pass'];
+            $mail->SMTPSecure = 'tls';   // Enable TLS encryption, `ssl` also accepted
+            // Message content
+            $mail->CharSet ="UTF-8";
+            $mail->setFrom($from, $fromName);
+            $mail->Sender = $SMTPOptions['user'];
+            $mail->addAddress($to);
+            $mail->addReplyTo($replyTo);
+            $mail->isHTML(true);
+            $mail->Subject = $subject;
+            $mail->Body = $body;
+            $mail->AltBody = strip_tags(str_replace(array("</p>", "<br>"), array("</p>\r\n\r\n", "\r\n"), $body));
+            if (!$mail->send()) {
+                logger(__METHOD__." Failed to send mail '$subject' to $to. " . $mail->ErrorInfo, E_WARNING);
+                return false;
+            }
+        } catch (Exception $e) {
+            logger(__METHOD__." Failed to send mail '$subject' to $to. " . $mail->ErrorInfo, E_WARNING);
+            return false;
+        }
+        logger(__METHOD__." Mail '$subject' has been sent to $to.");
+        return true;
     }
 }
