@@ -107,20 +107,26 @@ EOF;
                 $message = "Fel lösenord. Vänligen försök igen. Lösenordet du ska ange är samma som du använder på Friluftsfrämjandets hemsida.";
                 break;
             }
+            // Put name and phone into currentUser so they get displayed properly
             $currentUser->name = $_POST['name'];
             $currentUser->phone = $_POST['phone'];
             if ($_POST['mail'] !== $currentUser->mail) {
+                // Mail address change. Send a verification token.
                 $token = $currentUser->setUnverifiedMail($_POST['mail']);
-                $FF->queueMail(
-                    $_POST['mail'], // to
+                // Get mail template
+                $body = file_get_contents(__DIR__."/templates/confirm_mail_address.html");
+                $body = str_replace("{{name}}", $currentUser->name, $body);
+                $body = str_replace("{{new_mail}}", $_POST['mail'], $body);
+                $body = str_replace("{{link}}", "{$cfg['url']}index.php?t=$token", $body);
+                $body = str_replace("{{expires}}", strftime("%c", time()+86400), $body);
+                $FF->sendMail(
+                    $cfg['mailFrom'], // From
+                    $cfg['mailFromName'], // From name
+                    $cfg['mailReplyTo'], // Reply to
+                    $_POST['mail'], // To
                     "Bekräfta din epostadress", // subject
-                    "confirm_mail_address", // template name
-                    array( // replace.
-                        "{{name}}" => $currentUser->name,
-                        "{{new_mail}}" => $_POST['mail'],
-                        "{{link}}" => "{$cfg['url']}index.php?t=$token",
-                        "{{expires}}" => strftime("%c", time()+86400),
-                    )
+                    $body, // Body
+                    $cfg['SMTP'] // SMTP options
                 );
                 $message = "Dina kontaktuppgifter har sparats. Ett meddelande har skickats till adressen {$_POST['mail']}. Använd länken i mejlet för att aktivera den nya adressen.<br><br>Hittar du inte mejlet? Kolla i skräpkorgen!";
                 $_REQUEST['expand'] = "contact";
