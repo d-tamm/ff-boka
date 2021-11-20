@@ -113,20 +113,19 @@ EOF;
             if ($_POST['mail'] !== $currentUser->mail) {
                 // Mail address change. Send a verification token.
                 $token = $currentUser->setUnverifiedMail($_POST['mail']);
-                // Get mail template
-                $body = file_get_contents(__DIR__."/templates/confirm_mail_address.html");
-                $body = str_replace("{{name}}", $currentUser->name, $body);
-                $body = str_replace("{{new_mail}}", $_POST['mail'], $body);
-                $body = str_replace("{{link}}", "{$cfg['url']}index.php?t=$token", $body);
-                $body = str_replace("{{expires}}", strftime("%c", time()+86400), $body);
                 $FF->sendMail(
-                    $cfg['mailFrom'], // From
-                    $cfg['mailFromName'], // From name
-                    $cfg['mailReplyTo'], // Reply to
                     $_POST['mail'], // To
                     "Bekräfta din epostadress", // subject
-                    $body, // Body
-                    $cfg['SMTP'] // SMTP options
+                    "confirm_mail_address", // template
+                    array(
+                        "{{name}}" => $currentUser->name,
+                        "{{new_mail}}" => $_POST['mail'],
+                        "{{link}}" => "{$cfg['url']}index.php?t=$token",
+                        "{{expires}}" => strftime("%c", time()+86400)
+                    ),
+                    [], // attachments
+                    $cfg['mail'],
+                    false // send immediately
                 );
                 $message = "Dina kontaktuppgifter har sparats. Ett meddelande har skickats till adressen {$_POST['mail']}. Använd länken i mejlet för att aktivera den nya adressen.<br><br>Hittar du inte mejlet? Kolla i skräpkorgen!";
                 $_REQUEST['expand'] = "contact";

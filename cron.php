@@ -23,7 +23,7 @@ logger(__METHOD__.sprintf("Executing cron jobs. Last cron execution was %s ago."
  */
 
 // Send queued mails
-$FF->sendQueuedMails($cfg['mailFrom'], $cfg['mailFromName'], $cfg['mailReplyTo'], $cfg['SMTP']);
+$FF->sendQueuedMails($cfg['mail']);
 
 // Record last execution time
 $db->exec("UPDATE config SET value=UNIX_TIMESTAMP() WHERE name='last hourly cron run'");

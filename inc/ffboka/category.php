@@ -558,7 +558,7 @@ class Category extends FFBoka {
     
     /**
      * Get the path from section level
-     * @return array[int id, string caption] Array with category IDs and strings representing superordinate elements
+     * @return array Array [int id, string caption] with category IDs and strings representing superordinate elements
      */
     function getPath() {
         if ($this->parentId) $ret = $this->parent()->getPath();

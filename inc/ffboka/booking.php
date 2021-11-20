@@ -275,14 +275,11 @@ class Booking extends FFBoka {
 
     /**
      * Send a confirmation email to the booking user.
-     * @param string $from
-     * @param string $fromName
-     * @param string $replyTo
-     * @param array $SMTPOptions Array of SMTP options, with members host, port, user (username), pass (password)
+     * @param array $mailOptions Array of email options, with members from, fromName, replyTo, SMTPHost, SMTPPort, SMTPUser, SMTPPass
      * @param string $url The base URL of the installation, with trailing slash (https://domain.tld/installpath/).
      * @return bool|string Returns TRUE on success, or an error message string on failure.
      */
-    public function sendConfirmation(string $from, string $fromName, string $replyTo, array $SMTPOptions, string $url) {
+    public function sendConfirmation(array $mailOptions, string $url) {
         $itemList = "<tr><th>Resurs</th><th>Status</th><th>Datum</th><th></th></tr>"; // Header for table with booked items
         $leastStatus = self::STATUS_CONFIRMED;
         $rejectedItems = FALSE; // Whether there are rejected items in the booking or not
@@ -349,26 +346,24 @@ class Booking extends FFBoka {
             $statusText = "Några poster i bokningen är preliminära och behöver bekräftas av ansvarig handläggare.";
             if ($rejectedItems) $statusText .= " OBS, det finns poster som har avvisats. Kolla i kommentarsfältet längre ner om handläggaren har lämnat mer information om detta.";
         }
-        // Get template and replace placeholders
-        $body = file_get_contents(__DIR__."/../../templates/confirm_booking.html");
-        $body = str_replace("{{name}}", htmlspecialchars(is_null($this->userId) ? $this->extName : $this->user()->name), $body);
-        $body = str_replace("{{items}}", $itemList, $body);
-        $body = str_replace("{{messages}}", count($messages) ? "<li>".implode("</li><li>", $messages)."</li>" : "", $body);
-        $body = str_replace("{{status}}", $statusText, $body);
-        $body = str_replace("{{contactData}}", $contactData, $body);
-        $body = str_replace("{{answers}}", $answers, $body);
-        $body = str_replace("{{ref}}", htmlspecialchars($this->ref), $body);
-        $body = str_replace("{{commentCust}}", $this->commentCust ? str_replace("\n", "<br>", htmlspecialchars($this->commentCust)) : "(ingen kommentar har lämnats)", $body);
-        $body = str_replace("{{bookingLink}}", "{$url}book-sum.php?bookingId={$this->id}&token={$this->token}", $body);
         if ($this->sendMail(
-            $from,
-            $fromName,
-            $replyTo,
             is_null($this->userId) ? $this->extMail : $this->user()->mail, // to
             ($this->confirmationSent ? "Uppdaterad bokningsbekräftelse" : "Bokningsbekräftelse") . " #{$this->id} " . htmlspecialchars($this->ref), // subject
-            $body,
-            $SMTPOptions,
-            $attachments
+            "confirm_booking", // template
+            array( // replace
+                "{{name}}" => htmlspecialchars(is_null($this->userId) ? $this->extName : $this->user()->name),
+                "{{items}}" => $itemList,
+                "{{messages}}" => count($messages) ? "<li>".implode("</li><li>", $messages)."</li>" : "",
+                "{{status}}" => $statusText,
+                "{{contactData}}" => $contactData,
+                "{{answers}}" => $answers,
+                "{{ref}}" => htmlspecialchars($this->ref),
+                "{{commentCust}}" => $this->commentCust ? str_replace("\n", "<br>", htmlspecialchars($this->commentCust)) : "(ingen kommentar har lämnats)",
+                "{{bookingLink}}" => "{$url}book-sum.php?bookingId={$this->id}&token={$this->token}"
+            ),
+            $attachments,
+            $mailOptions,
+            false // send now
         )) $this->confirmationSent = true;
         else return "Kunde inte skicka bokningsbekräftelsen. Vänligen kontakta administratören.";
         return true;
@@ -377,10 +372,11 @@ class Booking extends FFBoka {
 
     /**
      * Send alerts about the booking to concerned admins
+     * @param array $mailOptions Array with members from, fromName, replyTo, SMTPUser, SMTPPass, SMTPPort, SMTPHost
      * @param string $url The base URL of the installation, with trailing slash (https://domain.tld/installpath/).
      * @return bool True if all notifications could be sent, otherwise false.
      */
-    public function sendNotifications(string $url) {
+    public function sendNotifications(array $mailOptions, string $url) {
         $ret = true;
         $adminsToNotify = array(); // array where the keys are email addresses or user ids, and the values are arrays of booked item ids
         // Some information about the booking user
@@ -409,18 +405,18 @@ class Booking extends FFBoka {
                     switch ($admin->getNotifyAdminOnNewBooking($cat)) {
                         case "confirmOnly":
                             if ($item->status > self::STATUS_PREBOOKED) break;
+                            // continue to "yes"
                         case "yes":
-                            $adminsToNotify[$adm['userId']][] = $item->bookedItemId;
+                            // Don't send notification to current user
+                            if ($admin->id != $_SESSION['authenticatedUser'] && $admin->mail != "") $adminsToNotify[$adm['userId']][] = $item->bookedItemId;
                     }
                 }
             }
         }
         foreach ($adminsToNotify as $id=>$itemIds) {
             if (is_numeric($id)) { // Admin user
-                if ($id == $_SESSION['authenticatedUser']) continue; // Don't send notification to current user
                 $adm = new User($id);
                 $mail = $adm->mail;
-                if ($mail=="") continue; // user has not set his/her email address
                 $name = $adm->name;
             } else {
                 $mail = $id;
@@ -438,27 +434,22 @@ class Booking extends FFBoka {
                 }
                 $itemList .= "</tr>";
             }
-            try {
-                $this->queueMail(
-                    $mail, // to
-                    $this->confirmationSent ? "FF Uppdaterad bokning #{$this->id}" : "FF Ny bokning #{$this->id}", // subject
-                    "booking_alert", // template
-                    array( // replace
-                        "{{name}}" => htmlspecialchars($name),
-                        "{{contactData}}" => $contactData,
-                        "{{items}}" => $itemList,
-                        "{{ref}}"   => htmlspecialchars($this->ref),
-                        "{{commentCust}}" => $this->commentCust ? str_replace("\n", "<br>", htmlspecialchars($this->commentCust)) : "(ingen kommentar har lämnats)",
-                        "{{bookingLink}}" => "{$url}book-sum.php?bookingId={$this->id}",
-                    ),
-                    [], // attachments
-                    "", // fromName
-                    $clientMail //replyTo
-                );
-            } catch (\Exception $e) {
-                logger(__METHOD__." Failed to send booking notification to $mail. " . $e->getMessage(), E_WARNING);
-                $ret = false;
-            }
+            $mailOptions['replyTo'] = $clientMail;
+            $this->sendMail(
+                $mail, // to
+                $this->confirmationSent ? "FF Uppdaterad bokning #{$this->id}" : "FF Ny bokning #{$this->id}", // subject
+                "booking_alert", // template
+                array( // replace
+                    "{{name}}" => htmlspecialchars($name),
+                    "{{contactData}}" => $contactData,
+                    "{{items}}" => $itemList,
+                    "{{ref}}"   => htmlspecialchars($this->ref),
+                    "{{commentCust}}" => $this->commentCust ? str_replace("\n", "<br>", htmlspecialchars($this->commentCust)) : "(ingen kommentar har lämnats)",
+                    "{{bookingLink}}" => "{$url}book-sum.php?bookingId={$this->id}",
+                ),
+                [], // attachments
+                $mailOptions
+            );
         }
         return $ret;
     }

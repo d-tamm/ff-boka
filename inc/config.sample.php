@@ -30,17 +30,16 @@ $cfg = array(
         'feedSocnr' => "path/to/feed?MNoSocnr=", // Feed to convert personnummer to member number. Personnummer will be appended
     ),
 
-    // Sender address, readable name and Reply-to address for auto-generated emails
-    "mailFrom"     => "someone@somewhere.com",
-    "mailFromName" => "Resursbokning",
-    "mailReplyTo"  => "someone@somewhere.com",
-    
-    // SMTP settings for sending emails
-    "SMTP" => array(
-        "host" => 'smtp.mymaildomain.com',
-        "port" => '587',
-        "user" => 'someone@somewhere.com',
-        "pass" => 'my smtp password',
+    // Email settings
+    "mail" => array(
+        // Sender address, readable name and Reply-to address for auto-generated emails
+        "from"     => "someone@somewhere.com",
+        "fromName" => "Resursbokning",
+        "replyTo"  => "someone@somewhere.com",
+        "SMTPHost" => 'smtp.mymaildomain.com',
+        "SMTPPort" => '587',
+        "ŚMTPUser" => 'someone@somewhere.com',
+        "SMTPPass" => 'my smtp password',
     ),
 
     // Max size of images in pixels (longer side). If larger images are submitted, they will be downscaled.
