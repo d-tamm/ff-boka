@@ -94,18 +94,17 @@ if (isset($_REQUEST['bookingId'])) {
     $_SESSION['bookingId'] = $_REQUEST['bookingId'];
 }
 
-if (isset($_SESSION['bookingId'])) {
-    // Open existing booking
-    try {
-        $booking = new Booking($_SESSION['bookingId']);
-    } catch (Exception $e) {
-        logger(__METHOD__." User {$currentUser->id} tried to access invalid booking {$_SESSION['bookingId']}", E_WARNING);
-        unset($_SESSION['bookingId']);
-        header("Location: index.php?action=bookingNotFound");
-        die();
-    }
-} else {
+if (!isset($_SESSION['bookingId'])) {
     header("Location: index.php");
+    die();
+}
+// Open existing booking
+try {
+    $booking = new Booking($_SESSION['bookingId']);
+} catch (Exception $e) {
+    logger(__METHOD__." User {$currentUser->id} tried to access invalid booking {$_SESSION['bookingId']}", E_WARNING);
+    unset($_SESSION['bookingId']);
+    header("Location: index.php?action=bookingNotFound");
     die();
 }
 
@@ -245,7 +244,7 @@ EOF;
             break;
         };
         $booking->sendNotifications($cfg['url']);
-        $result = $booking->sendConfirmation($cfg['url']);
+        $result = $booking->sendConfirmation($cfg['mailFrom'], $cfg['mailFromName'], $cfg['mailReplyTo'], $cfg['SMTP'], $cfg['url']);
         if ($result !== TRUE) {
             $message .= $result;
         } elseif ($_REQUEST['action'] == "confirmBooking") {
