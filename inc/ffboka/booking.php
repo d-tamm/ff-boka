@@ -275,10 +275,14 @@ class Booking extends FFBoka {
 
     /**
      * Send a confirmation email to the booking user.
+     * @param string $from
+     * @param string $fromName
+     * @param string $replyTo
+     * @param array $SMTPOptions Array of SMTP options, with members host, port, user (username), pass (password)
      * @param string $url The base URL of the installation, with trailing slash (https://domain.tld/installpath/).
      * @return bool|string Returns TRUE on success, or an error message string on failure.
      */
-    public function sendConfirmation(string $url) {
+    public function sendConfirmation(string $from, string $fromName, string $replyTo, array $SMTPOptions, string $url) {
         $itemList = "<tr><th>Resurs</th><th>Status</th><th>Datum</th><th></th></tr>"; // Header for table with booked items
         $leastStatus = self::STATUS_CONFIRMED;
         $rejectedItems = FALSE; // Whether there are rejected items in the booking or not
@@ -345,29 +349,28 @@ class Booking extends FFBoka {
             $statusText = "Några poster i bokningen är preliminära och behöver bekräftas av ansvarig handläggare.";
             if ($rejectedItems) $statusText .= " OBS, det finns poster som har avvisats. Kolla i kommentarsfältet längre ner om handläggaren har lämnat mer information om detta.";
         }
-        try {
-            $this->queueMail(
-                is_null($this->userId) ? $this->extMail : $this->user()->mail, // to
-                ($this->confirmationSent ? "Uppdaterad bokningsbekräftelse" : "Bokningsbekräftelse") . " #{$this->id} " . htmlspecialchars($this->ref), // subject
-                "confirm_booking", // template name
-                array( // replace array
-                    "{{name}}"    => htmlspecialchars(is_null($this->userId) ? $this->extName : $this->user()->name),
-                    "{{items}}"   => $itemList,
-                    "{{messages}}"=> count($messages) ? "<li>".implode("</li><li>", $messages)."</li>" : "",
-                    "{{status}}"  => $statusText,
-                    "{{contactData}}" => $contactData,
-                    "{{answers}}" => $answers,
-                    "{{ref}}"     => htmlspecialchars($this->ref),
-                    "{{commentCust}}" => $this->commentCust ? str_replace("\n", "<br>", htmlspecialchars($this->commentCust)) : "(ingen kommentar har lämnats)",
-                    "{{bookingLink}}" => "{$url}book-sum.php?bookingId={$this->id}&token={$this->token}",
-                ),
-                $attachments
-            );
-            $this->confirmationSent = true;
-        } catch(\Exception $e) {
-            logger(__METHOD__." Failed to send booking confirmation. " . $e->getMessage(), E_WARNING);
-            return "Kunde inte skicka bokningsbekräftelsen:" . $e->getMessage();
-        }
+        // Get template and replace placeholders
+        $body = file_get_contents(__DIR__."/../../templates/confirm_booking.html");
+        $body = str_replace("{{name}}", htmlspecialchars(is_null($this->userId) ? $this->extName : $this->user()->name), $body);
+        $body = str_replace("{{items}}", $itemList, $body);
+        $body = str_replace("{{messages}}", count($messages) ? "<li>".implode("</li><li>", $messages)."</li>" : "", $body);
+        $body = str_replace("{{status}}", $statusText, $body);
+        $body = str_replace("{{contactData}}", $contactData, $body);
+        $body = str_replace("{{answers}}", $answers, $body);
+        $body = str_replace("{{ref}}", htmlspecialchars($this->ref), $body);
+        $body = str_replace("{{commentCust}}", $this->commentCust ? str_replace("\n", "<br>", htmlspecialchars($this->commentCust)) : "(ingen kommentar har lämnats)", $body);
+        $body = str_replace("{{bookingLink}}", "{$url}book-sum.php?bookingId={$this->id}&token={$this->token}", $body);
+        if ($this->sendMail(
+            $from,
+            $fromName,
+            $replyTo,
+            is_null($this->userId) ? $this->extMail : $this->user()->mail, // to
+            ($this->confirmationSent ? "Uppdaterad bokningsbekräftelse" : "Bokningsbekräftelse") . " #{$this->id} " . htmlspecialchars($this->ref), // subject
+            $body,
+            $SMTPOptions,
+            $attachments
+        )) $this->confirmationSent = true;
+        else return "Kunde inte skicka bokningsbekräftelsen. Vänligen kontakta administratören.";
         return true;
     }
 
