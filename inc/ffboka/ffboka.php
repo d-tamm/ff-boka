@@ -466,92 +466,103 @@ class FFBoka {
 
 
     /**
-     * Queue an email for delayed sending. Create a mail queue entry to be processed by cron.
-     * @param string $to
-     * @param string $subject
-     * @param string $template Name of template file to use, without extension. The file must be in the templates folder.
-     * If there is a file named $template.html, it will be used. Otherwise, $template will be used as the message body.
-     * @param array $replace Array of strings [search=>replace] to be replaced in the body|template
-     * @param array $attachments Array of files [path=>filename] to attach. path is the absolute path to the 
-     * file, and filename is the name the file shall appear with in the email 
-     * @param string $fromName Clear text From name
-     * @param string $replyTo
-     * @return int Returns the ID of the created mail queue item.
-     * @throws \Exception if creation of mail queue item fails.
-     */
-    function queueMail(string $to, string $subject, $template, $replace=[], $attachments=[], string $fromName='', string $replyTo='') {
-        if (is_readable(__DIR__."/../../templates/$template.html")) {
-            $body = file_get_contents(__DIR__."/../../templates/$template.html");
-        } else {
-            $body = $template;
-        }
-        // Replace placeholders
-        $body = str_replace(array_keys($replace), array_values($replace), $body);
-
-        // Place mail into mail queue
-        $stmt = self::$db->prepare("INSERT INTO mailq SET fromName=:fromName, `to`=:to, replyTo=:replyTo, subject=:subject, body=:body, attachments=:attachments");
-        if (!$stmt->execute(array(
-            ":fromName" => $fromName,
-            ":to"       => $to,
-            ":replyTo"  => $replyTo,
-            ":subject"  => $subject,
-            ":body"     => $body,
-            ":attachments" => json_encode($attachments)
-        ))) {
-            logger(__METHOD__." Failed to queue mail. " . $stmt->errorInfo()[2], E_ERROR);
-            throw new \Exception("Failed to queue mail. " . $stmt->errorInfo()[2]);
-        }
-        return self::$db->lastInsertId();
-    }
-
-    /**
      * Send all emails from the mail queue
-     * @param string $from From address to use
-     * @param string $fromName Cleartext from name to use if no from name is set in queue entry
-     * @param string $replyTo Reply-to address to use if not set in queue entry
-     * @param array $SMTPOptions Array with SMTP config, containing the keys: host, port, user, pass
-     * @throws Exception if sending fails
+     * @param array $mailOptions Array with email config, containing the keys: from, fromName, replyTo, SMTPHost, SMTPPort, SMTPUser, SMTPPass
      */
-    function sendQueuedMails(string $from, string $fromName, string $replyTo, array $SMTPOptions) {
+    public function sendQueuedMails(array $mailOptions) {
         $stmt = self::$db->query("SELECT * FROM mailq");
         $rows = $stmt->fetchAll(PDO::FETCH_OBJ);
         if (count($rows)) logger(__METHOD__." Sending mails from mail queue...");
         foreach ($rows as $row) {
+            if ($row->fromName) $mailOptions['fromName'] = $row->fromName;
+            if ($row->replyTo) $mailOptions['replyTo'] = $row->replyTo;
+            $this->sendMail(
+                $row->to, // To
+                $row->subject, // Subject
+                $row->body, // Body
+                [], // replace
+                json_decode($row->attachments), // attachments
+                $mailOptions,
+                false // dont queue, send now
+            ) && self::$db->exec("DELETE FROM mailq WHERE mailqId={$row->mailqId}");
+        }
+    }
+
+    /**
+     * Send an email
+     * @param string $to Address where to send the mail
+     * @param string $subject
+     * @param string $templateBody Name of template file to use, without extension. The file must be in the templates folder.
+     * If there is a file named $template.html, it will be used. Otherwise, $template will be used as the message body.
+     * @param array $replace Array of strings [search=>replace] to be replaced in the body|template
+     * @param array $attachments optional Array of attachments with the members 'path' (relative to boka root) and 'filename'
+     * @param array $mailOptions Optional array with email config, containing the keys: from, fromName, replyTo, host, port, user, pass. Optional if $queue=true.
+     * @param bool $queue Add to queue (true, default) or send immediately (false)
+     * @return bool True or queue ID on success, false if mail could not be sent/queued.
+     */
+    public function sendMail(string $to, string $subject, string $templateBody, array $replace=[], array $attachments=[], array $mailOptions, bool $queue=true) {
+        // Get template
+        if (is_readable(__DIR__."/../../templates/$templateBody.html")) {
+            $body = file_get_contents(__DIR__."/../../templates/$templateBody.html");
+        } else {
+            $body = $templateBody;
+        }
+        // Replace placeholders
+        $body = str_replace(array_keys($replace), array_values($replace), $body);
+
+        if ($queue) {
+            // Place mail into mail queue
+            $stmt = self::$db->prepare("INSERT INTO mailq SET fromName=:fromName, `to`=:to, replyTo=:replyTo, subject=:subject, body=:body, attachments=:attachments");
+            if (!$stmt->execute(array(
+                ":fromName" => $mailOptions['fromName'],
+                ":to"       => $to,
+                ":replyTo"  => $mailOptions['replyTo'],
+                ":subject"  => $subject,
+                ":body"     => $body,
+                ":attachments" => json_encode($attachments)
+            ))) {
+                logger(__METHOD__." Failed to queue mail. " . $stmt->errorInfo()[2], E_ERROR);
+                return false;
+            }
+            return self::$db->lastInsertId();
+        } else {
+            // Send message now
             try {
                 $mail = new PHPMailer(true);
                 $mail->XMailer = ' '; // Don't advertise that we are using PHPMailer
                 // Add attachments
-                foreach (json_decode($row->attachments) as $att) {
-                    $mail->addAttachment(dirname(__FILE__) . "/../../" . $att->path, $att->filename);
+                foreach ($attachments as $att) {
+                    $mail->addAttachment(__DIR__ . "/../../" . $att['path'], $att['filename']);
                 }
                 //Server settings
                 $mail->SMTPDebug = 0;
                 $mail->isSMTP();
-                $mail->Host = $SMTPOptions['host'];
-                $mail->Port = $SMTPOptions['port'];
+                $mail->Host = $mailOptions['SMTPHost'];
+                $mail->Port = $mailOptions['SMTPPort'];
                 $mail->SMTPAuth = true;
-                $mail->Username = $SMTPOptions['user'];
-                $mail->Password = $SMTPOptions['pass'];
+                $mail->Username = $mailOptions['SMTPUser'];
+                $mail->Password = $mailOptions['SMTPPass'];
                 $mail->SMTPSecure = 'tls';   // Enable TLS encryption, `ssl` also accepted
                 // Message content
                 $mail->CharSet ="UTF-8";
-                $mail->setFrom($from, $row->fromName ? $row->fromName : $fromName);
-                $mail->Sender = $SMTPOptions['user'];
-                $mail->addAddress($row->to);
-                $mail->addReplyTo($row->replyTo ? $row->replyTo : $replyTo);
+                $mail->setFrom($mailOptions['from'], $mailOptions['fromName']);
+                $mail->Sender = $mailOptions['SMTPUser'];
+                $mail->addAddress($to);
+                $mail->addReplyTo($mailOptions['replyTo']);
                 $mail->isHTML(true);
-                $mail->Subject = $row->subject;
-                $mail->Body = $row->body;
-                $mail->AltBody = strip_tags(str_replace(array("</p>", "<br>"), array("</p>\r\n\r\n", "\r\n"), $row->body));
+                $mail->Subject = $subject;
+                $mail->Body = $body;
+                $mail->AltBody = strip_tags(str_replace(array("</p>", "<br>"), array("</p>\r\n\r\n", "\r\n"), $body));
                 if (!$mail->send()) {
-                    logger(__METHOD__." Failed to send mail #{$row->mailqId} to {$row->to}. " . $mail->ErrorInfo, E_WARNING);
-                    throw new Exception($mail->ErrorInfo);
+                    logger(__METHOD__." Failed to send mail '$subject' to $to. " . $mail->ErrorInfo, E_WARNING);
+                    return false;
                 }
-                $stmt = self::$db->exec("DELETE FROM mailq WHERE mailqId={$row->mailqId}");
-                logger(__METHOD__." Mail #{$row->mailqId} has been sent to {$row->to}");
             } catch (Exception $e) {
-                logger(__METHOD__." Failed to send mail #{$row->mailqId} to {$row->to}. " . $mail->ErrorInfo, E_WARNING);
+                logger(__METHOD__." Failed to send mail '$subject' to $to. " . $mail->ErrorInfo, E_WARNING);
+                return false;
             }
+            logger(__METHOD__." Mail '$subject' has been sent to $to.");
+            return true;
         }
     }
 }

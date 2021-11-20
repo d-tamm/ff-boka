@@ -94,18 +94,17 @@ if (isset($_REQUEST['bookingId'])) {
     $_SESSION['bookingId'] = $_REQUEST['bookingId'];
 }
 
-if (isset($_SESSION['bookingId'])) {
-    // Open existing booking
-    try {
-        $booking = new Booking($_SESSION['bookingId']);
-    } catch (Exception $e) {
-        logger(__METHOD__." User {$currentUser->id} tried to access invalid booking {$_SESSION['bookingId']}", E_WARNING);
-        unset($_SESSION['bookingId']);
-        header("Location: index.php?action=bookingNotFound");
-        die();
-    }
-} else {
+if (!isset($_SESSION['bookingId'])) {
     header("Location: index.php");
+    die();
+}
+// Open existing booking
+try {
+    $booking = new Booking($_SESSION['bookingId']);
+} catch (Exception $e) {
+    logger(__METHOD__." User {$currentUser->id} tried to access invalid booking {$_SESSION['bookingId']}", E_WARNING);
+    unset($_SESSION['bookingId']);
+    header("Location: index.php?action=bookingNotFound");
     die();
 }
 
@@ -120,8 +119,9 @@ if (!(
         die();
     }
     // Last access check: current user must be admin of some used category
-    $isAdmin = FALSE;
-    foreach ($booking->items() as $item) {
+    $items = $booking->items();
+    $isAdmin = (count($items)==0); // Otherwise, the following loop will not set it to true if no items are there.
+    foreach ($items as $item) {
         if ($item->category()->getAccess($currentUser) >= FFBoka::ACCESS_CONFIRM) {
             $isAdmin = TRUE;
             break;
@@ -244,8 +244,8 @@ EOF;
             $message = "Epostadressen har ett ogiltigt format.";
             break;
         };
-        $booking->sendNotifications($cfg['url']);
-        $result = $booking->sendConfirmation($cfg['url']);
+        $booking->sendNotifications($cfg['mail'], $cfg['url']);
+        $result = $booking->sendConfirmation($cfg['mail'], $cfg['url']);
         if ($result !== TRUE) {
             $message .= $result;
         } elseif ($_REQUEST['action'] == "confirmBooking") {
@@ -291,7 +291,7 @@ EOF;
                     $name = "";
                 }
                 if ($mail) { // can only send if admin has email address
-                    $FF->queueMail(
+                    $FF->sendMail(
                         $mail, // to
                         "Återkommande bokning har skapats", // subject
                         "alert_series_created", // template
@@ -300,7 +300,10 @@ EOF;
                             "{{count}}" => $_REQUEST['repeat-count'],
                             "{{user}}" => $booking->user()->name,
                             "{{bookingLink}}" => "{$cfg['url']}book-sum.php?bookingId={$booking->id}",
-                        )
+                        ),
+                        [], // attachments
+                        $cfg['mail'],
+                        true // delayed sending
                     );
                 }
             }
@@ -345,7 +348,7 @@ EOF;
         else $statusText = "Din bokning <i>" . htmlspecialchars($booking->ref) . "</i> har raderats av bokningsansvarig (" . htmlspecialchars($currentUser->name . ", " . $currentUser->mail) . "). Om detta är felaktigt, vänligen ta kontakt med " . htmlspecialchars($currentUser->name) . " omgående för att reda ut vad som har hänt.";
         if ($maxStatus > FFBoka::STATUS_PENDING) {
             try {
-                $FF->queueMail(
+                $FF->sendMail(
                     is_null($booking->userId) ? $booking->extMail : $booking->user()->mail, // to
                     "Bokning #{$booking->id} har raderats", // subject
                     "booking_deleted", // template name
@@ -354,7 +357,10 @@ EOF;
                         "{{items}}"   => $mailItems,
                         "{{status}}"  => $statusText,
                         "{{commentCust}}" => $booking->commentCust ? str_replace("\n", "<br>", htmlspecialchars($booking->commentCust)) : "(ingen kommentar har lämnats)",
-                    )
+                    ),
+                    [], // attachments
+                    $cfg['mail'],
+                    true // delayed sending
                 );
             } catch(Exception $e) {
                 $message = "Kunde inte skicka bekräftelsen till dig:" . $e;
@@ -376,7 +382,7 @@ EOF;
                     $name = "";
                 }
                 if ($mail) { // can only send if admin has email address
-                    $FF->queueMail(
+                    $FF->sendMail(
                         $mail, // to
                         "FF Bokning #{$booking->id} raderad", // subject
                         "booking_deleted", // template
@@ -385,7 +391,9 @@ EOF;
                             "{{items}}"   => $mailItems,
                             "{{status}}"  => "Bokningen nedan har raderats.",
                             "{{commentCust}}" => str_replace("\n", "<br>", htmlspecialchars($booking->commentCust)) . "<br><br>$contactData",
-                        )
+                        ),
+                        [], // attachments
+                        $cfg['mail']
                     );
                 }
             }

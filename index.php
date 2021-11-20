@@ -63,7 +63,7 @@ matchande namn och där du har behörighet att boka. Sökningen går inte ner p�
 <p>Du kan alltid höra av dig till oss för att ta reda på vad som är sparat om just dig.</p>
 
 <h3>Kontakt</h3>
-<p>Om du har frågor eller synpunkter vill vi väldigt gärna veta det för att hjälpa dig och göra systemet bättre! Skicka ett mejl till " . obfuscatedMaillink($cfg['mailReplyTo'], "Fråga om resursbokningen") . " eller gå till vårt team <a href='https://teams.microsoft.com/l/team/19%3ad94d6ea5be8c4dc99827f5a8027fa713%40thread.tacv2/conversations?groupId=d2e0218f-ec87-4b7d-8e74-d2b91e530c9b&tenantId=f68d9ffd-156c-4e18-8cb6-7c55c3ec7111' target='_blank'>Resursbokning</a> i Teams som du har tillgång till som ledare med Friluftsfrämjandet-adress.</p>";
+<p>Om du har frågor eller synpunkter vill vi väldigt gärna veta det för att hjälpa dig och göra systemet bättre! Skicka ett mejl till adressen som du hittar längst ner på startsidan, eller gå till vårt team <a href='https://teams.microsoft.com/l/team/19%3ad94d6ea5be8c4dc99827f5a8027fa713%40thread.tacv2/conversations?groupId=d2e0218f-ec87-4b7d-8e74-d2b91e530c9b&tenantId=f68d9ffd-156c-4e18-8cb6-7c55c3ec7111' target='_blank'>Resursbokning</a> i Teams som du har tillgång till som ledare med Friluftsfrämjandet-adress.</p>";
             die();
         case "exit_impersonate":
             if (isset($_SESSION['impersonate_realUserId'])) {
@@ -367,7 +367,7 @@ if (isset($_REQUEST['message'])) $message = ($message ? "$message<br>" : "") . $
         <h3>Om resursbokningen</h3>
         <p>Resursbokningen på <?= $cfg['url'] ?> är Friluftsfrämjandets plattform för att hantera resurser som olika lokalföreningar har, såsom kanoter, stugor och mycket annat. Tänk om du vill boka kajaksläpet med 12 kajaker, paddlar, flytvästar, kapell mm. Det blir många resurser som ska in i bokningen, och vi har inte hittat något befintligt system där detta går att göra på ett smidigt sätt. Därför har vi skapat vårt eget system. Det ska vara enkelt att tillgängliggöra våra resurser till våra medlemmar och även till externa!</p>
         <p>Plattformen är optimerad för användning i mobilen eftersom det är där den används mest. Den fungerar lika bra i datorn, men är inte så bra på att använda stora skärmar.</p>
-        <p>Systemet utvecklas av volontärer inom Friluftsfrämjandet. Du kan komma i kontakt med oss på <?= obfuscatedMaillink($cfg['mailReplyTo']) ?> samt via <a href="https://github.com/d-tamm/ff-boka/">Github</a> där källkoden ligger och där vi hanterar buggar och nya funktioner. Som ledare med FF-adress kan du också hitta oss i Teams-gruppen "Resursbokning".</p>
+        <p>Systemet utvecklas av volontärer inom Friluftsfrämjandet. Du kan komma i kontakt med oss på <?= obfuscatedMaillink($cfg['mail']['replyTo']) ?> samt via <a href="https://github.com/d-tamm/ff-boka/">Github</a> där källkoden ligger och där vi hanterar buggar och nya funktioner. Som ledare med FF-adress kan du också hitta oss i Teams-gruppen "Resursbokning".</p>
         <p>Resursbokningen används för närvarande av <?= $rowSec->sections ?> lokalavdelningar som tillsammans har lagt upp <?= $rowItems->items ?> resurser.</p>
     </div>
     </div><!--/main-->

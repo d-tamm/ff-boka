@@ -107,20 +107,25 @@ EOF;
                 $message = "Fel lösenord. Vänligen försök igen. Lösenordet du ska ange är samma som du använder på Friluftsfrämjandets hemsida.";
                 break;
             }
+            // Put name and phone into currentUser so they get displayed properly
             $currentUser->name = $_POST['name'];
             $currentUser->phone = $_POST['phone'];
             if ($_POST['mail'] !== $currentUser->mail) {
+                // Mail address change. Send a verification token.
                 $token = $currentUser->setUnverifiedMail($_POST['mail']);
-                $FF->queueMail(
-                    $_POST['mail'], // to
+                $FF->sendMail(
+                    $_POST['mail'], // To
                     "Bekräfta din epostadress", // subject
-                    "confirm_mail_address", // template name
-                    array( // replace.
+                    "confirm_mail_address", // template
+                    array(
                         "{{name}}" => $currentUser->name,
                         "{{new_mail}}" => $_POST['mail'],
                         "{{link}}" => "{$cfg['url']}index.php?t=$token",
-                        "{{expires}}" => strftime("%c", time()+86400),
-                    )
+                        "{{expires}}" => strftime("%c", time()+86400)
+                    ),
+                    [], // attachments
+                    $cfg['mail'],
+                    false // send immediately
                 );
                 $message = "Dina kontaktuppgifter har sparats. Ett meddelande har skickats till adressen {$_POST['mail']}. Använd länken i mejlet för att aktivera den nya adressen.<br><br>Hittar du inte mejlet? Kolla i skräpkorgen!";
                 $_REQUEST['expand'] = "contact";
