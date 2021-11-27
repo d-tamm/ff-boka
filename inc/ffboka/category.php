@@ -38,7 +38,8 @@ class Category extends FFBoka {
     }
     
     /**
-     * Setter function for category properties
+     * Setter function for category properties.
+     * 
      * @param string $name Property name
      * @param string|NULL $value Property value
      * @return string Set value on success, false on failure.
@@ -88,7 +89,8 @@ class Category extends FFBoka {
     }
 
     /**
-     * Set the category image and thumbnail from uploaded image file
+     * Set the category image and thumbnail from uploaded image file.
+     * 
      * @param $_FILES[x] $imgFile Member of $_FILES array
      * @param int $maxSize Image will be scaled down if any dimension is bigger than this. 0=no limit
      * @param int $thumbSize Size of thumbnail
@@ -120,9 +122,10 @@ class Category extends FFBoka {
     }
 
     /**
-     * Getter function for category properties
+     * Getter function for category properties.
+     * 
      * @param string $name Name of the property
-     * @return string|array Value of the property.
+     * @return string|array|NULL Value of the property.
      */
     public function __get($name) {
         switch ($name) {
@@ -167,9 +170,10 @@ class Category extends FFBoka {
 
     /**
      * Get all pre-booking messages of this and any parent categories.
-     * @return [ string ] Array of strings containing any pre-booking messages of this and parent categories
+     * 
+     * @return string[] Array of strings containing any pre-booking messages of this and parent categories
      */
-    public function prebookMsgs() {
+    public function prebookMsgs() : array {
         if (is_null($this->parentId)) {
             if ($this->prebookMsg) return array($this->prebookMsg);
             else return array();
@@ -182,9 +186,10 @@ class Category extends FFBoka {
 
     /**
      * Get all post-booking messages of this and any parent categories.
-     * @return [ string ] Array of strings containing any post-booking messages of this and parent categories
+     * 
+     * @return string[] Array of strings containing any post-booking messages of this and parent categories
      */
-    public function postbookMsgs() {
+    public function postbookMsgs(): array {
         if (is_null($this->parentId)) {
             if ($this->postbookMsg) return array($this->postbookMsg);
             else return array();
@@ -196,27 +201,30 @@ class Category extends FFBoka {
     }
     
     /**
-     * Get the section this category belongs to
+     * Get the section this category belongs to.
+     * 
      * @return \FFBoka\Section
      */
-    public function section() {
+    public function section() : \FFBoka\Section {
         return new Section($this->sectionId);
     }
 
     /**
-     * Get the contact user of the category
+     * Get the contact user of the category.
+     * 
      * @return \FFBoka\User
      */
-    public function contactUser() {
+    public function contactUser() : \FFBoka\User {
         return new User($this->contactUserId);            
     }
 
     /**
-     * Get HTML formatted, safe string with contact information
+     * Get HTML formatted, safe string with contact information.
+     * 
      * @return string If member is set as contact user, the member's data is returned, otherwise the name,
      *      mail and phone set in category. If nothing is set, the parent's contact data is returned.
      */
-    public function contactData() {
+    public function contactData() : string {
         if (is_null($this->contactUserId)) {
             if ($this->contactName=="" && $this->contactPhone=="" && $this->contactMail=="" && !is_null($this->parentId)) return $this->parent()->contactData();
             $ret = array();
@@ -230,20 +238,22 @@ class Category extends FFBoka {
     }
 
     /**
-     * Get the parent category if exists
+     * Get the parent category if exists.
+     * 
      * @return \FFBoka\Category|NULL
      */
-    public function parent() {
+    public function parent() : ?\FFBoka\Category {
         if ($pId = $this->parentId) return new Category($pId);
         else return NULL;            
     }
     
     /**
-     * Remove category
-     * @throws \Exception
+     * Remove category.
+     * 
+     * @throws \Exception on failure
      * @return boolean TRUE on success, throws an exception otherwise.
      */
-    public function delete() {
+    public function delete() : bool {
         // Full size images will be removed from file system by cron
         if (self::$db->exec("DELETE FROM categories WHERE catId={$this->id}")) {
             return TRUE;
@@ -255,12 +265,13 @@ class Category extends FFBoka {
     
     /**
      * Get all chosen booking questions, including the ones specified for parent objects.
+     * 
      * @param bool $inherited Mark questions on this cat level as inherited.
      * Questions from parent objects will always be marked as inherited.
      * @return Array of {inherited, required} where the key is the ID of the question.
      * If a question is set on several levels, the lowest level setting is returned.
      */
-    public function getQuestions(bool $inherited=FALSE) {
+    public function getQuestions(bool $inherited=FALSE) : array {
         if ($this->parentId) $ret = $this->parent()->getQuestions(TRUE);
         else $ret = array();
         $stmt = self::$db->query("SELECT questionId, required FROM cat_questions WHERE catId={$this->id}");
@@ -271,12 +282,13 @@ class Category extends FFBoka {
     }
     
     /**
-     * Add to or update a question in the category
+     * Add to or update a question in the category.
+     * 
      * @param int $id ID of the question to add or update
      * @param bool $required Whether the used is required to answer the question
      * @return boolean False on failure
      */
-    public function addQuestion(int $id, bool $required=FALSE) {
+    public function addQuestion(int $id, bool $required=FALSE) : bool {
         $stmt = self::$db->prepare("INSERT INTO cat_questions SET questionId=:questionId, catId={$this->id}, required=:required ON DUPLICATE KEY UPDATE required=VALUES(required)");
         $stmt->bindValue("questionId", $id, \PDO::PARAM_INT);
         $stmt->bindValue(":required", $required, \PDO::PARAM_BOOL);
@@ -286,11 +298,12 @@ class Category extends FFBoka {
     }
     
     /**
-     * Remove a question from the category
+     * Remove a question from the category.
+     * 
      * @param int $id
      * @return boolean
      */
-    public function removeQuestion(int $id) {
+    public function removeQuestion(int $id) : bool {
         $stmt = self::$db->prepare("DELETE FROM cat_questions WHERE questionId=? AND catId={$this->id}");
         if ($stmt->execute(array($id))) return true;
         logger(__METHOD__." Failed to remove question $id from category {$this->id}. " . $stmt->errorInfo()[2], E_ERROR);
@@ -300,13 +313,14 @@ class Category extends FFBoka {
     
     /**
      * Add an attachment file to the category. The caption will be set to the file name.
+     * 
      * @param $_FILES[x] $file A member of the $_FILES array
      * @param array $allowedFileTypes Associative array of $extension=>$icon_filename pairs.
      * @param int $maxSize The maximum accepted file size in bytes. Defaults to 0 (no limit)
      * @throws \Exception if trying to upload files with unallowed file types, too big files, or if this is a dummy category.
-     * @return int ID of the added file
+     * @return integer ID of the added file
      */
-    public function addFile($file, $allowedFileTypes, int $maxSize=0) {
+    public function addFile($file, $allowedFileTypes, int $maxSize=0) : int {
         if (!$this->id) {
             logger(__METHOD__." Cannot add file to dummy category.", E_ERROR);
             throw new \Exception("Internt fel.");
@@ -345,14 +359,15 @@ class Category extends FFBoka {
     }
     
     /**
-     * Set property for an attached file
+     * Set property for an attached file.
+     * 
      * @param int $fileId
      * @param string $name The name of the property to set. Must be one of caption|filename|displayLink|attachFile
      * @param mixed $value The value of the property to set
      * @throws \Exception if trying to set an invalid property.
      * @return bool True on success, or FALSE on failure
      */
-    public function setFileProp(int $fileId, string $name, $value) {
+    public function setFileProp(int $fileId, string $name, $value) : bool {
         switch ($name) {
         case "caption":
         case "filename":
@@ -373,27 +388,28 @@ class Category extends FFBoka {
     }
     
     /**
-     * Delete an uploaded category attachment file 
+     * Delete an uploaded category attachment file.
+     * 
      * @param int $fileId ID of the file to be deleted
      * @return bool True on success, False on failure
      */
-    function removeFile(int $fileId) {
+    function removeFile(int $fileId) : bool {
         if (unlink(__DIR__."/../../uploads/$fileId")) {
             if (self::$db->exec("DELETE FROM cat_files WHERE catId={$this->id} AND fileId=$fileId")) return true;
             logger(__METHOD__." Failed to delete attachment record $fileId from DB. " . self::$db->errorInfo()[2], E_WARNING);
         }
         logger(__METHOD__." Failed to unlink attachment file " . realpath(__DIR__."/../../uploads/$fileId"), E_WARNING);
-        return FALSE;
+        return false;
     }
     
     /**
-     * Get all attachments for the category
+     * Get all attachments for the category.
+     * 
      * @param bool $includeParents Whether to also return attachments of superordinate categories
-     * @return array of objects with the following members: fileId, catId, filename, md5, 
-     *      displayLink, attachFile. The array keys are the md5 checksums, so no double files
-     *      should be returned.
+     * @return array of objects {fileId, catId, filename, md5, displayLink, attachFile}.
+     *    The array keys are the md5 checksums, so no double files should be returned.
      */
-    public function files(bool $includeParents=FALSE) {
+    public function files(bool $includeParents=FALSE) : array {
         if ($includeParents) $ret = $this->parent()->files(TRUE);
         else $ret = array();
         $stmt = self::$db->query("SELECT * FROM cat_files WHERE catId={$this->id}");
@@ -406,53 +422,121 @@ class Category extends FFBoka {
     
     /**
      * Get the granted access level for given user, taking into account inherited access.
+     * 
      * @param \FFBoka\User $user
      * @param bool $tieInSectionAdmin Whether to also include admin role set on section level
-     * @return int Bitfield of granted access rights. For an empty (fake) category, returns ACCESS_CATADMIN.
+     * @return integer Bitfield of granted access rights. For an empty (fake) category, returns ACCESS_CATADMIN.
      */
-    public function getAccess(User $user, bool $tieInSectionAdmin=TRUE) {
+    public function getAccess(User $user, bool $tieInSectionAdmin=TRUE) : int {
         // On fake category, assume full cat access and don't go further
         if (!$this->id) return FFBoka::ACCESS_CATADMIN;
         $access = FFBoka::ACCESS_NONE;
         // Get group permissions for this category
-        $access = $access | $this->accessExternal;
+        $access = $access | $this->getAccessRecursive($user, "accessExternal");
         if ($user->id) {
-            $access = $access | $this->accessMember;
-            if ($user->sectionId==$this->sectionId) $access = $access | $this->accessLocal;
+            $access = $access | $this->getAccessRecursive($user, "accessMember");
+            if ($user->sectionId==$this->sectionId) $access = $access | $this->getAccessRecursive($user, "accessLocal");
             // Add permissions for assignment groups
-            foreach ($this->groupPerms(TRUE) as $groupPerm) {
-                if (in_array($groupPerm['assName'], $_SESSION['assignments'][$this->sectionId])) {
-                    $access = $access | $groupPerm['access'];
+            $access = $access | $this->getAccessRecursive($user, "assignment");
+            // Add individual permissions
+            $access = $access | $this->getAccessRecursive($user, "individual");
+        }
+        if ($tieInSectionAdmin) {
+            // Tie in access rules from section
+            $access = $access | $this->section()->getAccess($user);
+        }
+        return $access;
+    }
+
+    /**
+     * Retrieves the effective access level of the specified $type for the specified $user,
+     * taking into account inherited permissions if the current category does not define
+     * an explicit permission.
+     *
+     * @param User $user
+     * @param string $type One of [accessLocal|accessMember|accessExternal|assignment|individual]
+     * @throws \Exception if $type is invalid
+     * @return integer
+     */
+    private function getAccessRecursive(User $user, string $type) : int {
+        switch ($type) {
+        case "accessLocal":
+        case "accessMember":
+            if (!$user->id) return FFBoka::ACCESS_NONE;
+            // continue to accessExternal
+        case "accessExternal":
+            if (!is_null($this->$type)) return $this->$type;
+            break;
+        case "assignment":
+            $access = FFBoka::ACCESS_NONE;
+            $groupPerms = array_column($this->groupPerms(TRUE), "access", "assName");
+            if ($_SESSION['assignments'][$this->sectionId]) {
+                foreach ($_SESSION['assignments'][$this->sectionId] as $assName) {
+                    if (array_key_exists($assName, $groupPerms)) $access = $access | $groupPerms[$assName];
                 }
             }
-            // Add individual permissions
-            $stmt = self::$db->prepare("SELECT access FROM cat_admins WHERE catId={$this->id} AND userId=?");
-            $stmt->execute(array($user->id));
-            if ($row = $stmt->fetch(PDO::FETCH_OBJ)) $access = $access | $row->access;
+            return $access;
+        case "individual":
+            $stmt = self::$db->query("SELECT access FROM cat_admins WHERE catId={$this->id} AND userId={$user->id}");
+            if ($row = $stmt->fetch(PDO::FETCH_OBJ)) return $row->access;
+            break;
+        default:
+            throw new \Exception("Invalid access type $type passed to ".__METHOD__);
         }
+        if ($this->parentId) return $this->parent()->getAccessRecursive($user, $type);
+        return FFBoka::ACCESS_NONE;
+    }
+    
+    /**
+     * Get all effective permissions for the category, including inherited ones
+     * which are not overwritten by explicit ones.
+     *
+     * @return array of ['level', 'inherited', 'name']. The indices of the array indicate
+     *  the scope of the permission and are either of 'accessExternal', 'accessMember',
+     *  'accessLocal', an assignment name (string) or a userId (int). The 'level' member
+     *  contains the access level. The 'inherited' member is set to true for permissions
+     *  which are inherited from superordinate categories. The 'name' member is only
+     *  set for permissions for individual users and contains the real name of the user.
+     */
+    public function getAccessAll() : array {
         if ($this->parentId) {
-            // Tie in access rules from parent category
-            $access = $access | $this->parent()->getAccess($user, $tieInSectionAdmin);
-        } elseif ($tieInSectionAdmin) {
-            // Tie in access rules from section
-            $access = $access | $this->section()->getAccess($user, $tieInSectionAdmin);
+            // get inherited access rights
+            $access = $this->parent()->getAccessAll();
+            // add inherited flags to each member
+            foreach ($access as &$acc) $acc['inherited'] = true;
+        } else $access = array();
+        // Basic access
+        if (!is_null($this->accessExternal)) $access['accessExternal'] = [ "level"=>$this->accessExternal ];
+        if (!is_null($this->accessMember)) $access['accessMember'] = [ "level"=>$this->accessMember ];
+        if (!is_null($this->accessLocal)) $access['accessLocal'] = [ "level"=>$this->accessLocal ];
+        // Group access
+        foreach ($this->groupPerms() as $perm) {
+            $access[$perm['assName']] = [ "level"=>$perm['access'] ];
+        }
+        // Individual access
+        foreach ($this->admins(FFBoka::ACCESS_NONE) as $adm) {
+            $access[$adm['userId']] = [ "level"=>$adm['access'], "name"=>$adm['name'] ];
         }
         return $access;
     }
     
     /**
-     * Set personal and assignment based access rights to category
-     * @param int|string $id Either a numeric user id, or the name of an assignment
-     * @param int $access Access constant, e.g. FFBoka::ACCESS_CATADMIN, FFBoka::ACCESS_CONFIRM.
-     *  If set to FFBoka::ACCESS_NONE, access is revoked
-     * @return boolean
+     * Set personal and assignment based access rights to category.
+     * 
+     * @param integer|string $id Either a numeric user id, or the name of an assignment
+     * @param integer|null $access Access constant, e.g. FFBoka::ACCESS_CATADMIN, FFBoka::ACCESS_CONFIRM, FFBoka::ACCESS_NONE.
+     *  If set to NULL, access is revoked
+     * @return boolean True on success.
      */ 
-    public function setAccess($id, $access) {
+    public function setAccess($id, ?int $access) : bool {
         if (is_numeric($id)) {
             $user = new User($id); // This will add user to database if not already there.
-            if (!$user->id) return FALSE;
+            if (!$user->id) {
+                logger(__METHOD__." Cannot set access. Failed to add user $id to database.");
+                return false;
+            }
         }
-        if ($access == FFBoka::ACCESS_NONE) {
+        if (is_null($access)) { //revoke permission
             if (is_numeric($id)) {
                 // Revoke permission for single user
                 $stmt = self::$db->prepare("DELETE FROM cat_admins WHERE catId={$this->id} AND userId=?");
@@ -473,15 +557,17 @@ class Category extends FFBoka {
         }
         if ($stmt->execute([ ":id"=>$id, ":access"=>$access ])) return true;
         logger(__METHOD__." Failed to set access. " . $stmt->errorInfo()[2], E_ERROR);
+        return false;
     }
     
     /**
-     * Retrieve all admins for category
+     * Retrieve all admins for category.
+     * 
      * @param int $access Return all entries with at least this access level.
      * @param bool $inherit Even return admins from superordinate categories
      * @return array [userId, name, access]
      */
-    public function admins(int $access=FFBoka::ACCESS_READASK, bool $inherit=FALSE) {
+    public function admins(int $access=FFBoka::ACCESS_READASK, bool $inherit=FALSE) : array {
         if (!$this->id) return array();
         $stmt = self::$db->prepare("SELECT userId, name, access FROM cat_admins INNER JOIN users USING (userId) WHERE catId={$this->id} AND access>=? ORDER BY users.name");
         $stmt->execute(array($access));
@@ -496,16 +582,18 @@ class Category extends FFBoka {
     }
     
     /**
-     * Retrieve all group permissions for category
+     * Retrieve all group permissions for category. If $inherit and there are set permissions for the same assignment on 
+     * different levels, returns the setting from the lowest level (i.e. child level).
+     * 
      * @param bool $inherit Even return permissions inherited from parents
-     * @return array['assName', 'access']
+     * @return array with members ['assName', 'access']
      */
-    public function groupPerms(bool $inherit=FALSE) {
+    public function groupPerms(bool $inherit=FALSE) : array {
         if (!$this->id) return array();
         $stmt = self::$db->query("SELECT assName, access FROM cat_perms WHERE catId={$this->id} ORDER BY assName");
         $perms = $stmt->fetchAll(PDO::FETCH_ASSOC);
         if ($inherit && $this->parentId) {
-            // Tie in permissions from parent category
+            // Tie in permissions from parent category only if not yet in list
             foreach ($this->parent()->groupPerms(TRUE) as $inh) {
                 if (!in_array($inh['assName'], array_column($perms, "assName"))) $perms[] = $inh;
             }
@@ -514,13 +602,14 @@ class Category extends FFBoka {
     }
     
     /**
-     * Check whether category or some subordinate item shall be shown to user
+     * Check whether category or some subordinate category shall be shown to user.
+     * 
      * @param \FFBoka\User $user
      * @param int $minAccess Ignore access settings lower than this level.
-     * Set to ACCESS_CONFIRM to check for visibility for admins.
+     *    Set to ACCESS_CONFIRM to check for visibility for admins.
      * @return boolean Returns TRUE for fake categories, and if the user has access to this or any subordinate category.
      */
-    public function showFor(User $user, int $minAccess=FFBoka::ACCESS_READASK) {
+    public function showFor(User $user, int $minAccess=FFBoka::ACCESS_READASK) : bool {
         if (!$this->id) return TRUE;
         if ($this->getAccess($user) >= $minAccess) return TRUE;
         foreach ($this->children() as $child) {
@@ -530,10 +619,11 @@ class Category extends FFBoka {
     }
     
     /**
-     * Get all direct sub-categories ordered by caption
+     * Get all direct sub-categories ordered by caption.
+     * 
      * @return \FFBoka\Category[]
      */
-    public function children() {
+    public function children() : array {
         if (!$this->id) return array();
         $stmt = self::$db->query("SELECT catId FROM categories WHERE parentId={$this->id} ORDER BY caption");
         $children = array();
@@ -544,11 +634,12 @@ class Category extends FFBoka {
     }
 
     /**
-     * Check whether the category has a subordinate category with given ID
+     * Check whether the category has a subordinate category with given ID.
+     * 
      * @param int $childId
      * @return boolean
      */
-    function hasChild(int $childId) {
+    function hasChild(int $childId) : bool {
         foreach ($this->children() as $child) {
             if ($child->id==$childId) return true;
             if ($child->hasChild($childId)) return true;
@@ -557,10 +648,12 @@ class Category extends FFBoka {
     }
     
     /**
-     * Get the path from section level
-     * @return array Array [int id, string caption] with category IDs and strings representing superordinate elements
+     * Get the path from section level.
+     * 
+     * @return array Array with members [int id, string caption] with category IDs and strings representing superordinate elements.
+     *    The first element in the array has id 0 and 'LA xxx' as caption.
      */
-    function getPath() {
+    function getPath() : array {
         if ($this->parentId) $ret = $this->parent()->getPath();
         else $ret = array([ 'id'=>0, 'caption'=>"LA " . $this->section()->name ]);
         $ret[] = [ 'id'=>$this->id, 'caption'=>$this->caption ];
@@ -569,10 +662,11 @@ class Category extends FFBoka {
 
    
     /**
-     * Get all items in the current category
+     * Get all items in the current category.
+     * 
      * @return array|\FFBoka\Item[] Items sorted by caption
      */
-    public function items() {
+    public function items() : array {
         if (!$this->id) return array();
         $stmt = self::$db->query("SELECT itemId FROM items WHERE catId={$this->id}");
         $items = array();
@@ -585,11 +679,12 @@ class Category extends FFBoka {
     }
     
     /**
-     * Add new resource to category
+     * Add new resource to category.
+     * 
      * @throws \Exception
      * @return \FFBoka\Item
      */
-    public function addItem() {
+    public function addItem() : \FFBoka\Item {
         if (self::$db->exec("INSERT INTO items SET catId={$this->id}, caption='Ny resurs'")) {
             return new Item(self::$db->lastInsertId());
         } else {
@@ -600,12 +695,13 @@ class Category extends FFBoka {
 
     /**
      * Look for search string in category caption and child categories accessible to the given user.
+     * 
      * @param string $search The search string
      * @param User $user Used to determine access rights. Only categories where the user has read access will be searched.
      * @param int[] $matches Will be populated with an array containing matching category captions as keys and the corresponding distance as value.
-     * @return int The distance for a similar match. 0=perfect match.
+     * @return integer The distance for a similar match. 0=perfect match.
      */
-    public function contains(string $search, User $user, &$matches) {
+    public function contains(string $search, User $user, &$matches) : int {
         $minDistance = 100000;
         foreach ($this->children() as $child) {
             if ($child->showFor($user)) {

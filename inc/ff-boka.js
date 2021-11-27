@@ -1334,7 +1334,7 @@ $(document).on('pageshow', "#page-admin-category", function() {
  */
 function unsetAccess(id) {
     $.mobile.loading("show", {});
-    $.getJSON("?action=ajaxSetAccess&id=" + encodeURIComponent(id) + "&access=" + ACCESS_NONE, function(data, status) {
+    $.getJSON("?action=ajaxSetAccess&id=" + encodeURIComponent(id) + "&access=NULL", function(data, status) {
         $("#assigned-cat-access").html(data.html).enhanceWithin();
         $.mobile.loading("hide", {});
         if (data.message!="") alert(data.message);
