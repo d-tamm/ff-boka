@@ -81,36 +81,33 @@ function showQuestions(Category $cat, Section $section) {
 }
 
 /**
- * Returns html code for displaying the category access as a list
+ * Returns html code for displaying the category access as a list.
+ * 
  * @param Category $cat
  * @param string[] $accLevels Access levels from $cfg['catAccessLevels']
  * @param bool $inherited If set to true, the list entries are marked as inherited privileges and without delete button (i.e. readonly).
  * @return string Formatted HTML <li> list
  */
-function displayCatAccess($cat, $accLevels, $inherited=false) {
-    if (!is_null($parent = $cat->parent())) $ret = displayCatAccess($parent, $accLevels, true);
-    else $ret = "";
-    if ($cat->accessExternal) {
-        if ($inherited) $ret .= "<li class='wrap'>Icke-medlemmar (ärvt från {$cat->caption})<p>{$accLevels[$cat->accessExternal]}</p></li>";
-        else $ret .= "<li class='wrap'><a href='#' class='ajax-input'>Icke-medlemmar<p>{$accLevels[$cat->accessExternal]}</p></a><a href='#' onclick=\"unsetAccess('accessExternal');\">Återkalla behörighet</a></li>";
+function displayCatAccess(Category $cat, array $accLevels, bool $inherited=false) : string {
+    $ret = "";
+    foreach ($cat->getAccessAll() as $key=>$access) {
+        if ($key==="accessExternal") {
+            if ($access['inherited']) $ret .= "<li class='wrap'>Icke-medlemmar (ärvd behörighet)<p>{$accLevels[$access['level']]}</p></li>";
+            else $ret .= "<li class='wrap'><a href='#' class='ajax-input'>Icke-medlemmar<p>{$accLevels[$access['level']]}</p></a><a href='#' onclick=\"unsetAccess('accessExternal');\">Återkalla behörighet</a></li>";
+        } elseif ($key==="accessMember") {
+            if ($access['inherited']) $ret .= "<li class='wrap'>Medlem i valfri lokalavdelning (ärvd behörighet)<p>{$accLevels[$access['level']]}</p></li>";
+            else $ret .= "<li class='wrap'><a href='#' class='ajax-input'>Medlem i valfri lokalavdelning<p>{$accLevels[$access['level']]}</p></a><a href='#' onclick=\"unsetAccess('accessMember');\">Återkalla behörighet</a></li>";
+        } elseif ($key==="accessLocal") {
+            if ($access['inherited']) $ret .= "<li class='wrap'>Lokal medlem (ärvd behörighet)<p>{$accLevels[$access['level']]}</p></li>";
+            else $ret .= "<li class='wrap'><a href='#' class='ajax-input'>Lokal medlem<p>{$accLevels[$access['level']]}</p></a><a href='#' onclick=\"unsetAccess('accessLocal');\">Återkalla behörighet</a></li>";
+        } elseif (is_numeric($key)) {
+            if ($access['inherited']) $ret .= "<li class='wrap'>$key " . ($access['name'] ? htmlspecialchars($access['name']) : "(ingen persondata tillgänglig)") . " (ärvd behörighet)<p>{$accLevels[$access['level']]}</p></li>";
+            else $ret .= "<li class='wrap'><a href='#' class='ajax-input'>$key " . ($access['name'] ? htmlspecialchars($access['name']) : "(ingen persondata tillgänglig)") . "<p>{$accLevels[$access['level']]}</p></a><a href='#' onclick=\"unsetAccess('$key');\">Återkalla behörighet</a></li>";    
+        } else {
+            if ($access['inherited']) $ret .= "<li class='wrap'>$key (ärvd behörighet)<p>{$accLevels[$access['level']]}</p></li>";
+            else $ret .= "<li class='wrap'><a href='#' class='ajax-input'>$key<p>{$accLevels[$access['level']]}</p></a><a href='#' onclick=\"unsetAccess('$key');\">Återkalla behörighet</a></li>";    
+        }
     }
-    if ($cat->accessMember) {
-        if ($inherited) $ret .= "<li class='wrap'>Medlem i valfri lokalavdelning (ärvt från {$cat->caption})<p>{$accLevels[$cat->accessMember]}</p></li>";
-        else $ret .= "<li class='wrap'><a href='#' class='ajax-input'>Medlem i valfri lokalavdelning<p>{$accLevels[$cat->accessMember]}</p></a><a href='#' onclick=\"unsetAccess('accessMember');\">Återkalla behörighet</a></li>";
-    }
-    if ($cat->accessLocal) {
-        if ($inherited) $ret .= "<li class='wrap'>Lokal medlem (ärvt från {$cat->caption})<p>{$accLevels[$cat->accessLocal]}</p></li>";
-        else $ret .= "<li class='wrap'><a href='#' class='ajax-input'>Lokal medlem<p>{$accLevels[$cat->accessLocal]}</p></a><a href='#' onclick=\"unsetAccess('accessLocal');\">Återkalla behörighet</a></li>";
-    }
-    foreach ($cat->groupPerms() as $perm) {
-        if ($inherited) $ret .= "<li class='wrap'>{$perm['assName']} (ärvt från {$cat->caption})<p>{$accLevels[$perm['access']]}</p></li>";
-        else $ret .= "<li class='wrap'><a href='#' class='ajax-input'>{$perm['assName']}<p>{$accLevels[$perm['access']]}</p></a><a href='#' onclick=\"unsetAccess('{$perm['assName']}');\">Återkalla behörighet</a></li>";
-    }
-    foreach ($cat->admins() as $adm) {
-        if ($inherited) $ret .= "<li class='wrap'>{$adm['userId']} " . ($adm['name'] ? htmlspecialchars($adm['name']) : "(ingen persondata tillgänglig)") . " (ärvt från {$cat->caption})<p>{$accLevels[$adm['access']]}</p></li>";
-        else $ret .= "<li class='wrap'><a href='#' class='ajax-input'>{$adm['userId']} " . ($adm['name'] ? htmlspecialchars($adm['name']) : "(ingen persondata tillgänglig)") . "<p>{$accLevels[$adm['access']]}</p></a><a href='#' onclick=\"unsetAccess('{$adm['userId']}');\">Återkalla behörighet</a></li>";
-    }
-    if ($inherited) return $ret;
     if ($ret) return "<ul data-role='listview' data-inset='true' data-split-icon='delete' data-split-theme='c'>$ret</ul>";
     else return "<p><i>Inga behörigheter har tilldelats än. Använd alternativen ovan för att tilldela behörigheter.</i></p>";
 }
@@ -294,11 +291,11 @@ switch ($_REQUEST['action']) {
         case "accessExternal":
         case "accessMember":
         case "accessLocal":
-            $cat->{$_GET['id']} = $_GET['access'];
+            $cat->{$_GET['id']} = $_GET['access']==="NULL" ? NULL : $_GET['access'];
             break;
         default:
-            $cat->setAccess($_GET['id'], $_GET['access']);
-            if ($_GET['access'] >= FFBoka::ACCESS_CONFIRM && is_numeric($_GET['id'])) {
+            $cat->setAccess($_GET['id'], $_GET['access']==="NULL" ? NULL : $_GET['access']);
+            if (isset($_GET['access']) && $_GET['access'] >= FFBoka::ACCESS_CONFIRM && is_numeric($_GET['id'])) {
                 // New admin added. Send notification if not same as current user and if not an assignment group
                 $adm = new User($_GET['id']);
                 if ($_GET['id'] != $currentUser->id && $adm->mail) {
@@ -407,7 +404,6 @@ unset ($_SESSION['itemId']);
 <div data-role="page" id="page-admin-category">
     <?= head(htmlspecialchars($cat->caption), $cfg['url'], $cfg['superAdmins']) ?>
     <div role="main" class="ui-content">
-
     <div data-role="popup" data-overlay-theme="b" id="popup-msg-page-admin-category" class="ui-content">
         <p id="msg-page-admin-category"><?= $message ?></p>
         <a href='#' data-rel='back' class='ui-btn ui-btn-icon-left ui-btn-inline ui-corner-all ui-icon-check'>OK</a>
@@ -577,6 +573,10 @@ unset ($_SESSION['itemId']);
             <div id="cat-access-levels" style="display:none;">
                 <p>2. Välj behörighetsnivå här:</p>
                 <fieldset data-role="controlgroup" data-mini="true">
+                    <label>
+                        <input type="radio" class="cat-access-level" name="cat-access" value="<?= FFBoka::ACCESS_NONE ?>">
+                        <?= $cfg['catAccessLevels'][FFBoka::ACCESS_NONE] ?>
+                    </label>
                     <label>
                         <input type="radio" class="cat-access-level" name="cat-access" value="<?= FFBoka::ACCESS_READASK ?>">
                         <?= $cfg['catAccessLevels'][FFBoka::ACCESS_READASK] ?>
