@@ -408,7 +408,7 @@ class User extends FFBoka {
      *    id (section ID),
      *    distance (the composed geographic and least comparison distance),
      *    matches (a string with comma-separated matches.
-     * The return array is sorted by distance, ascending.
+     * The return array is sorted by geographic distance, ascending.
      */
     public function findResource(string $search) {
         // Get home position as radians
@@ -417,23 +417,22 @@ class User extends FFBoka {
         $homeLon = pi() * $homeSec->lon / 180;
         $ret = array();
         foreach ($this->getAllSections() as $sec) {
-            $matches = array();
-            $dist = $sec->contains($search, $this, $matches);
-            if ($dist < 400) {
-                // Sort matches after relevance and take the 3 best matches
+            $matches = $sec->contains($search, $this, 70);
+            if (count($matches)) {
+                // Sort matches after relevance and take the 4 best matches
                 asort($matches);
-                $matches = array_keys(array_slice($matches, 0, 3));
+                $matches = array_keys(array_slice($matches, 0, 4));
                 // Get section's position as radians and calculate geographic distance.
                 $lat = pi() * $sec->lat / 180;
                 $lon = pi() * $sec->lon / 180;
                 $dLon2 = pow(cos($homeLat) * ($homeLon - $lon), 2);
                 $dLat2 = pow($homeLat - $lat, 2);
-                $dist += (int) (6300 * sqrt($dLon2 + $dLat2)); // add distance in km
+                $distance = (int) (6300 * sqrt($dLon2 + $dLat2)); // distance in km
                 $ret[] = [
-                    "name"=>$sec->name,
-                    "id"=>$sec->id,
-                    "distance"=>$dist,
-                    "matches"=>implode(", ", $matches)
+                    "name" => $sec->name,
+                    "id" => $sec->id,
+                    "distance" => $distance,
+                    "matches" => implode(", ", $matches)
                 ];
             }
         }
