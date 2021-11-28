@@ -40,7 +40,7 @@ inloggningen, vänd dig i första hand till dem som har hand om inloggningen på
 <p>Läs gärna även hjälptexten på admin-sidan!</p>
 
 <h3>Global sökning</h3>
-<p>Här på startsidan kan du leta efter resurser i hela Sverige. Systemet letar då efter kategorier med
+<p>Här på startsidan kan du efter inloggning leta efter resurser i hela Sverige. Systemet letar då efter kategorier med
 matchande namn och där du har behörighet att boka. Sökningen går inte ner på resursnivå.</p>
 
 <h3>Säkerhet och integritet</h3>
@@ -301,7 +301,7 @@ if (isset($_REQUEST['message'])) $message = ($message ? "$message<br>" : "") . $
 
             <?php if ($cfg['testSystem']===TRUE) { ?><br>
             <form class="ui-body ui-body-a">
-                <p>Under testfasen kan du ge dig själv administratörs-behörighet i valfri lokalavdelning för att testa alla funktioner.</p>
+                <p>Detta är ett testsystem. Du kan därför ge dig själv administratörs-behörighet i valfri lokalavdelning för att testa alla funktioner.</p>
                 <input type="hidden" name="action" value="make me admin">
                 <select name="sectionId">
                     <option>Välj lokalavdelning</option><?php
