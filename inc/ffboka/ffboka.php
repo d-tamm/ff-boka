@@ -565,4 +565,24 @@ class FFBoka {
             return true;
         }
     }
+
+    /**
+     * Compare 2 strings by how exactly $needle is contained in $haystack.
+     *
+     * @param string $haystack 
+     * @param string $needle
+     * @return float Number between 0 (no match) and 100 (perfect match) If $haystack starts with $needle,
+     *  returns 100, if it contains $needle otherwise, 90.
+     */
+    public function compareStrings(string $haystack, string $needle) : int {
+        $pos = stripos($haystack, $needle);
+        if ($pos === false) { // No direct match. Calculate string similarity.
+            similar_text(strtolower($haystack), strtolower($needle), $percent);
+            return $percent;
+        } elseif ($pos === 0) { // Best match: caption starts with $search
+            return 100;
+        } else { // Medium match: caption contains $search
+            return 90;
+        }
+    }
 }

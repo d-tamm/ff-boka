@@ -694,32 +694,29 @@ class Category extends FFBoka {
     }
 
     /**
-     * Look for search string in category caption and child categories accessible to the given user.
+     * Look for $search string in category, including the category and item captions. Descends
+     *  into child categories. Only includes categories accessible to the given user.
      * 
      * @param string $search The search string
      * @param User $user Used to determine access rights. Only categories where the user has read access will be searched.
-     * @param int[] $matches Will be populated with an array containing matching category captions as keys and the corresponding distance as value.
-     * @return integer The distance for a similar match. 0=perfect match.
+     * @param int $minScore The minimal score needed for results to be included
+     * @param int[] $matches Will be populated with an array containing matching category captions as keys and the corresponding hit distance (0-100) as value.
      */
-    public function contains(string $search, User $user, &$matches) : int {
-        $minDistance = 100000;
+    public function contains(string $search, User $user, int $minScore, array &$matches) : void {
         foreach ($this->children() as $child) {
             if ($child->showFor($user)) {
-                $minDistance = min($minDistance, $child->contains($search, $user, $matches));
+                $child->contains($search, $user, $minScore, $matches);
             }
         }
         if ($this->getAccess($user) >= self::ACCESS_READASK) {
-            $pos = stripos($this->caption, $search);
-            if ($pos === false) { // No direct match. Calculate Levenshtein distance with low delete cost.
-                $dist = levenshtein($this->caption, $search, 200, 200, 20);
-            } elseif ($pos === 0) { // Best match: caption starts with $search
-                $dist = 0;
-            } else { // Medium match: caption contains $search
-                $dist = 50;
+            // Check category caption
+            if (($score = $this->compareStrings($this->caption, $search)) >= $minScore) $matches[$this->caption] = $score;
+            // Also search in item captions
+            foreach ($this->items() as $item) {
+                if ($item->active) {
+                    if (($score = $this->compareStrings($item->caption, $search)) >= $minScore) $matches[$item->caption] = $score;
+                }
             }
-            $matches[$this->caption] = $dist;
-            $minDistance = min($minDistance, $dist);
         }
-        return $minDistance;
     }
 }

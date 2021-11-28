@@ -35,6 +35,7 @@ class Section extends FFBoka {
     
     /**
      * Getter function for Section properties.
+     * 
      * @param string $name Name of the property to retrieve
      * @return number|string
      */
@@ -77,6 +78,7 @@ class Section extends FFBoka {
 
         /**
      * Setter function for section properties
+     * 
      * @param string $name Property name
      * @param int|string|NULL $value Property value
      * @return string Set value on success, false on failure.
@@ -101,19 +103,21 @@ class Section extends FFBoka {
 
     /**
      * Gets all admin members IDs of the section.
+     * 
      * @return int[] Admin member IDs
      */
-    public function getAdmins(){
+    public function getAdmins() : array {
         $stmt = self::$db->query("SELECT userId FROM section_admins WHERE sectionId={$this->id}");
         return $stmt->fetchAll(PDO::FETCH_COLUMN, 0);
     }
     
     /**
      * Add admin access for user.
-     * @param $userId int UserID of new admin
+     * 
+     * @param int $userId UserID of new admin
      * @return bool TRUE on success, FALSE on failure (e.g. if the user already is admin).
      */
-    public function addAdmin($userId){
+    public function addAdmin(int $userId) : bool {
         $user = new User($userId); // This will add user to database if not already there.
         if (!$user->id) return FALSE;
         $stmt = self::$db->prepare("INSERT INTO section_admins SET sectionId={$this->id}, userId=?");
@@ -123,11 +127,12 @@ class Section extends FFBoka {
     }
     
     /**
-     * Revoke admin access
+     * Revoke admin access.
+     * 
      * @param int $userId UserID of user to remove
      * @return bool True on success
      */
-    public function removeAdmin($userId) {
+    public function removeAdmin(int $userId) : bool {
         $stmt = self::$db->prepare("DELETE FROM section_admins WHERE sectionId={$this->id} AND userId=?");
         if($stmt->execute(array($userId))) return true;
         logger(__METHOD__." Failed to revoke admin access. " . $stmt->errorInfo()[2], E_ERROR);
@@ -136,9 +141,10 @@ class Section extends FFBoka {
     
     /**
      * Get all first level categories.
+     * 
      * @return boolean|Category[] Array of categories
      */
-    public function getMainCategories() {
+    public function getMainCategories() : array {
         if (!$stmt = self::$db->query("SELECT catId FROM categories WHERE sectionId={$this->id} AND parentId IS NULL")) return false;
         $ret = array();
         while ($row = $stmt->fetch(PDO::FETCH_OBJ)) {
@@ -148,11 +154,12 @@ class Section extends FFBoka {
     }
 
     /**
-     * Add new category to section
+     * Add new category to section.
+     * 
      * @param int $parentId ID of parent category, defaults to NULL=no parent
      * @return Category Created category
      */
-    public function createCategory($parentId = NULL) {
+    public function createCategory(?int $parentId = NULL) : Category {
         $stmt = self::$db->prepare("INSERT INTO categories SET sectionId={$this->id}, parentId=:parentId, caption='Ny kategori'");
         $stmt->bindValue("parentId", $parentId); // Use bindValue so even NULL can be passed.
         if ($stmt->execute()) {
@@ -164,12 +171,13 @@ class Section extends FFBoka {
     }
     
     /**
-     * Check whether the section contains any items visible to the given user
+     * Check whether the section contains any items visible to the given user.
+     * 
      * @param User $user May be empty dummy user for external access
      * @param int $minAccess Look for categories with at least this access level. May be set to ACCESS_CONFIRM to get admin visibility. 
      * @return boolean
      */
-    public function showFor(User $user, int $minAccess=FFBoka::ACCESS_READASK) {
+    public function showFor(User $user, int $minAccess=FFBoka::ACCESS_READASK) : bool {
         // Section admins see everything.
         if ($this->getAccess($user)) return true;
         // Go down into categories
@@ -180,20 +188,22 @@ class Section extends FFBoka {
     }
 
     /**
-     * Get the granted access level for given user in this section
-     * @param \FFBoka\User $user
+     * Get the granted access level for given user in this section.
+     * 
+     * @param User $user
      * @return int Bitfield of access levels for user in this section
      */
-    public function getAccess(User $user) {
+    public function getAccess(User $user) : int {
         if (in_array($user->id, $this->getAdmins())) return FFBoka::ACCESS_SECTIONADMIN;
         else return FFBoka::ACCESS_NONE;
     }
     
     /**
-     * Add a booking question template to this section
+     * Add a booking question template to this section.
+     * 
      * @return boolean|\FFBoka\Question
      */
-    public function addQuestion() {
+    public function addQuestion() : bool {
         if (self::$db->exec("INSERT INTO questions SET sectionId={$this->id}")) return new Question(self::$db->lastInsertId());
         logger(__METHOD__." Failed to add Question. " . self::$db->errorInfo()[2], E_ERROR);
         return FALSE;
@@ -201,9 +211,10 @@ class Section extends FFBoka {
     
     /**
      * Get all question templates in section
+     * 
      * @return \FFBoka\Question[]
      */
-    public function questions() {
+    public function questions() : array {
         $questions = array();
         $stmt = self::$db->query("SELECT questionId FROM questions WHERE sectionId={$this->id}");
         while ($row = $stmt->fetch(\PDO::FETCH_OBJ)) {
@@ -213,11 +224,12 @@ class Section extends FFBoka {
     }
     
     /**
-     * Return all unconfirmed items in the section
+     * Return all unconfirmed items in the section.
+     * 
      * @param User $user If set, only return items which this user can confirm
-     * @return \FFBoka\Item[]
+     * @return Item[]
      */
-    public function getUnconfirmedItems(User $user=null) {
+    public function getUnconfirmedItems(User $user=null) : array {
         $stmt = self::$db->query("SELECT bookedItemId FROM bookings INNER JOIN booked_items USING (bookingId) WHERE status>" . \FFBoka\FFBoka::STATUS_REJECTED . " AND status<" . \FFBoka\FFBoka::STATUS_CONFIRMED . " AND sectionId={$this->id}");
         $ret = array();
         while ($row = $stmt->fetch(\PDO::FETCH_OBJ)) {
@@ -230,24 +242,26 @@ class Section extends FFBoka {
     }
 
     /**
-     * Looks for categories with captions which are similar to the search string.
+     * Looks for categories with captions or item captions which are similar to the search string.
+     * 
      * @param string $search The term to look for
      * @param User $user Used to determine the applicable access rights. Only categories where the user has access will be searched.
-     * @param int[] $matches Will be populated with an array containing matching category captions as keys and the corresponding distance as value.
-     * @return int Returns the least distance from a perfect match (0).
+     * @param int $minScore The lowest score needed to include results (0-100).
+     * @return int[] Array containing matching category and item captions as keys and the corresponding score (0-100) as value.
      */
-    public function contains(string $search, User $user, &$matches) {
-        $minDistance = 100000;
+    public function contains(string $search, User $user, int $minScore) : array {
+        $matches = array();
         foreach ($this->getMainCategories() as $cat) {
             if ($cat->showFor($user)) {
-                $minDistance = min($minDistance, $cat->contains($search, $user, $matches));
+                $cat->contains($search, $user, $minScore, $matches);
             }
         }
-        return $minDistance;
+        return $matches;
     }
 
     /**
-     * Returns usage totals for this section
+     * Returns usage totals for this section.
+     * 
      * @param int $year If given, will return all bookings during that year. Otherwise, returns all bookings for all years.
      * @param int $month [1..12] If given, will return all bookings placed that month. Otherwise, returns all bookings for the whole year(s)
      * @return stdClass An object with the following members:
@@ -255,7 +269,7 @@ class Section extends FFBoka {
      *  bookedItems - total number of items in those bookings
      *  duration - total time as a sum of all items [hours]
      */
-    public function usageOverview($year=null, $month=null) {
+    public function usageOverview(int $year=null, int $month=null) : stdClass {
         // Sanitize parameters
         if (!is_null($year)) $year = (int)$year;
         if (!is_null($month)) $month = (int)$month;
@@ -273,7 +287,8 @@ class Section extends FFBoka {
     }
 
     /**
-     * Returns usage details for the section
+     * Returns usage details for the section.
+     * 
      * @param int $year If set, will return statistics for that year only. Otherwise, returns statistics for all years.
      * @param int $month If set, will return statistics for bookings in that month only; otherwise for the whole year.
      * @return array of objects, one object for each resource in this section, with the following members:
@@ -284,7 +299,7 @@ class Section extends FFBoka {
      *  * bookings (number of times the item has been booked)
      *  * duration (total number of hours the item has been booked)
      */
-    public function usageDetails($year=null, $month=null) {
+    public function usageDetails(int $year=null, int $month=null) : array {
         $query = "SELECT catId, categories.caption category, items.itemId, items.caption item, COUNT(booked_items.bookedItemId) bookings, SUM(UNIX_TIMESTAMP(`end`)-UNIX_TIMESTAMP(`start`))/3600 duration FROM items INNER JOIN categories USING (catId) LEFT JOIN booked_items ON items.itemId=booked_items.itemId";
         if (!is_null($year)) $query .= " AND YEAR(`start`)=$year";
         if (!is_null($month)) $query .= " AND MONTH(`start`)=$month";
