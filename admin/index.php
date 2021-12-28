@@ -249,7 +249,10 @@ unset($_SESSION['catId']);
 
     <?php
     $unconfirmed = array();
-    foreach ($section->getUnconfirmedItems($currentUser) as $item) $unconfirmed[$item->booking()->id]++; ?>
+    foreach ($section->getUnconfirmedItems($currentUser) as $item) {
+        if (!isset($unconfirmed[$item->booking()->id])) $unconfirmed[$item->booking()->id] = 0;
+        $unconfirmed[$item->booking()->id]++;
+    } ?>
     <a class='ui-btn <?= $unconfirmed ? "ui-btn-c" : "ui-btn-b" ?> ui-icon-calendar ui-btn-icon-left' title='<?= $unconfirmed ? "Öppna bokningsadministratören" : "" ?>' href='#' onClick="openBookingAdmin('<?= $cfg['url'] ?>', <?= $section->id ?>);" data-ajax='false'><?= $unconfirmed ? count($unconfirmed) . " obekräftad(e) bokning(ar)" : "Öppna bokningsadmin" ?></a>
 
     <div data-role="collapsibleset" data-inset="false">
