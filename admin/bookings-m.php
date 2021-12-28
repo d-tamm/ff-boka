@@ -68,7 +68,6 @@ if (isset($_REQUEST['action'])) {
             // Get Freebusy bars and compile list with unconfirmed items
             $fbList = array();
             $unconfirmed = array();
-            $conflicts = array();
             foreach ($_SESSION['itemIds'] as $id) {
                 $item = new Item($id);
                 $fbList["item-$id"] = $item->freebusyBar([
@@ -81,7 +80,17 @@ if (isset($_REQUEST['action'])) {
                     switch ($bi->status) {
                         case FFBoka::STATUS_CONFLICT:
                         case FFBoka::STATUS_PREBOOKED:
-                            $unconfirmed[] = "<li><a href='../book-sum.php?bookingId={$bi->booking()->id}' target='_blank'><span class='freebusy-busy " . ($bi->status==FFBoka::STATUS_CONFLICT ? "conflict" : "unconfirmed") . "' style='display:inline-block; width:1em;'>&nbsp;</span> {$item->caption} (" . trim(strftime("%e %b", $bi->start)) . ")</a></li>";
+                            $booking = $bi->booking();
+                            if (!isset($unconfirmed[$booking->id])) $unconfirmed[$booking->id] = [
+                                "bookingId"=>$booking->id,
+                                "ref"=>$booking->ref,
+                                "userName"=>$booking->userName,
+                                "start"=>trim(strftime("%e/%m", $booking->start())),
+                                "items"=>[],
+                                "conflict"=>false
+                            ];
+                            $unconfirmed[$booking->id]["items"][] = $bi->caption;
+                            if ($bi->status==FFBoka::STATUS_CONFLICT) $unconfirmed[$booking->id]["conflict"] = true;
                             break;
                     }
                 }

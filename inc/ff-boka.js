@@ -176,7 +176,8 @@ function scrollDateBookings(offset) {
         $("#bookings-current-range-readable").html( readableRange );
         $("#bookings-list-unconfirmed").html("");
         $.each(data.unconfirmed, function( index, value ) {
-            $("#bookings-list-unconfirmed").append(value);
+            $("#bookings-list-unconfirmed").append(
+                "<li><a href='../book-sum.php?bookingId=" + value.bookingId + "' target='_blank'><span class='freebusy-busy " + (value.conflict ? "conflict" : "unconfirmed") + "' style='display:inline-block; width:1em;'>&nbsp;</span> " + value.start + " " + value.userName + (value.ref ? " ("+value.ref+")" : "") + "<br><p>" + value.items.join(", ") + "</p></a></li>");
         });
         $("#bookings-list-unconfirmed").listview("refresh");
         $("#bookings-unconfirmed-count").text("("+data.unconfirmed.length+")");

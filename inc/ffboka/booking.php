@@ -336,7 +336,7 @@ class Booking extends FFBoka {
         if (count($arAnswers)) {
             $answers = "<p>Bokningsfrågor och dina svar:</p>"; 
             foreach ($arAnswers as $answer) $answers .= "<p>Fråga: " . htmlspecialchars($answer->question) . "<br>Ditt svar: " . htmlspecialchars($answer->answer) . "</p>";
-        }
+        } else $answers = "";
         // Comment on booking status
         if ($leastStatus==self::STATUS_CONFIRMED && $rejectedItems) {
             $statusText = "Din bokning har nu hanterats av bokningsansvarig, men det finns poster i bokningen som inte har kunnat bekräftas. Nedan ser du vilka av posterna som är bekräftade och vilka som har avvisats. Kolla i kommentarsfältet längre ner om handläggaren har lämnat mer information om detta.";

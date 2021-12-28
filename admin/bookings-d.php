@@ -89,7 +89,6 @@ switch ($_REQUEST['action']) {
         // Get Freebusy bars and compile list with unconfirmed items
         $fbList = array();
         $unconfirmed = array();
-        $conflicts = array();
         $maxBookedItemId = 0;
         foreach ($_SESSION['itemIds'] as $id) {
             $item = new Item($id);
@@ -103,11 +102,18 @@ switch ($_REQUEST['action']) {
             foreach ($item->upcomingBookings(0) as $bi) {
                 switch ($bi->status) {
                 case FFBoka::STATUS_CONFLICT:
-                    $conflicts[] = "<span class='freebusy-busy conflict' style='display:inline-block; width:1em;'>&nbsp;</span> <a class='link-unconfirmed' href='#' data-booking-id='{$bi->booking()->id}'>{$item->caption} (" . trim(strftime("%e %b", $bi->start)) . ")</a><br>";
-                    $maxBookedItemId = max($maxBookedItemId, $bi->bookedItemId);
-                    break;
                 case FFBoka::STATUS_PREBOOKED:
-                    $unconfirmed[] = "<span class='freebusy-busy unconfirmed' style='display:inline-block; width:1em;'>&nbsp;</span> <a class='link-unconfirmed' href='#' data-booking-id='{$bi->booking()->id}'>{$item->caption} (" . trim(strftime("%e %b", $bi->start)) . ")</a><br>";
+                    $booking = $bi->booking();
+                    if (!isset($unconfirmed[$booking->id])) $unconfirmed[$booking->id] = [
+                        "bookingId"=>$booking->id,
+                        "ref"=>$booking->ref,
+                        "userName"=>$booking->userName,
+                        "start"=>trim(strftime("%e/%m", $booking->start())),
+                        "items"=>[],
+                        "status"=>"unconfirmed"
+                    ];
+                    $unconfirmed[$booking->id]["items"][] = $bi->caption;
+                    if ($bi->status==FFBoka::STATUS_CONFLICT) $unconfirmed[$booking->id]["status"] = "conflict";
                     $maxBookedItemId = max($maxBookedItemId, $bi->bookedItemId);
                     break;
                 }
@@ -117,7 +123,7 @@ switch ($_REQUEST['action']) {
             "scale"=>$scale,
             "freebusy"=>$fbList,
             "unconfirmed"=>$unconfirmed,
-            "conflicts"=>$conflicts,
+//            "conflicts"=>$conflicts,
             "maxBookedItemId"=>$maxBookedItemId
         ]));
         
@@ -238,19 +244,18 @@ switch ($_REQUEST['action']) {
             $.each(data.freebusy, function(key, value) { // key will be "item-nn"
                 $("#freebusy-"+key).html(value);
             });
-            if (Object.keys(data.unconfirmed).length + Object.keys(data.conflicts).length == 0) {
+            if (Object.keys(data.unconfirmed).length == 0) {
                 $("#indicator-new-bookings").hide();
             } else {
                 $("#indicator-new-bookings").show();
             }
-            $("#indicator-unconfirmed-count").text(Object.keys(data.unconfirmed).length + Object.keys(data.conflicts).length);
-            $("#indicator-conflicts-count").text(Object.keys(data.conflicts).length);
+            $("#indicator-unconfirmed-count").text(Object.keys(data.unconfirmed).length + (Object.keys(data.unconfirmed).length>1 ? "nya" : " ny") );
             $("#indicator-new-bookings-list").html("");
-            $.each(data.conflicts, function( index, value ) {
-                $("#indicator-new-bookings-list").append(value);
-            });
             $.each(data.unconfirmed, function( index, value ) {
-                $("#indicator-new-bookings-list").append(value);
+                $("#indicator-new-bookings-list").append(
+                    "<span class='freebusy-busy " + value.status + "' style='display:inline-block; width:1em;'>&nbsp;</span>" +
+                    "<a class='link-unconfirmed' href='#' data-booking-id='" + value.bookingId + "' title='" + value.items.join(", ") + "'> " + value.start + " " + value.userName + (value.ref ? " ("+value.ref+")" : "") + "</a><br>"
+                );
             });
             if (maxBookedItemId < data.maxBookedItemId) {
                 maxBookedItemId = data.maxBookedItemId;
@@ -312,7 +317,7 @@ switch ($_REQUEST['action']) {
 
 <div id='booking-admin'>
     <div id="head">
-        <div id="indicator-new-bookings"><span id="indicator-unconfirmed-count">?</span><span id="indicator-unconfirmed-count-label"> bokningar att bekräfta</span> (<span id="indicator-conflicts-count">?</span>⚠<span id="indicator-conflicts-count-label"> konflikt</span>)
+        <div id="indicator-new-bookings"><span id="indicator-unconfirmed-count">? nya bokningar</span><span id="indicator-unconfirmed-count-label"> bokning(ar) att bekräfta</span>
             <div id="indicator-new-bookings-list"></div>
         </div>
         <h1><a href="index.php" title="Till startsidan"><i class='fas fa-home' style='color:white; margin-right:20px;'></i></a> Bokningar i <?= $section->name ?>, <span id='booking-adm-date'></span></h1>
