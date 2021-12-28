@@ -274,8 +274,8 @@ $cronDelayed = ($lastCron==0 || $lastCron < time()-3600);
             $stmt = $db->query("SELECT value FROM config WHERE name='db-version'");
             $ver = $stmt->fetch(PDO::FETCH_OBJ);
             echo $ver->value; ?></p>
-            <p>Med knappen nedan kan du hämta senaste versionen från master-grenen på Github och installera den.</p>
-            <button class='ui-btn ui-btn-c' onClick="systemUpgrade(1);">Uppgradera systemet</button>
+            <p><span style="text-decoration: line-through;">Med knappen nedan kan du hämta senaste versionen från master-grenen på Github och installera den.</span> Uppgraderingsfunktionen har avaktiverats och kommer att tas bort snart.</p>
+            <button disabled class='ui-btn ui-btn-c' onClick="systemUpgrade(1);">Uppgradera systemet</button>
             <ul id="upgrade-progress"></ul>
         </div>
 
