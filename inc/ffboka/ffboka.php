@@ -496,11 +496,11 @@ class FFBoka {
      * If there is a file named $template.html, it will be used. Otherwise, $template will be used as the message body.
      * @param array $replace Array of strings [search=>replace] to be replaced in the body|template
      * @param array $attachments optional Array of attachments with the members 'path' (relative to boka root) and 'filename'
-     * @param array $mailOptions Optional array with email config, containing the keys: from, fromName, replyTo, host, port, user, pass. Optional if $queue=true.
+     * @param array $mailOptions Optional array with email config, containing the keys: from, fromName, replyTo, SMTPHost, SMTPPort, SMTPUser, SMTPPass. Optional if $queue=true.
      * @param bool $queue Add to queue (true, default) or send immediately (false)
      * @return bool True or queue ID on success, false if mail could not be sent/queued.
      */
-    public function sendMail(string $to, string $subject, string $templateBody, array $replace=[], array $attachments=[], array $mailOptions, bool $queue=true) {
+    public function sendMail(string $to, string $subject, string $templateBody, array $replace=[], array $attachments=[], array $mailOptions=[], bool $queue=true) {
         // Get template
         if (is_readable(__DIR__."/../../templates/$templateBody.html")) {
             $body = file_get_contents(__DIR__."/../../templates/$templateBody.html");
