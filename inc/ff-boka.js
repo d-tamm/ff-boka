@@ -180,7 +180,7 @@ function scrollDateBookings(offset) {
                 "<li><a href='../book-sum.php?bookingId=" + value.bookingId + "' target='_blank'><span class='freebusy-busy " + (value.conflict ? "conflict" : "unconfirmed") + "' style='display:inline-block; width:1em;'>&nbsp;</span> " + value.start + " " + value.userName + (value.ref ? " ("+value.ref+")" : "") + "<br><p>" + value.items.join(", ") + "</p></a></li>");
         });
         $("#bookings-list-unconfirmed").listview("refresh");
-        $("#bookings-unconfirmed-count").text("("+data.unconfirmed.length+")");
+        $("#bookings-unconfirmed-count").text("("+Object.keys(data.unconfirmed).length+")");
         $.each(data.freebusy, function(key, value) { // key will be "item-nn"
             $("#freebusy-"+key).html(value);
         });
