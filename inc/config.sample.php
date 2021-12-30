@@ -70,8 +70,6 @@ $cfg = array(
     
     // UserIDs of users with superAdmin access (will display a superAdmin section on Admin page)
     "superAdmins" => array(),
-    // URL to zip file on Github containing the latest version
-    "upgradeUrl" => "https://github.com/d-tamm/ff-boka/archive/master.zip",
     
     // Textual representations of access levels
     "catAccessLevels" => array(
