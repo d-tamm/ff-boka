@@ -123,7 +123,6 @@ switch ($_REQUEST['action']) {
             "scale"=>$scale,
             "freebusy"=>$fbList,
             "unconfirmed"=>$unconfirmed,
-//            "conflicts"=>$conflicts,
             "maxBookedItemId"=>$maxBookedItemId
         ]));
         
@@ -146,7 +145,8 @@ switch ($_REQUEST['action']) {
     var startDate,
         maxBookedItemId=0,
         newBookingDate = new Date(),
-        newBookingItemId = 0;
+        newBookingItemId = 0,
+        notification;
     const dateOptions = { year: 'numeric', month: 'long' };
     
     startDate = new Date(new Date().setHours(0,0,0,0)); // Midnight
@@ -249,21 +249,48 @@ switch ($_REQUEST['action']) {
             } else {
                 $("#indicator-new-bookings").show();
             }
-            $("#indicator-unconfirmed-count").text(Object.keys(data.unconfirmed).length + (Object.keys(data.unconfirmed).length>1 ? "nya" : " ny") );
+            $("#indicator-unconfirmed-count").text(Object.keys(data.unconfirmed).length + (Object.keys(data.unconfirmed).length>1 ? " nya" : " ny") );
             $("#indicator-new-bookings-list").html("");
+            var notificationBody = [];
             $.each(data.unconfirmed, function( index, value ) {
                 $("#indicator-new-bookings-list").append(
                     "<span class='freebusy-busy " + value.status + "' style='display:inline-block; width:1em;'>&nbsp;</span>" +
                     "<a class='link-unconfirmed' href='#' data-booking-id='" + value.bookingId + "' title='" + value.items.join(", ") + "'> " + value.start + " " + value.userName + (value.ref ? " ("+value.ref+")" : "") + "</a><br>"
                 );
+                notificationBody.push(value.start + " " + value.userName + (value.ref ? " ("+value.ref+")" : ""));
             });
             if (maxBookedItemId < data.maxBookedItemId) {
                 maxBookedItemId = data.maxBookedItemId;
-                //var audio = new Audio("../resources/bell.mp3");
-                var audio = document.querySelector('#au-notify');
-                audio.play();
+                notifyUser("Nya bokningar att hantera", notificationBody.join("\n"));
+            }
+            if (!data.unconfirmed) notification.close();
+        });
+    }
+
+    function activateNotifications() {
+        Notification.requestPermission().then(function (permission) {
+            if (permission === "granted") {
+                $("#notificationTeaser").hide();
+                notifyUser("Skrivbordsaviseringar aktiverade", "I fortsättningen kommer du att få aviseringar vid nya bokningar som behöver hanteras.");
             }
         });
+    }
+
+    function notifyUser(title, body) {
+        if ("Notification" in window) {
+            if (Notification.permission === "granted") {
+                var options = {
+                    body: body,
+                    renotify: true,
+                    tag: "ff-boka",
+                    icon: "../resources/ff_logga_staende_bla.png"
+                };
+                notification = new Notification(title, options);
+                notification.onclick = function(event) {
+                    window.open("<?= $cfg['url'] ?>/admin/bookings-d.php")
+                }
+            }
+        }
     }
 
     // Add a new booking on behalf of another user    
@@ -330,7 +357,6 @@ switch ($_REQUEST['action']) {
             </td>
             <td><div class='freebusy-bar' id='booking-adm-scale'></div></td></tr>
         </table>
-        <audio id="au-notify" src="../resources/bell.mp3"></audio>
     </div>
     
     <?php 
@@ -341,6 +367,12 @@ switch ($_REQUEST['action']) {
     ?>
     
     <div id='legend'>
+        <script>
+            // Let's check if the browser supports notifications
+            if ("Notification" in window) {
+                if (Notification.permission !== "granted" && Notification.permission !== "denied") { document.write("<p id='notificationTeaser'><a href='#' onclick='activateNotifications();'>Klicka här</a> om du vill få skrivbordsaviseringar när nya bokningar kommer in.</p>"); }
+            }
+        </script>
         <h3>Teckenförklaring</h3>
         <div style="display:inline-block; margin-right:40px;">
             <span class='freebusy-free' style='display:inline-block; width:2em;'>&nbsp;</span> tillgänglig tid<br>
