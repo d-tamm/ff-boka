@@ -114,7 +114,7 @@ if ((int)$row->value < $first->getTimestamp() && date("j") >= $cfg['cronMonthly'
     foreach (glob(__DIR__ . "/uploads/*") as $file) {
         if (!is_dir($file)) {
             $stmt = $db->query("SELECT fileId FROM cat_files WHERE fileId=" . basename($file));
-            if ($stmtm->rowCount()==0) {
+            if ($stmt->rowCount()==0) {
                 if (unlink($file)) logger(__METHOD__." Deleted attachment file $file");
                 else logger(__METHOD__." Failed to delete orphaned attachment file $file", E_ERROR);
             }
