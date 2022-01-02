@@ -9,7 +9,7 @@ require_once __DIR__ . "/config.php";
 $scheme = ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS']!=='off') ? "https" : "http");
 $instPath = realpath(__DIR__ . "/..");
 $docRoot = realpath($_SERVER['DOCUMENT_ROOT']);
-if (($_SERVER['SERVER_PORT']=="80" && $scheme=="http") || ($_SERVER['SERVER_PORT']=="443" && $scheme=="https")) $port = "";
+if ($_SERVER['SERVER_PORT']=="80" || $_SERVER['SERVER_PORT']=="443") $port = "";
 else $port = ":" . $_SERVER['SERVER_PORT'];
 $cfg['url'] = $scheme . "://" . $_SERVER['SERVER_NAME'] . $port . substr($instPath, strlen($docRoot));
 if (substr($cfg['url'], -1, 1) !== "/") $cfg['url'] = $cfg['url'] . "/";
