@@ -1608,7 +1608,7 @@ $(document).on('pageshow', "#page-admin-usage", function() {
     // Show message if there is any
     if ($("#msg-page-admin-usage").html()) {
         setTimeout(function() {
-            $("#popup-msg-page-super-admin").popup('open');
+            $("#popup-msg-page-admin-usage").popup('open');
         }, 500); // We need some delay here to make this work on Chrome.
     }
 
