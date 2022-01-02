@@ -1673,48 +1673,25 @@ $(document).on('pageshow', "#page-super-admin", function() {
     }
 });
 
-/**
- * Perform a system upgrade by fetching the latest version from Github
- */
-function systemUpgrade(step) {
-	switch(step) {
-	case 1:
-	    if (confirm("Det här kommer att försöka hämta senaste versionen från Github och installera den. De gamla filerna kommer att skrivas över. Har du gjort en backup? Redo att fortsätta?")) {
-	    	$("#upgrade-progress").html("");
-	    	$("#upgrade-progress").append("<li>Hämtar senaste versionen från master-grenen på Github...</li>");
-	        $.getJSON("?action=ajaxUpgrade&step=1", function(data, status) {
-	            if (data.error) {
-	            	$("#upgrade-progress").append("<li>"+data.error+"</li>");
-	            } else {
-	            	$("#upgrade-progress").append("<li>Har hämtat senaste versionen.</li>");
-	            	systemUpgrade(2);
-	            }
-	        });
-	    }
-	    break;
-	case 2:
-    	$("#upgrade-progress").append("<li>Packar upp arkivet...</li>");
-        $.getJSON("?action=ajaxUpgrade&step=2", function(data, status) {
-            if (data.error) {
-            	$("#upgrade-progress").append("<li>"+data.error+"</li>");
-            } else {
-            	$("#upgrade-progress").append("<li>Har packat upp arkivet.</li>");
-            	systemUpgrade(3);
-            }
+function gotoSection(sectionId, name) {
+    if (confirm(`Om du fortsätter läggs du till som LA-admin på LA ${name}, så att du kan rensa bort kategorier. Sedan kan du återvända hit och ta bort lokalavdelningen. Vill du det?`)) {
+        $.getJSON("superadmin.php", { action: "ajaxMakeMeAdmin", sectionId: sectionId }, function(data, status) {
+            location.href="index.php?sectionId="+sectionId;
         });
-        break;
-	case 3:
-		$("#upgrade-progress").append("<li>Ersätter filerna...</li>");
-        $.getJSON("?action=ajaxUpgrade&step=3", function(data, status) {
-            if (data.error) {
-            	$("#upgrade-progress").append("<li>"+data.error+"</li>");
-            } else {
-            	$("#upgrade-progress").append("<li>"+data.status+"</li>");
-            	$("#upgrade-progress").append("<li>Lyckades att ersätta filerna. <a href='javascript:location.reload();'>Ladda om sidan</a> för att slutföra uppgraderingen.</li>");
-            }
-        });
-        break;
-	}
+    }
+}
+
+function deleteSection(sectionId, name) {
+    var input = prompt(`OBS! Du håller på att radera lokalavdelningen ${name}. Allt innehåll knytet till ${name} kommer att tas bort, såsom kategorier, behörigheter och resurser. Återställning kan bara ske från backupfiler!\n\nBekräfta genom att knappa in avdelningens ID som är ${sectionId}`);
+    if (input != null) {
+        if (input == sectionId) {
+	        $.getJSON("superadmin.php", { action: "ajaxDeleteSection", sectionId: sectionId }, function(data, status) {
+                if (data.status == "OK") {
+                    $("#admin-section-" + data.sectionId).hide();
+                } else alert("Något har gått fel. " + data.error);
+            });
+        } else alert("Fel ID.");
+    }
 }
 
 function editPoll(id) {
