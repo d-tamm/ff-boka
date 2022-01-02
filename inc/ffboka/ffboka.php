@@ -536,6 +536,7 @@ class FFBoka {
                 }
                 //Server settings
                 $mail->SMTPDebug = 0;
+                $mail->Debugoutput = function($str, $level) { logger("PHPMailer level $level, message: $str"); };
                 $mail->isSMTP();
                 $mail->Host = $mailOptions['SMTPHost'];
                 $mail->Port = $mailOptions['SMTPPort'];
