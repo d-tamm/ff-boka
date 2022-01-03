@@ -406,7 +406,7 @@ class FFBoka {
      * mån 2020-08-24 kl 07:00-21:00
      * mån 2020-08-24 kl 07:00 till tis 2020-08-25 kl 21:00
      * @param int $start Unix timestamp of start time
-     * @param imt $end Unix timestamp of end time
+     * @param int $end Unix timestamp of end time
      * @param bool $includeWeekday Whether to include the weekday
      * @return string
      */

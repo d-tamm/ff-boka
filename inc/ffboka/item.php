@@ -359,7 +359,7 @@ class Item extends FFBoka {
         if ($scale) $ret .= self::freebusyWeekends($start, $days);
         while ($row = $stmt->fetch(\PDO::FETCH_OBJ)) {
             if ($row->bufferAfterBooking) {
-                $ret .= "<div class='freebusy-blocked' style='left:" . number_format(($row->unixStart-$start-$row->bufferAfterBooking*3600)/$secs*100, 2) . "%; width:" . number_format(($row->unixEnd - $row->unixStart + 2*$row->bufferAfterBooking*3600)/$secs*100, 2) . "%' title='ej bokbar'></div>";
+                $ret .= "<div class='freebusy-blocked' style='left:" . number_format(($row->unixStart-$start-$row->bufferAfterBooking*3600)/$secs*100, 2, ".", "") . "%; width:" . number_format(($row->unixEnd - $row->unixStart + 2*$row->bufferAfterBooking*3600)/$secs*100, 2, ".", "") . "%' title='ej bokbar'></div>";
             }
             $class = "freebusy-busy";
             if ($adminView) {
@@ -374,7 +374,7 @@ class Item extends FFBoka {
             }
             $title = strftime("%F kl %H:00", $row->unixStart) . " till " . strftime("%F kl %H:00", $row->unixEnd);
             if ($adminView) $title .= "\n" . htmlspecialchars($row->extName ? $row->extName : $row->username) . "\n" . htmlspecialchars($row->ref) . (is_null($row->price) ? "\nInget pris satt" : "\nPris: {$row->price} kr");
-            $ret .= "<div class='$class' data-booking-id='{$row->bookingId}' data-booked-item-id='{$row->bookedItemId}' " . ($includeTokens ? "data-token='{$row->token}' " : "") . "style='left:" . number_format(($row->unixStart - $start) / $secs * 100, 2) . "%; width:" . number_format(($row->unixEnd - $row->unixStart) / $secs * 100, 2) . "%;' title='$title'></div>";
+            $ret .= "<div class='$class' data-booking-id='{$row->bookingId}' data-booked-item-id='{$row->bookedItemId}' " . ($includeTokens ? "data-token='{$row->token}' " : "") . "style='left:" . number_format(($row->unixStart - $start) / $secs * 100, 2, ".", "") . "%; width:" . number_format(($row->unixEnd - $row->unixStart) / $secs * 100, 2, ".", "") . "%;' title='$title'></div>";
         }
         if ($scale) $ret .= self::freebusyScale(false, $days);
         return $ret;
