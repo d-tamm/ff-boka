@@ -9,6 +9,8 @@
 use FFBoka\FFBoka;
 
 $cfg = array(
+    "url" => "...", // URL of this installation, will be set at runtime.
+    
     // Database connection settings
     "dbhost" => "127.0.0.1", // The host of the mariaDb server
     "dbport" => 3306,        // The DB port
@@ -38,7 +40,7 @@ $cfg = array(
         "replyTo"  => "someone@somewhere.com",
         "SMTPHost" => 'smtp.mymaildomain.com',
         "SMTPPort" => '587',
-        "ŚMTPUser" => 'someone@somewhere.com',
+        "SMTPUser" => 'someone@somewhere.com',
         "SMTPPass" => 'my smtp password',
     ),
 
@@ -69,7 +71,7 @@ $cfg = array(
     "sectionAdmins" => array('Ordförande', 'Vice ordförande'),
     
     // UserIDs of users with superAdmin access (will display a superAdmin section on Admin page)
-    "superAdmins" => array(),
+    "superAdmins" => array(0),
     
     // Textual representations of access levels
     "catAccessLevels" => array(
