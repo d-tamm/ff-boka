@@ -194,10 +194,10 @@ class Item extends FFBoka {
      * @param int $days Number of days in future to return bookings for. If set to 0, all (even past) bookings are returned
      * @return Item[] Array of bookedItems.
      */
-    public function upcomingBookings(int $days=60) {
+    public function upcomingBookings(int $days=365) {
         // Get freebusy information.
         if ($days) $timeConstraint = "AND (
-            (start>NOW() AND start<DATE_ADD(NOW(), INTERVAL :days DAY)) OR (end>NOW() AND end<DATE_ADD(NOW(), INTERVAL :days DAY))
+            (start>NOW() AND start<DATE_ADD(NOW(), INTERVAL :days DAY)) OR (end>NOW() AND end<DATE_ADD(NOW(), INTERVAL :days DAY)) OR (start<NOW() AND end>DATE_ADD(NOW(), INTERVAL :days DAY))
             )";
         else $timeConstraint = "";
         $stmt = self::$db->prepare("

@@ -185,7 +185,7 @@ END;
         foreach ($item->images() as $img) {
             $html .= "<div class='item-image'><img src='image.php?type=itemImage&id={$img->id}'><label>" . htmlspecialchars($img->caption) . "</label></div>";
         }
-        if ($cat->getAccess($currentUser)>=FFBoka::ACCESS_PREBOOK) { // show coming bookings for this item
+        if ($cat->getAccess($currentUser)>=FFBoka::ACCESS_PREBOOK) { // show current and upcoming bookings for this item
             $html .= "<div class='ui-body ui-body-a'><h3>Kommande bokningar</h3>\n<ul>\n";
             $bookedItems = $item->upcomingBookings();
             foreach ($bookedItems as $bi) {
