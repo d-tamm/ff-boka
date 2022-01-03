@@ -314,3 +314,28 @@ function logger(string $message, int $level=E_NOTICE) {
     if ($logFile === "") error_log("ff-boka $sLevel $message\n");
     else error_log(strftime("%F %T") . " $sLevel $message\n", 3, $logFile);
 }
+
+/**
+ * http://php.net/array_diff_key recursive implementation.
+ * From https://github.com/gajus/marray
+ * 
+ * @param array $arr1 The array with master keys to check.
+ * @param array $arr2 An array to compare keys against.
+ * @return array
+ */
+function diff_key_recursive (array $arr1, array $arr2) {
+    $diff = array_diff_key($arr1, $arr2);
+    $intersect = array_intersect_key($arr1, $arr2);
+    
+    foreach ($intersect as $k => $v) {
+        if (is_array($arr1[$k]) && is_array($arr2[$k])) {
+            $d = diff_key_recursive($arr1[$k], $arr2[$k]);
+            
+            if ($d) {
+                $diff[$k] = $d;
+            }
+        }
+    }
+    
+    return $diff;
+}
