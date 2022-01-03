@@ -118,8 +118,8 @@ $cronDelayed = ($lastCron==0 || $lastCron < time()-3600);
 $currentCfg = $cfg;
 unset($cfg);
 require("../inc/config.sample.php");
-$cfgMissing = array_diff_key($cfg, $currentCfg);
-$cfgObsolete = array_diff_key($currentCfg, $cfg);
+$cfgMissing = diff_key_recursive($cfg, $currentCfg);
+$cfgObsolete = diff_key_recursive($currentCfg, $cfg);
 $cfg = $currentCfg;
 
 ?><!DOCTYPE html>
@@ -228,7 +228,7 @@ $cfg = $currentCfg;
                 echo "<div class='ui-body ui-body-a' style='color:red;'>";
                 if ($cfgMissing) {
                     echo "<p>Följande konfigurationsparametrar saknas:</p><ul>";
-                    foreach ($cfgMissing as $key=>$value) echo "<li>\$cfg['$key'] = " . var_export($value, true) . ")</li>";
+                    foreach ($cfgMissing as $key=>$value) echo "<li>\$cfg['$key'] = " . var_export($value, true) . "</li>";
                     echo "</ul>";
                 }
                 if ($cfgObsolete) {
@@ -244,8 +244,8 @@ $cfg = $currentCfg;
             $ver = $stmt->fetch(PDO::FETCH_OBJ);
             echo $ver->value; ?>.</p>
 
-<h3>Aktuell konfiguration</h3>
-            <pre><?= print_r($cfg, TRUE) ?></pre>
+            <h3>Aktuell konfiguration</h3>
+            <pre><?= strip_tags(print_r($cfg, TRUE)) ?></pre>
         </div>
 
         <div data-role="collapsible">
