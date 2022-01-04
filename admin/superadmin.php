@@ -250,7 +250,7 @@ $cfg = $currentCfg;
                 // See if there is any buffered information about the current code version
                 $stmt = $db->query("SELECT value FROM config WHERE name='gitInfo'");
                 $gitInfo = unserialize($stmt->fetch(PDO::FETCH_OBJ)->value);
-                if (!isset($gitInfo['sha']) || $gitInfo['sha'] != $sha || !$gitInfo['date']) {
+                if (!isset($gitInfo['sha']) || (time()-$gitInfo['lastChecked']>60*60) || $gitInfo['sha'] != $sha || !$gitInfo['date']) {
                     // No or outdated buffered info. Get it from Github.
                     $gitInfo['sha'] = $sha;
                     ini_set('user_agent', 'ff-boka'); // Need to set User Agent in order to get an answer from Github
@@ -258,6 +258,7 @@ $cfg = $currentCfg;
                     $gitInfo['date'] = $commit->commit->committer->date;
                     $gitInfo['message'] = $commit->commit->message;
                     $gitInfo['branches'] = [];
+                    $gitInfo['lastChecked'] = time();
                     foreach (json_decode(file_get_contents("https://api.github.com/repos/d-tamm/ff-boka/branches")) as $branch) {
                         $cmp = json_decode(file_get_contents("https://api.github.com/repos/d-tamm/ff-boka/compare/{$branch->name}...$sha"));
                         $gitInfo['branches'][$branch->name] = [ "status"=>$cmp->status, "ahead_by"=>$cmp->ahead_by, "behind_by"=>$cmp->behind_by ];
