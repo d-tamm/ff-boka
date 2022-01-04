@@ -10,7 +10,7 @@ use FFBoka\FFBoka;
 
 $cfg = array(
     "url" => "...", // URL of this installation, will be set at runtime.
-    
+
     // Database connection settings
     "dbhost" => "127.0.0.1", // The host of the mariaDb server
     "dbport" => 3306,        // The DB port
@@ -103,4 +103,5 @@ $cfg = array(
     // Welcome messages on landing page
     "welcomeMsg" => "<p class='ui-body ui-body-b'>Välkommen till Friluftsfrämjandets nya resursbokningssystem! Om du behöver hjälp, klicka på <b>?</b> uppe till höger.</p>",
     "welcomeMsgLoggedIn" => "<p class='ui-body ui-body-b'>Återkoppla gärna till utvecklarna med synpunkter och önskemål! Bara på det viset kan vi möta lokalavdelningarnas behov på bästa sätt.</p>",
+    "maintenance" => false,
 );
