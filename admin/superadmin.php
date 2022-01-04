@@ -149,7 +149,7 @@ $cfg = $currentCfg;
                 <textarea name="question" id="super-admin-poll-question"></textarea>
             </div>
             <div class="ui-field-contain">
-                <label for="super-admin-poll-choices">Svarsalternativ<br><small>1 alternaiv per rad</small></label>
+                <label for="super-admin-poll-choices">Svarsalternativ<br><small>1 alternativ per rad</small></label>
                 <textarea name="choices" id="super-admin-poll-choices"></textarea>
             </div>
             <div class="ui-field-contain">
@@ -237,7 +237,47 @@ $cfg = $currentCfg;
                     echo "</ul>";
                 }
                 echo "<p>Se filen inc/config.sample.php.</p></div>";
-            } ?>
+            } else echo "<p>Konfigurationsfilen är komplett.</p>";
+            
+            // Get SHA checksum for current commit (try git first, then git-ftp)
+            $sha = @exec("git log --pretty=format:'%H' -n 1");
+            if ($sha) $shaSource = "git";
+            elseif (file_exists("../.git-ftp.log")) {
+                $sha = trim(file_get_contents("../.git-ftp.log"));
+                $shaSource = ".git-ftp.log";
+            }
+            if ($sha) {
+                // See if there is any buffered information about the current code version
+                $stmt = $db->query("SELECT value FROM config WHERE name='gitInfo'");
+                $gitInfo = unserialize($stmt->fetch(PDO::FETCH_OBJ)->value);
+                if (!isset($gitInfo['sha']) || $gitInfo['sha'] != $sha) {
+                    // No or outdated buffered info. Get it from Github.
+                    $gitInfo['sha'] = $sha;
+                    ini_set('user_agent', 'ff-boka'); // Need to set User Agent in order to get an answer from Github
+                    $commit = json_decode(file_get_contents("https://api.github.com/repos/d-tamm/ff-boka/commits/$sha"));
+                    $gitInfo['date'] = $commit->commit->committer->date;
+                    $gitInfo['message'] = $commit->commit->message;
+                    $gitInfo['branches'] = [];
+                    foreach (json_decode(file_get_contents("https://api.github.com/repos/d-tamm/ff-boka/branches")) as $branch) {
+                        $cmp = json_decode(file_get_contents("https://api.github.com/repos/d-tamm/ff-boka/compare/{$branch->name}...$sha"));
+                        $gitInfo['branches'][$branch->name] = [ "status"=>$cmp->status, "ahead_by"=>$cmp->ahead_by, "behind_by"=>$cmp->behind_by ];
+                    }
+                    // Save gathered info for future calls to this page
+                    $stmt = $db->prepare("REPLACE INTO config SET name='gitInfo', value=?");
+                    $stmt->execute([ serialize($gitInfo) ]);
+                }
+                echo "<p>Kodversion på den här installationen är (enligt $shaSource) commit <a href='https://github.com/d-tamm/ff-boka/commit/$sha' target='_blank'>" . substr($sha, 0, 7) . "</a> från {$gitInfo['date']} ({$gitInfo['message']}).</p><ul>";
+                foreach ($gitInfo['branches'] as $name=>$b) {
+                    switch ($b['status']) {
+                        case "identical": echo "<li>Identisk med grenen <b>$name</b></li>"; break;
+                        case "behind": echo "<li>{$b['behind_by']} commits efter grenen <b>$name</b></li>"; break;
+                        case "ahead": echo "<li>{$b['ahead_by']} commits före grenen <b>$name</b></li>"; break;
+                        default: echo "<li>{$b['ahead_by']} commits före och {$b['behind_by']} commits efter grenen <b>$name</b></li>";
+                    }
+                }
+                echo "</ul>";
+            } else echo "<p>Okänd kodversion av installationen.</p>"
+            ?>
 
             <p>Aktuell DB-version är <?php 
             $stmt = $db->query("SELECT value FROM config WHERE name='db-version'");
