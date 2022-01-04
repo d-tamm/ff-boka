@@ -55,53 +55,16 @@ case "ajaxImpersonate":
     } else {
         die(json_encode([ "error" => "Du ska ange ett numeriskt medlemsnummer." ]));
     }
-case "ajaxUpgrade":
-    header("Content-Type: application/json");
-    switch ($_REQUEST['step']) {
-    case "1":
-        try {
-            if (!deleteDirectory("../update")) die(json_encode([ "error"=>"FEL: Kan inte ta bort gamla filer." ]));
-            if (!mkdir("../update")) die(json_encode([ "error"=>"FEL: Kan inte skapa mappen /update." ]));
-            if (file_put_contents('../update/ff-boka-master.zip', fopen($cfg['upgradeUrl'], 'r'))===FALSE) die(json_encode([ "error"=>"FEL: Kan inte hämta arkivet {$cfg['upgradeUrl']}" ]));
-        } catch (Exception $e) {
-            die(json_encode([ "error"=>"Något har gått fel. ".print_r($e, TRUE) ]));
-        }
-        die(json_encode([ "status"=>"ok" ]));
-    case "2":
-        try {
-            $zip = new ZipArchive;
-            if ($zip->open('../update/ff-boka-master.zip') === TRUE) {
-                if ($zip->extractTo('../update/')===FALSE) die(json_encode([ "error"=>"Kan inte packa upp arkivet." ]));
-                $zip->close();
-            } else die(json_encode([ "error"=>"Kan inte öppna arkivet för att packa upp det." ]));
-        } catch (Exception $e) {
-            die(json_encode([ "error"=>"Något har gått fel. ".print_r($e, TRUE) ]));
-        }
-        if (!unlink('../update/ff-boka-master.zip')) die(json_encode([ "error"=>"Kan inte ta bort arkivfilen." ]));
-        die(json_encode([ "status"=>"ok" ]));
-    case "3":
-        chdir("..") || die(json_encode([ "error"=>"Kan inte gå till huvudmappen." ]));
-        // save local config
-        if (!copy("inc/config.php", "config.php")) die(json_encode([ "error"=>"Kan inte skapa säkerhetskopia på config.php i huvudmappen." ]));
-        else $ret[] = "Har skapat säkerhetskopia av config.php i huvudmappen.";
-        foreach (scandir("update/ff-boka-master/") as $filename) {
-            if ($filename=="." || $filename=="..") continue;
-            if (!deleteDirectory($filename)) $ret[] = "<b>Kunde inte ta bort gamla versionen av $filename.</b>";
-            else $ret[] = "Har tagit bort gamla versionen av $filename.";
-            if (!rename("update/ff-boka-master/$filename", $filename)) $ret[] = "<b>Kunde inte flytta nya versionen på $filename på plats.</b>";
-            else $ret[] = "Har ersatt $filename med ny version.";
-        }
-        // restore local config
-        if (!rename("config.php", "inc/config.php")) $ret[] = "<b>Kunde inte flytta tillbaka config.php från huvudmappen till inc-mappen.</b>";
-        else $ret[] = "Har flyttat tillbaka config.php till inc-mappen.";
-        // remove all update files
-        if (!deleteDirectory("update")) die(json_encode([ "error"=>"FEL: Kan inte ta bort gamla filer." ]));
-        else $ret[] = "Har rensat tillfälliga update-filer.";
-        require(__DIR__."/../inc/version.php");
-        $ret[] = "Den aktuella DB-versionen är nu $dbVersion";
-        die(json_encode([ "status"=>implode("</li><li>", $ret) ]));
-    }
     
+case "ajaxDeleteSection":
+    // Delete a whole section. Intended for sections which are no longer present in the central database.
+    $stmt = $db->prepare("DELETE FROM sections WHERE sectionId=?");
+    if ($stmt->execute([ $_GET['sectionId'] ])) {
+        if ($stmt->rowCount()==1) die(json_encode([ "status"=>"OK", "sectionId"=>$_GET['sectionId'] ]));
+        else die(json_encode([ "status"=>"error", "error"=>$stmt->rowCount()." LAs har raderats, istället för 1." ]));
+    } else die(json_encode([ "status"=>"error", "error"=>$db->errorInfo()[2] ]));
+    break;
+
 case "ajaxAddPoll":
 case "ajaxGetPoll":
     if ($_REQUEST['action']=="ajaxAddPoll") $poll = $FF->addPoll();
@@ -151,6 +114,14 @@ $row = $stmt->fetch(PDO::FETCH_OBJ);
 $lastCron = (int)$row->value;
 $cronDelayed = ($lastCron==0 || $lastCron < time()-3600);
 
+// Check that config file is complete
+$currentCfg = $cfg;
+unset($cfg);
+require("../inc/config.sample.php");
+$cfgMissing = diff_key_recursive($cfg, $currentCfg);
+$cfgObsolete = diff_key_recursive($currentCfg, $cfg);
+$cfg = $currentCfg;
+
 ?><!DOCTYPE html>
 <html>
 <head>
@@ -178,7 +149,7 @@ $cronDelayed = ($lastCron==0 || $lastCron < time()-3600);
                 <textarea name="question" id="super-admin-poll-question"></textarea>
             </div>
             <div class="ui-field-contain">
-                <label for="super-admin-poll-choices">Svarsalternativ<br><small>1 alternaiv per rad</small></label>
+                <label for="super-admin-poll-choices">Svarsalternativ<br><small>1 alternativ per rad</small></label>
                 <textarea name="choices" id="super-admin-poll-choices"></textarea>
             </div>
             <div class="ui-field-contain">
@@ -196,9 +167,17 @@ $cronDelayed = ($lastCron==0 || $lastCron < time()-3600);
         <table id="super-admin-pollresults-votes" style="width:100%;"></table>
     </div>
 
+    <?php
+    if ($cronDelayed || $cfgMissing || $cfg_obsolete) {
+        echo "<div class='ui-body ui-body-c'><p>Det finns några problem:</p><ul>";
+        if ($cronDelayed) echo "<li><a href='#' onclick=\"$('#superadmin-systeminfo').collapsible('expand');\">Cron</a> utförs inte.</li>";
+        if ($cfgMissing || $cfgObsolete) echo "<li><a href='#' onclick=\"$('#superadmin-config').collapsible('expand');\">Konfigurationen</a> är inte uppdaterad.</li>";
+        echo "<ul></div>";
+    } ?>
+    
     <div data-role="collapsibleset" data-inset="false">
         
-        <div data-role="collapsible" <?= $cronDelayed ? " data-collapsed='false'" : "" ?>>
+        <div data-role="collapsible" id="superadmin-systeminfo">
             <h2>Systeminfo</h2>
             <?= $cronDelayed ? "<div style='float:left; font-size:3em; color:var(--FF-orange);'>⚠ </div>" : "" ?>
             <h3>Cron <span style='color:var(<?= $cronDelayed ? "--FF-orange" : "--FF-green" ?>);'>■</span></h3>
@@ -241,9 +220,72 @@ $cronDelayed = ($lastCron==0 || $lastCron < time()-3600);
 		</ul>
         </div>
 
-        <div data-role="collapsible">
+        <div data-role="collapsible" id="superadmin-config">
             <h2>Konfiguration</h2>
-            <pre><?= print_r($cfg, TRUE) ?></pre>
+            
+            <?php
+            if ($cfgMissing || $cfgObsolete) {
+                echo "<div class='ui-body ui-body-a' style='color:red;'>";
+                if ($cfgMissing) {
+                    echo "<p>Följande konfigurationsparametrar saknas:</p><ul>";
+                    foreach ($cfgMissing as $key=>$value) echo "<li>\$cfg['$key'] = " . var_export($value, true) . "</li>";
+                    echo "</ul>";
+                }
+                if ($cfgObsolete) {
+                    echo "<p>Följande konfigurationsparametrar används inte längre:</p><ul>";
+                    foreach ($cfgObsolete as $key=>$value) echo "<li>\$cfg['$key'] = " . var_export($value, true) . "</li>";
+                    echo "</ul>";
+                }
+                echo "<p>Se filen inc/config.sample.php.</p></div>";
+            } else echo "<p>Konfigurationsfilen är komplett.</p>";
+            
+            // Get SHA checksum for current commit (try git first, then git-ftp)
+            $sha = @exec("git log --pretty=format:'%H' -n 1");
+            if ($sha) $shaSource = "git";
+            elseif (file_exists("../.git-ftp.log")) {
+                $sha = trim(file_get_contents("../.git-ftp.log"));
+                $shaSource = ".git-ftp.log";
+            }
+            if ($sha) {
+                // See if there is any buffered information about the current code version
+                $stmt = $db->query("SELECT value FROM config WHERE name='gitInfo'");
+                $gitInfo = unserialize($stmt->fetch(PDO::FETCH_OBJ)->value);
+                if (!isset($gitInfo['sha']) || $gitInfo['sha'] != $sha || !$gitInfo['date']) {
+                    // No or outdated buffered info. Get it from Github.
+                    $gitInfo['sha'] = $sha;
+                    ini_set('user_agent', 'ff-boka'); // Need to set User Agent in order to get an answer from Github
+                    $commit = json_decode(file_get_contents("https://api.github.com/repos/d-tamm/ff-boka/commits/$sha"));
+                    $gitInfo['date'] = $commit->commit->committer->date;
+                    $gitInfo['message'] = $commit->commit->message;
+                    $gitInfo['branches'] = [];
+                    foreach (json_decode(file_get_contents("https://api.github.com/repos/d-tamm/ff-boka/branches")) as $branch) {
+                        $cmp = json_decode(file_get_contents("https://api.github.com/repos/d-tamm/ff-boka/compare/{$branch->name}...$sha"));
+                        $gitInfo['branches'][$branch->name] = [ "status"=>$cmp->status, "ahead_by"=>$cmp->ahead_by, "behind_by"=>$cmp->behind_by ];
+                    }
+                    // Save gathered info for future calls to this page
+                    $stmt = $db->prepare("REPLACE INTO config SET name='gitInfo', value=?");
+                    $stmt->execute([ serialize($gitInfo) ]);
+                }
+                echo "<p>Kodversion på den här installationen är (enligt $shaSource) commit <a href='https://github.com/d-tamm/ff-boka/commit/$sha' target='_blank'>" . substr($sha, 0, 7) . "</a> från {$gitInfo['date']} ({$gitInfo['message']}).</p><ul>";
+                foreach ($gitInfo['branches'] as $name=>$b) {
+                    switch ($b['status']) {
+                        case "identical": echo "<li>Identisk med grenen <b>$name</b></li>"; break;
+                        case "behind": echo "<li>{$b['behind_by']} commits efter grenen $name</li>"; break;
+                        case "ahead": echo "<li>{$b['ahead_by']} commits före grenen $name</li>"; break;
+                        default: echo "<li>{$b['ahead_by']} commits före och {$b['behind_by']} commits efter grenen $name</li>";
+                    }
+                }
+                echo "</ul>";
+            } else echo "<p>Okänd kodversion av installationen.</p>"
+            ?>
+
+            <p>Aktuell DB-version är <?php 
+            $stmt = $db->query("SELECT value FROM config WHERE name='db-version'");
+            $ver = $stmt->fetch(PDO::FETCH_OBJ);
+            echo $ver->value; ?>.</p>
+
+            <h3>Aktuell konfiguration</h3>
+            <pre><?= strip_tags(print_r($cfg, TRUE)) ?></pre>
         </div>
 
         <div data-role="collapsible">
@@ -268,15 +310,31 @@ $cronDelayed = ($lastCron==0 || $lastCron < time()-3600);
             <pre><?php print_r($_SESSION); ?></pre>
         </div>
 
-        <div data-role="collapsible">
-            <h2>Uppgradering</h2>
-            <p>Aktuell DB-version är <?php 
-            $stmt = $db->query("SELECT value FROM config WHERE name='db-version'");
-            $ver = $stmt->fetch(PDO::FETCH_OBJ);
-            echo $ver->value; ?></p>
-            <p><span style="text-decoration: line-through;">Med knappen nedan kan du hämta senaste versionen från master-grenen på Github och installera den.</span> Uppgraderingsfunktionen har avaktiverats och kommer att tas bort snart.</p>
-            <button disabled class='ui-btn ui-btn-c' onClick="systemUpgrade(1);">Uppgradera systemet</button>
-            <ul id="upgrade-progress"></ul>
+        <div data-role="collapsible" id="admin-section-misc">
+            <h2>Lokalavdelningar</h2>
+            <ul data-role="listview" data-inset="true" data-filter="true" data-split-icon="delete" data-split-theme="c"><?php
+                $updated = -1;
+                $stmt = $db->query("SELECT *, DATEDIFF(NOW(), timestamp) < 35 AS updated FROM sections ORDER BY updated, name");
+                while ($row = $stmt->fetch(PDO::FETCH_OBJ)) {
+                    $section = new Section($row->sectionId);
+                    if ($row->updated==0 && $updated<0) {
+                        $updated = 0;
+                        echo "<li data-role='list-divider' class='wrap' data-theme='c'><b>Ej uppdaterade LA</b><p>Följande LA har inte fått uppdateringar från centralregistret på sistone. De kanske inte är aktuella längre. Inaktuella LA utan kategorier kan raderas.</p></li>";
+                    }
+                    if ($row->updated==1 && $updated==0) {
+                        $updated = 1;
+                        echo "<li data-role='list-divider' data-theme='c'>Aktuella LA</li>";
+                    }
+                    echo "<li class='wrap' id='admin-section-{$row->sectionId}'><a href=\"javascript:gotoSection({$row->sectionId}, '{$row->name}');\">";
+                    echo "<h2>{$row->name} ({$row->sectionId})</h2>";
+                    echo "<p>{$section->registeredUsers} registrerade användare, därav {$section->activeUsers} aktiva.";
+                    echo "<br>{$section->activeItems} aktiverade resurser i {$section->numberOfCategories} kategorier.";
+                    if (!$row->updated) echo "<br>Inte uppdaterad sedan {$row->timestamp}.";
+                    echo "</p></a>";
+                    if (!$row->updated && $section->numberOfCategories == 0) echo "<a href=\"javascript:deleteSection({$row->sectionId}, '{$row->name}');\" title='Ta bort LA {$row->name}'></a>";
+                    echo "</li>";
+                }
+            ?></ul>
         </div>
 
         <div data-role="collapsible" id="admin-section-misc">
