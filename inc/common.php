@@ -134,6 +134,15 @@ function htmlHeaders(string $title, string $baseUrl, string $mode="mobile") {
     // output meta tags and include stylesheets, jquery etc    ?>
     <title><?= $title ?></title>
     <meta charset="UTF-8">
+    <link rel="icon" type="image/png" sizes="16x16" href="<?= $baseUrl ?>resources/favicon16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="<?= $baseUrl ?>resources/favicon32.png">
+    <link rel="icon" type="image/png" sizes="48x48" href="<?= $baseUrl ?>resources/favicon48.png">
+    <link rel="icon" type="image/png" sizes="64x64" href="<?= $baseUrl ?>resources/favicon64.png">
+    <link rel="icon" type="image/png" sizes="128x128" href="<?= $baseUrl ?>resources/favicon128.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="<?= $baseUrl ?>resources/favicon192.png">
+    <link rel="apple-touch-icon" type="image/png" sizes="152x152" href="<?= $baseUrl ?>resources/favicon152.png">
+    <link rel="apple-touch-icon" type="image/png" sizes="167x167" href="<?= $baseUrl ?>resources/favicon167.png">
+    <link rel="apple-touch-icon" type="image/png" sizes="180x180" href="<?= $baseUrl ?>resources/favicon180.png">
     <?php if ($mode=="mobile") { ?>
         <meta name="viewport" content="width=device-width, initial-scale=1"/>
         <link rel="stylesheet" href="<?= $baseUrl ?>inc/jquery.mobile-1.4.5.min.css" />
