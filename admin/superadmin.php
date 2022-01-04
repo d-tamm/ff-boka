@@ -250,7 +250,7 @@ $cfg = $currentCfg;
                 // See if there is any buffered information about the current code version
                 $stmt = $db->query("SELECT value FROM config WHERE name='gitInfo'");
                 $gitInfo = unserialize($stmt->fetch(PDO::FETCH_OBJ)->value);
-                if (!isset($gitInfo['sha']) || $gitInfo['sha'] != $sha) {
+                if (!isset($gitInfo['sha']) || $gitInfo['sha'] != $sha || !$gitInfo['date']) {
                     // No or outdated buffered info. Get it from Github.
                     $gitInfo['sha'] = $sha;
                     ini_set('user_agent', 'ff-boka'); // Need to set User Agent in order to get an answer from Github
