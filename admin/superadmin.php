@@ -270,9 +270,9 @@ $cfg = $currentCfg;
                 foreach ($gitInfo['branches'] as $name=>$b) {
                     switch ($b['status']) {
                         case "identical": echo "<li>Identisk med grenen <b>$name</b></li>"; break;
-                        case "behind": echo "<li>{$b['behind_by']} commits efter grenen <b>$name</b></li>"; break;
-                        case "ahead": echo "<li>{$b['ahead_by']} commits före grenen <b>$name</b></li>"; break;
-                        default: echo "<li>{$b['ahead_by']} commits före och {$b['behind_by']} commits efter grenen <b>$name</b></li>";
+                        case "behind": echo "<li>{$b['behind_by']} commits efter grenen $name</li>"; break;
+                        case "ahead": echo "<li>{$b['ahead_by']} commits före grenen $name</li>"; break;
+                        default: echo "<li>{$b['ahead_by']} commits före och {$b['behind_by']} commits efter grenen $name</li>";
                     }
                 }
                 echo "</ul>";
