@@ -1659,6 +1659,7 @@ $(document).on('pagecreate', "#page-super-admin", function() {
         	$("#super-admin-poll-question").val(data.question);
         	$("#super-admin-poll-choices").val(data.choices.join("\n"));
         	$("#super-admin-poll-expires").val(data.expires);
+            $("#super-admin-poll-targetgroup").val(data.targetGroup).selectmenu("refresh", true);
 	        $("#popup-super-admin-poll").popup('open');
         });
     });
@@ -1700,6 +1701,7 @@ function editPoll(id) {
     	$("#super-admin-poll-question").val(data.question);
     	$("#super-admin-poll-choices").val(data.choices.join("\n"));
     	$("#super-admin-poll-expires").val(data.expires);
+        $("#super-admin-poll-targetgroup").val(data.targetGroup).selectmenu("refresh", true);
         $("#popup-super-admin-poll").popup('open');
     });
 }
