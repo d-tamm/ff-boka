@@ -1,4 +1,6 @@
 <?php
+
+use FFBoka\FFBoka;
 use FFBoka\User;
 use FFBoka\Section;
 use FFBoka\Poll;
@@ -74,6 +76,7 @@ case "ajaxGetPoll":
         "question" => $poll->question,
         "choices" => $poll->choices,
         "expires" => $poll->expires,
+        "targetGroup" => $poll->targetGroup,
         "votes" => $poll->votes,
         "voteMax" => $poll->voteMax
     ]));
@@ -86,6 +89,7 @@ case "savePoll":
         if ($poll->question != $_REQUEST['question']) $poll->question = $_REQUEST['question'];
         if ($poll->choices != array_map('trim', explode("\n", $_REQUEST['choices']))) $poll->choices = array_map('trim', explode("\n", $_REQUEST['choices']));
         if ($_REQUEST['expires']=="") $_REQUEST['expires'] = NULL;
+        if ($poll->targetGroup != $_REQUEST['targetGroup']) $poll->targetGroup = $_REQUEST['targetGroup'];
         if ($poll->expires != $_REQUEST['expires']) $poll->expires = $_REQUEST['expires'];
     }
     $expand = "polls";
@@ -155,6 +159,15 @@ $cfg = $currentCfg;
             <div class="ui-field-contain">
                 <label for="super-admin-poll-expires">Aktiv t.o.m.<br><small>Tomt = inget slutdatum</small></label>
                 <input name="expires" type="date" id="super-admin-poll-expires">
+            </div>
+            <div class="ui-field-contain">
+                <label for="super-admin-poll-targetgroup">Målgrupp</label>
+                <select name="targetGroup" id="super-admin-poll-targetgroup">
+                    <option value="<?= FFBoka::ACCESS_BOOK ?>">Alla inloggade användare</option>
+                    <option value="<?= FFBoka::ACCESS_CONFIRM ?>">Bokningsansvariga</option>
+                    <option value="<?= FFBoka::ACCESS_CATADMIN ?>">Kategori-admin</option>
+                    <option value="<?= FFBoka::ACCESS_SECTIONADMIN ?>">LA-admin</option>
+                </select>
             </div>
         	<input data-inline='true' data-icon='delete' data-corners='false' data-theme='c' type="submit" name="submit" value="Ta bort">
         	<input data-inline='true' data-icon='check' data-corners='false' data-theme='b' type="submit" value="Spara">

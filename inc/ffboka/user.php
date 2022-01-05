@@ -99,7 +99,7 @@ class User extends FFBoka {
      * Fills $_SESSION['assignments'] with array[sectionIds][names]
      * @return bool Success or failure
      */
-    public function getAssignments() {
+    public function getAssignments() : bool {
         $_SESSION['assignments'] = array();
         if (self::$apiFeedUserAss) { // API URL for assignments is set. Try to get user's assignments
             $data = @file_get_contents(self::$apiFeedUserAss . $this->id);
@@ -129,7 +129,7 @@ class User extends FFBoka {
      * Deletes the user and all related data from the database
      * @return boolean TRUE on success, FALSE otherwise
      */
-    public function delete() {
+    public function delete() : bool {
         $name = $this->name;
         $id = $this->id;
         if (self::$db->exec("DELETE FROM users WHERE userID={$this->id}") !== FALSE) {
@@ -156,7 +156,7 @@ class User extends FFBoka {
      * @param string $cookie String in the format selector:authenticator where authenticator is base64 encoded
      * @param int $ttl TTL for the new cookie
      */
-    static function restorePersistentLogin(string $cookie, int $ttl) {
+    static function restorePersistentLogin(string $cookie, int $ttl) : void {
         list($selector, $authenticator) = explode(':', $cookie);
         $stmt = self::$db->prepare("SELECT * FROM persistent_logins WHERE selector=? AND expires>NOW()");
         $stmt->execute(array($selector));
@@ -181,7 +181,7 @@ class User extends FFBoka {
      * @param int $ttl How long the cookie shall be valid (seconds)
      * @return boolean TRUE on success, FALSE on failure to create cookie
      */
-    public function createPersistentLogin(int $ttl) {
+    public function createPersistentLogin(int $ttl) : bool {
         //https://stackoverflow.com/questions/3128985/php-login-system-remember-me-persistent-cookie
         // Remove old token
         $this->removePersistentLogin();
@@ -224,10 +224,10 @@ class User extends FFBoka {
      * Remove cookie and database post for persistent login ("Remember me")
      * @param string $selector If set, will remove the persistent login containing this selector,
      * otherwise the login on the current connection is removed
-     * @return False if $selector is empty and there is not current persistent login
+     * @return bool False if $selector is empty and there is not current persistent login
      * @throws \Exception if database post cannot be deleted
      */
-    public function removePersistentLogin(string $selector="") {
+    public function removePersistentLogin(string $selector="") : bool {
         $currentSelector = explode(":", $_COOKIE['remember'])[0];
         if ($selector == "") {
             if ($currentSelector == "") return false; // No information available on which login to remove
@@ -251,7 +251,7 @@ class User extends FFBoka {
             ":userId"=>$this->id
         ])) {
             logger(__METHOD__." Failed to remove persistent login from database. " . $stmt->errorInfo()[2], E_ERROR);
-            throw new \Exception($stmt->errorInfo()[2]);
+            throw new \Exception((string) $stmt->errorInfo()[2]);
         }
     }
     
@@ -259,7 +259,7 @@ class User extends FFBoka {
      * Get all persistent logins for user
      * @return array of objects { string userAgent, string selector, int expires } Expires is returned as Unix timestamp
      */
-    public function persistentLogins() {
+    public function persistentLogins() : array {
         $stmt = self::$db->query("SELECT userAgent, selector, UNIX_TIMESTAMP(expires) expires FROM persistent_logins WHERE userId={$this->id}");
         return $stmt->fetchall(\PDO::FETCH_OBJ);
     }
@@ -268,7 +268,7 @@ class User extends FFBoka {
      * Get an HTML formatted string with contact data
      * @return string
      */
-    public function contactData() {
+    public function contactData() : string {
         $ret = array();
         if ($this->name) $ret[] = htmlspecialchars($this->name);
         if ($this->phone) $ret[] = "☎ " . htmlspecialchars($this->phone);
@@ -281,7 +281,7 @@ class User extends FFBoka {
      * @param int $sectionId ID of section which this booking belongs to
      * @return \FFBoka\Booking
      */
-    public function addBooking(int $sectionId) {
+    public function addBooking(int $sectionId) : \FFBoka\Booking {
         // Create token
         for ($token = '', $i = 0, $z = strlen($a = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789')-1; $i < 40; $x = rand(0,$z), $token .= $a[$x], $i++);
         if ($this->id) $stmt = self::$db->prepare("INSERT INTO bookings SET sectionId=?, userId={$this->id}, token='$token'");
@@ -294,7 +294,7 @@ class User extends FFBoka {
      * Get booking IDs of all the user's bookings, incl up to 1 year old ones
      * @return int[] IDs of bookings no older than 1 year
      */
-    public function bookingIds() {
+    public function bookingIds() : array {
         $stmt = self::$db->query("SELECT bookingId FROM bookings WHERE userId={$this->id} AND timestamp>DATE_SUB(CURDATE(), INTERVAL 1 YEAR) ORDER BY timestamp DESC");
         return $stmt->fetchAll(\PDO::FETCH_COLUMN, 0);
     }
@@ -303,7 +303,7 @@ class User extends FFBoka {
      * Get booking IDs of bookings which the user has initiated but not completed
      * @return int[] booking IDs
      */
-    public function unfinishedBookings() {
+    public function unfinishedBookings() : array {
         $stmt = self::$db->query("SELECT bookingId FROM booked_items INNER JOIN bookings USING (bookingId) WHERE userId={$this->id} AND status=" . FFBoka::STATUS_PENDING);
         return $stmt->fetchAll(\PDO::FETCH_COLUMN, 0);
     }
@@ -312,7 +312,7 @@ class User extends FFBoka {
      * Find sections where user has booking admin roles
      * @return Section[]
      */
-    public function bookingAdminSections() {
+    public function bookingAdminSections() : array {
         $admSections = array();
         foreach ($this->getAllSections() as $section) {
             if ($section->showFor($this, FFBoka::ACCESS_CONFIRM)) {
@@ -328,7 +328,7 @@ class User extends FFBoka {
      * @return string yes|confirmOnly|no If confirmOnly, the user shall only be notified on new
      * bookings that need to be confirmed. 
      */
-    public function getNotifyAdminOnNewBooking(Category $cat) {
+    public function getNotifyAdminOnNewBooking(Category $cat) : string {
         $stmt = self::$db->query("SELECT notify FROM cat_admin_noalert WHERE userId={$this->id} AND catId={$cat->id}");
         if ($row = $stmt->fetch(\PDO::FETCH_OBJ)) {
             return $row->notify;
@@ -374,7 +374,7 @@ class User extends FFBoka {
      * @param string $newMail the new email address
      * @return string the token used to preliminarily save the address
      */
-    public function setUnverifiedMail(string $mail) {
+    public function setUnverifiedMail(string $mail) : string {
         // Delete any previous tokens for same user
         self::$db->exec("DELETE FROM tokens WHERE useFor='change mail address' AND forId={$this->id}");
         return $this->createToken("change mail address", $this->id, $mail);
@@ -395,7 +395,15 @@ class User extends FFBoka {
      * @return \FFBoka\Poll|NULL
      */
     public function getUnansweredPoll() {
-        $stmt = self::$db->query("SELECT polls.pollId FROM polls WHERE (expires IS NULL OR expires > NOW()) AND pollId NOT IN (SELECT pollId FROM poll_answers WHERE userId={$this->id}) LIMIT 1");
+        // Look for any admin assignments
+        $access = self::ACCESS_BOOK;
+        $stmt = self::$db->query("SELECT COUNT(*) count FROM section_admins WHERE userId={$this->id}");
+        if ($stmt->fetch(PDO::FETCH_OBJ)->count > 0) $access = self::ACCESS_SECTIONADMIN;
+        else {
+            $stmt = self::$db->query("SELECT COUNT(*) count FROM cat_admins WHERE userId={$this->id}");
+            if ($stmt->fetch(PDO::FETCH_OBJ)->count > 0) $access = self::ACCESS_CATADMIN;
+        }
+        $stmt = self::$db->query("SELECT polls.pollId FROM polls WHERE targetGroup<=$access AND (expires IS NULL OR expires > NOW()) AND pollId NOT IN (SELECT pollId FROM poll_answers WHERE userId={$this->id}) LIMIT 1");
         if ($row = $stmt->fetch(\PDO::FETCH_OBJ)) return new \FFBoka\Poll($row->pollId);
         else return NULL;
     }
@@ -410,7 +418,7 @@ class User extends FFBoka {
      *    matches (a string with comma-separated matches.
      * The return array is sorted by geographic distance, ascending.
      */
-    public function findResource(string $search) {
+    public function findResource(string $search) : array {
         // Get home position as radians
         $homeSec = $this->section;
         $homeLat = pi() * $homeSec->lat / 180;

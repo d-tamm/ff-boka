@@ -39,11 +39,11 @@ class Poll extends FFBoka {
      * @return string Set value on success, false on failure.
      */
     public function __set($name, $value) {
-        if ($name=="expires" && $value==="") $value=NULL;
         switch ($name) {
             case "choices":
                 // Choices are passed as array. Convert to string.
                 $value = json_encode($value);
+                // continue
             case "question":
                 $stmt = self::$db->prepare("UPDATE polls SET $name=? WHERE pollId={$this->id}");
                 if ($stmt->execute(array($value))) {
@@ -52,22 +52,22 @@ class Poll extends FFBoka {
                     $this->setVotes(array_fill(0, count($this->choices), 0));
                     return $value;
                 }
-                logger(__METHOD__." Failed to set Poll property $name to $value. " . $stmt->errorInfo()[2], E_ERROR);
                 break;
             case "expires":
-                if (is_null($value)) {
+            case "targetGroup":
+                if ($name=="expires" && (is_null($value) || $value==="")) {
                     if(self::$db->exec("UPDATE polls SET $name=NULL WHERE pollId={$this->id}") !== FALSE) return true;
-                    logger(__METHOD__." Failed to set Poll property $name to $value. " . self::$db->errorInfo()[2], E_ERROR);
+                    logger(__METHOD__." Failed to set Poll property $name to NULL. " . self::$db->errorInfo()[2], E_ERROR);
                 } else {
                     $stmt = self::$db->prepare("UPDATE polls SET $name=? WHERE pollId={$this->id}");
                     if ($stmt->execute(array($value))) return $value;
-                    logger(__METHOD__." Failed to set Poll property $name to $value. " . $stmt->errorInfo()[2], E_ERROR);
                 }
                 break;
             default:
-                logger(__METHOD__." Use of undefined Poll property $name.", E_WARNING);
+                logger(__METHOD__." Use of undefined Poll property $name.", E_ERROR);
                 throw new \Exception("Use of undefined Poll property $name");
         }
+        logger(__METHOD__." Failed to set Poll property $name to $value. " . $stmt->errorInfo()[2], E_ERROR);
         return false;
     }
     
@@ -86,6 +86,7 @@ class Poll extends FFBoka {
                 return $this->id;
             case "question":
             case "expires":
+            case "targetGroup":
             case "choices":
             case "votes":
                 $stmt = self::$db->query("SELECT $name FROM polls WHERE pollId={$this->id}");
