@@ -5,7 +5,7 @@ spl_autoload_register(function($class) {
 });
 
 require_once __DIR__ . "/config.php";
-if ($cfg['maintenance'] && basename($_SERVER['PHP_SELF'])!=="superadmin.php") die("<html><head><title>Resursbokning - Underhåll</head><body><h1>Underhåll</h1><p>Vi utför underhållsarbeten på bokningssystemet. Välkommen åter inom kort!</body></html>");
+if ($cfg['maintenance'] && basename($_SERVER['PHP_SELF'])!=="superadmin.php") die("<html><head><title>Resursbokning - Underhåll</title></head><body><h1>Underhåll</h1><p>Vi utför underhållsarbeten på bokningssystemet. Välkommen åter inom kort!</body></html>");
 
 // Calculate the installation path
 $scheme = ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS']!=='off') ? "https" : "http");
