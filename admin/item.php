@@ -90,6 +90,8 @@ fält på kategorinivå.</p>
 vara användbart under tiden du lägger upp resursen tills all information är på plats, eller 
 när en resurs inte är tillgänglig på grund av skada, förlust mm.</p>
 <p>Du kan även lägga in <b>interna anteckningar</b>. De visas bara för administratörer.</p>
+<p><b>Direktlänken</b> kan användas för att dirigera en användare direkt till denna resurs.
+Länken öppnar bokningsflödet så att den här resursen redan är förvald.</p>
 <p>Knappen <b>Duplicera resursen</b> skapar en kopia. Om rubriken i din resurs slutar på
 en siffra eller en siffra i parenteser så får kopian nästa löpnummer. Om du t.ex. kopierar 
 <tt>Kanadensare (1)</tt> så heter kopian <tt>Kanadensare (2)</tt>. Annars får kopians 
@@ -231,6 +233,10 @@ EOF;
             <label for="item-note">Intern anteckning:</label>
             <textarea name="note" class="ajax-input" id="item-note" placeholder="Intern anteckning"><?= htmlspecialchars($item->note) ?></textarea>
         </div>
+
+        <p>Direktlänk: <?php
+        $directLink = "{$cfg['url']}book-part.php?sectionId={$section->id}&selectItemId={$item->id}"; ?>
+        <a target="_blank" href="<?= $directLink ?>"><?= $directLink ?></a> <span style="cursor:pointer;" onclick="navigator.clipboard.writeText('<?= $directLink ?>'); alert('Länken har kopierats till urklipp');" title="Kopiera länk">&#x1f4cb;</span></p>
 
         <div><input type='button' data-corners="false" id='delete-item' value='Ta bort resursen' data-theme='c'></div>
         <div><input type='button' data-corners="false" value='Duplicera resursen' onClick="location.href='?action=copyItem';"></div>
