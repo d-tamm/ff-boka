@@ -113,12 +113,21 @@ function displayCatAccess(Category $cat, array $accLevels, bool $inherited=false
 }
 
 
-function showAttachments(Category $cat) {
+/**
+ * Creates HTML code which shows all attachments for $cat. Attachments defined at mother categories are shown as non-editable items.
+ *
+ * @param Category $cat The category for which to show the attachments
+ * @param bool $inherited Indicates that the results shall be shown as non-editable, inherited items.
+ * @return string HTML code
+ */
+function showAttachments(Category $cat, bool $inherited=false) : string {
+    $ret = "";
+    if ($parent = $cat->parent()) $ret .= showAttachments($parent, true);
     $files = $cat->files();
     if (count($files)) {
-        $ret = "";
         foreach ($files as $file) {
-            $ret .= "<div class='ui-body ui-body-a'>
+            if ($inherited) $ret .= "<p class='ui-body ui-body-a'><b>" . htmlspecialchars($file->caption) . "</b><br><i>ärvt från kategori <a href='?catId={$cat->id}'>{$cat->caption}</a></i><br>" . ($file->displayLink ? "• Visa länk<br>" : "") . ($file->attachFile ? "• Skicka med filen<br>" : "") . "</p>";
+            else $ret .= "<div class='ui-body ui-body-a'>
             <button style='position:absolute; right:0px; top:0px;' title='Radera bilagan' onClick='catFileDelete({$file->fileId})' class='ui-btn ui-btn-inline ui-btn-icon-notext ui-icon-delete' id='cat-file-delete-{$file->fileId}'>Radera bilaga</button>
             <h3><a id='cat-file-header-{$file->fileId}' href='../attment.php?fileId={$file->fileId}' data-ajax='false'>" . htmlspecialchars($file->caption) . "</a></h3>
             <p>Filnamn: " . htmlspecialchars($file->filename) . "</p>
@@ -129,13 +138,13 @@ function showAttachments(Category $cat) {
             <fieldset data-role='controlgroup' data-mini='true'>
                 <label><input onChange=\"setCatFileProp({$file->fileId}, 'displayLink', this.checked ? 1 : 0);\" type='checkbox'" . ($file->displayLink==1 ? " checked" : "") . "> Visa länk till fil i bokningsflödet</label>
                 <label><input onChange=\"setCatFileProp({$file->fileId}, 'attachFile', this.checked ? 1 : 0);\" type='checkbox'" . ($file->attachFile==1 ? " checked" : "") . "> Skicka med som fil i bokningsbekräftelsen</label>
-            </fieldset>
-            </div>\n";
+            </fieldset>\n</div>\n";
         }
-        return $ret;
-    } else {
-        return "<p><i>Här laddar du upp filer som du vill skicka med vid bokning av resurser från den här kategorin eller underordnade kategorier.</i></p>";
     }
+    if (!$ret && !$inherited) {
+        $ret = "<p><i>Här laddar du upp filer som du vill skicka med vid bokning av resurser från den här kategorin eller underordnade kategorier.</i></p>";
+    }
+    return $ret;
 }
 
 if (!isset($_REQUEST['expand'])) $_REQUEST['expand']="";
@@ -623,6 +632,16 @@ unset ($_SESSION['itemId']);
         <div data-role="collapsible" class="ui-filterable" data-collapsed="<?= $_REQUEST['expand']=="files" ? "false" : "true" ?>">
             <h2>Bilagor</h2>
             <div id="cat-attachments"><?= showAttachments($cat) ?></div>
+            <p class="ui-body ui-body-a">
+                Ladda upp en ny bilaga:<br>
+                <input type='file' id='cat-file-file'>
+            </p>
+        </div>
+
+
+        <div data-role="collapsible" class="ui-filterable" data-collapsed="<?= $_REQUEST['expand']=="reminders" ? "false" : "true" ?>">
+            <h2>Påminnelser</h2>
+            <div id="cat-reminders"></div>
             <p class="ui-body ui-body-a">
                 Ladda upp en ny bilaga:<br>
                 <input type='file' id='cat-file-file'>
