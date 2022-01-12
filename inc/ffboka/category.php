@@ -5,6 +5,8 @@
  * @license GNU-GPL
  */
 namespace FFBoka;
+
+use Exception;
 use PDO;
 
 /**
@@ -718,5 +720,82 @@ class Category extends FFBoka {
                 }
             }
         }
+    }
+
+    /**
+     * Get all reminders of this category.
+     *
+     * @param boolean $includeInherited Set to true to include even inherited reminders from parent categories.
+     * @return array Array of objects { int id, int catId, int offset, string message }, where id is a unique
+     *  category reminder identifier, offset is the number of hours before (positive) or after (negative values)
+     *  the start of a booking when the reminder shall be sent, and message is the text to be sent.
+     */
+    public function reminders(bool $includeInherited=false) : array {
+        $parent = $this->parent();
+        $reminders = array();
+        if ($includeInherited && !is_null($parent)) {
+            $reminders = $parent->reminders(true);
+        }
+        $stmt = self::$db->query("SELECT * FROM cat_reminders WHERE catId={$this->id}");
+        while ($row = $stmt->fetch(PDO::FETCH_OBJ)) {
+            $reminders[] = $row;
+        }
+        return $reminders;
+    }
+
+    /**
+     * Add a reminder to the category
+     *
+     * @param integer $offset Number of hours before (+) or after (-) start of booking when the reminder shall be sent
+     * @param string $message The message to send with the reminder
+     * @return integer The ID of the created reminder
+     */
+    public function addReminder(int $offset, string $message) : int {
+        $stmt = self::$db->prepare("INSERT INTO cat_reminders SET catId={$this->id}, offset=:offset, message=:message");
+        $stmt->execute([
+            ":offset"=>$offset,
+            ":message"=>$message
+        ]);
+        return (int) self::$db->lastInsertId();
+    }
+
+    /**
+     * Edit the properties of a reminder
+     *
+     * @param integer $id The id of the reminder to change
+     * @param integer|NULL $offset Number of hours before (+) or after (-) start of booking when the reminder shall be sent
+     *  If set to NULL, the offset is not changed.
+     * @param integer|NULL $message The new message to send with the reminder. If set to NULL, the message is not changed.
+     * @return bool True on success, false on failure.
+     */
+    public function editReminder(int $id, int $offset=NULL, string $message=NULL) : bool {
+        if (!is_null($offset)) {
+            $stmt = self::$db->prepare("UPDATE cat_reminders SET offset=:offset WHERE catId={$this->id} AND id=:id");
+            if (!$stmt->execute([ ":offset"=>$offset, ":id"=>$id ])) {
+                logger(__METHOD__." Failed to change cat reminder. ".$stmt->errorInfo()[2], E_ERROR);
+                return false;
+            }
+        }
+        if (!is_null($message)) {
+            $stmt = self::$db->prepare("UPDATE cat_reminders SET message=:message WHERE catId={$this->id} AND id=:id");
+            if (!$stmt->execute([ ":message"=>$message, ":id"=>$id ])) {
+                logger(__METHOD__." Failed to change cat reminder. ".$stmt->errorInfo()[2], E_ERROR);
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Delete a cat reminder
+     *
+     * @param integer $id The id of the reminder to delete
+     * @return bool True on success, false on failure
+     */
+    public function deleteReminder(int $id) : bool {
+        $stmt = self::$db->prepare("DELETE FROM cat_reminders WHERE catId={$this->id} AND id=?");
+        if ($stmt->execute([ $id ])) return true;
+        logger(__METHOD__." Failed to delete cat reminder. ".$stmt->errorInfo()[2], E_ERROR);
+        return false;
     }
 }

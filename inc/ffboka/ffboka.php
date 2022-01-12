@@ -359,7 +359,7 @@ class FFBoka {
             ":forId"=>$forId,
         ))) {
             logger(__METHOD__." Failed to create token. " . $stmt->errorInfo()[2], E_ERROR);
-            throw new \Exception($stmt->errorInfo()[2]);
+            throw new \Exception((string) $stmt->errorInfo()[2]);
         }
         return($token);
     }
@@ -422,6 +422,25 @@ class FFBoka {
     }
 
     /**
+     * Return a human readable representation of the offset of a reminder.
+     *
+     * @param integer $offset Number of hours before/after a booking
+     * @return string
+     */
+    static function formatReminderOffset( int $offset ) : string {
+        $dagar = round( abs( $offset/24 ) );
+        if ( $offset > 0 && $dagar > 1 ) return "$dagar dagar före bokningsstart";
+        if ( $offset > 18 && $dagar == 1 ) return "1 dag före bokningsstart";
+        if ( $offset > 1 ) return "$offset timmar före bokningsstart";
+        if ( $offset == 1 ) return "1 timme före bokningsstart";
+        if ( $offset == 0 ) return "vid bokningsstart";
+        if ( $offset == -1 ) return "1 timme efter bokningsstart";
+        if ( $offset >= -18 ) return (-$offset) . " timmar efter bokningsstart";
+        if ( $dagar == 1 ) return "1 dag efter bokningsstart";
+        return "$dagar dagar efter bokningsstart";
+    }
+    
+    /**
      * Add a new poll
      * @return \FFBoka\Poll
      */
@@ -452,7 +471,18 @@ class FFBoka {
         }
         return $polls;
     }
-    
+
+    /**
+     * Get the category reminder with ID $id.
+     *
+     * @param integer $id
+     * @return array|bool Returns an array with the members [ id, catId message, offset ] or FALSE if the reminder does not exist.
+     */
+    public function catReminder( int $id ) {
+        $stmt = self::$db->query( "SELECT * from cat_reminders WHERE id=$id" );
+        return $stmt->fetch( PDO::FETCH_ASSOC );
+    }
+
     /**
      * Get the next available ID for booking series
      * @return int

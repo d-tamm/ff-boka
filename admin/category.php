@@ -205,6 +205,9 @@ switch ($_REQUEST['action']) {
 
 <h3>Bilagor</h3>
 <p>Här laddar du upp filer som du vill skicka med bokningsbekräftelser och/eller visa som länk i bokningsflödet. Det kan vara sådant som städrutiner, en särskild blankett du vill att användaren fyller i, körinstruktioner mm. Du kan ladda upp filer av typerna " . implode(", ", array_keys($cfg['allowedAttTypes'])) . ". Filstorleken får maximalt vara " . FFBoka::formatBytes($cfg['uploadMaxFileSize']). ". Rubriken är den text som visas för användaren på skärmen.</p>
+
+<h3>Påminnelser</h3>
+<p>Du kan ställa in att användarna får ett meddelande ett visst antal timmar före eller efter bokningsstart. Använd ett positivt antal timmar för påminnelser före bokningsstart, och negativa tal för påminnelser efter bokningsstart.</p>
 ";
         die();
     case "new":
@@ -396,8 +399,41 @@ switch ($_REQUEST['action']) {
         $cat->removeFile($_REQUEST['fileId']);
         header("Content-Type: application/json");
         die(json_encode([ "status"=>"OK", "html"=>showAttachments($cat) ]));
-        die();
-}
+
+    case "ajaxGetReminders":
+        if ( $cat->getAccess( $currentUser ) < FFBoka::ACCESS_CATADMIN ) {
+            http_response_code( 403 );
+            die();
+        }
+        $ret = array();
+        // Collect reminders of this category
+        foreach( $cat->reminders() as $reminder ) {
+            $ret[] = "<li data-icon='edit'><a href='#' onclick='editCatReminder({$reminder->id});'>" . $FF::formatReminderOffset( $reminder->offset ) . "<p>\"" . htmlspecialchars( $reminder->message ) . "\"</p></a></li>";
+        }
+        // Add inherited reminders
+        while ( !is_null( $cat = $cat->parent() ) ) {
+            foreach ( $cat->reminders() as $reminder ) {
+                $ret[] = "<li><strong>" . $FF::formatReminderOffset( $reminder->offset ) . "</strong><p>\"" . htmlspecialchars( $reminder->message ) . "\"<br><i><small>ärvt från kategori <a href='?catId={$cat->id}'>{$cat->caption}</p></a></small></i></li>";
+            }
+        }
+        $ret[] = "<li data-icon='plus'><a href='#' onclick='editCatReminder(0);'>Skapa ny påminnelse</a></li>";
+        if ( count($ret)==1 ) $ret[] = "<li style='white-space:normal;'><i><small>Här kan du ställa in påminnelser som ska skickas till användaren ett antal timmar före eller efter början på en bokning. Ett klassiskt användningsfall är att skicka ut passerkod strax innan bokningen.</small></i></li>";
+        die( implode( "", $ret ) );
+
+    case "ajaxGetReminder":
+        header("Content-Type: application/json");
+        if ($_GET['id']==0) die( json_encode( [ "id"=>0, "message"=>"Ny påminnelse", "offset"=>0 ] ));
+        die( json_encode( $FF->catReminder( $_GET['id'] ) ) );
+
+    case "ajaxSaveReminder":
+        if ( $cat->getAccess( $currentUser ) < FFBoka::ACCESS_CATADMIN ) {
+            http_response_code( 403 );
+            die();
+        }
+        if ( $_GET['id'] ) $cat->editReminder( $_GET['id'], $_GET['offset'], $_GET['message'] );
+        else $cat->addReminder( $_GET['offset'], $_GET['message'] );
+        die("OK");
+    }
 }
 
 unset ($_SESSION['itemId']);
@@ -418,6 +454,21 @@ unset ($_SESSION['itemId']);
         <a href='#' data-rel='back' class='ui-btn ui-btn-icon-left ui-btn-inline ui-corner-all ui-icon-check'>OK</a>
     </div>
     
+    <div data-role="popup" data-overlay-theme="b" id="popup-cat-reminders" class="ui-content">
+        <h3>Påminnelse</h3>
+        <input type="hidden" id="cat-reminders-id">
+        <div class="ui-field-contain">
+            <label for="cat-reminders-message">Meddelande</label>
+            <textarea id="cat-reminders-message" placeholder="T.ex. koden till hänglåset är 12345."></textarea>
+        </div>
+        <div class="ui-field-contain">
+            <label for="cat-reminders-offset">Timmar före (+) / efter (-) bokningsstart</label>
+            <input type="number" min="-8760" max="8760" id="cat-reminders-offset" placeholder="antal timmar">
+        </div>
+        <button class="ui-btn ui-btn-inline ui-btn-icon-left ui-icon-delete" onclick="deleteCatReminder();">Radera</button>
+        <button class="ui-btn ui-btn-inline ui-btn-icon-left ui-icon-check" onclick="saveCatReminder();">Spara</button>
+    </div>
+
     <div class="saved-indicator" id="cat-saved-indicator">Sparad</div>
 
     <div data-role="collapsibleset" data-inset="false">
@@ -620,7 +671,7 @@ unset ($_SESSION['itemId']);
             <h2>Bokningsfrågor</h2>
             <?php
             if ($questions = showQuestions($cat, $section)) {
-                echo "<p><i>Klicka på frågorna som ska visas i bokningsflödet. Frågor med blå bakgrund är aktiverade. Klicka en gång till för att göra frågan obligatorisk (<span class='required'></span>). Klicka en tredje gång för att avaktivera frågan.</i></p>";
+                echo "<p><i><small>Klicka på frågorna som ska visas i bokningsflödet. Frågor med blå bakgrund är aktiverade. Klicka en gång till för att göra frågan obligatorisk (<span class='required'></span>). Klicka en tredje gång för att avaktivera frågan.</small></i></p>";
                 echo "<ul data-role='listview' data-inset='true' id='cat-questions'>$questions</ul>";
             } else {
                 echo "<p><i>Inga frågor har lagts upp i din lokalavdelning än. Om du vill att någon fråga ska visas vid bokning i denna kategori, be LA-administratören att lägga upp frågan. Detta ska göras på LA-nivå. När detta har gjorts kommer upplagda frågor att dyka upp här så du kan välja ut de frågor som ska visas med din kategori.</i></p>";
@@ -641,11 +692,8 @@ unset ($_SESSION['itemId']);
 
         <div data-role="collapsible" class="ui-filterable" data-collapsed="<?= $_REQUEST['expand']=="reminders" ? "false" : "true" ?>">
             <h2>Påminnelser</h2>
-            <div id="cat-reminders"></div>
-            <p class="ui-body ui-body-a">
-                Ladda upp en ny bilaga:<br>
-                <input type='file' id='cat-file-file'>
-            </p>
+            <ul data-role="listview" id="cat-reminders">
+            </ul>
         </div>
         <?php } ?>
         

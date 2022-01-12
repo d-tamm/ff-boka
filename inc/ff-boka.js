@@ -1318,7 +1318,9 @@ $(document).on('pageshow', "#page-admin-category", function() {
             }
         });
     });
-      
+
+    // Get reminders via ajax
+    getCatReminders();
 
     // Show message if there is any
     if ($("#msg-page-admin-category").html()) {
@@ -1451,6 +1453,42 @@ function toggleQuestion(id) {
     }, function(data, status) {
         $("#cat-questions").html(data.html).listview("refresh");
     });
+}
+
+/**
+ * Get the category reminders via ajax
+ */
+function getCatReminders() {
+    $.get( "category.php", { action: "ajaxGetReminders" } )
+    .done( function( data ) {
+        $("#cat-reminders").html( data ).listview("refresh");
+    })
+    .fail( function() {
+        $("#cat-reminders").html("<li><i>Kan inte hämta påminnelser.</i></li>");
+    });
+}
+
+function editCatReminder( id ) {
+    $.getJSON( "category.php", { action: "ajaxGetReminder", id: id } )
+    .done( function( data ) {
+        $("#cat-reminders-id").val( data ? data.id : 0 );
+        $("#cat-reminders-message").val( data ? data.message : "Fel: Påminnelsen hittades inte" );
+        $("#cat-reminders-offset").val( data ? data.offset : 0 );
+        $("#popup-cat-reminders").popup('open');    
+    });
+}
+
+function saveCatReminder() {
+    $.get( "category.php", {
+        action: "ajaxSaveReminder",
+        id: $("#cat-reminders-id").val(),
+        message: $("#cat-reminders-message").val(),
+        offset: $("#cat-reminders-offset").val()
+    } )
+    .done(function( data ) {
+        getCatReminders();
+    });
+    $("#popup-cat-reminders").popup('close');
 }
 
 
