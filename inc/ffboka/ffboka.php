@@ -473,17 +473,6 @@ class FFBoka {
     }
 
     /**
-     * Get the category reminder with ID $id.
-     *
-     * @param integer $id
-     * @return array|bool Returns an array with the members [ id, catId message, offset ] or FALSE if the reminder does not exist.
-     */
-    public function catReminder( int $id ) {
-        $stmt = self::$db->query( "SELECT * from cat_reminders WHERE id=$id" );
-        return $stmt->fetch( PDO::FETCH_ASSOC );
-    }
-
-    /**
      * Get the next available ID for booking series
      * @return int
      */

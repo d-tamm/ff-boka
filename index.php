@@ -158,8 +158,8 @@ if (isset($_POST['login'])) {
                 if ($u->createPersistentLogin($cfg['TtlPersistentLogin'])===FALSE) die("Kan inte skapa permanent inloggning.");
             }
             // Redirect if requested by login form
-            if ($_POST['redirect']) {
-                header("Location: {$_POST['redirect']}");
+            if ($_REQUEST['redirect']) {
+                header("Location: {$cfg['url']}{$_REQUEST['redirect']}");
                 die();
             }
             // Redirect Ordförande etc on first login

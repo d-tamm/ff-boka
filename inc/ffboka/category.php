@@ -366,7 +366,6 @@ class Category extends FFBoka {
      * @param int $fileId
      * @param string $name The name of the property to set. Must be one of caption|filename|displayLink|attachFile
      * @param mixed $value The value of the property to set
-     * @throws \Exception if trying to set an invalid property.
      * @return bool True on success, or FALSE on failure
      */
     public function setFileProp(int $fileId, string $name, $value) : bool {
@@ -385,7 +384,7 @@ class Category extends FFBoka {
             break;
         default: 
             logger(__METHOD__." Trying to set invalid property $name on file attachment {$this->id}", E_ERROR);
-            throw new \Exception("Cannot set property $name on file attachment.");
+            return false;
         }
     }
     
@@ -730,60 +729,55 @@ class Category extends FFBoka {
      *  category reminder identifier, offset is the number of hours before (positive) or after (negative values)
      *  the start of a booking when the reminder shall be sent, and message is the text to be sent.
      */
-    public function reminders(bool $includeInherited=false) : array {
-        $parent = $this->parent();
+    public function reminders( bool $includeInherited = false ) : array {
         $reminders = array();
-        if ($includeInherited && !is_null($parent)) {
-            $reminders = $parent->reminders(true);
+        if ( $includeInherited ) {
+            $parent = $this->parent();
+            if ( !is_null( $parent ) ) $reminders = $parent->reminders( true );
         }
-        $stmt = self::$db->query("SELECT * FROM cat_reminders WHERE catId={$this->id}");
-        while ($row = $stmt->fetch(PDO::FETCH_OBJ)) {
+        $stmt = self::$db->query( "SELECT * FROM cat_reminders WHERE catId={$this->id}" );
+        while ( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
             $reminders[] = $row;
         }
         return $reminders;
     }
 
     /**
-     * Add a reminder to the category
+     * Get the category reminder with ID $id.
      *
-     * @param integer $offset Number of hours before (+) or after (-) start of booking when the reminder shall be sent
-     * @param string $message The message to send with the reminder
-     * @return integer The ID of the created reminder
+     * @param integer $id
+     * @return array|bool Returns an array with the members [ id, catId, message, offset ] or FALSE if the reminder does not exist.
      */
-    public function addReminder(int $offset, string $message) : int {
-        $stmt = self::$db->prepare("INSERT INTO cat_reminders SET catId={$this->id}, offset=:offset, message=:message");
-        $stmt->execute([
-            ":offset"=>$offset,
-            ":message"=>$message
-        ]);
-        return (int) self::$db->lastInsertId();
+    public function getReminder( int $id ) {
+        $stmt = self::$db->prepare( "SELECT * from cat_reminders WHERE id=?" );
+        $stmt->execute( [ $id ] );
+        return $stmt->fetch( PDO::FETCH_ASSOC );
     }
 
     /**
-     * Edit the properties of a reminder
+     * Edit the properties of a reminder or create a new reminder.
      *
-     * @param integer $id The id of the reminder to change
-     * @param integer|NULL $offset Number of hours before (+) or after (-) start of booking when the reminder shall be sent
-     *  If set to NULL, the offset is not changed.
-     * @param integer|NULL $message The new message to send with the reminder. If set to NULL, the message is not changed.
-     * @return bool True on success, false on failure.
+     * @param integer $id The id of the reminder to change. If 0, add a new reminder.
+     * @param integer $offset Number of hours before (+) or after (-) start of booking when the reminder shall be sent
+     * @param integer $message The new message to send with the reminder.
+     * @return int|bool The id of the reminder, false on failure.
      */
-    public function editReminder(int $id, int $offset=NULL, string $message=NULL) : bool {
-        if (!is_null($offset)) {
-            $stmt = self::$db->prepare("UPDATE cat_reminders SET offset=:offset WHERE catId={$this->id} AND id=:id");
-            if (!$stmt->execute([ ":offset"=>$offset, ":id"=>$id ])) {
-                logger(__METHOD__." Failed to change cat reminder. ".$stmt->errorInfo()[2], E_ERROR);
+    public function editReminder( int $id, int $offset, string $message ) {
+        if ( $id == 0 ) {
+            if ( !self::$db->exec( "INSERT INTO cat_reminders SET catId={$this->id}" ) ) {
+                logger(__METHOD__ . " INSERT INTO cat_reminders SET catId={$this->id} " . self::$db->errorInfo()[2] );
                 return false;
             }
+            $id = self::$db->lastInsertId();
         }
-        if (!is_null($message)) {
-            $stmt = self::$db->prepare("UPDATE cat_reminders SET message=:message WHERE catId={$this->id} AND id=:id");
-            if (!$stmt->execute([ ":message"=>$message, ":id"=>$id ])) {
-                logger(__METHOD__." Failed to change cat reminder. ".$stmt->errorInfo()[2], E_ERROR);
-                return false;
-            }
-        }
-        return true;
+        $stmt = self::$db->prepare( "UPDATE cat_reminders SET offset=:offset, message=:message WHERE catId={$this->id} AND id=:id" );
+        if ( $stmt->execute( [
+            ":offset" => $offset,
+            ":message" => $message,
+            ":id" => $id
+        ] ) ) return $id;
+        logger( __METHOD__ . " Failed to change or create cat reminder. ".$stmt->errorInfo()[2], E_ERROR );
+        return false;
     }
 
     /**
