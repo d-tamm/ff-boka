@@ -224,10 +224,10 @@ class User extends FFBoka {
      * Remove cookie and database post for persistent login ("Remember me")
      * @param string $selector If set, will remove the persistent login containing this selector,
      * otherwise the login on the current connection is removed
-     * @return bool False if $selector is empty and there is not current persistent login
+     * @return bool|void False if $selector is empty and there is not current persistent login
      * @throws \Exception if database post cannot be deleted
      */
-    public function removePersistentLogin(string $selector="") : bool {
+    public function removePersistentLogin(string $selector="") {
         $currentSelector = explode(":", $_COOKIE['remember'])[0];
         if ($selector == "") {
             if ($currentSelector == "") return false; // No information available on which login to remove
