@@ -272,7 +272,7 @@ unset( $_SESSION[ 'catId' ] );
             <p><a href="<?= $cfg[ 'url' ] . "boka-" . urlencode( $section->name ) ?>"><?= $cfg[ 'url' ] . "boka-" . $section->name ?></a></p>
 
             <h3>Geografiskt läge</h3>
-            <p>Kartan nedan visar lokalavdelningens geografiska läge. Det används t.ex. vid sökning från startsidan för att sortera resultatet efter geografiskt avstånd. Du kan justera positionen genom att klicka på kartan.</p>
+            <p>Kartan nedan visar lokalavdelningens geografiska läge. Det används t.ex. vid sökning från startsidan för att sortera resultatet efter geografiskt avstånd.</p>
 
             <iframe id="sec-map" width="100%" height="450" frameborder="0" marginheight="0" marginwidth="0" src="" style="border: 1px solid grey"></iframe>
         </div>

@@ -1633,7 +1633,10 @@ $( document ).on( 'pagecreate', "#page-admin-item", function() {
             contentType: false,
             processData: false,
         }).done( function( data ) {
-            $( "#file-item-img" ).replaceWith( $( "#file-item-img" ).val( '' ).clone( true ) );
+            e = $( "#file-item-img" );
+            e.wrap('<form></form>').closest('form').get(0).reset();
+            e.unwrap();
+//            $( "#file-item-img" ).replaceWith( $( "#file-item-img" ).val( '' ).clone( true ) );
             getItemImages();
         }).fail( function( xhr ) {
             alert( xhr.responseText );

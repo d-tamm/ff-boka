@@ -75,18 +75,5 @@ $color = "blue";
                 zoom: 10,
             })
         });
-
-        map.on("click", function(e) {
-            var pos = ol.proj.toLonLat(e.coordinate);
-            $.getJSON("index.php", {
-                action: "ajaxSetLocation",
-                sectionId: <?= $_GET['sectionId'] ?>,
-                lon: pos[0],
-                lat: pos[1],
-            }, function(data, status) {
-                if (data.error) console.log(data.error);
-                else homeMarker.setGeometry( new ol.geom.Point( ol.proj.fromLonLat([ data.lon, data.lat ]) ) );
-            });
-        });
   </script>
   </body></html>
