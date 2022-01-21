@@ -45,7 +45,6 @@ switch ($_REQUEST[ 'action' ]) {
         break;
 
     // Section level: require section admin permissions
-    case "setLocation":
     case "getQuestion":
     case "getQuestions":
     case "saveQuestion":
@@ -88,13 +87,13 @@ switch ($_REQUEST[ 'action' ]) {
     case "getReminder":
     case "saveReminder":
     case "deleteReminder":
-        if ( $_GET[ 'class' ] == "cat" ) {
-            if ( !isset( $_SESSION[ 'catId' ] ) ) { http_response_code( 400 ); die(); } // Bad request
-            $catOrItem = new Category( $_SESSION[ 'catId' ] );
-        }
-        elseif ( $_GET[ 'class' ] == "item" ) {
+        if ( $_GET[ 'class' ] == "item" ) {
             if ( !isset( $_SESSION[ 'itemId' ] ) ) { http_response_code( 400 ); die(); } // Bad request
             $catOrItem = new Item( $_SESSION[ 'itemId' ] );
+        }
+        elseif ( $_GET[ 'class' ] == "cat" ) {
+            if ( !isset( $_SESSION[ 'catId' ] ) ) { http_response_code( 400 ); die(); } // Bad request
+            $catOrItem = new Category( $_SESSION[ 'catId' ] );
         }
         else { http_response_code( 405 ); die(); } // Method not allowed
         if ( $catOrItem->getAccess( $currentUser ) < FFBoka::ACCESS_CATADMIN ) {
@@ -184,13 +183,6 @@ case "removeSectionAdmin":
     if ( !$section->removeAdmin( $_REQUEST[ 'id' ] ) ) { http_response_code( 500 ); die(); } // Internal server error
     die();
     
-case "setLocation":
-    if ( !isset( $_GET[ 'lat' ] ) || !isset( $_GET[ 'lon' ] ) ) { http_response_code( 400 ); die(); } // Bad request
-    header( "Content-Type: application/json" );
-    $section->lat = $_GET[ 'lat' ];
-    $section->lon = $_GET[ 'lon' ];
-    die( json_encode ( [ "lat" => $section->lat, "lon" => $section->lon ] ) );
-
 case "getQuestion":
     if ( !isset( $_REQUEST[ 'id' ] ) ) { http_response_code( 400 ); die(); } // Bad request
     header( "Content-Type: text/plain" );
@@ -243,23 +235,21 @@ case "deleteQuestion":
 // ===== CATEGORY/ITEM LEVEL AJAX REQUESTS =====
 
 case "getReminders":
-    $ret = array();
-    // Collect reminders for category or item
-    foreach( $catOrItem->reminders() as $reminder ) {
-        $ret[] = "<li data-icon='edit'><a href='#' onclick=\"editReminder('{$_GET[ 'class' ]}', {$reminder->id});\">" . $FF::formatReminderOffset( $reminder->offset ) . "<p>\"" . htmlspecialchars( $reminder->message ) . "\"</p></a></li>";
-    }
-    if ( $_GET[ 'class' ] == "cat" ) {
-        // Add inherited reminders for categories
-        while ( !is_null( $catOrItem = $catOrItem->parent() ) ) {
-            foreach ( $catOrItem->reminders() as $reminder ) {
-                $ret[] = "<li><strong>" . $FF::formatReminderOffset( $reminder->offset ) . "</strong><p>\"" . htmlspecialchars( $reminder->message ) . "\"<br><i><small>ärvt från kategori <a href='?catId={$catOrItem->id}'>{$catOrItem->caption}</p></a></small></i></li>";
-            }
-        }
-    }
-    if ( !count( $ret ) ) $ret[] = "<li style='white-space:normal;'><i><small>Här kan du ställa in påminnelser som ska skickas till användaren ett antal timmar före eller efter början på en bokning. Ett klassiskt användningsfall är att skicka ut passerkod strax innan bokningen. Påminnelser kan även ställas in på kategorinivå.</small></i></li>";
-    $ret[] = "<li data-icon='plus'><a href='#' onclick=\"editReminder('{$_GET[ 'class' ]}', 0);\">Skapa ny påminnelse</a></li>";
     header( "Content-Type: text/html" );
-    die( implode( "", $ret ) );
+    // Collect reminders for item
+    foreach( $catOrItem->reminders() as $reminder ) {
+        echo "<li data-icon='edit'><a href='#' onclick=\"editReminder('{$_GET[ 'class' ]}', {$reminder->id});\">" . $FF::formatReminderOffset( $reminder->offset ) . "<p>\"" . htmlspecialchars( $reminder->message ) . "\"</p></a></li>";
+    }
+    $parent = ( $_GET[ 'class' ] == "item" ) ? $catOrItem->category() : $catOrItem->parent();
+    // Add reminders inherited from parent categories
+    while ( !is_null( $parent ) ) {
+        foreach ( $parent->reminders() as $reminder ) {
+            echo "<li><strong>" . $FF::formatReminderOffset( $reminder->offset ) . "</strong><p>\"" . htmlspecialchars( $reminder->message ) . "\"<br><i><small>ärvt från kategori <a href='category.php?catId={$parent->id}&expand=reminders'>{$parent->caption}</p></a></small></i></li>";
+        }
+        $parent = $parent->parent();
+    }
+    echo "<li data-icon='plus'><a href='#' onclick=\"editReminder('{$_GET[ 'class' ]}', 0);\">Skapa ny påminnelse</a></li>";
+    die();
 
 case "getReminder":
     if ( !isset( $_GET[ 'id' ] ) ) { http_response_code( 400 ); die(); } // Bad request
@@ -458,7 +448,6 @@ case "toggleQuestion":
     die();
     
 case "deleteCat":
-    header("Content-Type: application/json");
     if (!$cat->delete()) http_response_code( 500 ); // Internal server error
     die();
     
