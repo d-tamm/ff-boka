@@ -472,7 +472,7 @@ class Item extends FFBoka {
      *
      * @param bool $includeInherited If set to true, also include reminders inherited from category level.
      * @return array Array of objects { int id, int itemId|catId, int offset, string message }, where id is a unique
-     *  category reminder identifier, offset is the number of hours before (positive) or after (negative values)
+     *  item|category reminder identifier, offset is the number of hours before (positive) or after (negative values)
      *  the start of a booking when the reminder shall be sent, and message is the text to be sent.
      */
     public function reminders( bool $includeInherited = false ) : array {
