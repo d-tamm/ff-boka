@@ -235,20 +235,31 @@ case "deleteQuestion":
 // ===== CATEGORY/ITEM LEVEL AJAX REQUESTS =====
 
 case "getReminders":
+    $reminders = array();
     header( "Content-Type: text/html" );
     // Collect reminders for item
-    foreach( $catOrItem->reminders() as $reminder ) {
-        echo "<li data-icon='edit'><a href='#' onclick=\"editReminder('{$_GET[ 'class' ]}', {$reminder->id});\">" . $FF::formatReminderOffset( $reminder->offset ) . "<p>\"" . htmlspecialchars( $reminder->message ) . "\"</p></a></li>";
+    foreach( $catOrItem->reminders() as $r ) {
+        $reminders[] = [ "id"=>$r->id, "offset"=>$r->offset, "message"=>$r->message ];
     }
     $parent = ( $_GET[ 'class' ] == "item" ) ? $catOrItem->category() : $catOrItem->parent();
     // Add reminders inherited from parent categories
     while ( !is_null( $parent ) ) {
-        foreach ( $parent->reminders() as $reminder ) {
-            echo "<li><strong>" . $FF::formatReminderOffset( $reminder->offset ) . "</strong><p>\"" . htmlspecialchars( $reminder->message ) . "\"<br><i><small>ärvt från kategori <a href='category.php?catId={$parent->id}&expand=reminders'>{$parent->caption}</p></a></small></i></li>";
+        foreach ( $parent->reminders() as $r ) {
+            $reminders[] = [ "offset"=>$r->offset, "message"=>$r->message, "parentId"=>$parent->id, "parentCaption"=>$parent->caption ];
         }
         $parent = $parent->parent();
     }
-    echo "<li data-icon='plus'><a href='#' onclick=\"editReminder('{$_GET[ 'class' ]}', 0);\">Skapa ny påminnelse</a></li>";
+    // Sort the reminders by offset
+    $offsets = array_column( $reminders, "offset" );
+    array_multisort( $offsets, $reminders );
+    foreach ( $reminders as $r ) {
+        if ( isset( $r[ 'parentId' ] ) ) { // inherited reminders are only displayed, not editable
+            echo "<li><strong>" . $FF::formatReminderOffset( $r['offset'] ) . "</strong><p>\"" . htmlspecialchars( $r['message'] ) . "\"<br><i>ärvt från kategori <a href='category.php?catId={$r['parentId']}&expand=reminders'>{$r['parentCaption']}</p></a></i></li>";
+        } else { // reminders of the current objects are editable
+            echo "<li><a href='#' onclick=\"editReminder('{$_GET[ 'class' ]}', {$r['id']});\">" . $FF::formatReminderOffset( $r['offset'] ) . "<p>\"" . htmlspecialchars( $r['message'] ) . "\"</p></a><a href='#' onclick=\"deleteReminder('{$_GET[ 'class' ]}', {$r['id']});\"></a></li>";
+        }
+    }
+    echo "<li data-icon='plus' data-theme='a'><a href='#' onclick=\"editReminder('{$_GET[ 'class' ]}', 0);\">Skapa ny påminnelse</a></li>";
     die();
 
 case "getReminder":
