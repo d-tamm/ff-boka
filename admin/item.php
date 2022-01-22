@@ -127,10 +127,12 @@ switch ( $_REQUEST[ 'action' ] ) {
                 <textarea id="reminder-message" placeholder="T.ex. koden till hänglåset är 12345."></textarea>
             </div>
             <div class="ui-field-contain">
-                <label for="reminder-offset">Timmar före (+) / efter (-) bokningsstart</label>
-                <input type="number" min="-8760" max="8760" id="reminder-offset" placeholder="antal timmar">
+            <label for="reminder-offset">Tidpunkt för att skicka</label>
+            <select id="reminder-offset"><?php
+                foreach ( [ -4320, -2160, -1440, -720, -336, -168, -96, -48, -24, -12, -6, -3, -1, 0, 1, 3, 6, 12, 24, 48, 96, 168, 336, 720, 1440, 2160, 4320 ] as $offset ) echo "<option value='$offset'>" . $FF::formatReminderOffset($offset) . "</option>\n"; ?>
+            </select>
             </div>
-            <button class="ui-btn ui-btn-inline ui-btn-icon-left ui-icon-delete" onclick="deleteReminder( 'item' );">Radera</button>
+            <a href='#' data-rel="back" class="ui-btn ui-btn-inline ui-btn-icon-left ui-icon-back">Avbryt</a>
             <button class="ui-btn ui-btn-inline ui-btn-icon-left ui-icon-check" onclick="saveReminder( 'item' );">Spara</button>
         </div>
 
@@ -191,7 +193,7 @@ switch ( $_REQUEST[ 'action' ] ) {
         <hr>
         
         <h3>Påminnelser</h3>
-        <ul data-role="listview" id="reminders">
+        <ul data-role="listview" id="reminders" data-split-icon="delete" data-split-theme="c">
         </ul>
 
         <h3>Bilder</h3>

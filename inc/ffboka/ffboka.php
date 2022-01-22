@@ -428,16 +428,19 @@ class FFBoka {
      * @return string
      */
     static function formatReminderOffset( int $offset ) : string {
-        $dagar = round( abs( $offset/24 ) );
-        if ( $offset > 0 && $dagar > 1 ) return "$dagar dagar före bokningsstart";
-        if ( $offset > 18 && $dagar == 1 ) return "1 dag före bokningsstart";
-        if ( $offset > 1 ) return "$offset timmar före bokningsstart";
-        if ( $offset == 1 ) return "1 timme före bokningsstart";
-        if ( $offset == 0 ) return "vid bokningsstart";
-        if ( $offset == -1 ) return "1 timme efter bokningsstart";
-        if ( $offset >= -18 ) return (-$offset) . " timmar efter bokningsstart";
-        if ( $dagar == 1 ) return "1 dag efter bokningsstart";
-        return "$dagar dagar efter bokningsstart";
+        $suffix = $offset < 0 ? "före" : "efter";
+        $offset = abs( $offset );
+        $parts = [];
+        $months = intdiv( $offset, 720 );
+        if ( $months ) $parts[] = $months . ( $months==1 ? " månad" : " månader" );
+        $weeks = intdiv( $offset - $months * 720, 168 );
+        if ( $weeks ) $parts[] = $weeks . ( $weeks==1 ? " vecka" : " veckor" );
+        $days = intdiv( $offset - $months * 720 - $weeks * 168, 24 );
+        if ( $days ) $parts[] = $days . ( $days==1 ? " dag" : " dagar" );
+        $hours = $offset - $months * 720 - $weeks * 168 - $days * 24;
+        if ( $hours ) $parts[] = $hours . ( $hours==1 ? " timme" : " timmar" );
+        if ( count( $parts ) ) return implode( ", ", $parts ) . " $suffix bokningsstart";
+        return "vid bokningsstart";
     }
     
     /**

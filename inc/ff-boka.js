@@ -1521,7 +1521,7 @@ function editReminder( reminderClass, id ) {
     .done( function( data ) {
         $( "#reminder-id" ).val( data ? data.id : 0 );
         $( "#reminder-message" ).val( data ? data.message : "Fel: Påminnelsen hittades inte" );
-        $( "#reminder-offset" ).val( data ? data.offset : 0 );
+        $( "#reminder-offset").val( data.offset ).selectmenu( "refresh", true );
         $( "#popup-reminder" ).popup('open');    
     })
     .fail( function( data, txtStatus, xhr ) {
@@ -1543,11 +1543,11 @@ function saveReminder( reminderClass ) {
     });
 }
 
-function deleteReminder( reminderClass ) {
+function deleteReminder( reminderClass, id ) {
     $.get( "ajax.php", {
         action: "deleteReminder",
         class: reminderClass,
-        id: $( "#reminder-id" ).val()
+        id: id,
     })
     .done( function() {
         getReminders( reminderClass );
