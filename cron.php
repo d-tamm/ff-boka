@@ -2,6 +2,7 @@
 use FFBoka\Category;
 use FFBoka\User;
 use FFBoka\FFBoka;
+use FFBoka\Item;
 
 /**
  * Cron tasks for resource booking system
@@ -24,6 +25,24 @@ logger(__METHOD__.sprintf("Executing cron jobs. Last cron execution was %s ago."
 
 // Send queued mails
 $FF->sendQueuedMails($cfg['mail']);
+
+// Send reminders
+// Get all confirmed bookedItems starting 6 months ago until 6 months ahead
+$stmt = $db->query( "SELECT bookedItemId, itemId, UNIX_TIMESTAMP(start) start, remindersSent FROM `booked_items` WHERE DATEDIFF(start, NOW())<185 AND DATEDIFF(NOW(), start)<185 AND status=4" );
+while ( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
+    $sent = json_decode( $row->remindersSent );
+    $item = new Item( $row->bookedItemId );
+    foreach ( $item->reminders( true ) as $r ) {
+        if ( time() >= $row->start + $r->offset ) { // Overdue to send reminder
+            if ( 
+                ( property_exists( $r, "itemId" ) && !in_array( "item{$r->id}", $sent ) ) ||
+                ( property_exists( $r, "catId"  ) && !in_array( "cat{$r->id}", $sent ) )
+            ) {
+                // TODO: add reminder to list grouped by email addresses, finally send reminders
+            }
+        }
+    };
+}
 
 // Record last execution time
 $db->exec("UPDATE config SET value=UNIX_TIMESTAMP() WHERE name='last hourly cron run'");
