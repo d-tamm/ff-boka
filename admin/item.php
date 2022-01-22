@@ -182,7 +182,7 @@ switch ( $_REQUEST[ 'action' ] ) {
         </div>
 
         <p>Direktlänk: <?php
-        $directLink = "{$cfg['url']}boka-{$section->name}?selectItemId={$item->id}"; ?>
+        $directLink = "{$cfg['url']}book-part.php?sectionId={$section->id}&selectItemId={$item->id}"; ?>
         <a target="_blank" href="<?= $directLink ?>"><?= $directLink ?></a> <span style="cursor:pointer;" onclick="navigator.clipboard.writeText('<?= $directLink ?>'); alert('Länken har kopierats till urklipp');" title="Kopiera länk">&#x1f4cb;</span></p>
 
         <div><input type='button' data-corners="false" id='delete-item' value='Ta bort resursen' data-theme='c'></div>

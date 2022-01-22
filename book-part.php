@@ -25,7 +25,7 @@ function displayCat(Category $cat, $user, $fbStart, $fileTypes=[]) {
         if (isset($_GET['selectItemId'])) {
             // Expand category of selected item. The item itself will be selected by javascript.
             $i = new Item($_GET['selectItemId']);
-            if ($i->isBelowCategory($cat)) echo " data-collapsed='false'";  
+            if ($i->isBelowCategory($cat)) echo " data-collapsed='false'";
         }
         echo " data-inset='false'>";
         echo "<h3><div class='cat-list-img'>" . embedImage($cat->thumb) . "</div>" . htmlspecialchars($cat->caption) . "</h3>";
