@@ -22,4 +22,6 @@ CREATE TABLE `item_reminders` (
 
 ALTER TABLE `booked_items` ADD `remindersSent` VARCHAR(255) NOT NULL DEFAULT '[]'; 
 
+INSERT INTO `news` (`newsId`, `date`, `caption`, `body`) VALUES (NULL, CURRENT_DATE(), 'Bokningspåminnelser', 'Nu kan du som admin skapa meddelanden som automatiskt skickas till användarna i samband med att en bokning börjar eller slutar. Användbart t.ex. för att skicka ut koder till kombinationslås.'); 
+
 UPDATE config SET value=23 WHERE name='db-version';
