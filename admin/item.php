@@ -54,35 +54,21 @@ switch ( $_REQUEST[ 'action' ] ) {
     case "help":
         echo <<<EOF
         <h3>Allmänt</h3>
-        <p>Inställningarna här sparas direkt. Du behöver inte trycka på någon spara-knapp. Längst
-        upp ser du var i strukturen resursen är placerad, med klickbara överordnade element. Det 
-        är användbart för att snabbt navigera upp i hirarkin. Klicka på knappen med pennsymbol till
-        höger om sökvägen för att flytta resursen till en annan kategori.</p>
-        <p><b>Rubriken</b> visas i listor och bör hållas kort och tydlig. Har du flera resurser av
-        samma typ kan det vara bra att lägga till ett löpnummer eller dylikt  som hjälper dig att 
-        identifiera resurserna.</p>
-        <p><b>Beskrivningen</b> kan vara en längre text. Här kan du samla all information om 
-        resursen som kan vara användbar för användaren. Texten visas bara i resursens detailjvy, inte
-        i listor.</p>
-        <p><b>Text i bokningsbekräftelse:</b> Du kan lägga in en text som skickas med i den bekräftelse
-        som användaren får när hen har lagt en bokning. Fungerar på samma sätt som motsvarande
-        fält på kategorinivå.</p>
-        <p>Med <b>Aktiv (kan bokas)</b> bestämmer du om resursen ska visas för bokning. Det kan 
-        vara användbart under tiden du lägger upp resursen tills all information är på plats, eller 
-        när en resurs inte är tillgänglig på grund av skada, förlust mm.</p>
+        <p>Inställningarna här sparas direkt. Du behöver inte trycka på någon spara-knapp. Längst upp ser du var i strukturen resursen är placerad, med klickbara överordnade element. Det är användbart för att snabbt navigera upp i hirarkin. Klicka på knappen med pennsymbol till höger om sökvägen för att flytta resursen till en annan kategori.</p>
+        <p><b>Rubriken</b> visas i listor och bör hållas kort och tydlig. Har du flera resurser av samma typ kan det vara bra att lägga till ett löpnummer eller dylikt  som hjälper dig att identifiera resurserna.</p>
+        <p><b>Beskrivningen</b> kan vara en längre text. Här kan du samla all information om resursen som kan vara användbar för användaren. Texten visas bara i resursens detailjvy, inte i listor.</p>
+        <p><b>Text i bokningsbekräftelse:</b> Du kan lägga in en text som skickas med i den bekräftelse som användaren får när hen har lagt en bokning. Fungerar på samma sätt som motsvarande fält på kategorinivå.</p>
+        <p>Med <b>Aktiv (kan bokas)</b> bestämmer du om resursen ska visas för bokning. Det kan vara användbart under tiden du lägger upp resursen tills all information är på plats, eller när en resurs inte är tillgänglig på grund av skada, förlust mm.</p>
         <p>Du kan även lägga in <b>interna anteckningar</b>. De visas bara för administratörer.</p>
-        <p><b>Direktlänken</b> kan användas för att dirigera en användare direkt till denna resurs.
-        Länken öppnar bokningsflödet så att den här resursen redan är förvald.</p>
-        <p>Knappen <b>Duplicera resursen</b> skapar en kopia. Om rubriken i din resurs slutar på
-        en siffra eller en siffra i parenteser så får kopian nästa löpnummer. Om du t.ex. kopierar 
-        <tt>Kanadensare (1)</tt> så heter kopian <tt>Kanadensare (2)</tt>. Annars får kopians 
-        rubrik tillägget <tt>(kopia)</tt>. <b>OBS</b>, kopian är avaktiverad från början! Du måste
-        själv aktivera den.</p>
+        <p><b>Direktlänken</b> kan användas för att dirigera en användare direkt till denna resurs. Länken öppnar bokningsflödet så att den här resursen redan är förvald.</p>
+        <p>Knappen <b>Duplicera resursen</b> skapar en kopia. Om rubriken i din resurs slutar på en siffra eller en siffra i parenteser så får kopian nästa löpnummer. Om du t.ex. kopierar <tt>Kanadensare (1)</tt> så heter kopian <tt>Kanadensare (2)</tt>. Annars får kopians rubrik tillägget <tt>(kopia)</tt>. <b>OBS</b>, kopian är avaktiverad från början! Du måste själv aktivera den.</p>
+
+        <h3>Påminnelser</h3>
+        <p>Du kan ställa in att användarna får ett meddelande ett visst antal timmar före eller efter bokningens start eller slut. Funktionen är t.ex. användbar för att skicka ut aktuell kod till kodlås, påminna om slutstädning mm. Meddelandet som skickas till användaren är det som är aktuellt vid utskickstidpunkten, inte vid bokningstidpunkten. Om du t.ex. vill skicka ut en kod som ändras varje vecka så innehåller meddelandet den kod som vid tiden för utskicket gäller, oavsett när bokningen har lagts.</p>
+        <p>Påminnelser kan även ställas in på kategorinivå. För att ändra dessa, gå till respektive kategori.</p>
 
         <h3>Bilder</h3>
-        <p>Du kan lägga in ett valfritt antal bilder till din resurs. En av bilderna blir huvudbilden, 
-        vilket innebär att den visas i listor vid t.ex. bokning. Övriga bilder visas bara på
-        detaljsidor. Till varje bild kan du även lägga in en bildtext som visas under bilden.</p>
+        <p>Du kan lägga in ett valfritt antal bilder till din resurs. En av bilderna blir huvudbilden, vilket innebär att den visas i listor vid t.ex. bokning. Övriga bilder visas bara på detaljsidor. Till varje bild kan du även lägga in en bildtext som visas under bilden.</p>
         EOF;
         die();
 
@@ -127,10 +113,16 @@ switch ( $_REQUEST[ 'action' ] ) {
                 <textarea id="reminder-message" placeholder="T.ex. koden till hänglåset är 12345."></textarea>
             </div>
             <div class="ui-field-contain">
-            <label for="reminder-offset">Tidpunkt för att skicka</label>
-            <select id="reminder-offset"><?php
-                foreach ( [ -4320, -2160, -1440, -720, -336, -168, -96, -48, -24, -12, -6, -3, -1, 0, 1, 3, 6, 12, 24, 48, 96, 168, 336, 720, 1440, 2160, 4320 ] as $offset ) echo "<option value='$offset'>" . $FF::formatReminderOffset($offset) . "</option>\n"; ?>
-            </select>
+                <label for="reminder-offset">Tidpunkt för att skicka</label>
+                <fieldset data-role="controlgroup" data-type="horizontal">
+                    <select id="reminder-offset" style="min-width:25em;"><?php
+                        foreach ( [ -15552000, -7776000, -5184000, -2592000, -1209600, -604800, -345600, -172800, -86400, -43200, -21600, -10800, -3600, -1800, -300, 0, 300, 1800, 3600, 10800, 21600, 43200, 86400, 172800, 345600, 604800, 1209600, 2592000, 5184000, 7776000, 15552000 ] as $offset ) echo "<option value='$offset'>" . $FF::formatReminderOffset($offset) . "</option>\n"; ?>
+                    </select>
+                    <select id="reminder-anchor">
+                        <option value="start">start</option>
+                        <option value="end">slut</option>
+                    </select>
+                </fieldset>
             </div>
             <a href='#' data-rel="back" class="ui-btn ui-btn-inline ui-btn-icon-left ui-icon-back">Avbryt</a>
             <button class="ui-btn ui-btn-inline ui-btn-icon-left ui-icon-check" onclick="saveReminder( 'item' );">Spara</button>

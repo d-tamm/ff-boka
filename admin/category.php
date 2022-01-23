@@ -107,7 +107,8 @@ if ( isset( $_REQUEST[ 'action' ] ) && $_REQUEST[ 'action' ] == "help") {
     <p>Här laddar du upp filer som du vill skicka med bokningsbekräftelser och/eller visa som länk i bokningsflödet. Det kan vara sådant som städrutiner, en särskild blankett du vill att användaren fyller i, körinstruktioner mm. Du kan ladda upp filer av typerna $attTypes. Filstorleken får maximalt vara $fileSize. Rubriken är den text som visas för användaren på skärmen.</p>
 
     <h3>Påminnelser</h3>
-    <p>Du kan ställa in att användarna får ett meddelande ett visst antal timmar före eller efter bokningsstart. Använd ett positivt antal timmar för påminnelser före bokningsstart, och negativa tal för påminnelser efter bokningsstart.</p>
+    <p>Du kan ställa in att användarna får ett meddelande ett visst antal timmar före eller efter bokningens start eller slut. Funktionen är t.ex. användbar för att skicka ut aktuell kod till kodlås, påminna om slutstädning mm. Meddelandet som skickas till användaren är det som är aktuellt vid utskickstidpunkten, inte vid bokningstidpunkten. Om du t.ex. vill skicka ut en kod som ändras varje vecka så innehåller meddelandet den kod som vid tiden för utskicket gäller, oavsett när bokningen har lagts.</p>
+    <p>Påminnelser ärvs till underkategorier.</p>
     EOF;
     die( $ret );
 }
@@ -147,9 +148,15 @@ unset ($_SESSION['itemId']);
         </div>
         <div class="ui-field-contain">
             <label for="reminder-offset">Tidpunkt för att skicka</label>
-            <select id="reminder-offset"><?php
-                foreach ( [ -4320, -2160, -1440, -720, -336, -168, -96, -48, -24, -12, -6, -3, -1, 0, 1, 3, 6, 12, 24, 48, 96, 168, 336, 720, 1440, 2160, 4320 ] as $offset ) echo "<option value='$offset'>" . $FF::formatReminderOffset($offset) . "</option>\n"; ?>
-            </select>
+            <fieldset data-role="controlgroup" data-type="horizontal">
+                <select id="reminder-offset" style="min-width:25em;"><?php
+                    foreach ( [ -15552000, -7776000, -5184000, -2592000, -1209600, -604800, -345600, -172800, -86400, -43200, -21600, -10800, -3600, -1800, -300, 0, 300, 1800, 3600, 10800, 21600, 43200, 86400, 172800, 345600, 604800, 1209600, 2592000, 5184000, 7776000, 15552000 ] as $offset ) echo "<option value='$offset'>" . $FF::formatReminderOffset($offset) . "</option>\n"; ?>
+                </select>
+                <select id="reminder-anchor">
+                    <option value="start">start</option>
+                    <option value="end">slut</option>
+                </select>
+            </fieldset>
         </div>
         <a href='#' data-rel="back" class="ui-btn ui-btn-inline ui-btn-icon-left ui-icon-back">Avbryt</a>
         <button class="ui-btn ui-btn-inline ui-btn-icon-left ui-icon-check" onclick="saveReminder( 'cat' );">Spara</button>

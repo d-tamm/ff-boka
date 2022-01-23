@@ -239,24 +239,25 @@ case "getReminders":
     header( "Content-Type: text/html" );
     // Collect reminders for item
     foreach( $catOrItem->reminders() as $r ) {
-        $reminders[] = [ "id"=>$r->id, "offset"=>$r->offset, "message"=>$r->message ];
+        $reminders[] = [ "id"=>$r->id, "offset"=>$r->offset, "anchor"=>$r->anchor, "message"=>$r->message ];
     }
     $parent = ( $_GET[ 'class' ] == "item" ) ? $catOrItem->category() : $catOrItem->parent();
     // Add reminders inherited from parent categories
     while ( !is_null( $parent ) ) {
         foreach ( $parent->reminders() as $r ) {
-            $reminders[] = [ "offset"=>$r->offset, "message"=>$r->message, "parentId"=>$parent->id, "parentCaption"=>$parent->caption ];
+            $reminders[] = [ "offset"=>$r->offset, "anchor"=>$r->anchor, "message"=>$r->message, "parentId"=>$parent->id, "parentCaption"=>$parent->caption ];
         }
         $parent = $parent->parent();
     }
-    // Sort the reminders by offset
-    $offsets = array_column( $reminders, "offset" );
+    // Sort the reminders by time
+    $offsets = [];
+    foreach ( $reminders as $r ) $offsets[] = $r['offset'] + ( $r['anchor']=="start" ? 0 : 3600*24*30*12 );
     array_multisort( $offsets, $reminders );
     foreach ( $reminders as $r ) {
         if ( isset( $r[ 'parentId' ] ) ) { // inherited reminders are only displayed, not editable
-            echo "<li><strong>" . $FF::formatReminderOffset( $r['offset'] ) . "</strong><p>\"" . htmlspecialchars( $r['message'] ) . "\"<br><i>ärvt från kategori <a href='category.php?catId={$r['parentId']}&expand=reminders'>{$r['parentCaption']}</p></a></i></li>";
+            echo "<li><strong>" . $FF::formatReminderOffset( $r['offset'] ) . ( $r['anchor']=="start" ? " bokningsstart" : " bokningsslut" ) . "</strong><p>\"" . htmlspecialchars( $r['message'] ) . "\"<br><i>ärvt från kategori <a href='category.php?catId={$r['parentId']}&expand=reminders'>{$r['parentCaption']}</p></a></i></li>";
         } else { // reminders of the current objects are editable
-            echo "<li><a href='#' onclick=\"editReminder('{$_GET[ 'class' ]}', {$r['id']});\">" . $FF::formatReminderOffset( $r['offset'] ) . "<p>\"" . htmlspecialchars( $r['message'] ) . "\"</p></a><a href='#' onclick=\"deleteReminder('{$_GET[ 'class' ]}', {$r['id']});\"></a></li>";
+            echo "<li><a href='#' onclick=\"editReminder('{$_GET[ 'class' ]}', {$r['id']});\">" . $FF::formatReminderOffset( $r['offset'] ) . ( $r['anchor']=="start" ? " bokningsstart" : " bokningsslut" ) . "<p>\"" . htmlspecialchars( $r['message'] ) . "\"</p></a><a href='#' onclick=\"deleteReminder('{$_GET[ 'class' ]}', {$r['id']});\"></a></li>";
         }
     }
     echo "<li data-icon='plus' data-theme='a'><a href='#' onclick=\"editReminder('{$_GET[ 'class' ]}', 0);\">Skapa ny påminnelse</a></li>";
@@ -265,13 +266,13 @@ case "getReminders":
 case "getReminder":
     if ( !isset( $_GET[ 'id' ] ) ) { http_response_code( 400 ); die(); } // Bad request
     header( "Content-Type: application/json" );
-    if ( $_GET[ 'id' ] == 0 ) die( json_encode( [ "id"=>0, "message"=>"Ny påminnelse", "offset"=>0 ] ));
+    if ( $_GET[ 'id' ] == 0 ) die( json_encode( [ "id"=>0, "message"=>"Ny påminnelse", "offset"=>0, "anchor"=>"start" ] ));
     die( json_encode( $catOrItem->getReminder( $_GET[ 'id' ] ) ) );
 
 case "saveReminder":
     if ( !isset( $_GET[ 'id' ] ) || !isset( $_GET[ 'offset' ] ) || !isset( $_GET[ 'message' ] ) ) { http_response_code( 400 ); die(); } // Bad request
     header( "Content-Type: application/json" );
-    die( json_encode( $catOrItem->editReminder( $_GET[ 'id' ], $_GET[ 'offset' ], $_GET[ 'message' ] ) ) );
+    die( json_encode( $catOrItem->editReminder( $_GET[ 'id' ], $_GET[ 'offset' ], $_GET[ 'anchor' ], $_GET[ 'message' ] ) ) );
 
 case "deleteReminder":
     if ( !isset( $_GET[ 'id' ] ) ) { http_response_code( 400 ); die(); } // Bad request

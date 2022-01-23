@@ -422,25 +422,27 @@ class FFBoka {
     }
 
     /**
-     * Return a human readable representation of the offset of a reminder.
+     * Return a human readable representation of the offset of a reminder, split up in months, weeks, days, hours and minutes.
      *
-     * @param integer $offset Number of hours before/after a booking
+     * @param integer $offset Number of seconds before/after a booking
      * @return string
      */
     static function formatReminderOffset( int $offset ) : string {
-        $suffix = $offset < 0 ? "före" : "efter";
+        $beforeAfter = $offset < 0 ? "före" : "efter";
         $offset = abs( $offset );
         $parts = [];
-        $months = intdiv( $offset, 720 );
+        $months = intdiv( $offset, 2592000 ); // 2592000 seconds per month
         if ( $months ) $parts[] = $months . ( $months==1 ? " månad" : " månader" );
-        $weeks = intdiv( $offset - $months * 720, 168 );
+        $weeks = intdiv( $offset - $months * 2592000, 604800 ); // 604800 seconds per week
         if ( $weeks ) $parts[] = $weeks . ( $weeks==1 ? " vecka" : " veckor" );
-        $days = intdiv( $offset - $months * 720 - $weeks * 168, 24 );
+        $days = intdiv( $offset - $months * 2592000 - $weeks * 604800, 86400 ); // 86400 seconds per day
         if ( $days ) $parts[] = $days . ( $days==1 ? " dag" : " dagar" );
-        $hours = $offset - $months * 720 - $weeks * 168 - $days * 24;
+        $hours = intdiv( $offset - $months * 2592000 - $weeks * 604800 - $days * 86400, 3600 ); // 3600 seconds per hour
         if ( $hours ) $parts[] = $hours . ( $hours==1 ? " timme" : " timmar" );
-        if ( count( $parts ) ) return implode( ", ", $parts ) . " $suffix bokningsstart";
-        return "vid bokningsstart";
+        $minutes = intdiv( $offset - $months * 2592000 - $weeks * 604800 - $days * 86400 - $hours * 3600, 60 );
+        if ( $minutes ) $parts[] = $minutes . ( $minutes==1 ? " minut" : " minuter" );
+        if ( count( $parts ) ) return implode( ", ", $parts ) . " " . $beforeAfter;
+        return "vid";
     }
     
     /**

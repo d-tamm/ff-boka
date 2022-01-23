@@ -395,11 +395,12 @@ class Category extends FFBoka {
      * @return bool True on success, False on failure
      */
     function removeFile(int $fileId) : bool {
-        if (unlink(__DIR__."/../../uploads/$fileId")) {
-            if (self::$db->exec("DELETE FROM cat_files WHERE catId={$this->id} AND fileId=$fileId")) return true;
-            logger(__METHOD__." Failed to delete attachment record $fileId from DB. " . self::$db->errorInfo()[2], E_WARNING);
+        if (self::$db->exec("DELETE FROM cat_files WHERE catId={$this->id} AND fileId=$fileId")) {
+            if (unlink(__DIR__."/../../uploads/$fileId")) return true;
+            logger(__METHOD__." Failed to unlink attachment file " . realpath(__DIR__."/../../uploads/$fileId"), E_WARNING);
+            return true;
         }
-        logger(__METHOD__." Failed to unlink attachment file " . realpath(__DIR__."/../../uploads/$fileId"), E_WARNING);
+        logger(__METHOD__." Failed to delete attachment record $fileId from DB. " . self::$db->errorInfo()[2], E_WARNING);
         return false;
     }
     
@@ -725,9 +726,9 @@ class Category extends FFBoka {
      * Get all reminders of this category.
      *
      * @param boolean $includeInherited Set to true to include even inherited reminders from parent categories.
-     * @return array Array of objects { int id, int catId, int offset, string message }, where id is a unique
-     *  category reminder identifier, offset is the number of hours before (positive) or after (negative values)
-     *  the start of a booking when the reminder shall be sent, and message is the text to be sent.
+     * @return array Array of objects { int id, int catId, int offset, string anchor, string message }, where id is a unique
+     *  category reminder identifier, offset is the number of seconds before (positive) or after (negative values)
+     *  the anchor (start|end) of a booking when the reminder shall be sent, and message is the text to be sent.
      */
     public function reminders( bool $includeInherited = false ) : array {
         $reminders = array();
@@ -746,7 +747,7 @@ class Category extends FFBoka {
      * Get the category reminder with ID $id.
      *
      * @param integer $id
-     * @return array|bool Returns an array with the members [ id, catId, message, offset ] or FALSE if the reminder does not exist.
+     * @return array|bool Returns an array with the members [ id, catId, message, anchor, offset ] or FALSE if the reminder does not exist.
      */
     public function getReminder( int $id ) {
         $stmt = self::$db->prepare( "SELECT * from cat_reminders WHERE id=?" );
@@ -759,25 +760,46 @@ class Category extends FFBoka {
      *
      * @param integer $id The id of the reminder to change. If 0, add a new reminder.
      * @param integer $offset Number of hours before (+) or after (-) start of booking when the reminder shall be sent
+     * @param string $anchor Where to anchor the offset, either "start" or "end" of the booking
      * @param integer $message The new message to send with the reminder.
      * @return int|bool The id of the reminder, false on failure.
      */
-    public function editReminder( int $id, int $offset, string $message ) {
+    public function editReminder( int $id, int $offset, string $anchor, string $message ) {
         if ( $id == 0 ) {
-            if ( !self::$db->exec( "INSERT INTO cat_reminders SET catId={$this->id}" ) ) {
-                logger(__METHOD__ . " INSERT INTO cat_reminders SET catId={$this->id} " . self::$db->errorInfo()[2] );
-                return false;
-            }
+            self::$db->exec( "INSERT INTO cat_reminders SET catId={$this->id}" );
             $id = self::$db->lastInsertId();
         }
-        $stmt = self::$db->prepare( "UPDATE cat_reminders SET offset=:offset, message=:message WHERE catId={$this->id} AND id=:id" );
-        if ( $stmt->execute( [
+        if ( !in_array( $anchor, [ "start", "end" ] ) ) {
+            logger( __METHOD__ . " Tried to save a reminder with invalid anchor $anchor", E_ERROR );
+            return false;
+        }
+        $stmt = self::$db->prepare( "UPDATE cat_reminders SET offset=:offset, anchor=:anchor, message=:message WHERE catId={$this->id} AND id=:id" );
+        if ( !$stmt->execute( [
             ":offset" => $offset,
+            ":anchor" => $anchor,
             ":message" => $message,
             ":id" => $id
-        ] ) ) return $id;
-        logger( __METHOD__ . " Failed to change or create cat reminder. ".$stmt->errorInfo()[2], E_ERROR );
-        return false;
+        ] ) ) {
+            logger( __METHOD__ . " Failed to change or create cat reminder. ".$stmt->errorInfo()[2], E_ERROR );
+            return false;
+        }
+        // Find all items belonging to the same section
+        $stmt = self::$db->query( "SELECT itemId FROM items INNER JOIN categories USING (catId) WHERE sectionId={$this->sectionId}" );
+        while ( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
+            $item = new Item( $row->itemId );
+            if ( $item->isBelowCategory( $this ) ) {
+                // This item is affected by the reminder change. Adjust all corresponding bookedItems.
+                $stmt = self::$db->query( "SELECT bookedItemId, UNIX_TIMESTAMP($anchor) anchor FROM booked_items WHERE itemId={$row->itemId}" );
+                while ( $row2 = $stmt->fetch( PDO::FETCH_OBJ ) ) {
+                    $bookedItem = new Item( $row2->bookedItemId, true );
+                    // Mark the reminder as not being sent if sending time has not passed yet.
+                    if ( $row2->anchor + $offset*3600 > time() ) $bookedItem->setReminderSent( $id, 'cat', false );
+                    // Mark it as being sent if time has passed.
+                    else $bookedItem->setReminderSent( $id, 'cat', true );
+                }
+            }
+        }
+        return $id;
     }
 
     /**

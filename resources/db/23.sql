@@ -1,18 +1,20 @@
 -- Add booking reminders
 
-CREATE TABLE `ff-boka`.`cat_reminders` (
+CREATE TABLE `cat_reminders` (
     `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
     `catId` INT UNSIGNED NOT NULL,
-    `offset` SMALLINT NOT NULL,
+    `offset` INT NOT NULL,
+    `anchor` ENUM('start','end') NOT NULL,
     `message` VARCHAR(10000) NOT NULL,
     PRIMARY KEY (`id`),
     FOREIGN KEY (`catId`) REFERENCES `categories`(`catId`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE = InnoDB; 
 
-CREATE TABLE `ff-boka`.`item_reminders` (
+CREATE TABLE `item_reminders` (
     `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
     `itemId` INT UNSIGNED NOT NULL,
-    `offset` SMALLINT NOT NULL,
+    `offset` INT NOT NULL,
+    `anchor` ENUM('start','end') NOT NULL,
     `message` VARCHAR(10000) NOT NULL,
     PRIMARY KEY (`id`),
     FOREIGN KEY (`itemId`) REFERENCES `items`(`itemId`) ON DELETE CASCADE ON UPDATE CASCADE

@@ -28,20 +28,54 @@ $FF->sendQueuedMails($cfg['mail']);
 
 // Send reminders
 // Get all confirmed bookedItems starting 6 months ago until 6 months ahead
-$stmt = $db->query( "SELECT bookedItemId, itemId, UNIX_TIMESTAMP(start) start, remindersSent FROM `booked_items` WHERE DATEDIFF(start, NOW())<185 AND DATEDIFF(NOW(), start)<185 AND status=4" );
+$bookings = [];
+$stmt = $db->query( "SELECT bookedItemId FROM `booked_items` WHERE DATEDIFF(start, NOW())<185 AND DATEDIFF(NOW(), start)<185 AND status=4" );
 while ( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
-    $sent = json_decode( $row->remindersSent );
-    $item = new Item( $row->bookedItemId );
-    foreach ( $item->reminders( true ) as $r ) {
-        if ( time() >= $row->start + $r->offset ) { // Overdue to send reminder
-            if ( 
-                ( property_exists( $r, "itemId" ) && !in_array( "item{$r->id}", $sent ) ) ||
-                ( property_exists( $r, "catId"  ) && !in_array( "cat{$r->id}", $sent ) )
+    $item = new Item( $row->bookedItemId, true );
+    foreach ( $item->reminders( true ) as $reminder ) {
+        if ( time() >= $item->{$reminder->anchor} + $reminder->offset ) {
+            // Time to send reminder has passed. Check if it has been sent already.
+            $sent = $item->remindersSent;
+            if (
+                ( property_exists( $reminder, "itemId" ) && !in_array( "item{$reminder->id}", $sent ) ) ||
+                ( property_exists( $reminder, "catId" ) && !in_array( "cat{$reminder->id}", $sent ) )
             ) {
-                // TODO: add reminder to list grouped by email addresses, finally send reminders
+                // Reminder has not been sent yet. Remember booking information
+                $booking = $item->booking();
+                if ( !isset( $bookings[ $booking->id ] ) ) $bookings[ $booking->id ] = [
+                    "user" => $booking->userName,
+                    "mail" => $booking->userMail,
+                    "section" => $booking->section()->name,
+                    "start" => $item->start,
+                    "ref" => $booking->ref,
+                    "reminders" => []
+                ];
+                $bookings[ $booking->id ][ "reminders" ][] = htmlspecialchars( $reminder->message );
+                // Add information to db that reminder has been sent
+                $item->setReminderSent( $reminder->id, property_exists( $reminder, "itemId" ) ? "item" : "cat" );
+                logger( "Prepared " . ( property_exists( $reminder, "itemId" ) ? "item" : "cat" ) . " reminder {$reminder->id} for booking {$booking->id}" );
             }
         }
-    };
+    }
+}
+foreach ( $bookings as $id=>$booking ) {
+    if ( $FF->sendMail(
+        $booking[ 'mail' ], // To
+        "Din bokning {$booking['ref']}", // subject
+        "reminder", // Body or template
+        [ // replace
+            "{{user}}" => $booking[ 'user' ],
+            "{{link}}" => $cfg[ 'url' ] . "book-sum.php?bookingId=" . $id,
+            "{{ref}}" => $booking[ 'ref' ],
+            "{{section}}" => $booking[ 'section' ],
+            "{{date}}" => date( "j/n", $booking[ 'start' ] ),
+            "{{reminders}}" => implode( "</p><p>", array_unique( $booking[ 'reminders' ] ) ),
+        ],
+        [], // attachments
+        $cfg[ 'mail' ], // mail options
+        false // don't queue
+    ) ) logger( "Sent " . count( $booking[ 'reminders' ] ) . " reminder(s) for booking $id to {$booking[ 'mail' ]}" );
+    else logger( "Failed to send reminder for booking $id to {$booking[ 'mail' ]}", E_ERROR );
 }
 
 // Record last execution time
