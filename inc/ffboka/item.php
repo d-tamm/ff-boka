@@ -535,7 +535,7 @@ class Item extends FFBoka {
         while ( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
             $bookedItem = new Item( $row->bookedItemId, true );
             // Mark the reminder as not being sent if sending time has not passed yet.
-            if ( $row->anchor + $offset*3600 > time() ) $bookedItem->setReminderSent( $id, 'item', false );
+            if ( $row->anchor + $offset > time() ) $bookedItem->setReminderSent( $id, 'item', false );
             // Mark it as being sent if time has passed.
             else $bookedItem->setReminderSent( $id, 'item', true );
         }
