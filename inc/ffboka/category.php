@@ -793,7 +793,7 @@ class Category extends FFBoka {
                 while ( $row2 = $stmt->fetch( PDO::FETCH_OBJ ) ) {
                     $bookedItem = new Item( $row2->bookedItemId, true );
                     // Mark the reminder as not being sent if sending time has not passed yet.
-                    if ( $row2->anchor + $offset*3600 > time() ) $bookedItem->setReminderSent( $id, 'cat', false );
+                    if ( $row2->anchor + $offset > time() ) $bookedItem->setReminderSent( $id, 'cat', false );
                     // Mark it as being sent if time has passed.
                     else $bookedItem->setReminderSent( $id, 'cat', true );
                 }
