@@ -9,7 +9,7 @@
 use FFBoka\FFBoka;
 
 $cfg = array(
-    "url" => "...", // URL of this installation, will be set at runtime.
+    "url" => "http://localhost/", // URL of this installation, with trailing slash
 
     // Database connection settings
     "dbhost" => "127.0.0.1", // The host of the mariaDb server
