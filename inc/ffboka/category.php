@@ -808,10 +808,22 @@ class Category extends FFBoka {
      * @param integer $id The id of the reminder to delete
      * @return bool True on success, false on failure
      */
-    public function deleteReminder(int $id) : bool {
-        $stmt = self::$db->prepare("DELETE FROM cat_reminders WHERE catId={$this->id} AND id=?");
-        if ($stmt->execute([ $id ])) return true;
-        logger(__METHOD__." Failed to delete cat reminder. ".$stmt->errorInfo()[2], E_ERROR);
+    public function deleteReminder( int $id ) : bool {
+        // Remove sent flag from any bookedItems
+        $stmt = self::$db->query( "SELECT bookedItemId FROM bookedItems WHERE remindersSent LIKE CONCAT('%\"', 'cat$id', '\"%')" );
+//        $like = '"cat'.$id.'"';
+//        logger("Like=$like");
+//        $stmt->execute( [ $like ] );
+        while ( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) { // TODO: catch error to see why fetch does not work
+            logger(__LINE__);
+            $item = new Item( $row->bookedItemId, true );
+            $item->setReminderSent( $id, "cat", false );
+        }
+        logger("catId={$this->id}, id=$id, row=".__LINE__);
+        // Delete the reminder
+        $stmt = self::$db->prepare( "DELETE FROM cat_reminders WHERE catId={$this->id} AND id=?" );
+        if ( $stmt->execute( [ $id ] ) ) return true;
+        logger( __METHOD__ . " Failed to delete cat reminder. " . $stmt->errorInfo()[ 2 ], E_ERROR );
         return false;
     }
 }
