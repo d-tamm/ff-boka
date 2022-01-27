@@ -810,16 +810,11 @@ class Category extends FFBoka {
      */
     public function deleteReminder( int $id ) : bool {
         // Remove sent flag from any bookedItems
-        $stmt = self::$db->query( "SELECT bookedItemId FROM bookedItems WHERE remindersSent LIKE CONCAT('%\"', 'cat$id', '\"%')" );
-//        $like = '"cat'.$id.'"';
-//        logger("Like=$like");
-//        $stmt->execute( [ $like ] );
-        while ( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) { // TODO: catch error to see why fetch does not work
-            logger(__LINE__);
+        $stmt = self::$db->query( "SELECT bookedItemId FROM booked_items WHERE remindersSent LIKE '%\"cat$id\"%'" );
+        while ( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
             $item = new Item( $row->bookedItemId, true );
             $item->setReminderSent( $id, "cat", false );
         }
-        logger("catId={$this->id}, id=$id, row=".__LINE__);
         // Delete the reminder
         $stmt = self::$db->prepare( "DELETE FROM cat_reminders WHERE catId={$this->id} AND id=?" );
         if ( $stmt->execute( [ $id ] ) ) return true;

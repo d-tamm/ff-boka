@@ -549,6 +549,12 @@ class Item extends FFBoka {
      * @return bool True on success, false on failure
      */
     public function deleteReminder( int $id ) : bool {
+        // Remove sent flag from any bookedItems
+        $stmt = self::$db->query( "SELECT bookedItemId FROM booked_items WHERE remindersSent LIKE '%\"item$id\"%'" );
+        while ( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
+            $item = new Item( $row->bookedItemId, true );
+            $item->setReminderSent( $id, "item", false );
+        }
         $stmt = self::$db->prepare( "DELETE FROM item_reminders WHERE itemId={$this->id} AND id=?" );
         if ( $stmt->execute( [ $id ] ) ) return true;
         logger ( __METHOD__ . " Failed to delete item reminder. " . $stmt->errorInfo()[ 2 ], E_ERROR );
@@ -563,7 +569,7 @@ class Item extends FFBoka {
      * @param bool $sent If true, mark the reminder as sent. If false, remove the mark.
      * @return bool False if method failed, e.g. because this is not a booked item
      */
-    public function setReminderSent( int $id, string $prefix="", bool $sent=true ) : bool {
+    public function setReminderSent( int $id, string $prefix, bool $sent=true ) : bool {
         if ( !$this->bookedItemId ) return false;
         $reminders = $this->remindersSent;
         if ( $sent ) $reminders[] = "$prefix$id";
