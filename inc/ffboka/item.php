@@ -535,6 +535,7 @@ class Item extends FFBoka {
         while ( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
             $bookedItem = new Item( $row->bookedItemId, true );
             // Mark the reminder as not being sent if sending time has not passed yet.
+
             $bookedItem->setReminderSent( $id, 'item', ( $row->anchor + $offset < time() ) );
         }
         return $id;
@@ -569,9 +570,10 @@ class Item extends FFBoka {
      */
     public function setReminderSent( int $id, string $prefix, bool $sent=true ) : bool {
         if ( !$this->bookedItemId ) return false;
+        if ( !in_array( $prefix, [ "cat", "item" ] ) ) return false;
         $reminders = $this->remindersSent;
-        if ( $sent ) $reminders[] = "$prefix$id";
-        else unset( $reminders[ array_search( "$prefix$id", $reminders ) ] );
+        if ( $sent && !in_array( "$prefix$id", $reminders ) ) $reminders[] = "$prefix$id";
+        elseif ( !$sent && in_array( "$prefix$id", $reminders )) unset( $reminders[ array_search( "$prefix$id", $reminders ) ] );
         $this->remindersSent = array_values( array_unique( $reminders ) );
         return true;
     }
