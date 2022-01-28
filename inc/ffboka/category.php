@@ -783,6 +783,7 @@ class Category extends FFBoka {
             logger( __METHOD__ . " Failed to change or create cat reminder. ".$stmt->errorInfo()[2], E_ERROR );
             return false;
         }
+        // Adjust existing bookedItems affected by this change
         // Find all items belonging to the same section
         $stmt = self::$db->query( "SELECT itemId FROM items INNER JOIN categories USING (catId) WHERE sectionId={$this->sectionId}" );
         while ( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
@@ -793,9 +794,7 @@ class Category extends FFBoka {
                 while ( $row2 = $stmt->fetch( PDO::FETCH_OBJ ) ) {
                     $bookedItem = new Item( $row2->bookedItemId, true );
                     // Mark the reminder as not being sent if sending time has not passed yet.
-                    if ( $row2->anchor + $offset > time() ) $bookedItem->setReminderSent( $id, 'cat', false );
-                    // Mark it as being sent if time has passed.
-                    else $bookedItem->setReminderSent( $id, 'cat', true );
+                    $bookedItem->setReminderSent( $id, 'cat', ( $row2->anchor + $offset < time() ) );
                 }
             }
         }
