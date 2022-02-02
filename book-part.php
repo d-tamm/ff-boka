@@ -25,7 +25,7 @@ function displayCat(Category $cat, $user, $fbStart, $fileTypes=[]) {
         if (isset($_GET['selectItemId'])) {
             // Expand category of selected item. The item itself will be selected by javascript.
             $i = new Item($_GET['selectItemId']);
-            if ($i->isBelowCategory($cat)) echo " data-collapsed='false'";  
+            if ($i->isBelowCategory($cat)) echo " data-collapsed='false'";
         }
         echo " data-inset='false'>";
         echo "<h3><div class='cat-list-img'>" . embedImage($cat->thumb) . "</div>" . htmlspecialchars($cat->caption) . "</h3>";
@@ -238,50 +238,56 @@ END;
     case "ajaxSave":
         // Check that chosen start and end time are OK
         // If everything is OK and "save", create a booking if necessary and save item.
-        header("Content-Type: application/json");
+        header( "Content-Type: application/json" );
         $unavail = array();
         $minAccess = FFBoka::ACCESS_CATADMIN;
-        if ($_REQUEST['ids']) {
-            foreach (array_keys($_REQUEST['ids']) as $id) {
+        if ( $_REQUEST[ 'ids' ] ) {
+            foreach ( array_keys( $_REQUEST[ 'ids' ] ) as $id ) {
                 // For every item with visible freebusy information, check availability
-                $item = new Item($id, $_REQUEST['bookingStep']==2);
-                $acc = $item->category()->getAccess($currentUser);
-                $minAccess = ($minAccess & $acc);
-                if ($acc >= FFBoka::ACCESS_PREBOOK) {
-                    if (!$item->isAvailable($_REQUEST['start'], $_REQUEST['end'])) $unavail[] = htmlspecialchars($item->caption);
+                $item = new Item( $id, $_REQUEST[ 'bookingStep' ] == 2 );
+                $acc = $item->category()->getAccess( $currentUser );
+                $minAccess = ( $minAccess & $acc );
+                if ( $acc >= FFBoka::ACCESS_PREBOOK ) {
+                    if ( !$item->isAvailable( $_REQUEST[ 'start' ], $_REQUEST[ 'end' ] ) ) $unavail[] = htmlspecialchars( $item->caption );
                 }
             }
         }
-        if (count($unavail)===0 && $_REQUEST['action']==="ajaxSave") {
+        if ( count( $unavail ) === 0 && $_REQUEST[ 'action' ] === "ajaxSave" ) {
             // Times are OK. Create or change booking
-            if ($_REQUEST['bookingStep']==2) {
+            if ( $_REQUEST[ 'bookingStep' ] == 2 ) {
                 // In step 2, only single items are modified
-                $item = new Item(array_keys($_REQUEST['ids'])[0], TRUE);
-                $item->start = $_REQUEST['start'];
-                $item->end = $_REQUEST['end'];
-                if ($acc < FFBoka::ACCESS_CONFIRM) $item->status = FFBoka::STATUS_PENDING;
+                $item = new Item( array_keys( $_REQUEST[ 'ids' ] )[ 0 ], TRUE );
+                if ( $item->start < $_REQUEST[ 'start' ] ) {
+                    // Item was postponed. Some reminders may need to be resent. Remove their sent flags
+                    foreach ( $item->reminders( true ) as $r ) {
+                        if ( $_REQUEST[ 'start' ] + $r->offset > time() ) $item->setReminderSent( $r->id, property_exists( $r, "itemId" ) ? "item" : "cat", false );
+                    }
+                }
+                $item->start = $_REQUEST[ 'start' ];
+                $item->end = $_REQUEST[ 'end' ];
+                if ( $acc < FFBoka::ACCESS_CONFIRM ) $item->status = FFBoka::STATUS_PENDING;
                 else $item->status = FFBoka::STATUS_CONFIRMED;
             } else {
                 // Step 1: Several items to save
-                if (isset($_SESSION['bookingId'])) {
-                    $booking = new Booking($_SESSION['bookingId']);
+                if ( isset( $_SESSION[ 'bookingId' ] ) ) {
+                    $booking = new Booking( $_SESSION[ 'bookingId' ] );
                 } else {
-                    $booking = $currentUser->addBooking($section->id);
-                    $_SESSION['bookingId'] = $booking->id;
-                    $_SESSION['token'] = $booking->token;
+                    $booking = $currentUser->addBooking( $section->id );
+                    $_SESSION[ 'bookingId' ] = $booking->id;
+                    $_SESSION[ 'token' ] = $booking->token;
                 }
                 // Add items to booking
-                foreach (array_keys($_REQUEST['ids']) as $id) {
-                    $item = $booking->addItem($id);
-                    $item->start = $_REQUEST['start'];
-                    $item->end = $_REQUEST['end'];
+                foreach ( array_keys( $_REQUEST[ 'ids' ]) as $id ) {
+                    $item = $booking->addItem( $id );
+                    $item->start = $_REQUEST[ 'start' ];
+                    $item->end = $_REQUEST[ 'end' ];
                 }
             }
         }
-        die(json_encode([
-            "timesOK" => (count($unavail) === 0),
+        die( json_encode( [
+            "timesOK" => ( count( $unavail ) === 0),
             "unavail" => $unavail,
-        ]));
+        ] ) );
 }
 }
 

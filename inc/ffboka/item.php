@@ -76,7 +76,9 @@ class Item extends FFBoka {
             case "status":
             case "start": // int|string Start time as Unix timestamp or string
             case "end": // int|string Start time as Unix timestamp or string
+            case "remindersSent": // string[]
                 if ($this->bookedItemId) {
+                    if ($name=="remindersSent") $value = json_encode( $value );
                     if (($name=="start" || $name=="end") && is_numeric($value)) $stmt = self::$db->prepare("UPDATE booked_items SET $name=FROM_UNIXTIME(?) WHERE bookedItemId={$this->bookedItemId}");
                     else $stmt = self::$db->prepare("UPDATE booked_items SET $name=? WHERE bookedItemId={$this->bookedItemId}");
                     if ($stmt->execute(array($value))) return $this->$name;
@@ -131,10 +133,12 @@ class Item extends FFBoka {
             case "status":
             case "start": // booking start time (as unix timestamp) of booked item
             case "end": // booking end time (as unix timestamp) of booked item
+            case "remindersSent": // string[]
                 if ($this->bookedItemId) {
                     if ($name=="start" || $name=="end") $stmt = self::$db->query("SELECT UNIX_TIMESTAMP($name) $name FROM booked_items WHERE bookedItemId={$this->bookedItemId}");
                     else $stmt = self::$db->query("SELECT $name FROM booked_items WHERE bookedItemId={$this->bookedItemId}");
                     $row = $stmt->fetch(PDO::FETCH_OBJ);
+                    if ( $name == "remindersSent" ) return json_decode( $row->$name, true );
                     return $row->$name;
                 } else {
                     logger(__METHOD__." Trying to get item property $name for item which is not a booked item.", E_WARNING);
@@ -154,6 +158,19 @@ class Item extends FFBoka {
         return new Category($this->catId);
     }
     
+
+    /**
+     * Get the granted access level for given user, taking into account inherited access.
+     * 
+     * @param \FFBoka\User $user
+     * @param bool $tieInSectionAdmin Whether to also include admin role set on section level
+     * @return integer Bitfield of granted access rights. For an empty (fake) category, returns ACCESS_CATADMIN.
+     */
+    public function getAccess( User $user, bool $tieInSectionAdmin=TRUE ) : int {
+        return $this->category()->getAccess( $user, $tieInSectionAdmin );
+    }
+
+
     /**
      * Is this item placed under the specified category or its child categories?
      * @param Category $cat
@@ -219,8 +236,7 @@ class Item extends FFBoka {
     
     /**
      * Remove item from database
-     * @throws \Exception
-     * @return boolean True on success
+     * @return boolean True on success, false on failure
      */
     public function delete() {
         // Full size image will be removed from file system by cron
@@ -228,7 +244,7 @@ class Item extends FFBoka {
             return TRUE;
         } else {
             logger(__METHOD__." Failed to delete item. ".self::$db->errorInfo()[2], E_ERROR);
-            throw new \Exception("Failed to delete item.");
+            return false;
         }
     }
     
@@ -453,6 +469,113 @@ class Item extends FFBoka {
                     )
                 )");
         return ($stmt->rowCount()===0);
+    }
+
+    /**
+     * Get all reminders of this item.
+     *
+     * @param bool $includeInherited If set to true, also include reminders inherited from category level.
+     * @return array Array of objects { int id, int itemId|catId, int offset, string anchor, string message }, where id is a unique
+     *  item|category reminder identifier, offset is the number of seconds before (positive) or after (negative values)
+     *  the anchor (start|end) when the reminder shall be sent, and message is the text to be sent.
+     */
+    public function reminders( bool $includeInherited = false ) : array {
+        $reminders = array();
+        if ( $includeInherited ) $reminders = $this->category()->reminders( true );
+        $stmt = self::$db->query( "SELECT * FROM item_reminders WHERE itemId={$this->id}" );
+        while ( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
+            $reminders[] = $row;
+        }
+        return $reminders;
+    }
+
+    /**
+     * Get the item reminder with ID $id.
+     *
+     * @param integer $id
+     * @return array|bool Returns an array with the members [ id, catId, message, anchor, offset ] or FALSE if the reminder does not exist.
+     */
+    public function getReminder( int $id ) {
+        $stmt = self::$db->prepare( "SELECT * from item_reminders WHERE id=?" );
+        $stmt->execute( [ $id ] );
+        return $stmt->fetch( PDO::FETCH_ASSOC );
+    }
+
+    /**
+     * Edit the properties of a reminder or create a new reminder.
+     *
+     * @param integer $id The id of the reminder to change. If 0, add a new reminder.
+     * @param integer $offset Number of hours before (+) or after (-) start of booking when the reminder shall be sent
+     * @param string $anchor Where to anchor the offset, either "start" or "end" of the booking
+     * @param integer $message The new message to send with the reminder.
+     * @return int|bool The id of the reminder, false on failure.
+     */
+    public function editReminder( int $id, int $offset, string $anchor, string $message ) {
+        if ( $id==0 ) { // add a new reminder
+            self::$db->exec( "INSERT INTO item_reminders SET itemId={$this->id}" );
+            $id = self::$db->lastInsertId();
+        }
+        if ( !in_array( $anchor, [ "start", "end" ] ) ) {
+            logger( __METHOD__ . " Tried to save a reminder with invalid anchor $anchor", E_ERROR );
+            return false;
+        }
+        // Save changes
+        $stmt = self::$db->prepare("UPDATE item_reminders SET offset=:offset, anchor=:anchor, message=:message WHERE itemId={$this->id} AND id=:id");
+        if ( !$stmt->execute( [
+            ":offset" => $offset,
+            ":anchor" => $anchor,
+            ":message" => $message,
+            ":id" => $id
+        ] ) ) {
+            logger( __METHOD__ . " Failed to change or create item reminder. " . $stmt->errorInfo()[ 2 ], E_ERROR );
+            return false;
+        }
+        // Adjust existing bookedItems
+        $stmt = self::$db->query( "SELECT bookedItemId, UNIX_TIMESTAMP($anchor) anchor FROM booked_items WHERE itemId={$this->id}" );
+        while ( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
+            $bookedItem = new Item( $row->bookedItemId, true );
+            // Mark the reminder as not being sent if sending time has not passed yet.
+
+            $bookedItem->setReminderSent( $id, 'item', ( $row->anchor + $offset < time() ) );
+        }
+        return $id;
+    }
+
+    /**
+     * Delete an item reminder
+     *
+     * @param integer $id The id of the reminder to delete
+     * @return bool True on success, false on failure
+     */
+    public function deleteReminder( int $id ) : bool {
+        // Remove sent flag from any bookedItems
+        $stmt = self::$db->query( "SELECT bookedItemId FROM booked_items WHERE remindersSent LIKE '%\"item$id\"%'" );
+        while ( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
+            $item = new Item( $row->bookedItemId, true );
+            $item->setReminderSent( $id, "item", false );
+        }
+        $stmt = self::$db->prepare( "DELETE FROM item_reminders WHERE itemId={$this->id} AND id=?" );
+        if ( $stmt->execute( [ $id ] ) ) return true;
+        logger ( __METHOD__ . " Failed to delete item reminder. " . $stmt->errorInfo()[ 2 ], E_ERROR );
+        return false;
+    } 
+    
+    /**
+     * Mark a reminder as sent. Only applicable for bookedItems
+     * 
+     * @param int $id The id of the reminder which has been sent.
+     * @param string $prefix e.g. "cat" or "item"
+     * @param bool $sent If true, mark the reminder as sent. If false, remove the mark.
+     * @return bool False if method failed, e.g. because this is not a booked item
+     */
+    public function setReminderSent( int $id, string $prefix, bool $sent=true ) : bool {
+        if ( !$this->bookedItemId ) return false;
+        if ( !in_array( $prefix, [ "cat", "item" ] ) ) return false;
+        $reminders = $this->remindersSent;
+        if ( $sent && !in_array( "$prefix$id", $reminders ) ) $reminders[] = "$prefix$id";
+        elseif ( !$sent && in_array( "$prefix$id", $reminders )) unset( $reminders[ array_search( "$prefix$id", $reminders ) ] );
+        $this->remindersSent = array_values( array_unique( $reminders ) );
+        return true;
     }
 }
 

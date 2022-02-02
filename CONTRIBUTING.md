@@ -130,10 +130,6 @@ och [composer](https://getcomposer.org).
     Det ska skapa en mapp `ff-boka`.
   * Byt till mappen med `cd ff-boka`.
 * Kör `composer install` för att installera några beroenden (dependencies).
-* Installera och aktivera sqlite (används för browscap som tolkar UserAgent stings)
-  * `sudo apt install phpx.x-sqlite`
-  * Aktivera i php.ini
-  * Starta om apache `service apache2 restart`
 * Installera följande i undermappen vendor:
   * JQueryUI (ladda ner från deras hemsida, packa upp arkivet och flytta mappen så att
     t.ex. jquery-ui.css ligger på vendor/jquery-ui-1.12.1/jquery-ui.css)

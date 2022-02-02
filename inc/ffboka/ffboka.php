@@ -359,7 +359,7 @@ class FFBoka {
             ":forId"=>$forId,
         ))) {
             logger(__METHOD__." Failed to create token. " . $stmt->errorInfo()[2], E_ERROR);
-            throw new \Exception($stmt->errorInfo()[2]);
+            throw new \Exception((string) $stmt->errorInfo()[2]);
         }
         return($token);
     }
@@ -422,6 +422,30 @@ class FFBoka {
     }
 
     /**
+     * Return a human readable representation of the offset of a reminder, split up in months, weeks, days, hours and minutes.
+     *
+     * @param integer $offset Number of seconds before/after a booking
+     * @return string
+     */
+    static function formatReminderOffset( int $offset ) : string {
+        $beforeAfter = $offset < 0 ? "före" : "efter";
+        $offset = abs( $offset );
+        $parts = [];
+        $months = intdiv( $offset, 2592000 ); // 2592000 seconds per month
+        if ( $months ) $parts[] = $months . ( $months==1 ? " månad" : " månader" );
+        $weeks = intdiv( $offset - $months * 2592000, 604800 ); // 604800 seconds per week
+        if ( $weeks ) $parts[] = $weeks . ( $weeks==1 ? " vecka" : " veckor" );
+        $days = intdiv( $offset - $months * 2592000 - $weeks * 604800, 86400 ); // 86400 seconds per day
+        if ( $days ) $parts[] = $days . ( $days==1 ? " dag" : " dagar" );
+        $hours = intdiv( $offset - $months * 2592000 - $weeks * 604800 - $days * 86400, 3600 ); // 3600 seconds per hour
+        if ( $hours ) $parts[] = $hours . ( $hours==1 ? " timme" : " timmar" );
+        $minutes = intdiv( $offset - $months * 2592000 - $weeks * 604800 - $days * 86400 - $hours * 3600, 60 );
+        if ( $minutes ) $parts[] = $minutes . ( $minutes==1 ? " minut" : " minuter" );
+        if ( count( $parts ) ) return implode( ", ", $parts ) . " " . $beforeAfter;
+        return "vid";
+    }
+    
+    /**
      * Add a new poll
      * @return \FFBoka\Poll
      */
@@ -452,7 +476,7 @@ class FFBoka {
         }
         return $polls;
     }
-    
+
     /**
      * Get the next available ID for booking series
      * @return int

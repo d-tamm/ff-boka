@@ -290,7 +290,7 @@ $cfg = $currentCfg;
                     }
                 }
                 echo "</ul>";
-            } else echo "<p>Okänd kodversion av installationen.</p>"
+            } else echo "<p>Okänd kodversion av installationen.</p>";
             ?>
 
             <p>Aktuell DB-version är <?php 

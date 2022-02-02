@@ -13,7 +13,7 @@ require(__DIR__ . "/../inc/common.php");
 if (isset($_REQUEST['catId'])) $_SESSION['catId'] = $_REQUEST['catId'];
 
 if (!isset($_SESSION['sectionId']) || !isset($_SESSION['authenticatedUser']) || !isset($_SESSION['catId'])) {
-    header("Location: {$cfg['url']}?redirect=admin");
+    header( "Location: {$cfg[ 'url' ]}index.php?action=sessionExpired" );
     die();
 }
 
@@ -27,26 +27,6 @@ $cat = new Category($_SESSION['catId']);
 if ($cat->getAccess($currentUser) < FFBoka::ACCESS_CATADMIN) {
     header("Location: {$cfg['url']}?action=accessDenied&to=" . urlencode("administrationssidan för " . htmlspecialchars($item->caption)));
     die();
-}
-
-
-/**
- * Composes an HTML string showing the item's images and captions
- * @param Item $item
- * @return string Returns HTML code for the image block.
- */
-function imageHtml(Item $item) {
-    $ret = "";
-    foreach ($item->images() as $image) {
-        $ret .= "<div class='ui-body ui-body-a ui-corner-all'>\n";
-        $ret .= "<img class='item-img-preview' src='../image.php?type=itemImage&id={$image->id}'>";
-        $ret .= "<textarea class='item-img-caption ajax-input' placeholder='Bildtext' data-id='{$image->id}'>" . htmlspecialchars($image->caption) . "</textarea>";
-        $ret .= "<div class='ui-grid-a'>";
-        $ret .= "<div class='ui-block-a'><label><input type='radio' name='imageId' onClick=\"setItemProp('imageId', {$image->id});\" value='{$image->id}' " . ($image->id==$item->imageId ? "checked='true'" : "") . ">Huvudbild</label></div>";
-        $ret .= "<div class='ui-block-b'><input type='button' data-corners='false' class='ui-btn ui-corner-all' value='Ta bort' onClick='deleteImage({$image->id});'></div>";
-        $ret .= "</div></div><br>";
-    }
-    return $ret;
 }
 
 
@@ -69,41 +49,29 @@ function showCatTree(Category $startAt, Category $selected, User $user, $indent=
 }
 
 
-switch ($_REQUEST['action']) {
+if ( isset( $_REQUEST[ 'action' ] ) ) {
+switch ( $_REQUEST[ 'action' ] ) {
     case "help":
         echo <<<EOF
-<h3>Allmänt</h3>
-<p>Inställningarna här sparas direkt. Du behöver inte trycka på någon spara-knapp. Längst
-upp ser du var i strukturen resursen är placerad, med klickbara överordnade element. Det 
-är användbart för att snabbt navigera upp i hirarkin. Klicka på knappen med pennsymbol till
-höger om sökvägen för att flytta resursen till en annan kategori.</p>
-<p><b>Rubriken</b> visas i listor och bör hållas kort och tydlig. Har du flera resurser av
-samma typ kan det vara bra att lägga till ett löpnummer eller dylikt  som hjälper dig att 
-identifiera resurserna.</p>
-<p><b>Beskrivningen</b> kan vara en längre text. Här kan du samla all information om 
-resursen som kan vara användbar för användaren. Texten visas bara i resursens detailjvy, inte
-i listor.</p>
-<p><b>Text i bokningsbekräftelse:</b> Du kan lägga in en text som skickas med i den bekräftelse
-som användaren får när hen har lagt en bokning. Fungerar på samma sätt som motsvarande
-fält på kategorinivå.</p>
-<p>Med <b>Aktiv (kan bokas)</b> bestämmer du om resursen ska visas för bokning. Det kan 
-vara användbart under tiden du lägger upp resursen tills all information är på plats, eller 
-när en resurs inte är tillgänglig på grund av skada, förlust mm.</p>
-<p>Du kan även lägga in <b>interna anteckningar</b>. De visas bara för administratörer.</p>
-<p><b>Direktlänken</b> kan användas för att dirigera en användare direkt till denna resurs.
-Länken öppnar bokningsflödet så att den här resursen redan är förvald.</p>
-<p>Knappen <b>Duplicera resursen</b> skapar en kopia. Om rubriken i din resurs slutar på
-en siffra eller en siffra i parenteser så får kopian nästa löpnummer. Om du t.ex. kopierar 
-<tt>Kanadensare (1)</tt> så heter kopian <tt>Kanadensare (2)</tt>. Annars får kopians 
-rubrik tillägget <tt>(kopia)</tt>. <b>OBS</b>, kopian är avaktiverad från början! Du måste
-själv aktivera den.</p>
+        <h3>Allmänt</h3>
+        <p>Inställningarna här sparas direkt. Du behöver inte trycka på någon spara-knapp. Längst upp ser du var i strukturen resursen är placerad, med klickbara överordnade element. Det är användbart för att snabbt navigera upp i hirarkin. Klicka på knappen med pennsymbol till höger om sökvägen för att flytta resursen till en annan kategori.</p>
+        <p><b>Rubriken</b> visas i listor och bör hållas kort och tydlig. Har du flera resurser av samma typ kan det vara bra att lägga till ett löpnummer eller dylikt  som hjälper dig att identifiera resurserna.</p>
+        <p><b>Beskrivningen</b> kan vara en längre text. Här kan du samla all information om resursen som kan vara användbar för användaren. Texten visas bara i resursens detailjvy, inte i listor.</p>
+        <p><b>Text i bokningsbekräftelse:</b> Du kan lägga in en text som skickas med i den bekräftelse som användaren får när hen har lagt en bokning. Fungerar på samma sätt som motsvarande fält på kategorinivå.</p>
+        <p>Med <b>Aktiv (kan bokas)</b> bestämmer du om resursen ska visas för bokning. Det kan vara användbart under tiden du lägger upp resursen tills all information är på plats, eller när en resurs inte är tillgänglig på grund av skada, förlust mm.</p>
+        <p>Du kan även lägga in <b>interna anteckningar</b>. De visas bara för administratörer.</p>
+        <p><b>Direktlänken</b> kan användas för att dirigera en användare direkt till denna resurs. Länken öppnar bokningsflödet så att den här resursen redan är förvald.</p>
+        <p>Knappen <b>Duplicera resursen</b> skapar en kopia. Om rubriken i din resurs slutar på en siffra eller en siffra i parenteser så får kopian nästa löpnummer. Om du t.ex. kopierar <tt>Kanadensare (1)</tt> så heter kopian <tt>Kanadensare (2)</tt>. Annars får kopians rubrik tillägget <tt>(kopia)</tt>. <b>OBS</b>, kopian är avaktiverad från början! Du måste själv aktivera den.</p>
 
-<h3>Bilder</h3>
-<p>Du kan lägga in ett valfritt antal bilder till din resurs. En av bilderna blir huvudbilden, 
-vilket innebär att den visas i listor vid t.ex. bokning. Övriga bilder visas bara på
-detaljsidor. Till varje bild kan du även lägga in en bildtext som visas under bilden.</p>
-EOF;
+        <h3>Påminnelser</h3>
+        <p>Du kan ställa in att användarna får ett meddelande ett visst antal timmar före eller efter bokningens start eller slut. Funktionen är t.ex. användbar för att skicka ut aktuell kod till kodlås, påminna om slutstädning mm. Meddelandet som skickas till användaren är det som är aktuellt vid utskickstidpunkten, inte vid bokningstidpunkten. Om du t.ex. vill skicka ut en kod som ändras varje vecka så innehåller meddelandet den kod som vid tiden för utskicket gäller, oavsett när bokningen har lagts.</p>
+        <p>Påminnelser kan även ställas in på kategorinivå. För att ändra dessa, gå till respektive kategori.</p>
+
+        <h3>Bilder</h3>
+        <p>Du kan lägga in ett valfritt antal bilder till din resurs. En av bilderna blir huvudbilden, vilket innebär att den visas i listor vid t.ex. bokning. Övriga bilder visas bara på detaljsidor. Till varje bild kan du även lägga in en bildtext som visas under bilden.</p>
+        EOF;
         die();
+
     case "newItem":
         $item = $cat->addItem();
         $_SESSION['itemId'] = $item->id;
@@ -116,59 +84,9 @@ EOF;
         
     case "moveItem":
         $item->moveToCat($cat);
-        break;
-        
-    case "setItemProp":
-        // Reply to AJAX request
-        switch ($_REQUEST['name']) {
-            case "caption":
-            case "description":
-            case "postbookMsg":
-            case "active":
-            case "note":
-            case "imageId":
-                header("Content-Type: application/json");
-                if ($_REQUEST['value']=="NULL") $item->{$_REQUEST['name']} = null;
-                else $item->{$_REQUEST['name']} = $_REQUEST['value'];
-                die(json_encode(["status"=>"OK"]));
-        }
-        logger(__METHOD__." Tried to set invalid item property {$_REQUEST['name']}.", E_WARNING);
-        break;
-        
-    case "ajaxDeleteItem":
-        header("Content-Type: application/json");
-        if ($item->delete()) die(json_encode(array("status"=>"OK")));
-        break;
-        
-    case "ajaxAddImage":
-        header("Content-Type: application/json");
-        if (is_uploaded_file($_FILES['image']['tmp_name'])) {
-            $image = $item->addImage();
-            $res = $image->setImage($_FILES['image'], $cfg['maxImgSize'], 80, $cfg['uploadMaxFileSize']);
-            if ($res!==TRUE) {
-                $image->delete();
-                die(json_encode([ "error"=>$res ]));
-            }
-            // Set as featured image if it is the first one for this item
-            if (!$item->imageId) $item->imageId = $image->id;
-            die(json_encode(array("html"=>imageHtml($item))));
-        }
-        die(json_encode(array("error"=>"File is not an uploaded file")));
-        
-    case "ajaxDeleteImage":
-        header("Content-Type: application/json");
-        $image = new Image($_GET['id']);
-        $image->delete();
-        die(json_encode(array("html"=>imageHtml($item))));
-        
-    case "ajaxSaveImgCaption":
-        header("Content-Type: application/json");
-        $image = new Image($_GET['id']);
-        $image->caption = $_GET['caption'];
-        die(json_encode(array("html"=>$image->caption)));
-        
+        break;            
 }
-
+}
 
 ?><!DOCTYPE html>
 <html>
@@ -186,7 +104,30 @@ EOF;
             <p id="msg-page-admin-item"><?= $message ?></p>
             <a href='#' data-rel='back' class='ui-btn ui-btn-icon-left ui-btn-inline ui-corner-all ui-icon-check'>OK</a>
         </div>
-        
+
+        <div data-role="popup" data-overlay-theme="b" id="popup-reminder" class="ui-content">
+            <h3>Påminnelse</h3>
+            <input type="hidden" id="reminder-id">
+            <div class="ui-field-contain">
+                <label for="reminder-message">Meddelande</label>
+                <textarea id="reminder-message" placeholder="T.ex. koden till hänglåset är 12345."></textarea>
+            </div>
+            <div class="ui-field-contain">
+                <label for="reminder-offset">Tidpunkt för att skicka</label>
+                <fieldset data-role="controlgroup" data-type="horizontal">
+                    <select id="reminder-offset" style="min-width:25em;"><?php
+                        foreach ( [ -15552000, -7776000, -5184000, -2592000, -1209600, -604800, -345600, -172800, -86400, -43200, -21600, -10800, -3600, -1800, -300, 0, 300, 1800, 3600, 10800, 21600, 43200, 86400, 172800, 345600, 604800, 1209600, 2592000, 5184000, 7776000, 15552000 ] as $offset ) echo "<option value='$offset'>" . $FF::formatReminderOffset($offset) . "</option>\n"; ?>
+                    </select>
+                    <select id="reminder-anchor">
+                        <option value="start">start</option>
+                        <option value="end">slut</option>
+                    </select>
+                </fieldset>
+            </div>
+            <a href='#' data-rel="back" class="ui-btn ui-btn-inline ui-btn-icon-left ui-icon-back">Avbryt</a>
+            <button class="ui-btn ui-btn-inline ui-btn-icon-left ui-icon-check" onclick="saveReminder( 'item' );">Spara</button>
+        </div>
+
         <div data-role="popup" data-overlay-theme="b" id="popup-move-item" class="ui-content">
             <h3>Flytta resursen</h3>
             <form data-ajax="false">
@@ -243,12 +184,16 @@ EOF;
         
         <hr>
         
+        <h3>Påminnelser</h3>
+        <ul data-role="listview" id="reminders" data-split-icon="delete" data-split-theme="c">
+        </ul>
+
         <h3>Bilder</h3>
         <div class="ui-field-contain">
             <label for="file-item-img">Ladda upp ny bild:</label>
             <input type="file" name="image" id="file-item-img">
         </div>
-        <div id='item-images'><?= imageHtml($item) ?></div>
+        <div id='item-images'></div>
         
     </div><!--/main-->
 

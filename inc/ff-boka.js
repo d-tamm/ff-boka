@@ -835,7 +835,7 @@ $(document).on('pagecreate', "#page-admin-section", function() {
         if ( value && value.length > 2 ) {
             $ul.html( "<li><div class='ui-loader'><span class='ui-icon ui-icon-loading'></span></div></li>" );
             $ul.listview( "refresh" );
-            $.getJSON("index.php", {action: "ajaxFindUser", q: value}, function(data, status) {
+            $.getJSON("ajax.php", {action: "findUser", q: value}, function(data, status) {
                 $.each( data, function ( i, val ) {
                     html += "<li style='cursor:pointer;' title='Lägg till " + val.name + " som LA-admin' onClick='addAdmin(" + val.userId + ");'>" + val.userId + " " + (val.name ? val.name : "(inget namn tillgängligt)") + "</li>";
                 });
@@ -865,6 +865,7 @@ $(document).on('pageshow', "#page-admin-section", function() {
             $("#popup-msg-page-admin-section").popup('open');
         }, 500); // We need some delay here to make this work on Chrome.
     }
+    listSectionAdmins();
     showQuestionOptions("");
     questionId = 0;
     questionType = "";
@@ -899,7 +900,7 @@ function showQuestionOptions(type) {
  */
 function getQuestions() {
     $.mobile.loading("show", {});
-    $.get("index.php", { action: "ajaxGetQuestions" }, function(data, status) {
+    $.get("ajax.php", { action: "getQuestions" }, function(data, status) {
         $("#sec-questions").html(data).listview("refresh");
         $.mobile.loading("hide", {});
     });
@@ -929,8 +930,8 @@ function saveQuestion() {
         return;
     }
     $.mobile.loading("show", {});
-    $.getJSON("index.php", {
-        action: "ajaxSaveQuestion",
+    $.getJSON("ajax.php", {
+        action: "saveQuestion",
         id: questionId,
         caption: $("#sec-question-caption").val(),
         type: questionType,
@@ -952,7 +953,7 @@ function saveQuestion() {
  */
 function deleteQuestion(id) {
 $.mobile.loading("show", {});
-    $.getJSON("index.php", { action: "ajaxDeleteQuestion", id: id }, function(data, status) {
+    $.getJSON("ajax.php", { action: "deleteQuestion", id: id }, function(data, status) {
     $.mobile.loading("hide", {});
     getQuestions();
    });
@@ -971,7 +972,7 @@ function showQuestion(id) {
         $("#popup-section-question").popup('open', { transition: "pop" } );
     } else {
         $.mobile.loading("show", {});
-        $.getJSON("index.php", { action: "ajaxGetQuestion", id: id }, function(data, status) {
+        $.getJSON("ajax.php", { action: "getQuestion", id: id }, function(data, status) {
             questionId = data.id;
             $("#sec-question-caption").val( data.caption );
             showQuestionOptions(data.type);
@@ -994,19 +995,37 @@ function showQuestion(id) {
 }
 
 /**
+ * Get a list of section admins
+ */
+function listSectionAdmins() {
+    $.get( "ajax.php", { action: "listSectionAdmins" } )
+    .done( function( data ) {
+        $( "#ul-sec-admins" ).html( data ).listview( "refresh" );
+    })
+    .fail( function() {
+        $( "#ul-sec-admins" ).html( "<li>Serverfel</li>" ).listview( "refresh" );
+    });
+
+}
+
+/**
  * Add a new section admin
  * @param userId UserId of new admin
  */
-function addAdmin(userId) {
-    $.getJSON("index.php", {action: "ajaxAddSectionAdmin", id: userId}, function(data, status) {
-        if (data['currentUserId']==userId) location.reload();
-        else if (data['html']) {
-            $("#ul-sec-admins").html(data['html']).listview("refresh");
-            $("#sec-adm-autocomplete-input").val("");
-            $("#sec-adm-autocomplete").html("");
-        } else {
-            alert(data['error']);
+function addAdmin( userId ) {
+    $.mobile.loading( "show", {} );
+    $.getJSON( "ajax.php", { action: "addSectionAdmin", id: userId } )
+    .done( function( data ) {
+        if ( data == userId ) location.reload();
+        else {
+            $("#sec-adm-autocomplete-input").val( "" );
+            $("#sec-adm-autocomplete").html( "" );
+            listSectionAdmins();
         }
+    }).fail( function( xhr ) {
+        alert( xhr.responseText );
+    }).always( function() {
+        $.mobile.loading( "hide", {} );
     });
 }
 
@@ -1016,15 +1035,15 @@ function addAdmin(userId) {
  * @param int currentUserId ID of user executing the request. Used for special behaviour if user revokes his|her own permissions.
  * @param string name Name of affected user
  */
-function removeAdmin(userId, currentUserId, name) {
-    if (confirm('Du håller på att återkalla admin-behörighet för ' + (currentUserId==userId ? "dig själv" : (name ? name : "(okänd)")) + '. Vill du fortsätta?')) {
-        $.getJSON("index.php", {action: "ajaxRemoveSectionAdmin", id: userId}, function(data, status) {
-            if (typeof data.html != 'undefined') {
-                $("#ul-sec-admins").html(data['html']).listview("refresh");
-                if (currentUserId==userId) location.reload();
-            } else {
-                alert(data['error']);
-            }
+function removeAdmin( userId, currentUserId, name ) {
+    if ( confirm( 'Du håller på att återkalla admin-behörighet för ' + ( currentUserId == userId ? "dig själv" : ( name ? name : "(okänd)" ) ) + '. Vill du fortsätta?' ) ) {
+        $.get( "ajax.php", { action: "removeSectionAdmin", id: userId } )
+        .done( function( data ) {
+            if ( currentUserId == userId ) { location.reload(); }
+            else { listSectionAdmins(); }
+        })
+        .fail( function() {
+            alert( "Kunde inte ta bort behörigheten." );
         });
     }
 }
@@ -1105,30 +1124,27 @@ $(document).on('pagecreate', "#page-admin-category", function() {
     /**
      * Save new category image
      */
-    $(document).off('change', "#file-cat-img").on('change', "#file-cat-img", function() {
+    $( document ).off( 'change', "#file-cat-img" ).on( 'change', "#file-cat-img", function() {
         // Save image via ajax: https://makitweb.com/how-to-upload-image-file-using-ajax-and-jquery/
         var fd = new FormData();
-        var file = $('#file-cat-img')[0].files[0];
-        fd.append('image', file);
-        fd.append('action', "ajaxSetImage");
-        $.mobile.loading("show", {});
+        var file = $( '#file-cat-img' )[ 0 ].files[ 0 ];
+        fd.append( 'image', file );
+        fd.append( 'action', "setCatImage" );
+        $.mobile.loading( "show", {} );
 
-        $.ajax({
-            url: 'category.php',
+        $.ajax( {
+            url: 'ajax.php',
             type: 'post',
             data: fd,
-            dataType: 'json',
             contentType: false,
-            processData: false,
-            success: function(data) {
-                if (data.status=="OK") {
-                    var d = new Date();
-                    $('#cat-img-preview').attr("src", "../image.php?type=category&id=" + data.id + "&" + d.getTime()).show().trigger( "updatelayout" );
-                } else {
-                    alert(data.error);
-                }
-                $.mobile.loading("hide", {});
-            },
+            processData: false
+        } ).done( function( data ) {
+            var d = new Date();
+            $('#cat-img-preview').attr("src", "../image.php?type=category&id=" + data + "&" + d.getTime()).show().trigger( "updatelayout" );
+        }).fail( function( xhr ) {
+            alert( xhr.responseText );
+        }).always( function() {
+            $.mobile.loading( "hide", {} );
         });
     });
 
@@ -1145,7 +1161,7 @@ $(document).on('pagecreate', "#page-admin-category", function() {
 	        if ( value && value.length > 2 ) {
 	            $ul.html( "<li><div class='ui-loader'><span class='ui-icon ui-icon-loading'></span></div></li>" );
 	            $ul.listview( "refresh" );
-	            $.getJSON("index.php", {action: "ajaxFindUser", q: value}, function(data, status) {
+	            $.getJSON("ajax.php", {action: "findUser", q: value}, function(data, status) {
 	                $.each( data, function ( i, val ) {
 	                    html += "<li style='cursor:pointer;' title='Sätt " + val['name'] + " som kontaktperson' onClick=\"setCatProp('contactUserId', " + val['userId'] + ");\">" + val['userId'] + " " + (val['name'] ? val['name'] : "(ingen persondata tillgänglig)") + "</li>";
 	                });
@@ -1174,7 +1190,7 @@ $(document).on('pagecreate', "#page-admin-category", function() {
 	        if ( value && value.length > 2 ) {
 	            $ul.html( "<li><div class='ui-loader'><span class='ui-icon ui-icon-loading'></span></div></li>" );
 	            $ul.listview( "refresh" );
-	            $.getJSON("index.php", {action: "ajaxFindUser", q: value}, function(data, status) {
+	            $.getJSON("ajax.php", {action: "findUser", q: value}, function(data, status) {
 	                $.each( data, function ( i, val ) {
 	                    html += "<label><input type='radio' class='cat-access-id' name='id' value='" + val['userId'] + "'>" + val['userId'] + " " + (val['name'] ? val['name'] : "(ingen persondata tillgänglig)") + "</label>";
 	                });
@@ -1213,17 +1229,18 @@ $(document).on('pagecreate', "#page-admin-category", function() {
      * Saves new admin and clears input fields.
      */
     $(document).off("change", ".cat-access-level").on("change", ".cat-access-level", function() {
-        $.mobile.loading("show", {});
-        $("#cat-access-levels").hide();
-        $("select.cat-access-id").val("").selectmenu("refresh");
-        $("#cat-adm-autocomplete-input").val("");
-        $("#cat-adm-autocomplete").html("");
-        $.getJSON("?action=ajaxSetAccess&id="+encodeURIComponent(chosenAccessId)+"&access="+this.value, function(data, status) {
-            $("#assigned-cat-access").html(data.html).enhanceWithin();
-            $("#assigned-cat-access a.ajax-input").addClass('change-confirmed');
+        $.mobile.loading( "show", {} );
+        $( "#cat-access-levels" ).hide();
+        $( "select.cat-access-id" ).val( "" ).selectmenu( "refresh" );
+        $( "#cat-adm-autocomplete-input" ).val( "" );
+        $( "#cat-adm-autocomplete" ).html( "" );
+        $.getJSON( "ajax.php", { action: "setCatAccess", id: chosenAccessId, access: this.value } )
+        .done( function( data ) {
+            $.mobile.loading( "hide", {} );
+            $( "#assigned-cat-access a.ajax-input").addClass('change-confirmed');
             setTimeout(function(){ $("#assigned-cat-access a.ajax-input").removeClass("change-confirmed"); }, 1500);
-            $.mobile.loading("hide", {});
-            if (data.message!="") alert(data.message);
+            if ( data.notice != "") alert( data.notice );
+            getCatAccess();
         });
     });
 
@@ -1231,15 +1248,15 @@ $(document).on('pagecreate', "#page-admin-category", function() {
      * Delete category
      */
     $(document).off('click', "#delete-cat").on('click', "#delete-cat", function() {
-        if (confirm("Du håller på att ta bort kategorin och alla poster i den. Fortsätta?")) {
-            $.mobile.loading("show", {});
-            $.getJSON("category.php", {action: "ajaxDeleteCat"}, function(data, status) {
+        if ( confirm( "Du håller på att ta bort kategorin och alla poster i den. Fortsätta?" ) ) {
+            $.mobile.loading( "show", {} );
+            $.get( "ajax.php", { action: "deleteCat" } )
+            .done( function() {
                 $.mobile.loading("hide", {});
-                if (data.status=="OK") {
-                    location.href="index.php";
-                } else {
-                    alert("Kunde inte radera kategorin. Kontakta administratören, tack.");
-                }
+                location.href="index.php";
+            })
+            .fail( function() {
+                alert( "Kunde inte radera kategorin. Kontakta administratören, tack." );
             });
         }
     });
@@ -1247,40 +1264,32 @@ $(document).on('pagecreate', "#page-admin-category", function() {
     /**
      * Save new attachment file
      */
-    $(document).off('change', "#cat-file-file").on('change', "#cat-file-file", function() {
+    $( document ).off( 'change', "#cat-file-file" ).on( 'change', "#cat-file-file", function() {
         // Save file via ajax: https://makitweb.com/how-to-upload-image-file-using-ajax-and-jquery/
         var fd = new FormData();
-        var file = $('#cat-file-file')[0].files[0];
-        fd.append('file', file);
-        fd.append('action', "ajaxAddFile");
-        $.mobile.loading("show", {});
+        var file = $( '#cat-file-file' )[ 0 ].files[ 0 ];
+        fd.append( 'file', file );
+        fd.append( 'action', "addCatFile" );
+        $.mobile.loading( "show", {} );
 
         $.ajax({
-            url: 'category.php',
+            url: 'ajax.php',
             type: 'post',
             data: fd,
-            dataType: 'json',
             contentType: false,
             processData: false,
-            success: function(data) {
-                $.mobile.loading("hide", {});
-                if (data.status=="OK") {
-                	$("#cat-file-file")[0].value="";
-            		$("#cat-attachments").html(data.html).enhanceWithin();
-                }
-                else alert(data.error);
-            },
-            error: function(xhr, status, error) {
-                $.mobile.loading("hide", {});
-            	alert("Kunde inte spara. Kan inte få kontakt med servern.");
-            }
-        });    	
+        }).done( function() {
+            $( "#cat-file-file" )[ 0 ].value="";
+            getCatFiles();
+        }).fail( function( xhr ) {
+            alert( xhr.responseText );
+        }).always( function() {
+            $.mobile.loading( "hide", {} );
+        });
     });
 });
 
 $(document).on('pageshow', "#page-admin-category", function() {
-    setCatProp("onlyGetContactData", "");
-
     t = $("#cat-sendAlertTo").tagging({
         "forbidden-chars": ["<", ">", " ", ","],
         "edit-on-delete": false,
@@ -1289,36 +1298,39 @@ $(document).on('pageshow', "#page-admin-category", function() {
     $sendAlertTo = t[0]; // This is the $tag_box object of the first captured div
 
     $sendAlertTo.on( "add:after", function ( elem, text, tagging ) {
-        $.mobile.loading("show", {});
-        $.getJSON("category.php", {
-            action: "ajaxAddAlert", 
+        $.mobile.loading( "show", {} );
+        $.get( "ajax.php", {
+            action: "addAlert", 
             sendAlertTo1: text
-        }).done(function(data, status) {
-            $.mobile.loading("hide", {});
-            if (data.status=="error") {
-                $("#cat-sendAlertTo").tagging("remove", text);
-                alert(data.error);
-            } else {
-                $("#cat-saved-indicator").addClass("saved");
-                setTimeout(function(){ $("#cat-saved-indicator").removeClass("saved"); }, 2500);
-            }
+        }).done( function( data ) {
+            $( "#cat-saved-indicator" ).addClass( "saved" );
+            setTimeout( function(){ $( "#cat-saved-indicator" ).removeClass( "saved" ); }, 2500 );
+        }).fail( function( xhr ) {
+            alert( xhr.responseText );
+            $( "#cat-sendAlertTo" ).tagging( "remove", text );
+        }).always( function() {
+            $.mobile.loading( "hide", {} );
         });
     });
     $sendAlertTo.on( "remove:after", function( elem, text, tagging) {
         $.mobile.loading("show", {});
-        $.getJSON("category.php", {
-            action: "ajaxDeleteAlert", 
+        $.getJSON("ajax.php", {
+            action: "deleteAlert", 
             sendAlertTo1: text
-        }).done(function(data, status) {
+        }).done(function() {
+            $("#cat-saved-indicator").addClass("saved");
+            setTimeout(function(){ $("#cat-saved-indicator").removeClass("saved"); }, 2500);
+        }).always(function() {
             $.mobile.loading("hide", {});
-            if (data.status=="error") {
-            } else {
-                $("#cat-saved-indicator").addClass("saved");
-                setTimeout(function(){ $("#cat-saved-indicator").removeClass("saved"); }, 2500);
-            }
         });
     });
-      
+
+    // Get some ajax content
+    getCatContactData();
+    getCatAccess();
+    getReminders( "cat" );
+    getCatFiles();
+    getCatQuestions();
 
     // Show message if there is any
     if ($("#msg-page-admin-category").html()) {
@@ -1330,15 +1342,51 @@ $(document).on('pageshow', "#page-admin-category", function() {
 });
 
 /**
+ * Retrieve all category permissions
+ */
+function getCatAccess() {
+    $.mobile.loading( "show", {} );
+    $.getJSON( "ajax.php", { action: "getCatAccess" } )
+    .done( function( data ) {
+        $( "#assigned-cat-access" ).html( data.html ).enhanceWithin();
+        $.mobile.loading( "hide", {} );
+    });
+}
+
+/**
  * Revoke category admin permissions
  * @param userId ID of affected user
  */
-function unsetAccess(id) {
-    $.mobile.loading("show", {});
-    $.getJSON("?action=ajaxSetAccess&id=" + encodeURIComponent(id) + "&access=NULL", function(data, status) {
-        $("#assigned-cat-access").html(data.html).enhanceWithin();
+function unsetAccess( id ) {
+    $.mobile.loading( "show", {} );
+    $.getJSON( "ajax.php", { action: "setCatAccess", id: id, access: "NULL" } )
+    .done( function( data ) {
         $.mobile.loading("hide", {});
-        if (data.message!="") alert(data.message);
+        if ( data.notice != "" ) alert( data.notice );
+        getCatAccess();
+    });
+}
+
+/**
+ * Updates the contact data for the category
+ */
+function getCatContactData() {
+    $.mobile.loading( "show", {} );
+    $.getJSON( "ajax.php", { action: "getCatContactData" } )
+    .done( function( data ) {
+        $.mobile.loading( "hide", {} );
+        switch ( data.contactType ) {
+            case "inherited": $( "#cat-contact-data-caption" ).html( "Kontaktuppgifterna från överordnad kategori används:" ); break;
+            case "user":      $( "#cat-contact-data-caption" ).html( "Så här visas kontaktuppgifterna (länkat till medlemsuppgifter):" ); break;
+            case "manual":    $( "#cat-contact-data-caption" ).html( "Så här visas kontaktuppgifterna (enligt inmatningen ovan):" ); break;
+            case "unset":     $( "#cat-contact-data-caption" ).html( "Inga kontaktuppgifter visas. Om du vill visa kontaktuppgifter, ställ in dem ovan." ); break;
+        }
+        $( "#cat-contact-data" ).html( data.contactData );
+        $( "#cat-contactName" ).val( data.contactName );
+        $( "#cat-contactPhone" ).val( data.contactPhone );
+        $( "#cat-contactMail" ).val( data.contactMail );
+        if ( data.contactType == "user" ) $( "#btn-unset-contact-user" ).show();
+        else $( "#btn-unset-contact-user" ).hide();
     });
 }
 
@@ -1347,47 +1395,46 @@ function unsetAccess(id) {
  * @param name Name of the property
  * @param val Value of the property
  */
-function setCatProp(name, val) {
-    $.mobile.loading("show", {});
-    $.getJSON("category.php", {
-    	action: "ajaxSetCatProp", 
+function setCatProp( name, val ) {
+    $.mobile.loading( "show", {} );
+    $.getJSON( "ajax.php", {
+    	action: "setCatProp", 
     	name: name, 
     	value: val
-	}).done(function(data, status) {
-        $.mobile.loading("hide", {});
-        if (data.status=="OK") {
-            if (name=="parentId") { location.href="?"+Math.round(Math.random()*100000); return false; }
-            switch (data.contactType) {
-                case "inherited": $("#cat-contact-data-caption").html("Kontaktuppgifterna från överordnad kategori används:"); break;
-                case "user": $("#cat-contact-data-caption").html("Så här visas kontaktuppgifterna (länkat till medlemsuppgifter):"); break;
-                case "manual": $("#cat-contact-data-caption").html("Så här visas kontaktuppgifterna (enligt inmatningen ovan):"); break;
-                case "unset": $("#cat-contact-data-caption").html("Inga kontaktuppgifter visas. Om du vill visa kontaktuppgifter, ställ in dem ovan."); break;
-            }
-            $("#cat-contact-data").html(data.contactData);
-            $("#cat-contactName").val(data.contactName);
-            $("#cat-contactPhone").val(data.contactPhone);
-            $("#cat-contactMail").val(data.contactMail);
-            $("#cat-contact-autocomplete-input").val("");
-            $("#cat-contact-autocomplete").html("");
-            if (name=="contactMail") $("#cat-contactMailInvalid").hide();
+	}).done( function( data ) {
+        $.mobile.loading( "hide", {} );
+        if ( data.status=="OK" ) {
+            if ( name=="parentId" ) { location.href="?" + Math.round( Math.random() * 100000 ); return false; }
+            $( "#cat-contact-autocomplete-input" ).val( "" );
+            $( "#cat-contact-autocomplete" ).html( "" );
+            if ( name == "contactMail" ) $( "#cat-contactMailInvalid").hide();
             if (name=="caption") {
-                $("#page-caption").text(val);
-                $("#cat-breadcrumb-last").text(val);
+                $( "#page-caption" ).text( val );
+                $( "#cat-breadcrumb-last" ).text( val );
             }
-            if (data.contactType=="user") $("#btn-unset-contact-user").show();
-            else $("#btn-unset-contact-user").hide();
-            if (name != "onlyGetContactData") {
-                $("#cat-saved-indicator").addClass("saved");
-                setTimeout(function(){ $("#cat-saved-indicator").removeClass("saved"); }, 2500);
-            }
-        } else if (data.status=="contactMailInvalid") {
-            $("#cat-contactMailInvalid").show();
-        } else {
-            alert("Kan inte spara ändringen :(");
+            if ( data.contactType == "user" ) $( "#btn-unset-contact-user" ).show();
+            else $( "#btn-unset-contact-user" ).hide();
+            $( "#cat-saved-indicator" ).addClass( "saved" );
+            setTimeout( function() { $( "#cat-saved-indicator" ).removeClass( "saved" ); }, 2500 );
+            getCatContactData();
+        } else if ( data.status == "contactMailInvalid" ) {
+            $( "#cat-contactMailInvalid" ).show();
         }
     }).fail(function() {
         $.mobile.loading("hide", {});
-    	alert("Servern accepterar inte förfrågan.");
+    	alert("Kan inte spara ändringen.");
+    });
+}
+
+/**
+ * Retrieve list of category attachments
+ */
+function getCatFiles() {
+    $.mobile.loading( "show", {} );
+    $.get( "ajax.php", { action: "getCatFiles" } )
+    .done( function( data ) {
+        $.mobile.loading( "hide", {} );
+        $( "#cat-attachments" ).html( data ).enhanceWithin();
     });
 }
 
@@ -1397,25 +1444,21 @@ function setCatProp(name, val) {
  * @param name Name of the property
  * @param value Value of the property
  */
-function setCatFileProp(fileId, name, value) {
-    $.mobile.loading("show", {});
-    $.getJSON("category.php", {
-    	action: "ajaxSetCatFileProp",
+function setCatFileProp( fileId, name, value ) {
+    $.mobile.loading( "show", {} );
+    $.get( "ajax.php", {
+    	action: "setCatFileProp",
     	fileId: fileId,
     	name: name,
     	value: value
-	}).done(function(data, status) {
-        $.mobile.loading("hide", {});
-        if (data.status=="OK") {
-        	if (name=="caption") $("#cat-file-header-"+fileId).text(value);
-            $("#cat-saved-indicator").addClass("saved");
-            setTimeout(function(){ $("#cat-saved-indicator").removeClass("saved"); }, 2500);
-        } else {
-            alert("Kan inte spara ändringen :(");
-        }
+	}).done( function( data ) {
+        if (name=="caption") $("#cat-file-header-"+fileId).text(value);
+        $("#cat-saved-indicator").addClass("saved");
+        setTimeout(function(){ $("#cat-saved-indicator").removeClass("saved"); }, 2500);
     }).fail(function() {
-        $.mobile.loading("hide", {});
     	alert("Servern accepterar inte förfrågan.");
+    }).always( function() {
+        $.mobile.loading("hide", {});
     });
 }
 
@@ -1426,13 +1469,12 @@ function setCatFileProp(fileId, name, value) {
 function catFileDelete(fileId) {
 	if (confirm("Vill du ta bort bilagan?")) {
 	    $.mobile.loading("show", {});
-	    $.get("category.php", {
-	    	action: "ajaxDeleteFile",
+	    $.get("ajax.php", {
+	    	action: "deleteCatFile",
 	    	fileId: fileId
-		}).done(function(data, status) {
+		}).done(function( data ) {
 	        $.mobile.loading("hide", {});
-	        if (data.status=="OK") $("#cat-attachments").html(data.html).enhanceWithin();
-	        else alert(data.error);
+	        getCatFiles();
 	    }).fail(function() {
 	        $.mobile.loading("hide", {});
 	    	alert("Servern accepterar inte förfrågan.");
@@ -1440,71 +1482,138 @@ function catFileDelete(fileId) {
 	}
 }
 
+function getCatQuestions() {
+    $.get( "ajax.php", { action: "getCatQuestions" } )
+    .done( function( data ) {
+        $( "#cat-questions" ).html( data ).listview( "refresh" );
+    });
+}
+
 /**
  * Toggles the state of a question between on, off, inherited and mandatory
  * @param id Question ID
  */
-function toggleQuestion(id) {
-    $.getJSON("category.php", {
-        action: "ajaxToggleQuestion",
-        id: id,
-    }, function(data, status) {
-        $("#cat-questions").html(data.html).listview("refresh");
+function toggleQuestion( id ) {
+    $.mobile.loading( "show", {} );
+    $.get( "ajax.php", { action: "toggleQuestion", id: id } )
+    .done( function() {
+        getCatQuestions();
+        $.mobile.loading( "hide", {} );
     });
 }
 
+/**
+ * Get the category reminders via ajax
+ */
+function getReminders( reminderClass ) {
+    $.get( "ajax.php", { action: "getReminders", class: reminderClass } )
+    .done( function( data ) {
+        $( "#reminders" ).html( data ).listview( "refresh" );
+    })
+    .fail( function() {
+        if ( xhr.status==403 ) location.href = "../index.php?action=sessionExpired";
+        $( "#reminders" ).html( "<li><i>Kan inte hämta påminnelser.</i></li>" );
+    });
+}
+
+function editReminder( reminderClass, id ) {
+    $.getJSON( "ajax.php", { action: "getReminder", class: reminderClass, id: id } )
+    .done( function( data ) {
+        $( "#reminder-id" ).val( data ? data.id : 0 );
+        $( "#reminder-message" ).val( data ? data.message : "Fel: Påminnelsen hittades inte" );
+        $( "#reminder-offset" ).val( data.offset ).selectmenu( "refresh", true );
+        $( "#reminder-anchor" ).val( data.anchor ).selectmenu( "refresh", true );
+        $( "#popup-reminder" ).popup('open');    
+    })
+    .fail( function( data, txtStatus, xhr ) {
+        if ( xhr.status==403 ) location.href = "../index.php?action=sessionExpired";
+    });
+}
+
+function saveReminder( reminderClass ) {
+    $.getJSON( "ajax.php", {
+        action: "saveReminder",
+        class: reminderClass,
+        id: $( "#reminder-id" ).val(),
+        message: $( "#reminder-message" ).val(),
+        offset: $( "#reminder-offset" ).val(),
+        anchor: $( "#reminder-anchor" ).val(),
+    } )
+    .done( function() {
+        getReminders( reminderClass );
+        $("#popup-reminder").popup('close');
+    });
+}
+
+function deleteReminder( reminderClass, id ) {
+    $.get( "ajax.php", {
+        action: "deleteReminder",
+        class: reminderClass,
+        id: id,
+    })
+    .done( function() {
+        getReminders( reminderClass );
+        $( "#popup-reminder" ).popup( 'close' );
+    })
+    .fail( function() {
+        console.log( "Failed to delete reminder." );
+        $( "#popup-reminder" ).popup( 'close' );
+    });
+}
 
 // ========== admin/item.php ==========
-$(document).on('pagecreate', "#page-admin-item", function() {
+$( document ).on( 'pagecreate', "#page-admin-item", function() {
     // Bind events
     
     /**
      * Set timeout for saving item caption
      */
-    $("#item-caption").on('input', function() {
-        clearTimeout(toutSetValue);
-        toutSetValue = setTimeout(setItemProp, 1000, "caption", this.value);
+    $( "#item-caption" ).on( 'input', function() {
+        clearTimeout( toutSetValue );
+        toutSetValue = setTimeout( setItemProp, 1000, "caption", this.value );
     });
     
     /**
      * Set timeout for saving item description
      */
-    $("#item-description").on('input', function() {
-        clearTimeout(toutSetValue);
-        toutSetValue = setTimeout(setItemProp, 1000, "description", this.value);
+    $( "#item-description" ).on( 'input', function() {
+        clearTimeout( toutSetValue );
+        toutSetValue = setTimeout( setItemProp, 1000, "description", this.value );
     });
 
     /**
      * Set timeout for saving item postbook message
      */
-     $("#item-postbookMsg").on('input', function() {
-        clearTimeout(toutSetValue);
-        toutSetValue = setTimeout(setItemProp, 1000, "postbookMsg", this.value);
+     $( "#item-postbookMsg" ).on( 'input', function() {
+        clearTimeout( toutSetValue );
+        toutSetValue = setTimeout( setItemProp, 1000, "postbookMsg", this.value );
     });
 
     /**
      * Save item active state
      */
-    $("#item-active").click(function() {
-        setItemProp("active", this.checked ? 1 : 0);
+    $( "#item-active" ).click( function() {
+        setItemProp( "active", this.checked ? 1 : 0 );
     });
     
     /**
      * Set timeout for saving item internal note
      */
-    $("#item-note").on('input', function() {
-        clearTimeout(toutSetValue);
-        toutSetValue = setTimeout(setItemProp, 1000, "note", this.value);
+    $( "#item-note" ).on( 'input', function() {
+        clearTimeout( toutSetValue );
+        toutSetValue = setTimeout( setItemProp, 1000, "note", this.value );
     });
 
     /**
      * Delete item
      */
-    $("#delete-item").click(function() {
-        if (confirm("Du håller på att ta bort utrustningen. Fortsätta?")) {
-            $.getJSON("item.php", { action: "ajaxDeleteItem" }, function(data, status) {
-                if (data.status=='OK') location.href="category.php?expand=items";
-                else alert("Något har gått fel. :(");
+    $( "#delete-item" ).click( function() {
+        if ( confirm( "Du håller på att ta bort utrustningen. Fortsätta?" ) ) {
+            $.get( "ajax.php", { action: "deleteItem" } )
+            .done( function() {
+                location.href="category.php?expand=items";
+            }).fail( function() {
+                alert( "Något har gått fel." );
             });
         }
     });
@@ -1512,57 +1621,60 @@ $(document).on('pagecreate', "#page-admin-item", function() {
     /**
      * Add a new image to item
      */
-    $("#file-item-img").change(function() {
+    $( "#file-item-img" ).change( function() {
         // Save image via ajax: https://makitweb.com/how-to-upload-image-file-using-ajax-and-jquery/
         var fd = new FormData();
-        var file = $('#file-item-img')[0].files[0];
-        fd.append('image',file);
-        fd.append('action', "ajaxAddImage");
-        $.mobile.loading("show", {});
+        var file = $( '#file-item-img' )[ 0 ].files[ 0 ];
+        fd.append( 'image', file );
+        fd.append( 'action', "addItemImage" );
+        $.mobile.loading( "show", {} );
         $.ajax({
-            url: 'item.php',
+            url: 'ajax.php',
             type: 'post',
             data: fd,
-            dataType: 'json',
             contentType: false,
             processData: false,
-            success: function(data) {
-                $.mobile.loading("hide", {});
-                if (data.html) {
-                    $('#item-images').html(data.html).enhanceWithin();
-                } else {
-                    alert(data.error);
-                }
-            },
+        }).done( function( data ) {
+            e = $( "#file-item-img" );
+            e.wrap('<form></form>').closest('form').get(0).reset();
+            e.unwrap();
+//            $( "#file-item-img" ).replaceWith( $( "#file-item-img" ).val( '' ).clone( true ) );
+            getItemImages();
+        }).fail( function( xhr ) {
+            alert( xhr.responseText );
+        }).always( function() {
+            $.mobile.loading( "hide", {} );
         });
     });
     
     /**
      * Save item image caption
      */
-    $("#item-images").on("input", ".item-img-caption", function(e, data) {
+    $( "#item-images" ).on( "input", ".item-img-caption", function( e, data ) {
         var _this = this;
-        clearTimeout(toutSetValue);
-        toutSetValue = setTimeout(function() {
-            $.getJSON(
-                "item.php",
-                { action: 'ajaxSaveImgCaption', id: $(_this).data('id'), caption: _this.value },
-                function(data, status) {
-                    $("#item-saved-indicator").addClass("saved");
-                    setTimeout(function(){ $("#item-saved-indicator").removeClass("saved"); },1000);
-                }
-            );
+        clearTimeout( toutSetValue );
+        toutSetValue = setTimeout( function() {
+            $.get( "ajax.php",
+                { action: 'saveItemImgCaption', id: $( _this ).data( 'id' ), caption: _this.value })
+            .done( function( data ) {
+                $( "#item-saved-indicator" ).addClass( "saved" );
+                setTimeout( function() { $( "#item-saved-indicator" ).removeClass( "saved" ); }, 1000 );
+            });
         }, 1000);
     });
 });
 
-$(document).on('pageshow', "#page-admin-item", function() {
+$(document).on( 'pageshow', "#page-admin-item", function() {
     // Show message if there is any
-    if ($("#msg-page-admin-item").html()) {
-        setTimeout(function() {
-            $("#popup-msg-page-admin-item").popup('open');
-        }, 500); // We need some delay here to make this work on Chrome.
+    if ( $( "#msg-page-admin-item" ).html() ) {
+        setTimeout( function() {
+            $( "#popup-msg-page-admin-item" ).popup( 'open' );
+        }, 500 ); // We need some delay here to make this work on Chrome.
     }
+
+    // Get reminders and images via ajax
+    getReminders( "item" );
+    getItemImages();
 });
 
 /**
@@ -1570,15 +1682,15 @@ $(document).on('pageshow', "#page-admin-item", function() {
  * @param name Property name
  * @param val Property value
  */
-function setItemProp(name, val) {
-    $.getJSON("item.php", {action: "setItemProp", name: name, value: val}, function(data, status) {
-        if (data.status=="OK") {
-            if (name=="caption") $("#page-caption").text(val);
-            $("#item-saved-indicator").addClass("saved");
-            setTimeout(function(){ $("#item-saved-indicator").removeClass("saved"); }, 2500);
-        } else {
-            alert("Kan inte spara ändringen :(");
-        }
+function setItemProp( name, val ) {
+    $.get( "ajax.php",
+        { action: "saveItemProp", name: name, value: val }
+    ).done( function() {
+        if ( name == "caption" ) $( "#page-caption" ).text( val );
+        $( "#item-saved-indicator" ).addClass( "saved" );
+        setTimeout( function() { $( "#item-saved-indicator" ).removeClass( "saved" ); }, 1000 );
+    }).fail( function() {
+        alert( "Kan inte spara ändringen." );
     });
 }
 
@@ -1586,16 +1698,22 @@ function setItemProp(name, val) {
  * Delete an item image
  * @param id Image ID to delete
  */
-function deleteImage(id) {
-    if (confirm("Vill du ta bort denna bild?")) {
-        $.getJSON("?action=ajaxDeleteImage&id="+id, function(data, status) {
-            if (data.error) {
-                alert(data.error);
-            } else {
-                $('#item-images').html(data.html).enhanceWithin();
-            }
+function deleteImage( id ) {
+    if ( confirm( "Vill du ta bort denna bild?" ) ) {
+        $.get( "ajax.php",
+            { action: "deleteItemImage", id: id }
+        ).done( function( data ) {
+            getItemImages();
         });
     }
+}
+
+function getItemImages() {
+    $.get( "ajax.php",
+        { action: "getItemImages" }
+    ).done( function( data ) {
+        $( '#item-images' ).html( data ).enhanceWithin();
+    });
 }
 
 

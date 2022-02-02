@@ -5,6 +5,8 @@
  * @license GNU-GPL
  */
 namespace FFBoka;
+
+use Exception;
 use PDO;
 
 /**
@@ -364,7 +366,6 @@ class Category extends FFBoka {
      * @param int $fileId
      * @param string $name The name of the property to set. Must be one of caption|filename|displayLink|attachFile
      * @param mixed $value The value of the property to set
-     * @throws \Exception if trying to set an invalid property.
      * @return bool True on success, or FALSE on failure
      */
     public function setFileProp(int $fileId, string $name, $value) : bool {
@@ -383,7 +384,7 @@ class Category extends FFBoka {
             break;
         default: 
             logger(__METHOD__." Trying to set invalid property $name on file attachment {$this->id}", E_ERROR);
-            throw new \Exception("Cannot set property $name on file attachment.");
+            return false;
         }
     }
     
@@ -394,11 +395,12 @@ class Category extends FFBoka {
      * @return bool True on success, False on failure
      */
     function removeFile(int $fileId) : bool {
-        if (unlink(__DIR__."/../../uploads/$fileId")) {
-            if (self::$db->exec("DELETE FROM cat_files WHERE catId={$this->id} AND fileId=$fileId")) return true;
-            logger(__METHOD__." Failed to delete attachment record $fileId from DB. " . self::$db->errorInfo()[2], E_WARNING);
+        if (self::$db->exec("DELETE FROM cat_files WHERE catId={$this->id} AND fileId=$fileId")) {
+            if (unlink(__DIR__."/../../uploads/$fileId")) return true;
+            logger(__METHOD__." Failed to unlink attachment file " . realpath(__DIR__."/../../uploads/$fileId"), E_WARNING);
+            return true;
         }
-        logger(__METHOD__." Failed to unlink attachment file " . realpath(__DIR__."/../../uploads/$fileId"), E_WARNING);
+        logger(__METHOD__." Failed to delete attachment record $fileId from DB. " . self::$db->errorInfo()[2], E_WARNING);
         return false;
     }
     
@@ -718,5 +720,104 @@ class Category extends FFBoka {
                 }
             }
         }
+    }
+
+    /**
+     * Get all reminders of this category.
+     *
+     * @param boolean $includeInherited Set to true to include even inherited reminders from parent categories.
+     * @return array Array of objects { int id, int catId, int offset, string anchor, string message }, where id is a unique
+     *  category reminder identifier, offset is the number of seconds before (positive) or after (negative values)
+     *  the anchor (start|end) of a booking when the reminder shall be sent, and message is the text to be sent.
+     */
+    public function reminders( bool $includeInherited = false ) : array {
+        $reminders = array();
+        if ( $includeInherited ) {
+            $parent = $this->parent();
+            if ( !is_null( $parent ) ) $reminders = $parent->reminders( true );
+        }
+        $stmt = self::$db->query( "SELECT * FROM cat_reminders WHERE catId={$this->id}" );
+        while ( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
+            $reminders[] = $row;
+        }
+        return $reminders;
+    }
+
+    /**
+     * Get the category reminder with ID $id.
+     *
+     * @param integer $id
+     * @return array|bool Returns an array with the members [ id, catId, message, anchor, offset ] or FALSE if the reminder does not exist.
+     */
+    public function getReminder( int $id ) {
+        $stmt = self::$db->prepare( "SELECT * from cat_reminders WHERE id=?" );
+        $stmt->execute( [ $id ] );
+        return $stmt->fetch( PDO::FETCH_ASSOC );
+    }
+
+    /**
+     * Edit the properties of a reminder or create a new reminder.
+     *
+     * @param integer $id The id of the reminder to change. If 0, add a new reminder.
+     * @param integer $offset Number of hours before (+) or after (-) start of booking when the reminder shall be sent
+     * @param string $anchor Where to anchor the offset, either "start" or "end" of the booking
+     * @param integer $message The new message to send with the reminder.
+     * @return int|bool The id of the reminder, false on failure.
+     */
+    public function editReminder( int $id, int $offset, string $anchor, string $message ) {
+        if ( $id == 0 ) {
+            self::$db->exec( "INSERT INTO cat_reminders SET catId={$this->id}" );
+            $id = self::$db->lastInsertId();
+        }
+        if ( !in_array( $anchor, [ "start", "end" ] ) ) {
+            logger( __METHOD__ . " Tried to save a reminder with invalid anchor $anchor", E_ERROR );
+            return false;
+        }
+        $stmt = self::$db->prepare( "UPDATE cat_reminders SET offset=:offset, anchor=:anchor, message=:message WHERE catId={$this->id} AND id=:id" );
+        if ( !$stmt->execute( [
+            ":offset" => $offset,
+            ":anchor" => $anchor,
+            ":message" => $message,
+            ":id" => $id
+        ] ) ) {
+            logger( __METHOD__ . " Failed to change or create cat reminder. ".$stmt->errorInfo()[2], E_ERROR );
+            return false;
+        }
+        // Adjust existing bookedItems affected by this change
+        // Find all items belonging to the same section
+        $stmt = self::$db->query( "SELECT itemId FROM items INNER JOIN categories USING (catId) WHERE sectionId={$this->sectionId}" );
+        while ( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
+            $item = new Item( $row->itemId );
+            if ( $item->isBelowCategory( $this ) ) {
+                // This item is affected by the reminder change. Adjust all corresponding bookedItems.
+                $stmt = self::$db->query( "SELECT bookedItemId, UNIX_TIMESTAMP($anchor) anchor FROM booked_items WHERE itemId={$row->itemId}" );
+                while ( $row2 = $stmt->fetch( PDO::FETCH_OBJ ) ) {
+                    $bookedItem = new Item( $row2->bookedItemId, true );
+                    // Mark the reminder as not being sent if sending time has not passed yet.
+                    $bookedItem->setReminderSent( $id, 'cat', ( $row2->anchor + $offset < time() ) );
+                }
+            }
+        }
+        return $id;
+    }
+
+    /**
+     * Delete a cat reminder
+     *
+     * @param integer $id The id of the reminder to delete
+     * @return bool True on success, false on failure
+     */
+    public function deleteReminder( int $id ) : bool {
+        // Remove sent flag from any bookedItems
+        $stmt = self::$db->query( "SELECT bookedItemId FROM booked_items WHERE remindersSent LIKE '%\"cat$id\"%'" );
+        while ( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
+            $item = new Item( $row->bookedItemId, true );
+            $item->setReminderSent( $id, "cat", false );
+        }
+        // Delete the reminder
+        $stmt = self::$db->prepare( "DELETE FROM cat_reminders WHERE catId={$this->id} AND id=?" );
+        if ( $stmt->execute( [ $id ] ) ) return true;
+        logger( __METHOD__ . " Failed to delete cat reminder. " . $stmt->errorInfo()[ 2 ], E_ERROR );
+        return false;
     }
 }

@@ -1,8 +1,8 @@
 <?php
+session_cache_limiter('nocache');
+
 session_start();
 require(__DIR__."/inc/common.php");
-
-session_cache_limiter('nocache');
 
 switch ($_GET['type']) {
 case "category":

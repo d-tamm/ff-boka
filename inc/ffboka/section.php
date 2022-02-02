@@ -203,7 +203,7 @@ class Section extends FFBoka {
      * 
      * @return boolean|\FFBoka\Question
      */
-    public function addQuestion() : bool {
+    public function addQuestion() {
         if (self::$db->exec("INSERT INTO questions SET sectionId={$this->id}")) return new Question(self::$db->lastInsertId());
         logger(__METHOD__." Failed to add Question. " . self::$db->errorInfo()[2], E_ERROR);
         return FALSE;
