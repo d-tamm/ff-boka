@@ -10,91 +10,12 @@ global $cfg, $message;
 session_start();
 require( __DIR__ . "/inc/common.php" );
 
-/**
- * Show a list of bookings belonging to this series. If this is not (yet) a series, show form elements to create a series
- * @param \FFBoka\Booking $booking
- * @return HTML formatted list
- */
-function showBookingSeries( \FFBoka\Booking $booking ) {
-    if( is_null( $booking->repeatId ) ) {
-        $ret = "<p style='margin:0;'>Skapa serie med <span style='display:inline-block; width:4em;'><input type='number' name='repeat-count' id='repeat-count' value='2' min='2' max='40'></span> tillfällen</p>
-    	    <fieldset data-role='controlgroup' data-type='horizontal' data-mini='true'>
-    	    	<legend>Upprepning varje</legend>
-    	    	<label><input type='radio' name='repeat-type' value='day' onClick=\"repeatType=this.value;
-repeatPreview($('#repeat-count').val(), repeatType);\">dag</label>
-    	    	<label><input type='radio' name='repeat-type' value='week' onClick=\"repeatType=this.value;
-repeatPreview($('#repeat-count').val(), repeatType);\">vecka</label>
-    	    	<label><input type='radio' name='repeat-type' onClick=\"repeatType=this.value;
-repeatPreview($('#repeat-count').val(), repeatType);\" value='month'>månad</label>
-    	    </fieldset>
-            <div id='repeat-preview'><i>När du har valt antal och typ så kommer du här se ifall resurserna är tillgängliga vid respektive tillfälle.</i></div>
-            <p><i>Icke-tillgängliga resurser kommer inte att bokas.</i></p>
-            <a href='#' disabled='disabled' class='ui-btn' id='repeat-create' onClick='repeatCreate()'>Skapa serien</a>";
-	} else {
-	    $ret = "<p>Den här bokningen är del av en bokningsserie.</p>";
-        $series = $booking->getBookingSeries();
-        if ( count( $series ) == 0 ) {
-            $ret .= "<p>Det finns inga fler tillfällen än det här.</p>";
-        } else {
-            $ret .= "<ul data-role='listview' data-inset='true'>";
-            foreach ( $series as $b ) {
-                $ret .= "<li><a href='book-sum.php?bookingId={$b->id}'>" . ( is_null( $start = $b->start() ) ? "(bokning utan resurser)" : strftime( "%F", $start ) ) . "</a></li>";
-            }
-            $ret .= "</ul>";
-        }
-        $ret .= "<div data-role='controlgroup'>
-            <a href='#' onClick='unlinkBooking()' class='ui-btn ui-mini ui-icon-action ui-btn-icon-left'>Lyft ut det här tillfället</a>
-            <a href='#' onClick='unlinkSeries()' class='ui-btn ui-mini ui-icon-bars ui-btn-icon-left'>Lös upp serien</a>
-            <a href='#' onClick='deleteSeries()' class='ui-btn ui-mini ui-btn-c ui-icon-delete ui-btn-icon-left'>Radera serien</a>
-            </div>";
-	}
-    return $ret;
-}
-
-/**
- * Save information related to the whole booking (user contact information, reference etc) from $_REQUEST array.
- * Also, set the status of pending items.
- * @param Booking $booking The booking where to save the information
- * @param int[] $conflicts Array with conflicting item ids (unavailable, but hidden to user)
- * @param int[] $unavail Array with unavailable item ids (unavailable, seen by user)
- * @param User $user The user whose permissions shall be used for setting the status
- */
-function saveBookingFields( Booking $booking, $conflicts, $unavail, User $user ) {
-    $booking->ref = $_REQUEST[ 'ref' ];
-    $booking->commentCust = $_REQUEST[ 'commentCust' ];
-    if ( isset( $_REQUEST[ 'commentIntern' ] ) ) $booking->commentIntern = $_REQUEST[ 'commentIntern' ];
-    $booking->extName = $_REQUEST[ 'extName' ];
-    $booking->extPhone = $_REQUEST[ 'extPhone' ];
-    $booking->extMail = $_REQUEST[ 'extMail' ];
-    $booking->okShowContactData = $_REQUEST[ 'okShowContactData' ];
-    // remove old answers previously saved with booking and save new answers to questions
-    $booking->clearAnswers();
-    if ( isset( $_REQUEST[ 'questionId' ] ) ) {
-        foreach ( $_REQUEST[ "questionId" ] as $id ) {
-            $question = new Question( $id );
-            $booking->addAnswer( $question->caption, implode( ", ", isset( $_REQUEST[ "answer-$id" ] ) ? $_REQUEST[ "answer-$id" ] : array() ) );
-        }
-    }
-    // Set status of pending items
-    foreach ( $booking->items() as $item ) {
-        if ( $item->status == FFBoka::STATUS_PENDING && !in_array( $item->bookedItemId, $unavail ) ) {
-            if ( $item->category()->getAccess( $user ) >= FFBoka::ACCESS_BOOK ) {
-                $item->status = FFBoka::STATUS_CONFIRMED;
-            } else {
-                if ( in_array( $item->bookedItemId, $conflicts ) ) $item->status = FFBoka::STATUS_CONFLICT;
-                else $item->status = FFBoka::STATUS_PREBOOKED;
-            }
-        }
-    }
-}
-
 $currentUser = new User( $_SESSION[ 'authenticatedUser' ] ?? 0 );
 
+// Need bookingId
 if ( isset( $_REQUEST[ 'bookingId' ] ) ) {
     $_SESSION[ 'bookingId' ] = $_REQUEST[ 'bookingId' ];
-}
-
-if ( !isset( $_SESSION[ 'bookingId' ] ) ) {
+} elseif ( !isset( $_SESSION[ 'bookingId' ] ) ) {
     header( "Location: index.php" );
     die();
 }
@@ -115,52 +36,40 @@ if ( !(
     ( $_SESSION[ 'authenticatedUser' ] && ( $booking->userId == $currentUser->id ) ) // same user
 ) ) {
     if ( !$_SESSION[ 'authenticatedUser' ] ) {
-        header( "Location: index.php?message=" . urlencode( "Du måste logga in för att se bokningen." ) . "&redirect=" . urlencode( "book-sum.php?bookingId={$_REQUEST[ 'bookingId' ]}" ) );
+        header( "Location: index.php?message=" . urlencode( "Du måste logga in för att se bokningen." ) . "&redirect=book-sum.php" );
         die();
     }
-    // Last access check: current user must be admin of some used category
-    $items = $booking->items();
-    $isAdmin = ( count( $items ) == 0 ); // Otherwise, the following loop will not set it to true if no items are there.
-    foreach ( $items as $item ) {
-        if ( $item->category()->getAccess( $currentUser ) >= FFBoka::ACCESS_CONFIRM ) {
-            $isAdmin = TRUE;
-            break;
-        }
-    }
-    if ( !$isAdmin ) {
+    // Last access check: current user must be admin of some category
+    if ( !$booking->section()->showFor( $currentUser, FFBoka::ACCESS_CONFIRM ) ) {
         logger( __METHOD__ . " Non-admin user {$currentUser->id} tried to access other user's booking {$_SESSION[ 'bookingId' ]}.", E_WARNING );
         unset( $_SESSION[ 'bookingId' ] );
-        header( "Location: index.php?action=accessDenied&to=" . urlencode( "bokningen." ) . "&redirect=" . urlencode( "book-sum.php?bookingId={$_REQUEST[ 'bookingId' ]}" ) );
+        header( "Location: index.php?action=accessDenied&to=bokningen" );
         die();
     }
 }
 
 $_SESSION[ 'sectionId' ] = $booking->sectionId;
 $section = new Section( $_SESSION[ 'sectionId' ] );
-
-// Check if booking collides with existing ones ...
-$unavail = array();
-// ... or with itself
-$overlap = $booking->getOverlappingItems();
-$conflicts = array();
 $items = $booking->items();
-foreach ( $items as $item ) {
-    if ( $item->status != FFBoka::STATUS_REJECTED && !$item->isAvailable( $item->start, $item->end ) ) {
-        if ( $item->category()->getAccess( $currentUser ) >= FFBoka::ACCESS_PREBOOK ) {
-            // User can see freebusy information. Let him change booking.
-            $unavail[] = $item->bookedItemId;
-        } else {
-            // User can't see freebusy information. Flag as conflict upon confirmation.
-            $conflicts[] = $item->bookedItemId;
-        }
-    }
-}
 
 // Get start and end time for first item in booking, as default for other items
 if ( count( $items ) ) {
     $startTime = $items[ 0 ]->start;
     $endTime = $items[ 0 ]->end;
 }
+
+// Check if booking collides with existing ones or with itself
+$unavail = array();
+$overlap = $booking->getOverlappingItems();
+foreach ( $booking->items() as $item ) {
+    if ( $item->status !== FFBoka::STATUS_REJECTED && !$item->isAvailable( $item->start, $item->end ) ) {
+        if ( $item->category()->getAccess( $currentUser ) >= FFBoka::ACCESS_PREBOOK ) {
+            // User can see freebusy information. Let them change booking.
+            $unavail[] = $item->bookedItemId;
+        }
+    }
+}
+
 
 if ( isset( $_REQUEST[ 'action' ] ) && $_REQUEST[ 'action' ] == "help" ) {
     echo <<<EOF
@@ -248,11 +157,10 @@ if ( isset( $_REQUEST[ 'action' ] ) && $_REQUEST[ 'action' ] == "help" ) {
     
     <ul data-role='listview' data-inset='true' data-divider-theme='a' data-split-icon='delete'>
     <?php
-    $questions = array();
+    $questions = array(); // Will be populated with $id as keys and $required as value
     $leastStatus = FFBoka::STATUS_CONFIRMED;
     $showRepeating = isset( $_SESSION[ 'authenticatedUser' ] ) ? true : false;
     $itemsToConfirm = array();
-    $items = $booking->items();
     foreach ( $items as $item ) {
         $leastStatus = min( $leastStatus, $item->status );
         $access = $item->category()->getAccess( $currentUser );
@@ -320,7 +228,7 @@ if ( isset( $_REQUEST[ 'action' ] ) && $_REQUEST[ 'action' ] == "help" ) {
     }
     ?>
     
-    <form id='form-booking' name='formBooking' action="book-sum.php" method='post' style='margin-top: 20px;'>
+    <form id='form-booking' name='formBooking' action="ajax.php" style='margin-top: 20px;'>
         <input type="hidden" name="action" value="confirmBooking">
         
         <?php
@@ -338,14 +246,14 @@ if ( isset( $_REQUEST[ 'action' ] ) && $_REQUEST[ 'action' ] == "help" ) {
             }
             echo "<input type='hidden' name='questionId[]' value='$id'>\n";
             echo "<fieldset data-role='controlgroup' data-mini='true'>\n";
-            // For checkbox questions with only one empty choice, move the caption to the checkbox instead
+            // Show the question, except for checkbox questions with only one empty choice where we move the caption to the checkbox instead
             if ( !( ( $question->type == "checkbox" || $question->type == "radio" ) && $question->options->choices[ 0 ] == "") ) echo "\t<legend" . ( $required ? " class='required'" : "" ) . ">" . htmlspecialchars( $question->caption ) . "</legend>\n";
             switch ( $question->type ) {
                 case "radio":
                 case "checkbox":
                     if ( $required ) $requiredCheckboxradios[ $id ] = $question->caption;
                     foreach ( $question->options->choices as $choice ) {
-                        echo "\t<label><input type='{$question->type}' name='answer-{$id}[]' value='" . htmlspecialchars( $choice ? $choice : "Ja" ) . "'" . ( $prevAns == ( $choice ? $choice : "Ja" ) ? " checked" : "" ) . "> " . htmlspecialchars( $choice ? $choice : $question->caption ) . ( $choice ? "" : " <span class='required'></span>" ) . "</label>\n";
+                        echo "\t<label><input type='{$question->type}' name='answer-{$id}[]' value='" . htmlspecialchars( $choice ?: "Ja" ) . "'" . ( $prevAns == ( $choice ?: "Ja" ) ? " checked" : "" ) . "> " . htmlspecialchars( $choice ?: $question->caption ) . ( $required ? " <span class='required'></span>" : "" ) . "</label>\n";
                     }
                     break;
                 case "text":
@@ -394,7 +302,7 @@ if ( isset( $_REQUEST[ 'action' ] ) && $_REQUEST[ 'action' ] == "help" ) {
 
         <div class="ui-field-contain">
             <label for="book-sum-ref">Referens:</label>
-            <input name="ref" id="book-sum-ref" placeholder="visas i din bokningsöversikt" value="<?= $booking->ref ?>">
+            <input name="ref" id="book-sum-ref" placeholder="visas som rubrik i din bokningsöversikt" value="<?= $booking->ref ?>">
         </div>
         
         Här kan du lämna valfritt meddelande:
@@ -405,18 +313,18 @@ if ( isset( $_REQUEST[ 'action' ] ) && $_REQUEST[ 'action' ] == "help" ) {
         ?>
     
         <input type="submit" data-icon="carat-r" data-iconpos="right" data-theme="b" data-corners="false" value="<?= $booking->status()==FFBoka::STATUS_PENDING ? "Slutför bokningen" : "Spara ändringar" ?>" <?= count( $overlap ) ? " disabled='disabled'" : "" ?>>
-        <a href="#" onClick="deleteBooking(<?= $currentUser->id ? $currentUser->id : 0 ?>, '<?= $cfg['url'] ?>');" class='ui-btn ui-btn-c ui-icon-delete ui-btn-icon-right'>Ta bort bokningen</a>
+        <a href="#" onClick="deleteBooking(<?= $currentUser->id ?: 0 ?>);" class='ui-btn ui-btn-c ui-icon-delete ui-btn-icon-right'>Ta bort bokningen</a>
             
         <?php if ( $showRepeating ) { ?>
             <div data-role="collapsible" data-corners="false" <?= is_null( $booking->repeatId ) ? "" : "data-collapsed='false'" ?>>
                 <h4>Återkommande bokningar</h4>
-                <div id='series-panel'><?= showBookingSeries( $booking ) ?></div>
+                <div id='series-panel'></div>
             </div>
-        <?php } ?>
+        <?php } // TODO: Skapa Serien shall not be clickable unless preview has been shown (i.e. number and frequency selected) ?>
     </form>
             
     </div><!--/main-->
-
+<!-- TODO: Changing an item during initial booking should not set that item to confirmed -->
     <div data-role="popup" id="popup-item-details" class="ui-content" data-overlay-theme="b">
         <h2 id='item-caption'></h2>
         <div class='ui-body ui-body-a' id='book-item-booking-details'>

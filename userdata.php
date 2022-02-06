@@ -74,9 +74,6 @@ switch ($_REQUEST['action']) {
 <p>Att radera ditt konto här påverkar inte ditt konto i aktivitetshanteraren.</p>
 EOF;
         die();
-    case "bookingDeleted":
-        $message = "Din bokning har nu tagits bort.";
-        break;
     case "deleteAccount":
         if ($currentUser->delete()) {
             // We remove the session cookie here. Otherwise, the user would be recreated in index.php

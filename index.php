@@ -110,12 +110,6 @@ matchande namn och där du har behörighet att boka. Sökningen går inte ner p�
         case "accessDenied":
             $message = "Du har inte tillgång till {$_REQUEST['to']}.";
             break;
-        case "bookingDeleted":
-            $message = "Din bokning har nu tagits bort.";
-            break;
-        case "bookingConfirmed":
-            $message = "Din bokning är nu klar. En bekräftelse har skickats till din epostadress " . htmlspecialchars($_REQUEST['mail']) . ".";
-            break;
         case "ajaxAnswerPoll":
             $poll = new Poll($_REQUEST['pollId']);
             $poll->addVote($_REQUEST['choiceId'], $_SESSION['authenticatedUser']);

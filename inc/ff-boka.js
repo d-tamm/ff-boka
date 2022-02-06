@@ -576,17 +576,31 @@ $(document).on('pagecreate', "#page-book-sum", function() {
     });
     
     /**
-     * Validate required checkboxes and radios before submitting the booking
+     * Sending of booking request via ajax
      */
-    $("#form-booking").submit(function(event) {
-        $.each(reqCheckRadios, function( id, q ) {
-            if ($("[name^=answer-"+id+"]:checked").length == 0) {
-                alert("Du måste först svara på frågan: "+q);
-                event.preventDefault();
-                return false;
+    $( "#form-booking" ).submit( function( event ) {
+        var $this = $(this);
+        event.preventDefault();
+        var allQuestionsAnswered = true;
+        // Validate required checkboxes and radios before submitting the booking
+        $.each( reqCheckRadios, function( id, q ) {
+            if ( $( "[name^=answer-"+id+"]:checked" ).length == 0 ) {
+                alert( "Du måste först svara på frågan: " + q );
+                allQuestionsAnswered = false;
             }
         });
-        return true;
+        if ( !allQuestionsAnswered ) return false;
+        $.mobile.loading( "show", {} );
+        $.post( $this.attr( 'action' ), $this.serialize() )
+        .done( function( data ) {
+            $.mobile.loading( "hide", {} );
+            if ( data != "" ) alert ( data );
+            $.mobile.changePage( "index.php" );
+        })
+        .fail( function( xhr ) {
+            $.mobile.loading( "hide", {} );
+            alert( xhr.responseText );
+        });
     });
 });
 
@@ -600,69 +614,109 @@ $(document).on('pageshow', "#page-book-sum", function() {
         }, 500); // We need some delay here to make this work on Chrome.
     }
     bookingStep=2;
+    $("#series-panel").load( "ajax.php?action=getSeries", function() {
+        $("#series-panel").enhanceWithin()
+    } );
 });
+
+/**
+ * Get the html section for repeating bookings (series)
+ */
+function getSeries() {
+    $.get( "ajax.php", { action: "getSeries" } )
+    .done( function( data ) {
+        $( '#series-panel' ).html( data ).enhanceWithin();
+    });
+}
 
 /**
  * Get a preview for a new booking series
  * @param int count Number of bookings in the series, including the original one
  * @param int type Type of repetition (day|week|month)
  */
-function repeatPreview(count, type) {
-    $.mobile.loading("show", {});
-    $.getJSON("book-sum.php", {
-        action: "ajaxRepeatPreview",
+function repeatPreview( count, type ) {
+    $.mobile.loading( "show", {} );
+    $.get( "ajax.php", {
+        action: "repeatPreview",
         count: count,
 		type: type
-    }, function(data, status) {
-        $.mobile.loading("hide", {});
-        if (data.error) alert(data.error);
-        else $('#repeat-preview').html(data.html);
-		$('#repeat-create').prop("disabled", false);
+    })
+    .done( function( data ) {
+        $.mobile.loading( "hide", {} );
+        $( '#repeat-preview' ).html( data );
+		$( '#repeat-create' ).prop( "disabled", false );
+    })
+    .fail( function( xhr ) {
+        $.mobile.loading( "hide", {} );
+        alert( xhr.responseText );
     });
 }
 
 /** User chose to create a booking series */
 function repeatCreate() {
-    var form = document.forms.formBooking;
-    form.elements.action.value = "repeatCreate";
-    form.submit();
+    document.forms.formBooking.elements.action.value = "repeatCreate";
+    $.mobile.loading( "show", {} );
+    $.post( $("#form-booking").attr( 'action' ), $("#form-booking").serialize() )
+    .done( function( data ) {
+        $.mobile.loading( "hide", {} );
+        getSeries();
+        if ( data != "" ) alert ( data );
+    })
+    .fail( function( xhr ) {
+        $.mobile.loading( "hide", {} );
+        alert( xhr.responseText );
+    });
 }
 
 /** Remove the booking from its booking series (but keep it) */
 function unlinkBooking() {
-    $.mobile.loading("show", {});
-    $.getJSON("book-sum.php", {
-        action: "ajaxUnlinkBooking"
-    }, function(data, status) {
+    $.mobile.loading( "show", {} );
+    $.post( "ajax.php", {
+        action: "unlinkBooking"
+    })
+    .done( function( data ) {
+        $.mobile.loading( "hide", {} );
+        $( '#series-panel' ).html( data ).enhanceWithin();
+		alert( "Bokningen har nu tagits bort från bokningsserien." );
+    })
+    .fail( function( xhr) {
         $.mobile.loading("hide", {});
-        $('#series-panel').html(data.html).enhanceWithin();
-		alert("Bokningen har nu tagits bort från bokningsserien.");
+        alert( xhr.responseText );
     });
 }
 
 /** Remove all bookings from series (but keep them) */
 function unlinkSeries() {
-    $.mobile.loading("show", {});
-    $.getJSON("book-sum.php", {
-        action: "ajaxUnlinkSeries"
-    }, function(data, status) {
+    $.mobile.loading( "show", {} );
+    $.post("ajax.php", {
+        action: "unlinkSeries"
+    })
+    .done( function( data ) {
+        $.mobile.loading( "hide", {} );
+        $( '#series-panel' ).html( data ).enhanceWithin();
+    })
+    .fail( function( xhr ) {
         $.mobile.loading("hide", {});
-        $('#series-panel').html(data.html).enhanceWithin();
-		alert("Bokningen har nu tagits bort från bokningsserien.");
+        alert( xhr.responseText );
     });
 }
 
 function deleteSeries() {
-	if (confirm("OBS! Om du fortsätter raderas alla kommande tillfällen i den här serien. Tillfällen som har passerat samt det första tillfället i serien raderas dock inte. Vill du fortsätta?")) {
-	    $.mobile.loading("show", {});
-	    $.getJSON("book-sum.php", {
-	        action: "ajaxDeleteSeries"
-	    }, function(data, status) {
+	if ( confirm( "OBS! Om du fortsätter raderas alla kommande tillfällen i den här serien. Tillfällen som har passerat samt det första tillfället i serien raderas dock inte. Vill du fortsätta?" ) ) {
+	    $.mobile.loading( "show", {} );
+	    $.post( "ajax.php", {
+	        action: "deleteSeries"
+	    })
+        .done( function( data ) {
+	        $.mobile.loading( "hide", {} );
+			getSeries();
+			alert( "Bokningsserien har nu raderats, förutom det första tillfället samt de tillfällen som redan har passerat." );
+			if ( data ) $.mobile.changePage( data );
+	    })
+        .fail( function( xhr ) {
 	        $.mobile.loading("hide", {});
-			alert("Bokningsserien har nu raderats, förutom det första tillfället samt de tillfällen som har passerat.");
-			if (data.gotoBookingId) location.href="book-sum.php?bookingId="+data.gotoBookingId;
-			else $('#series-panel').html(data.html).enhanceWithin();
-	    });
+            alert( xhr.responseText );
+        });
 	}
 }
 
@@ -670,15 +724,19 @@ function deleteSeries() {
  * Remove a single item from booking
  * @param int bookedItemId ID of item to remove
  */
-function removeItem(bookedItemId) {
-    $.mobile.loading("show", {});
-    $.getJSON("book-sum.php", {
-        action: "ajaxRemoveItem",
+function removeItem( bookedItemId ) {
+    $.mobile.loading( "show", {} );
+    $.post( "ajax.php", {
+        action: "removeItem",
         bookedItemId: bookedItemId
-    }, function(data, status) {
-        $.mobile.loading("hide", {});
-        if (data.error) alert(data.error);
-        else location.reload();
+    })
+    .done( function() {
+        $.mobile.loading( "hide", {} );
+        location.reload(); // TODO: don't reload the whole page, just replace relevant parts.
+    })
+    .fail( function( xhr ) {
+        $.mobile.loading( "hide", {} );
+        alert( xhr.responseText );
     });
 }
 
@@ -686,18 +744,22 @@ function removeItem(bookedItemId) {
  * Set the price for a booked item
  * @param bookedItemId
  */
-function setItemPrice(bookedItemId, lastPrice) {
-    var price = prompt("Pris för den här resursen (hela kr):", lastPrice);
-    if (price==="" || price) { // otherwise user hit cancel
-        $.mobile.loading("show", {});
-        $.getJSON("book-sum.php", {
-            action: "ajaxSetItemPrice",
+function setItemPrice( bookedItemId, lastPrice ) {
+    var price = prompt( "Pris för den här resursen (hela kr):", lastPrice );
+    if ( price === "" || price ) { // otherwise user hit cancel
+        $.mobile.loading( "show", {} );
+        $.post( "ajax.php", {
+            action: "setItemPrice",
             bookedItemId: bookedItemId,
             price: price
-        }, function(data, status) {
-            $.mobile.loading("hide", {});
-            if (data.error) alert(data.error);
-            else location.reload();
+        })
+        .done( function() {
+            $.mobile.loading( "hide", {} );
+            location.reload(); // TODO: don't reload the whole page, just replace relevant parts.
+        })
+        .fail( function( xhr ) {
+            $.mobile.loading( "hide", {} );
+            alert( xhr.responseText );
         });
     }
 }
@@ -705,17 +767,21 @@ function setItemPrice(bookedItemId, lastPrice) {
 /**
  * Function for admins to input how much the client has paid.
  */
-function setPaid(lastPaid) {
-    var paid = prompt("Hur mycket är betalt? (hela kronor)", lastPaid);
-    if (paid==="" || paid) { // otherwise user hit cancel
-        $.mobile.loading("show", {});
-        $.getJSON("book-sum.php", {
+function setPaid( lastPaid ) {
+    var paid = prompt( "Hur mycket är betalt? (hela kronor)", lastPaid );
+    if ( paid === "" || paid ) { // otherwise user hit cancel
+        $.mobile.loading( "show", {} );
+        $.post( "ajax.php", {
             action: "ajaxSetPaid",
             paid: paid
-        }, function(data, status) {
+        })
+        .done( function() {
             $.mobile.loading("hide", {});
-            if (data.error) alert(data.error);
-            else location.reload();
+            location.reload(); // TODO: don't reload the whole page, just replace relevant parts.
+        })
+        .fail( function( xhr ) {
+            $.mobile.loading( "hide", {} );
+            alert( xhr.responseText );
         });
     }
 }
@@ -723,72 +789,66 @@ function setPaid(lastPaid) {
 /**
  * Delete the whole booking
  * @param userId Used to redirect to userdata page for logged in users, or index for guests
- * @param baseUrl Base URL of the installation (for redirection after successful deletion)
  */
-function deleteBooking(userId=0, baseUrl) {
-    if (confirm("Är du säker på att du vill ta bort din bokning?")) {
-        $.mobile.loading("show", {});
-        $.getJSON("book-sum.php", { action: "ajaxDeleteBooking" }, function(data, status) {
-            $.mobile.loading("hide", {});
-            if (data.error) alert(data.error);
-            else if (userId) location.href = baseUrl + "userdata.php?action=bookingDeleted";
-            else location.href = baseUrl + "index.php?action=bookingDeleted";
+function deleteBooking( userId=0 ) {
+    if ( confirm( "Är du säker på att du vill ta bort din bokning?" ) ) {
+        $.mobile.loading( "show", {} );
+        $.post( "ajax.php", { action: "deleteBooking" } )
+        .done( function( data ) {
+            $.mobile.loading( "hide", {} );
+            alert( "Bokningen har nu raderats." );
+            if ( userId ) $.mobile.changePage( "userdata.php" );
+            else $.mobile.changePage( "index.php" );
+        })
+        .fail( function( xhr ) {
+            $.mobile.loading( "hide", {} );
+            alert( xhr.responseText );
         });
     }
     return false;
 }
 
 /**
- * Mark an item as confirmed
+ * Mark an item as confirmed or rejected
  * @param int bookedItemId ID of item to confirm
+ * @param int status Can be either FFBoka::STATUS_REJECTED (1) or FFBoka::STATUS_CONFIRMED (4)
  */
-function confirmBookedItem(bookedItemId) {
-    $.mobile.loading("show", {});
-    $.getJSON("book-sum.php", { action: "ajaxConfirmBookedItem", bookedItemId: bookedItemId }, function(data, status) {
-        $.mobile.loading("hide", {});
-        if (data.error) alert(data.error);
-        else {
-			// Remove item from array of items to confirm
-			itemsToConfirm.splice(itemsToConfirm.indexOf(bookedItemId), 1);
-			// Update user interface
-            $("#book-item-status-"+bookedItemId).html("Bekräftat");
-            $("#book-item-btn-confirm-"+bookedItemId).hide();
-            $("#book-item-btn-reject-"+bookedItemId).hide();
-        	if (data.allManaged == true) {
-				$("#btn-confirm-all-items").hide();
-				alert("Alla obekräftade poster i bokningen har nu hanterats. Om du har justerat några start- eller sluttider bör du skriva något om det i meddelande-rutan längre ner. Skicka också gärna en uppdaterad bokningsbekräftelse genom att klicka på 'Spara ändringar' längst ner på sidan.");
-			}
+function handleBookedItem( bookedItemId, status ) {
+    $.mobile.loading( "show", {} );
+    $.post( "ajax.php", { action: "handleBookedItem", bookedItemId: bookedItemId, status: status } )
+    .done( function( data ) {
+        $.mobile.loading( "hide", {} );
+        // Remove item from array of items to confirm
+        itemsToConfirm.splice( itemsToConfirm.indexOf( bookedItemId ), 1 );
+        // Update user interface
+        $( "#book-item-status-" + bookedItemId ).html( status == 4 ? "Bekräftat" : "Avböjt" );
+        if ( status == 1 ) {
+            $( "li#item-" + bookedItemId ).addClass( "rejected" );
+            $( "li#item-" + bookedItemId + " a" ).removeClass( "ui-btn-c" ).addClass( "ui-btn-a" );
+            $( "#book-item-btn-confirm-" + bookedItemId ).parent().hide();
+        } else {
+            $( "#book-item-btn-confirm-" + bookedItemId ).hide();
+            $( "#book-item-btn-reject-" + bookedItemId ).hide();
         }
+        if ( itemsToConfirm.length == 0 ) {
+            $( "#btn-confirm-all-items" ).hide();
+            alert( "Alla obekräftade poster i bokningen har nu hanterats. Om du har ändrat eller avböjt några resurser bör du skriva något om det i kommentarsfältet nedan så att användaren/kunden förstår vad som händer. Klicka sedan på 'Slutför bokningen' längst ner på sidan för att skicka ut en uppdaterad bokningsbekräftelse." );
+        }
+    })
+    .fail( function( xhr ) {
+        $.mobile.loading( "hide", {} );
+        alert( xhr.responseText );
     });
 }
+
 
 /**
  * Mark all items in booking as confirmed
  */
-function confirmAllItems() {
-	$.each(itemsToConfirm, function(index, bookedItemId) {
-		confirmBookedItem(bookedItemId);
+ function confirmAllItems() {
+	$.each( itemsToConfirm, function( index, bookedItemId ) {
+		handleBookedItem( bookedItemId, 4 );
 	});
-}
-
-/**
- * Mark an item as rejected
- * @param int bookedItemId ID of item to reject
- */
-function rejectBookedItem(bookedItemId) {
-    $.mobile.loading("show", {});
-    $.getJSON("book-sum.php", { action: "ajaxRejectBookedItem", bookedItemId: bookedItemId }, function(data, status) {
-        $.mobile.loading("hide", {});
-        if (data.error) alert(data.error);
-        else {
-            $("#book-item-status-"+bookedItemId).html("Avböjt");
-            $("li#item-"+bookedItemId).addClass("rejected");
-            $("li#item-"+bookedItemId+" a").removeClass("ui-btn-c").addClass("ui-btn-a");
-            $("#book-item-btn-confirm-"+bookedItemId).parent().hide();
-        	if (data.allManaged == true) alert("Alla obekräftade poster i bokningen har nu hanterats. Kom ihåg att skriva en förklaring i meddelande-fältet längre ner på sidan så att den bokande förstår varför du har avböjt den här posten. Klicka sedan på 'Slutför bokningen' längst ner på sidan för att skicka ut en uppdaterad bokningsbekräftelse.");
-        	else alert("Du har nekat bokningsförfrågan för den här posten.\n\nKom ihåg att skriva en förklaring i meddelande-fältet längre ner på sidan så att den bokande förstår varför du har avböjt den här posten. Du kan sedan välja att skicka ut en uppdaterad bokningsbekräftelse genom att klicka på 'Slutför bokningen' längst ner, eller först göra fler justeringar på bokningen.");
-        }
-    });
 }
 
 
@@ -796,21 +856,22 @@ function rejectBookedItem(bookedItemId) {
  * Scrolls the freebusy bar of a single booked item to another start date
  * @param int offset Number of days to scroll
  */
-function scrollItemDate(offset) {
-    $.mobile.loading("show", {});
+function scrollItemDate( offset ) {
+    $.mobile.loading( "show", {} );
     // Calculate start and end of week
-    fbStart.setDate(fbStart.getDate() + offset);
-    var fbEnd = new Date(fbStart.valueOf());
-    fbEnd.setDate(fbEnd.getDate() + 6);
-    var readableRange = "må " + fbStart.getDate() + "/" + (fbStart.getMonth()+1);
-    if (fbStart.getFullYear() != fbEnd.getFullYear()) readableRange += " '"+fbStart.getFullYear().toString().substr(-2);
-    readableRange += " &ndash; sö " + fbEnd.getDate() + "/" + (fbEnd.getMonth()+1) + " '"+fbEnd.getFullYear().toString().substr(-2);
+    fbStart.setDate( fbStart.getDate() + offset );
+    var fbEnd = new Date( fbStart.valueOf() );
+    fbEnd.setDate( fbEnd.getDate() + 6 );
+    var readableRange = "må " + fbStart.getDate() + "/" + ( fbStart.getMonth() + 1 );
+    if ( fbStart.getFullYear() != fbEnd.getFullYear() ) readableRange += " '" + fbStart.getFullYear().toString().substr( -2 );
+    readableRange += " &ndash; sö " + fbEnd.getDate() + "/" + ( fbEnd.getMonth() + 1 ) + " '" + fbEnd.getFullYear().toString().substr(-2);
     // Get freebusy bar
-    $.getJSON("book-sum.php", { action: "ajaxFreebusyItem", start: fbStart.valueOf()/1000 }, function(data, status) {
-        $("#book-current-range-readable").html( readableRange );
-        $("#book-freebusy-bar-item").html( data.freebusyBar );
+    $.get( "ajax.php", { action: "freebusyItem", start: fbStart.valueOf()/1000 } )
+    .done( function( data ) {
+        $( "#book-current-range-readable" ).html( readableRange );
+        $( "#book-freebusy-bar-item" ).html( data );
         updateBookedTimeframe();
-        $.mobile.loading("hide", {});
+        $.mobile.loading( "hide", {} );
     });
 }
 
