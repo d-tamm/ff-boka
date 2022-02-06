@@ -436,7 +436,7 @@ function showBookingSeries( \FFBoka\Booking $booking ) {
         </fieldset>
         <div id='repeat-preview'><i>När du har valt antal och typ så kommer du här se ifall resurserna är tillgängliga vid respektive tillfälle.</i></div>
         <p><i>Icke-tillgängliga resurser kommer inte att bokas.</i></p>
-        <a href='#' disabled='disabled' class='ui-btn' id='repeat-create' onClick='repeatCreate()'>Skapa serien</a>
+        <button disabled='' class='ui-btn' id='repeat-create' onClick='repeatCreate()'>Skapa serien</button>
         EOF;
 	} else {
 	    $ret = "<p>Den här bokningen är del av en bokningsserie.</p>";

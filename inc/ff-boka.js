@@ -424,6 +424,7 @@ function popupItemDetails(itemId) {
  */
 function updateBookedTimeframe() {
     // swap start and end time if start time is after end time
+    // FIXME: swapping is a bad idea if user uses dropdown controls
     if (endDate.valueOf()+endTime*60*60*1000 < startDate.valueOf()+startTime*60*60*1000) {
         if (nextDateClick == "start") {
             var temp = new Date(endDate.valueOf());

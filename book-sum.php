@@ -320,7 +320,7 @@ if ( isset( $_REQUEST[ 'action' ] ) && $_REQUEST[ 'action' ] == "help" ) {
                 <h4>Återkommande bokningar</h4>
                 <div id='series-panel'></div>
             </div>
-        <?php } // TODO: Skapa Serien shall not be clickable unless preview has been shown (i.e. number and frequency selected) ?>
+        <?php } ?>
     </form>
             
     </div><!--/main-->
