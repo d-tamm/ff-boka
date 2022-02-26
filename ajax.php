@@ -2,20 +2,25 @@
 // Handle ajax requests for non-admin pages
 
 use FFBoka\Booking;
+use FFBoka\Category;
 use FFBoka\FFBoka;
 use FFBoka\Item;
 use FFBoka\Question;
+use FFBoka\Section;
 use FFBoka\User;
 
 session_start();
-require( __DIR__."/inc/common.php" );
+require( __DIR__ . "/inc/common.php" );
 global $cfg, $FF;
 
-if ( !isset( $_REQUEST[ 'action' ] ) ) { http_response_code( 400 ); die(); } // Bad request
+if ( !isset( $_REQUEST[ 'action' ] ) ) { http_response_code( 400 ); die( "action missing" ); } // Bad request
 
-// Check permissions and set some basic objects
+
+/****** Check permissions and set some basic objects ******/
+
 $currentUser = new User( $_SESSION[ 'authenticatedUser' ] ?? 0 );
 
+// Requests that require the bookingId sessions variable
 if ( in_array( $_REQUEST[ 'action' ], [ "confirmBooking", "repeatCreate", "deleteBooking", "setPaid", "removeItem", "repeatPreview", "unlinkBooking", "unlinkSeries", "deleteSeries", "getSeries" ] ) ) {
     if ( !isset( $_SESSION[ 'bookingId' ] ) ) {
         http_response_code( 406 ); // Not acceptable
@@ -25,10 +30,17 @@ if ( in_array( $_REQUEST[ 'action' ], [ "confirmBooking", "repeatCreate", "delet
 }
 
 switch ( $_REQUEST[ 'action' ] ) {
+    case "checkTimes":
+    case "saveItem":
+    case "getItemDetails":
+    case "getFreebusyWholeSection":
+    case "getCombinedAccessAndFreebusy":
+        continue;
+
     case "repeatCreate":
     case "unlinkBooking":
         if ( !isset( $_SESSION[ 'authenticatedUser' ] ) ) {
-            http_response_code( 401 ); die( "Booking series are only available for authenticated users." );  // Unauthorized
+            http_response_code( 401 ); die( "Booking series are only available to authenticated users." );  // Unauthorized
         }
     case "confirmBooking":
     case "deleteBooking":
@@ -106,8 +118,154 @@ switch ( $_REQUEST[ 'action' ] ) {
 }
 
 
+/****** Do the real work ******/
 
 switch ( $_REQUEST[ 'action' ] ) {
+    case "checkTimes":
+    case "saveItem":
+        // Check that chosen start and end time are OK
+        // If everything is OK and "save", create a booking if necessary and save item.
+        header( "Content-Type: application/json" );
+        if ( !isset( $_SESSION[ 'sectionId' ] ) ) { http_response_code( 406 ); die( "SectionId missing" ); }
+        $section = new Section( $_SESSION[ 'sectionId' ] );
+        $unavail = array();
+        $minAccess = FFBoka::ACCESS_CATADMIN;
+        if ( $_REQUEST[ 'ids' ] ) {
+            foreach ( array_keys( $_REQUEST[ 'ids' ] ) as $id ) {
+                // For every item with visible freebusy information, check availability
+                $item = new Item( $id, $_REQUEST[ 'bookingStep' ] == 2 );
+                $acc = $item->category()->getAccess( $currentUser );
+                $minAccess = ( $minAccess & $acc );
+                if ( $acc >= FFBoka::ACCESS_PREBOOK ) {
+                    if ( !$item->isAvailable( $_REQUEST[ 'start' ], $_REQUEST[ 'end' ] ) ) $unavail[] = htmlspecialchars( $item->caption );
+                }
+            }
+        }
+        if ( count( $unavail ) === 0 && $_REQUEST[ 'action' ] === "saveItem" ) {
+            // Times are OK. Create or change booking
+            if ( $_REQUEST[ 'bookingStep' ] == 2 ) {
+                // In step 2, only single bookedItems are modified
+                $item = new Item( array_keys( $_REQUEST[ 'ids' ] )[ 0 ], TRUE );
+                if ( $item->start < $_REQUEST[ 'start' ] ) {
+                    // Item was postponed. Some reminders may need to be resent. Remove their sent flags
+                    foreach ( $item->reminders( true ) as $r ) {
+                        if ( $_REQUEST[ 'start' ] + $r->offset > time() ) $item->setReminderSent( $r->id, property_exists( $r, "itemId" ) ? "item" : "cat", false );
+                    }
+                }
+                $item->start = $_REQUEST[ 'start' ];
+                $item->end = $_REQUEST[ 'end' ];
+                $item->status = FFBoka::STATUS_PENDING;
+            } else {
+                // Step 1: Several items to save
+                if ( isset( $_SESSION[ 'bookingId' ] ) ) {
+                    $booking = new Booking( $_SESSION[ 'bookingId' ] );
+                } else {
+                    $booking = $currentUser->addBooking( $section->id );
+                    $_SESSION[ 'bookingId' ] = $booking->id;
+                    $_SESSION[ 'token' ] = $booking->token;
+                }
+                // Add items to booking
+                foreach ( array_keys( $_REQUEST[ 'ids' ] ) as $id ) {
+                    $item = $booking->addItem( $id );
+                    $item->start = $_REQUEST[ 'start' ];
+                    $item->end = $_REQUEST[ 'end' ];
+                }
+            }
+        }
+        die( json_encode( [
+            "timesOK" => ( count( $unavail ) === 0),
+            "unavail" => $unavail,
+        ] ) );
+
+    case "getItemDetails":
+        /* Retrieve item details, e.g. for popup. Returns a JSON object with the members:
+            caption: caption of the item
+            html: item description, images, upcoming bookings, closing button
+            start, end: start and end time of booking
+            price: set price for the item
+        */
+        if ( !$_REQUEST[ 'id' ] ) { http_response_code( 400 ); die( "id missing." ); }
+        if ( !$_REQUEST[ 'bookingStep' ] ) { http_response_code( 400 ); die( "bookingStep missing." ); }
+        header( "Content-Type: application/json" );
+        $item = new Item( $_REQUEST[ 'id' ], $_REQUEST[ 'bookingStep' ] == 2 );
+        if ( $_REQUEST[ 'bookingStep' ] == 2 ) {
+            // Remember for ajax requests for changing booking properties from popup
+            $_SESSION[ 'bookedItemId' ] = $_REQUEST[ 'id' ]; 
+        }
+        // For bookedItems in step 2, check permissions and get start, end, price
+        if ( $_REQUEST[ 'bookingStep' ] == 2 ) {
+            if ( $item->status <= FFBoka::STATUS_PENDING ||
+                $item->category()->getAccess( $currentUser ) >= FFBoka::ACCESS_CONFIRM || // admin
+                ( isset( $_SESSION[ 'token' ] ) && $_SESSION[ 'token' ] == $item->booking()->token) || // correct token
+                ( isset( $_SESSION[ 'authenticatedUser' ] ) && $item->booking()->userId == $_SESSION[ 'authenticatedUser' ] ) // same user
+                ) {
+                $start = $item->start;
+                $end = $item->end;
+                $price = $item->price;
+            }
+        }
+        $cat = $item->category();
+        $html = str_replace( "\n", "<br>", htmlspecialchars( $item->description ) );
+        foreach ( $item->images() as $img ) {
+            $html .= "<div class='item-image'><img src='image.php?type=itemImage&id={$img->id}'><label>" . htmlspecialchars( $img->caption ) . "</label></div>";
+        }
+        if ( $cat->getAccess( $currentUser ) >= FFBoka::ACCESS_PREBOOK ) { // show current and upcoming bookings for this item
+            $html .= "<div class='ui-body ui-body-a'><h3>Kommande bokningar</h3>\n<ul>\n";
+            $bookedItems = $item->upcomingBookings();
+            foreach ( $bookedItems as $bi ) {
+                $b = $bi->booking();
+                $html .= "<li>" . FFBoka::formatDateSpan( $bi->start, $bi->end, true );
+                if ( $b->okShowContactData == 1 && $_SESSION[ 'authenticatedUser' ] ) $html .= "<br>Bokad av " . htmlspecialchars( $b->userName . " (" . $b->userPhone . ", " . $b->userMail . ")" );
+                $html .= "</li>\n";
+            }
+            if ( !count( $bookedItems ) ) $html .= "<li><i>Det finns inga kommande bokningar.</i></li>";
+            $html .= "</ul>\n</div>\n";
+        }
+        $html .= "<a href='#' data-rel='back' class='ui-btn ui-icon-delete ui-btn-icon-left'>Stäng inforutan</a>";
+        die( json_encode( [
+            "caption" => htmlspecialchars( $item->caption ),
+            "html" => $html,
+            "start" => isset( $start ) ? $start : "",
+            "end" => isset( $end ) ? $end : "",
+            "price" => isset( $price ) ? $price : ""
+        ] ) );
+
+    case "getFreebusyWholeSection":
+        // Get freebusy bars for all items in section
+        // Also include combined freebusy bar for current selection.
+        // Requires:
+        // start: UX timestamp of start of the week to show
+        // ids (optional): array of itemIds to include in combined bar.
+        if ( !isset( $_SESSION[ 'sectionId' ] ) ) { http_response_code( 406 ); die( "SectionId missing" ); }
+        $section = new Section( $_SESSION[ 'sectionId' ] );
+        if ( !$_REQUEST[ 'start' ] ) { http_response_code( 406 ); die( "start parameter missing" ); }
+        $freebusyBars = array();
+        foreach ( $section->getMainCategories() as $cat ) {
+            getFreebusy( $freebusyBars, $cat, $currentUser, $_REQUEST[ 'start' ] );
+        }
+        $ids = isset( $_REQUEST[ 'ids' ] ) ? array_keys( $_REQUEST[ 'ids' ] ) : array();
+        header( "Content-Type: application/json" );
+        die( json_encode( [
+            "freebusyBars" => $freebusyBars,
+            "freebusyCombined" => getFreebusyCombined( $ids, $currentUser, $_REQUEST[ 'start' ] ),
+        ] ) );
+
+    case "getCombinedAccessAndFreebusy":
+        // Return least common access rights for item selection.
+        // Also include freebusy bar for same selection.
+        $access = FFBoka::ACCESS_SECTIONADMIN - 1; // bit field of ones
+        if ( !$_REQUEST[ 'ids' ] ) die( json_encode( [ "access" => $access, "freebusyBar" => "" ] ) );
+        foreach ( array_keys( $_REQUEST[ 'ids' ] ) as $id ) {
+            $item = new Item( $id );
+            $access = ( $access & $item->category()->getAccess( $currentUser ) );
+        }
+        header( "Content-Type: application/json" );
+        die( json_encode( [
+            "access" => $access,
+            "freebusyBar" => getFreebusyCombined( array_keys( $_REQUEST[ 'ids' ] ), $currentUser, $_REQUEST[ 'start' ] ),
+        ] ) );
+
+            
     case "freebusyItem":
         // Get freebusy bars for current booked item
         if ( !isset( $_SESSION[ 'bookedItemId' ] ) ) { http_response_code( 400 ); die( "Unknown bookedItemId" ); }
@@ -416,6 +574,51 @@ switch ( $_REQUEST[ 'action' ] ) {
         die();
 
     default:
+}
+
+
+/**
+ * Get freebusy information for all items in (and below) a category
+ * @param string[] $fbList Array of HTML strings representing an item's freebusy information for 1 week. Found busy times will be appended to this array.
+ * @param Category $cat Category in which to start searching for items
+ * @param User $user User to which the items shall be visible.
+ * @param int $start Unix timestamp of start of the week
+ */
+function getFreebusy( &$fbList, Category $cat, $user, $start ) {
+    $acc = $cat->getAccess( $user );
+    foreach ( $cat->items() as $item ) {
+        if ( $item->active ) {
+            if ( $acc >= FFBoka::ACCESS_PREBOOK ) {
+                $fbList[ "item-" . $item->id ] = $item->freebusyBar( [ 'start' => $start ] );
+            } else {
+                $fbList[ "item-" . $item->id ] = Item::freebusyUnknown();
+            }
+        }
+    }
+    foreach ( $cat->children() as $child ) {
+        getFreebusy( $fbList, $child, $user, $start );
+    }
+}
+
+
+/**
+ * Get a combined freebusy bar for all passed items 
+ * @param int[] $ids to include
+ * @param User $user The current user, governs whether freebusy information is included
+ * @param int $start Unix timestamp of start of the week
+ * @return string HTML code
+ */
+function getFreebusyCombined( $ids, $user, $start ) : string {
+    $freebusyCombined = "";
+    foreach ( $ids as $id ) {
+        $item = new Item( $id );
+        if ( $item->category()->getAccess( $user ) >= FFBoka::ACCESS_PREBOOK ) {
+            $freebusyCombined .= $item->freebusyBar( [ 'start' => $start ] );
+        } else {
+            $freebusyCombined .= Item::freebusyUnknown();
+        }
+    }
+    return $freebusyCombined;
 }
 
 
