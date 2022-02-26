@@ -155,122 +155,39 @@ if ( isset( $_REQUEST[ 'action' ] ) && $_REQUEST[ 'action' ] == "help" ) {
     if ( count( $overlap ) ) echo "<p class='ui-body ui-body-c'>Du har lagt in " . ( count( $overlap ) == 1 ? "en resurs" : "några resurser" ) . " flera gånger vid samma tid eller så att tiderna överlappar. De berörda raderna är markerade nedan. Du behöver ta bort dubletten eller justera tiden för att kunna slutföra bokningen.</p>";
     ?>
     
-    <ul data-role='listview' data-inset='true' data-divider-theme='a' data-split-icon='delete'>
-    <?php
-    $questions = array(); // Will be populated with $id as keys and $required as value
-    $leastStatus = FFBoka::STATUS_CONFIRMED;
-    $showRepeating = isset( $_SESSION[ 'authenticatedUser' ] ) ? true : false;
-    $itemsToConfirm = array();
-    foreach ( $items as $item ) {
-        $leastStatus = min( $leastStatus, $item->status );
-        $access = $item->category()->getAccess( $currentUser );
-        $showRepeating = $showRepeating && $access >= FFBoka::ACCESS_BOOK;
-        $showEditButtons = ( $access >= FFBoka::ACCESS_CONFIRM && $item->status != FFBoka::STATUS_REJECTED );
-        foreach ( $item->category()->getQuestions() as $id=>$q ) {
-            if ( isset( $questions[ $id ] ) ) $questions[ $id ] = ( $questions[ $id ] || $q->required );
-            else $questions[ $id ] = $q->required;
-        }
-        echo "<li id='item-{$item->bookedItemId}'" . ( ( in_array( $item->bookedItemId, $unavail ) || array_key_exists( $item->id, $overlap ) ) ? " data-theme='c'" : "" ) . ( $item->status == FFBoka::STATUS_REJECTED ? " class='rejected'" : "" ) . ">";
-        if ( $showEditButtons ) {
-            echo "<div class='item-edit-buttons'>";
-            if ( $item->status == FFBoka::STATUS_CONFLICT || $item->status == FFBoka::STATUS_PREBOOKED ) {
-                echo "<button id='book-item-btn-confirm-{$item->bookedItemId}' class='ui-btn ui-btn-inline ui-btn-a' onclick=\"handleBookedItem({$item->bookedItemId}, " . FFBoka::STATUS_CONFIRMED . ");\">Bekräfta</button>";
-                $itemsToConfirm[] = $item->bookedItemId;
-                echo "<button id='book-item-btn-reject-{$item->bookedItemId}' class='ui-btn ui-btn-inline ui-btn-a' onclick=\"handleBookedItem({$item->bookedItemId}, " . FFBoka::STATUS_REJECTED . ");\">Avböj</button>";
-            }
-            echo "<button class='ui-btn ui-btn-inline ui-btn-a' onclick=\"setItemPrice({$item->bookedItemId}, {$item->price});\">Sätt pris</button>";
-            echo "</div>";
-        }
-        echo "<a href='#' onClick='popupItemDetails({$item->bookedItemId});'" . ( $showEditButtons ? " class='has-edit-buttons'" : "" ) . ">" . embedImage( $item->getFeaturedImage()->thumb ) .
-        "<h3 style='white-space:normal;'>" . htmlspecialchars( $item->caption ) . "</h3><p style='overflow:auto; white-space:normal; margin-bottom:0px;'>";
-        echo strftime( "%F kl %H", $item->start ) . " &mdash; " . strftime( "%F kl %H", $item->end ) . "<br>\n";
-        if ( in_array( $item->bookedItemId, $unavail ) ) echo "<span id='book-item-status-{$item->bookedItemId}'>Inte tillgänglig</span>";
-        elseif ( array_key_exists( $item->id, $overlap ) ) echo "Överlappar";
-        else {
-            switch ( $item->status ) {
-            case FFBoka::STATUS_PENDING: echo "Bokning ej slutförd än"; break;
-            case FFBoka::STATUS_REJECTED: echo "Avböjt"; break;
-            case FFBoka::STATUS_CONFLICT:
-            case FFBoka::STATUS_PREBOOKED:
-                echo "<span id='book-item-status-{$item->bookedItemId}'>Väntar på bekräftelse</span>"; break;
-            case FFBoka::STATUS_CONFIRMED: echo "Bekräftat"; break;
-            }
-        }
-        if ( !is_null( $item->price ) ) echo "<span id='book-item-price-{$item->bookedItemId}' class='ui-li-count'>{$item->price} kr</span>";
-        echo "</p></a>\n";
-        echo "<a href='#' onClick='removeItem({$item->bookedItemId});'>Ta bort</a></li>\n";
-    }
-    ?>
+    <ul data-role='listview' id='book-sum-item-list' data-inset='true' data-divider-theme='a' data-split-icon='delete'>
     </ul>
 
     <?= count( $items ) == 0 ? "<p>Bokningen innehåller inte några resurser.</p>" : "" ?>
 
     <button onClick="location.href='book-part.php<?= isset( $startTime ) ? "?start=$startTime&end=$endTime" : "" ?>'" data-transition='slide' data-direction='reverse' class='ui-btn ui-icon-plus ui-btn-icon-right'>Lägg till fler resurser</button>
     
-    <script>itemsToConfirm = <?= json_encode( $itemsToConfirm ) ?>;</script>
-    <?php
-    if ( count( $itemsToConfirm ) ) {
-        echo "<button onClick='confirmAllItems();' id='btn-confirm-all-items' class='ui-btn ui-icon-check ui-btn-icon-right'>Bekräfta alla</button>";
-    }
+    <button onClick='confirmAllItems();' id='btn-confirm-all-items' class='ui-btn ui-icon-check ui-btn-icon-right' style="display:none;">Bekräfta alla obekräftade</button>
     
-    $price = $booking->price;
-    $paid = $booking->paid;
-    if ( !is_null( $price ) ) { ?>
-        <div class='ui-body ui-body-a' style='margin-top: 20px;'>
-        <table style='width: 100%;'>
-            <tr><td>Pris för bokningen <?= $leastStatus < FFBoka::STATUS_CONFIRMED ? "(preliminärt)" : "" ?></td><td style='text-align: right;'><?= $price ?>&nbsp;kr</td></tr>
-            <tr><td>Betalt</td><td style='text-align: right; white-space: nowrap;'>
-            <?= $section->showFor( $currentUser, FFBoka::ACCESS_CONFIRM ) ? "<a href='#' onClick='setPaid($paid);' class='ui-btn ui-btn-a ui-btn-inline ui-icon-edit ui-btn-icon-notext'>Ändra</a>" : "" ?>
-            <?= $paid ?>&nbsp;kr</td></tr>
-            <tr><td>Kvar att betala</td><td style='font-weight:bold; text-align: right; border-top:1px solid var(--FF-blue); border-bottom:double var(--FF-blue);'><?= $price - $paid ?>&nbsp;kr</td></tr>
-        </table>
-        </div><?php
-    }
-    ?>
+    <div id="book-sum-pay-state" class='ui-body ui-body-a' style='margin-top: 20px; display:none;'>
+    <table style='width: 100%;'>
+        <tr>
+            <td>Pris för bokningen<span id="book-sum-price-prel" style="display:none;"> (preliminärt)</span></td>
+            <td style='text-align: right;'><span id="book-sum-price">0</span>&nbsp;kr</td>
+        </tr>
+        <tr>
+            <td>Betalt</td>
+            <td style='text-align: right; white-space: nowrap;'>
+                <?= $section->showFor( $currentUser, FFBoka::ACCESS_CONFIRM ) ? "<a href='#' onClick='setPaid();' class='ui-btn ui-btn-a ui-btn-inline ui-icon-edit ui-btn-icon-notext'>Ändra</a>" : "" ?>
+                <span id="book-sum-paid">0</span>&nbsp;kr
+            </td>
+        </tr>
+        <tr>
+            <td>Kvar att betala</td>
+            <td style='font-weight:bold; text-align: right; border-top:1px solid var(--FF-blue); border-bottom:double var(--FF-blue);'><span id="book-sum-to-pay">0</span>&nbsp;kr</td>
+        </tr>
+    </table>
+    </div>
     
     <form id='form-booking' name='formBooking' action="ajax.php" style='margin-top: 20px;'>
         <input type="hidden" name="action" value="confirmBooking">
         
-        <?php
-        $prevAnswers = $booking->answers();
-        $requiredCheckboxradios = array();
-        if ( count( $questions ) ) echo "<div class='ui-body ui-body-a'>";
-        foreach ( $questions as $id=>$required ) {
-            $question = new Question( $id );
-            $prevAns = "";
-            foreach ( $prevAnswers as $prev ) {
-                if ( $prev->question == $question->caption ) {
-                    $prevAns = $prev->answer;
-                    break;
-                }
-            }
-            echo "<input type='hidden' name='questionId[]' value='$id'>\n";
-            echo "<fieldset data-role='controlgroup' data-mini='true'>\n";
-            // Show the question, except for checkbox questions with only one empty choice where we move the caption to the checkbox instead
-            if ( !( ( $question->type == "checkbox" || $question->type == "radio" ) && $question->options->choices[ 0 ] == "") ) echo "\t<legend" . ( $required ? " class='required'" : "" ) . ">" . htmlspecialchars( $question->caption ) . "</legend>\n";
-            switch ( $question->type ) {
-                case "radio":
-                case "checkbox":
-                    if ( $required ) $requiredCheckboxradios[ $id ] = $question->caption;
-                    foreach ( $question->options->choices as $choice ) {
-                        echo "\t<label><input type='{$question->type}' name='answer-{$id}[]' value='" . htmlspecialchars( $choice ?: "Ja" ) . "'" . ( $prevAns == ( $choice ?: "Ja" ) ? " checked" : "" ) . "> " . htmlspecialchars( $choice ?: $question->caption ) . ( $required ? " <span class='required'></span>" : "" ) . "</label>\n";
-                    }
-                    break;
-                case "text":
-                    echo "<input" . ( $question->options->length ? " maxlength='{$question->options->length}'" : "" ) . " name='answer-{$id}[]' value='$prevAns'" . ( $required ? " required='true'" : "" ) . ">\n";
-                    break;
-                case "number":
-                    echo "<input type='number'" . ( strlen( $question->options->min ) ? " min='{$question->options->min}'" : "" ) . ( $question->options->max ? " max='{$question->options->max}'" : "" ) . " name='answer-{$id}[]' value='$prevAns'" . ( $required ? " required='true'" : "" ) . ">\n";
-                    break;
-            }
-            echo "</fieldset>";
-        }
-        // We need to inject verification JS code for checking required questions here - can't be done in central js file. 
-        echo "<script>reqCheckRadios = " . json_encode( $requiredCheckboxradios ) . ";</script>";
-
-        if ( count( $questions ) ) echo "</div>\n\n";
-        ?>
-        
+        <div id="book-sum-questions" class='ui-body ui-body-a' style="display:none;"></div>
         
         <?php if ( $booking->userId ) { 
             $bookUser = new User( $booking->userId ); ?>
@@ -301,7 +218,7 @@ if ( isset( $_REQUEST[ 'action' ] ) && $_REQUEST[ 'action' ] == "help" ) {
         </label>
 
         <div class="ui-field-contain">
-            <label for="book-sum-ref">Referens:</label>
+            <label for="book-sum-ref">Valfritt namn till bokningen:</label>
             <input name="ref" id="book-sum-ref" placeholder="visas som rubrik i din bokningsöversikt" value="<?= $booking->ref ?>">
         </div>
         
@@ -315,12 +232,10 @@ if ( isset( $_REQUEST[ 'action' ] ) && $_REQUEST[ 'action' ] == "help" ) {
         <input type="submit" data-icon="carat-r" data-iconpos="right" data-theme="b" data-corners="false" value="<?= $booking->status()==FFBoka::STATUS_PENDING ? "Slutför bokningen" : "Spara ändringar" ?>" <?= count( $overlap ) ? " disabled='disabled'" : "" ?>>
         <a href="#" onClick="deleteBooking(<?= $currentUser->id ?: 0 ?>);" class='ui-btn ui-btn-c ui-icon-delete ui-btn-icon-right'>Ta bort bokningen</a>
             
-        <?php if ( $showRepeating ) { ?>
-            <div data-role="collapsible" data-corners="false" <?= is_null( $booking->repeatId ) ? "" : "data-collapsed='false'" ?>>
-                <h4>Återkommande bokningar</h4>
-                <div id='series-panel'></div>
-            </div>
-        <?php } ?>
+        <div id="book-sum-series" data-role="collapsible" data-corners="false" <?= is_null( $booking->repeatId ) ? "" : "data-collapsed='false'" ?>>
+            <h4>Återkommande bokningar</h4>
+            <div id='series-panel'></div>
+        </div>
     </form>
             
     </div><!--/main-->
