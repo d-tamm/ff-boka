@@ -495,7 +495,7 @@ function checkTimes( save = false ) {
             }
             if ( save && bookingStep == 2 ) {
                 $( "#popup-item-details" ).popup( "close" );
-				setTimeout( function() { location.reload() }, 200 ); // TODO: Instead of reloading the whole page, do an ajax request
+                getBookSumDetails();
             }
             $( "#book-warning-conflict" ).hide();
         } else {
@@ -625,9 +625,7 @@ $( document ).on( 'pageshow', "#page-book-sum", function() {
         $( "#popup-msg-page-book-sum" ).popup( 'open' );
     }
     bookingStep=2;
-    $( "#series-panel" ).load( "ajax.php?action=getSeries", function() {
-        $( "#series-panel" ).enhanceWithin()
-    } );
+    getBookSumDetails();
 } );
 
 /**
@@ -743,7 +741,7 @@ function removeItem( bookedItemId ) {
     } )
     .done( function() {
         $.mobile.loading( "hide", {} );
-        location.reload(); // TODO: don't reload the whole page, just replace relevant parts.
+        getBookSumDetails();
     } )
     .fail( function( xhr ) {
         $.mobile.loading( "hide", {} );
@@ -766,13 +764,42 @@ function setItemPrice( bookedItemId, lastPrice ) {
         } )
         .done( function() {
             $.mobile.loading( "hide", {} );
-            location.reload(); // TODO: don't reload the whole page, just replace relevant parts.
+            getBookSumDetails();
         } )
         .fail( function( xhr ) {
             $.mobile.loading( "hide", {} );
             alert( xhr.responseText );
         } );
     }
+}
+
+/**
+ * Get list of booked items in booking step 2
+ */
+function getBookSumDetails() {
+    $.getJSON( "ajax.php", { action: "getBookSumDetails" } )
+    .done( function( data ) {
+        $( "#book-sum-item-list" ).html( data.itemList ).listview( "refresh" );
+        if ( data.price ) $( "#book-sum-pay-state" ).show();
+        else $( "#book-sum-pay-state" ).hide();
+        if ( data.allConfirmed ) $( "#book-sum-price-prel" ).hide();
+        else $( "#book-sum-price-prel" ).show();
+        if ( data.itemsToConfirm.length ) $( "#btn-confirm-all-items" ).show();
+        else $( "#btn-confirm-all-items" ).hide();
+        $( "#book-sum-price" ).text( data.price );
+        $( "#book-sum-paid" ).text( data.paid );
+        $( "#book-sum-to-pay" ).text( data.price - data.paid );
+        itemsToConfirm = data.itemsToConfirm;
+        if ( data.questions != "" ) {
+            $( "#book-sum-questions" ).show();
+            $( "#book-sum-questions" ).html( data.questions ).enhanceWithin();
+        } else $( "#book-sum-questions" ).hide();
+        reqCheckRadios = data.reqCheckRadios;
+        if ( data.showRepeating ) {
+            getSeries();
+            $( "#book-sum-series" ).show();
+        } else $( "#book-sum-series" ).hide();
+    } );
 }
 
 /**
@@ -783,12 +810,12 @@ function setPaid( lastPaid ) {
     if ( paid === "" || paid ) { // otherwise user hit cancel
         $.mobile.loading( "show", {} );
         $.post( "ajax.php", {
-            action: "ajaxSetPaid",
+            action: "setPaid",
             paid: paid
         } )
         .done( function() {
             $.mobile.loading( "hide", {} );
-            location.reload(); // TODO: don't reload the whole page, just replace relevant parts.
+            getBookSumDetails();
         } )
         .fail( function( xhr ) {
             $.mobile.loading( "hide", {} );
