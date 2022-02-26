@@ -206,7 +206,7 @@ function head(string $caption, string $baseUrl, $superAdmins=array()) {
                 <button onClick="document.cookie='cookiesOK=0; path=/'; $('#divCookieConsent').hide();$('#div-remember-me').hide();">Avböj kakor</button>
             </div>
         <?php } 
-        if (strpos($_SERVER['HTTP_USER_AGENT'], 'MSIE') || strpos($_SERVER['HTTP_USER_AGENT'], 'Trident/7')) echo "<div class='ui-bar ui-bar-b' style='font-weight:normal;'><b>Dags att uppgradera din webbläsare.</b> Du använder Internet Explorer, en föråldrad webbläsare som aldrig har följt några webbstandarder. Vi har valt att inte lägga vår tid på att stödja den, och bokningen kommer inte att fungera med den. Vänligen använd en annan webbläsare. Vi rekommenderar Firefox eller Chrome.</div>";
+        if (strpos($_SERVER['HTTP_USER_AGENT'], 'MSIE') || strpos($_SERVER['HTTP_USER_AGENT'], 'Trident/7')) echo "<div class='ui-bar ui-bar-b' style='font-weight:normal;'><b>Dags att uppgradera din webbläsare.</b> Du använder Internet Explorer, en föråldrad webbläsare som är dålig på att följa webbstandarder. Vi har valt att inte längre slösa vår tid på att stödja den, och bokningssystemet kommer kanske inte att fungera med den. Vänligen använd en annan webbläsare. Vi rekommenderar Firefox eller Chrome.</div>";
         ?>
     </div>
     
