@@ -231,7 +231,7 @@ $( document ).on( 'pagecreate', "#page-book-part", function() {
             endHour = hour;
         }
         nextDateClick = nextDateClick == "start" ? "end" : "start"; 
-        updateBookedTimeframe();
+        updateBookedTimeframe( true );
     } );
 
     /**
@@ -428,11 +428,11 @@ function popupItemDetails( itemId ) {
 
 /**
  * Update currently chosen start and end date/time in user interface
+ * @param bool swap whether to swap start and end time if they are in wrong order
  */
-function updateBookedTimeframe() {
-    // swap start and end time if start time is after end time
-    // FIXME: swapping is a bad idea if user uses dropdown controls
+function updateBookedTimeframe( swap = false ) {
     if ( endDate.valueOf() + endHour * 60 * 60 * 1000 < startDate.valueOf() + startHour * 60 * 60 * 1000 ) {
+        // swap start and end time if start time is after end time
         if ( nextDateClick == "start" ) {
             var temp = new Date( endDate.valueOf() );
             endDate = new Date( startDate.valueOf() );
@@ -533,7 +533,7 @@ $( document ).on( 'pagecreate', "#page-book-sum", function() {
             endHour = hour;
         }
         nextDateClick = nextDateClick == "start" ? "end" : "start"; 
-        updateBookedTimeframe();
+        updateBookedTimeframe( true );
     } );
 
 	/** User changed number of occurences in the booking series dialog */
