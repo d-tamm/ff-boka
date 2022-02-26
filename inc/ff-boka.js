@@ -464,14 +464,17 @@ function updateBookedTimeframe( swap = false ) {
  * @param bool save Whether to also save the booking and go to booking summary
  */
 function checkTimes( save = false ) {
+    var start = startDate.valueOf() / 1000 + startHour * 60 * 60;
+    var end = endDate.valueOf() / 1000 + endHour * 60 * 60;
+    if ( isNaN( start ) || isNaN( end ) ) return;
     $.mobile.loading( "show", {} );
     // Send times to server to check availability:
     $.getJSON( "ajax.php", {
         action: ( save ? "saveItem" : "checkTimes"),
         bookingStep: bookingStep,
         ids: checkedItems,
-        start: startDate.valueOf() / 1000 + startHour * 60 * 60,
-        end: endDate.valueOf() / 1000 + endHour * 60 * 60,
+        start: start,
+        end: end,
     })
     .done( function( data ) {
         $.mobile.loading( "hide", {} );
