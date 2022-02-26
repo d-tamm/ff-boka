@@ -208,9 +208,9 @@ var bookingStep,
     fbStart,
     wday,
     startDate,
-    startTime,
+    startHour,
     endDate,
-    endTime,
+    endHour,
     nextDateClick;
 
 $( document ).on( 'pagecreate', "#page-book-part", function() {
@@ -224,11 +224,11 @@ $( document ).on( 'pagecreate', "#page-book-part", function() {
         if ( nextDateClick == "start" ) {
             startDate = new Date( fbStart.valueOf() );
             startDate.setDate( startDate.getDate() + Number( this.dataset.day ) );
-            startTime = hour;
+            startHour = hour;
         } else {
             endDate = new Date( fbStart.valueOf() );
             endDate.setDate( endDate.getDate() + Number( this.dataset.day ) );
-            endTime = hour;
+            endHour = hour;
         }
         nextDateClick = nextDateClick == "start" ? "end" : "start"; 
         updateBookedTimeframe();
@@ -263,7 +263,7 @@ $( document ).on( 'pagecreate', "#page-book-part", function() {
      * User chose a new start time from dropdown for booking items
      */
     $( '#book-time-start' ).change( function( event ) {
-        startTime = Number( this.value );
+        startHour = Number( this.value );
         updateBookedTimeframe();
     } );
 
@@ -271,7 +271,7 @@ $( document ).on( 'pagecreate', "#page-book-part", function() {
      * User chose a new end time from dropdown for booking items
      */
     $( '#book-time-end' ).change( function( event ) {
-        endTime = Number( this.value );
+        endHour = Number( this.value );
         updateBookedTimeframe();
     } );
 } );
@@ -287,20 +287,20 @@ $( document ).on( 'pageshow', "#page-book-part", function() {
     $( ".book-item" ).removeClass( "item-checked" );
     // Initialise date chooser
     if ( get( 'start' ) && get( 'end' ) ) {
-    	// If start/end time have been passed as GET parameters startTime and endTime, use them
+    	// If start/end time have been passed as GET parameters startHour and endHour, use them
     	// Parameters are expected as unix timestamp in seconds.
         fbStart = new Date( parseInt( get( 'start' ) ) * 1000 );
         fbStart.setHours( 0, 0, 0, 0 ); // Midnight
     	startDate = new Date( parseInt( get( 'start' ) ) * 1000 );
-    	startTime = startDate.getHours();
+    	startHour = startDate.getHours();
     	startDate.setHours( 0, 0, 0, 0 );
     	endDate = new Date( parseInt( get( 'end' ) ) * 1000 );
-    	endTime = endDate.getHours();
+    	endHour = endDate.getHours();
     	endDate.setHours( 0, 0, 0, 0 );
     } else {
         fbStart = new Date();
-    	startTime = fbStart.getHours();
-    	endTime = fbStart.getHours();
+    	startHour = fbStart.getHours();
+    	endHour = fbStart.getHours();
         fbStart.setHours( 0, 0, 0, 0 ); // Midnight
     	startDate = new Date( fbStart.valueOf() );
     	endDate = new Date( fbStart.valueOf() );
@@ -407,17 +407,17 @@ function popupItemDetails( itemId ) {
             checkedItems[ itemId ] = true;
             // Initialise date chooser
             startDate = new Date( Number( data.start ) * 1000 );
-            startTime = startDate.getHours();
+            startHour = startDate.getHours();
             startDate.setHours( 0, 0, 0, 0 ); // Midnight
             endDate = new Date( Number( data.end ) * 1000 );
-            endTime = endDate.getHours();
+            endHour = endDate.getHours();
             endDate.setHours( 0, 0, 0, 0 ); // Midnight
             fbStart = new Date( startDate.valueOf() );
             wday = fbStart.getDay() ? fbStart.getDay() - 1 : 6; // Weekday, where Monday=0 ... Sunday=6
             fbStart.setDate( fbStart.getDate() - wday ); // Should now be last Monday
             nextDateClick = "start";
-            $( "#book-item-booked-start" ).html( startDate.toLocaleDateString( "sv-SE" ) + ' ' + startTime + ':00' );
-            $( "#book-item-booked-end" ).html( endDate.toLocaleDateString( "sv-SE" ) + ' ' + endTime + ':00' );
+            $( "#book-item-booked-start" ).html( startDate.toLocaleDateString( "sv-SE" ) + ' ' + startHour + ':00' );
+            $( "#book-item-booked-end" ).html( endDate.toLocaleDateString( "sv-SE" ) + ' ' + endHour + ':00' );
             scrollItemDate( 0 );
             $( "#book-item-price" ).val( data.price );
         } else {
@@ -432,30 +432,30 @@ function popupItemDetails( itemId ) {
 function updateBookedTimeframe() {
     // swap start and end time if start time is after end time
     // FIXME: swapping is a bad idea if user uses dropdown controls
-    if ( endDate.valueOf() + endTime * 60 * 60 * 1000 < startDate.valueOf() + startTime * 60 * 60 * 1000 ) {
+    if ( endDate.valueOf() + endHour * 60 * 60 * 1000 < startDate.valueOf() + startHour * 60 * 60 * 1000 ) {
         if ( nextDateClick == "start" ) {
             var temp = new Date( endDate.valueOf() );
             endDate = new Date( startDate.valueOf() );
             startDate = new Date( temp.valueOf() );
-            temp = endTime;
-            endTime = startTime;
-            startTime = temp;
+            temp = endHour;
+            endHour = startHour;
+            startHour = temp;
         } else {
             endDate = new Date( startDate.valueOf() );
-            endTime = startTime;
+            endHour = startHour;
         }
     }
     $( "#book-date-start" ).val( dateToISO( startDate ) );
-    $( "#book-time-start" ).val( startTime ).selectmenu( "refresh" );
+    $( "#book-time-start" ).val( startHour ).selectmenu( "refresh" );
     $( "#book-date-end" ).val( dateToISO( endDate ) );
-    $( "#book-time-end" ).val( endTime ).selectmenu( "refresh" );
+    $( "#book-time-end" ).val( endHour ).selectmenu( "refresh" );
     if ( nextDateClick == "start" ) {
         $( "#book-date-chooser-next-click" ).html( "Klicka på önskat startdatum för att ändra datum." );
     } else {
         $( "#book-date-chooser-next-click" ).html( "Klicka på önskat slutdatum." );
     }
-    $( '#book-chosen-timeframe' ).css( 'left', ( ( startDate - fbStart ) / 1000 / 60 / 60 + startTime ) / 24 / 7 * 100 + "%" );
-    $( '#book-chosen-timeframe' ).css( 'width', ( ( endDate - startDate ) / 1000 / 60 / 60 - startTime + endTime ) / 24 / 7 * 100 + "%" );
+    $( '#book-chosen-timeframe' ).css( 'left', ( ( startDate - fbStart ) / 1000 / 60 / 60 + startHour ) / 24 / 7 * 100 + "%" );
+    $( '#book-chosen-timeframe' ).css( 'width', ( ( endDate - startDate ) / 1000 / 60 / 60 - startHour + endHour ) / 24 / 7 * 100 + "%" );
     checkTimes();
 }
 
@@ -470,8 +470,8 @@ function checkTimes( save = false ) {
         action: ( save ? "saveItem" : "checkTimes"),
         bookingStep: bookingStep,
         ids: checkedItems,
-        start: startDate.valueOf() / 1000 + startTime * 60 * 60,
-        end: endDate.valueOf() / 1000 + endTime * 60 * 60,
+        start: startDate.valueOf() / 1000 + startHour * 60 * 60,
+        end: endDate.valueOf() / 1000 + endHour * 60 * 60,
     })
     .done( function( data ) {
         $.mobile.loading( "hide", {} );
@@ -526,11 +526,11 @@ $( document ).on( 'pagecreate', "#page-book-sum", function() {
         if ( nextDateClick == "start" ) {
             startDate = new Date( fbStart.valueOf() );
             startDate.setDate( startDate.getDate() + Number( this.dataset.day ) );
-            startTime = hour;
+            startHour = hour;
         } else {
             endDate = new Date( fbStart.valueOf() );
             endDate.setDate( endDate.getDate() + Number( this.dataset.day ) );
-            endTime = hour;
+            endHour = hour;
         }
         nextDateClick = nextDateClick == "start" ? "end" : "start"; 
         updateBookedTimeframe();
@@ -573,7 +573,7 @@ $( document ).on( 'pagecreate', "#page-book-sum", function() {
      * User chose a new start time from dropdown for booking items
      */
     $( '#book-time-start' ).change( function( event ) {
-        startTime = Number( this.value );
+        startHour = Number( this.value );
         updateBookedTimeframe();
     } );
 
@@ -581,7 +581,7 @@ $( document ).on( 'pagecreate', "#page-book-sum", function() {
      * User chose a new end time from dropdown for booking items
      */
     $( '#book-time-end' ).change( function( event ) {
-        endTime = Number( this.value );
+        endHour = Number( this.value );
         updateBookedTimeframe();
     } );
     
