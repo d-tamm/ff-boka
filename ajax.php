@@ -548,10 +548,9 @@ switch ( $_REQUEST[ 'action' ] ) {
         die( showBookingSeries( $booking ) );
         
     case "deleteSeries":
-        $first = NULL;
         $gotoFirst = false;
         foreach ( $booking->getBookingSeries( TRUE ) as $b ) {
-            if ( is_null( $first ) ) { // keep the first instance and switch to it
+            if ( !isset( $first ) ) { // keep the first instance and switch to it
                 $first = $b;
                 continue;
             }
