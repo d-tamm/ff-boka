@@ -468,7 +468,6 @@ function checkTimes( save = false ) {
     var end = endDate.valueOf() / 1000 + endHour * 60 * 60;
     if ( isNaN( start ) || isNaN( end ) ) return;
     $.mobile.loading( "show", {} );
-    // Send times to server to check availability:
     $.getJSON( "ajax.php", {
         action: ( save ? "saveItem" : "checkTimes"),
         bookingStep: bookingStep,
