@@ -143,7 +143,7 @@ if ( isset( $_REQUEST[ 'action' ] ) && $_REQUEST[ 'action' ] == "help" ) {
     <?= head( "Din bokning", $cfg[ 'url' ], $cfg[ 'superAdmins' ] ) ?>
     <div role="main" class="ui-content">
 
-    <div data-role="popup" data-overlay-theme="b" id="popup-msg-page-book-sum" class="ui-content">
+    <div data-role="popup" data-history="false" data-overlay-theme="b" id="popup-msg-page-book-sum" class="ui-content">
         <p id="msg-page-book-sum"><?= $message ?></p>
         <a href='#' data-rel='back' class='ui-btn ui-btn-icon-left ui-btn-inline ui-corner-all ui-icon-check'>OK</a>
     </div>
@@ -174,9 +174,9 @@ if ( isset( $_REQUEST[ 'action' ] ) && $_REQUEST[ 'action' ] == "help" ) {
         if ( $showEditButtons ) {
             echo "<div class='item-edit-buttons'>";
             if ( $item->status == FFBoka::STATUS_CONFLICT || $item->status == FFBoka::STATUS_PREBOOKED ) {
-                echo "<button id='book-item-btn-confirm-{$item->bookedItemId}' class='ui-btn ui-btn-inline ui-btn-a' onclick=\"confirmBookedItem({$item->bookedItemId});\">Bekräfta</button>";
+                echo "<button id='book-item-btn-confirm-{$item->bookedItemId}' class='ui-btn ui-btn-inline ui-btn-a' onclick=\"handleBookedItem({$item->bookedItemId}, " . FFBoka::STATUS_CONFIRMED . ");\">Bekräfta</button>";
                 $itemsToConfirm[] = $item->bookedItemId;
-                echo "<button id='book-item-btn-reject-{$item->bookedItemId}' class='ui-btn ui-btn-inline ui-btn-a' onclick=\"rejectBookedItem({$item->bookedItemId});\">Avböj</button>";
+                echo "<button id='book-item-btn-reject-{$item->bookedItemId}' class='ui-btn ui-btn-inline ui-btn-a' onclick=\"handleBookedItem({$item->bookedItemId}, " . FFBoka::STATUS_REJECTED . ");\">Avböj</button>";
             }
             echo "<button class='ui-btn ui-btn-inline ui-btn-a' onclick=\"setItemPrice({$item->bookedItemId}, {$item->price});\">Sätt pris</button>";
             echo "</div>";

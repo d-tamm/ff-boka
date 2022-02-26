@@ -230,7 +230,7 @@ if (isset($_REQUEST['message'])) $message = ($message ? "$message<br>" : "") . $
     <?= head("Resursbokning", $cfg['url'], $cfg['superAdmins']) ?>
     <div role="main" class="ui-content">
 
-    <div data-role="popup" data-overlay-theme="b" id="popup-msg-page-start" class="ui-content">
+    <div data-role="popup" data-history="false" data-overlay-theme="b" id="popup-msg-page-start" class="ui-content">
         <p id="msg-page-start"><?= $message ?></p>
         <a href='#' data-rel='back' class='ui-btn ui-btn-icon-left ui-btn-inline ui-icon-check'>OK</a>
     </div>

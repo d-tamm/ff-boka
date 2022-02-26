@@ -138,7 +138,7 @@ $cfg = $currentCfg;
     <?= head("Super-Admin", $cfg['url'], $cfg['superAdmins']) ?>
     <div role="main" class="ui-content">
 
-    <div data-role="popup" data-overlay-theme="b" id="popup-msg-page-super-admin" class="ui-content">
+    <div data-role="popup" data-history="false" data-overlay-theme="b" id="popup-msg-page-super-admin" class="ui-content">
         <p id="msg-page-super-admin"><?= $message ?></p>
         <a href='#' data-rel='back' class='ui-btn ui-btn-icon-left ui-btn-inline ui-corner-all ui-icon-check'>OK</a>
     </div>
