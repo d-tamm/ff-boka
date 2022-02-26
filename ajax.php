@@ -21,7 +21,7 @@ if ( !isset( $_REQUEST[ 'action' ] ) ) { http_response_code( 400 ); die( "action
 $currentUser = new User( $_SESSION[ 'authenticatedUser' ] ?? 0 );
 
 // Requests that require the bookingId sessions variable
-if ( in_array( $_REQUEST[ 'action' ], [ "confirmBooking", "repeatCreate", "deleteBooking", "setPaid", "removeItem", "repeatPreview", "unlinkBooking", "unlinkSeries", "deleteSeries", "getSeries" ] ) ) {
+if ( in_array( $_REQUEST[ 'action' ], [ "getBookSumDetails", "confirmBooking", "repeatCreate", "deleteBooking", "setPaid", "removeItem", "repeatPreview", "unlinkBooking", "unlinkSeries", "deleteSeries", "getSeries" ] ) ) {
     if ( !isset( $_SESSION[ 'bookingId' ] ) ) {
         http_response_code( 406 ); // Not acceptable
         die( "bookingId not set." );
@@ -35,8 +35,8 @@ switch ( $_REQUEST[ 'action' ] ) {
     case "getItemDetails":
     case "getFreebusyWholeSection":
     case "getCombinedAccessAndFreebusy":
-        continue;
-
+    case "getBookSumDetails":
+        break;
     case "repeatCreate":
     case "unlinkBooking":
         if ( !isset( $_SESSION[ 'authenticatedUser' ] ) ) {
@@ -265,7 +265,103 @@ switch ( $_REQUEST[ 'action' ] ) {
             "freebusyBar" => getFreebusyCombined( array_keys( $_REQUEST[ 'ids' ] ), $currentUser, $_REQUEST[ 'start' ] ),
         ] ) );
 
-            
+
+    case "getBookSumDetails":
+        $overlap = $booking->getOverlappingItems();
+        $leastStatus = FFBoka::STATUS_CONFIRMED;
+        $showRepeating = isset( $_SESSION[ 'authenticatedUser' ] ) ? true : false;
+        $itemList = "";
+        $itemsToConfirm = array();
+        $questions = array(); // Will be populated with $id as keys and $required as value
+        foreach ( $booking->items() as $item ) {
+            $leastStatus = min( $leastStatus, $item->status );
+            $showRepeating = $showRepeating && $item->category()->getAccess( $currentUser ) >= FFBoka::ACCESS_BOOK;
+            $showEditButtons = ( $item->category()->getAccess( $currentUser ) >= FFBoka::ACCESS_CONFIRM && $item->status != FFBoka::STATUS_REJECTED );
+            $unavail = (
+                $item->status !== FFBoka::STATUS_REJECTED &&
+                !$item->isAvailable( $item->start, $item->end ) &&
+                $item->category()->getAccess( $currentUser ) >= FFBoka::ACCESS_PREBOOK
+            );
+            foreach ( $item->category()->getQuestions() as $id=>$q ) {
+                if ( isset( $questions[ $id ] ) ) $questions[ $id ] = ( $questions[ $id ] || $q->required );
+                else $questions[ $id ] = $q->required;
+            }
+            $itemList .= "<li id='item-{$item->bookedItemId}'" . ( $unavail || array_key_exists( $item->id, $overlap ) ? " data-theme='c'" : "" ) . ( $item->status == FFBoka::STATUS_REJECTED ? " class='rejected'" : "" ) . ">";
+            if ( $showEditButtons ) {
+                $itemList .= "<div class='item-edit-buttons'>";
+                if ( $item->status == FFBoka::STATUS_CONFLICT || $item->status == FFBoka::STATUS_PREBOOKED ) {
+                    $itemsToConfirm[] = $item->bookedItemId;
+                    $itemList .= "<button id='book-item-btn-confirm-{$item->bookedItemId}' class='ui-btn ui-btn-inline ui-btn-a' onclick=\"handleBookedItem({$item->bookedItemId}, " . FFBoka::STATUS_CONFIRMED . ");\">Bekräfta</button>";
+                    $itemList .= "<button id='book-item-btn-reject-{$item->bookedItemId}' class='ui-btn ui-btn-inline ui-btn-a' onclick=\"handleBookedItem({$item->bookedItemId}, " . FFBoka::STATUS_REJECTED . ");\">Avböj</button>";
+                }
+                $itemList .= "<button class='ui-btn ui-btn-inline ui-btn-a' onclick=\"setItemPrice({$item->bookedItemId}, {$item->price});\">Sätt pris</button>";
+                $itemList .= "</div>";
+            }
+            $itemList .= "<a href='#' onClick='popupItemDetails({$item->bookedItemId});'" . ( $showEditButtons ? " class='has-edit-buttons'" : "" ) . ">" . embedImage( $item->getFeaturedImage()->thumb ) . "<h3 style='white-space:normal;'>" . htmlspecialchars( $item->caption ) . "</h3><p style='overflow:auto; white-space:normal; margin-bottom:0px;'>";
+            $itemList .= strftime( "%F kl %H", $item->start ) . " &mdash; " . strftime( "%F kl %H", $item->end ) . "<br>\n";
+            if ( $unavail ) $itemList .= "<span id='book-item-status-{$item->bookedItemId}'>Inte tillgänglig</span>";
+            elseif ( array_key_exists( $item->id, $overlap ) ) $itemList .= "Överlappar";
+            else {
+                switch ( $item->status ) {
+                case FFBoka::STATUS_PENDING: $itemList .= "Bokning ej slutförd än"; break;
+                case FFBoka::STATUS_REJECTED: $itemList .= "Avböjt"; break;
+                case FFBoka::STATUS_CONFLICT:
+                case FFBoka::STATUS_PREBOOKED:
+                    $itemList .= "<span id='book-item-status-{$item->bookedItemId}'>Väntar på bekräftelse</span>"; break;
+                case FFBoka::STATUS_CONFIRMED: $itemList .= "Bekräftat"; break;
+                }
+            }
+            if ( !is_null( $item->price ) ) $itemList .= "<span id='book-item-price-{$item->bookedItemId}' class='ui-li-count'>{$item->price} kr</span>";
+            $itemList .= "</p></a>\n<a href='#' onClick='removeItem({$item->bookedItemId});'>Ta bort</a></li>\n";
+        }
+
+        $prevAnswers = $booking->answers();
+        $requiredCheckboxradios = array();
+        $htmlQuestions = "";
+        foreach ( $questions as $id => $required ) {
+            $question = new Question( $id );
+            $prevAns = "";
+            foreach ( $prevAnswers as $prev ) {
+                if ( $prev->question == $question->caption ) {
+                    $prevAns = $prev->answer;
+                    break;
+                }
+            }
+            $htmlQuestions .= "<input type='hidden' name='questionId[]' value='$id'>\n";
+            $htmlQuestions .= "<fieldset data-role='controlgroup' data-mini='true'>\n";
+            // Show the question, except for checkbox questions with only one empty choice where we move the caption to the checkbox instead
+            if ( !( ( $question->type == "checkbox" || $question->type == "radio" ) && $question->options->choices[ 0 ] == "" ) ) $htmlQuestions .= "<legend" . ( $required ? " class='required'" : "" ) . ">" . htmlspecialchars( $question->caption ) . "</legend>\n";
+            switch ( $question->type ) {
+                case "radio":
+                case "checkbox":
+                    if ( $required ) $requiredCheckboxradios[ $id ] = $question->caption;
+                    foreach ( $question->options->choices as $choice ) {
+                        $htmlQuestions .= "<label><input type='{$question->type}' name='answer-{$id}[]' value='" . htmlspecialchars( $choice ?: "Ja" ) . "'" . ( $prevAns == ( $choice ?: "Ja" ) ? " checked" : "" ) . "> " . htmlspecialchars( $choice ?: $question->caption ) . ( $required ? " <span class='required'></span>" : "" ) . "</label>\n";
+                    }
+                    break;
+                case "text":
+                    $htmlQuestions .= "<input" . ( $question->options->length ? " maxlength='{$question->options->length}'" : "" ) . " name='answer-{$id}[]' value='$prevAns'" . ( $required ? " required='true'" : "" ) . ">\n";
+                    break;
+                case "number":
+                    $htmlQuestions .= "<input type='number'" . ( strlen( $question->options->min ) ? " min='{$question->options->min}'" : "" ) . ( $question->options->max ? " max='{$question->options->max}'" : "" ) . " name='answer-{$id}[]' value='$prevAns'" . ( $required ? " required='true'" : "" ) . ">\n";
+                    break;
+            }
+            $htmlQuestions .= "</fieldset>";
+        }
+
+        header( "Content-Type: application/json" );
+        die( json_encode( [
+            "itemList" => $itemList,
+            "price" => $booking->price,
+            "paid" => $booking->paid,
+            "itemsToConfirm" => $itemsToConfirm,
+            "allConfirmed" => $leastStatus >= FFBoka::STATUS_CONFIRMED,
+            "questions" => $htmlQuestions,
+            "reqCheckRadios" => $requiredCheckboxradios,
+            "showRepeating" => $showRepeating,
+        ] ) );
+    
+
     case "freebusyItem":
         // Get freebusy bars for current booked item
         if ( !isset( $_SESSION[ 'bookedItemId' ] ) ) { http_response_code( 400 ); die( "Unknown bookedItemId" ); }
