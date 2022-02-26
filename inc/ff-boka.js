@@ -112,9 +112,7 @@ $( document ).on( 'pagecreate', "#page-start", function( e ) {
 $( document ).on( 'pageshow', "#page-start", function() {
     // Show message if there is any
     if ( $( "#msg-page-start" ).html() ) {
-        setTimeout( function() {
-            $( "#popup-msg-page-start" ).popup( 'open' );
-        }, 500 ); // We need some delay here to make this work on Chrome.
+        $( "#popup-msg-page-start" ).popup( 'open' );
     }
 } );
 
@@ -281,9 +279,7 @@ $( document ).on( 'pagecreate', "#page-book-part", function() {
 $( document ).on( 'pageshow', "#page-book-part", function() {
     // Show message if there is any
     if ( $( "#msg-page-book-part" ).html() ) {
-        setTimeout( function() {
-            $( "#popup-msg-page-book-part" ).popup( 'open' );
-        }, 500 ); // We need some delay here to make this work on Chrome.
+        $( "#popup-msg-page-book-part" ).popup( 'open' );
     }
     bookingStep = 1;
     // Uncheck all items
@@ -333,7 +329,12 @@ function scrollDate( offset ) {
     if ( fbStart.getFullYear() != fbEnd.getFullYear() ) readableRange += " '" + fbStart.getFullYear().toString().substr( -2 );
     readableRange += " &ndash; sö " + fbEnd.getDate() + "/" + ( fbEnd.getMonth() + 1 ) + " '" + fbEnd.getFullYear().toString().substr( -2 );
     // Get freebusy bars
-    $.getJSON( "book-part.php", { action: "ajaxFreebusy", start: fbStart.valueOf() / 1000, ids: checkedItems }, function( data, status ) {
+    $.getJSON( "ajax.php", {
+        action: "getFreebusyWholeSection",
+        start: fbStart.valueOf() / 1000,
+        ids: checkedItems
+    } )
+    .done( function( data ) {
         $( "#book-current-range-readable" ).html( readableRange );
         $.each( data.freebusyBars, function( key, value ) { // key will be "item-nn"
             $( "#freebusy-" + key ).html( value );
@@ -359,7 +360,12 @@ function toggleItem( itemId ){
     if ( Object.keys( checkedItems ).length > 0 ) {
         // Get access information for all selected items
         $.mobile.loading( "show", {} );
-        $.getJSON( "book-part.php", { action: "ajaxCombinedAccess", start: fbStart.valueOf() / 1000, ids: checkedItems }, function( data, status ) {
+        $.getJSON( "ajax.php", {
+            action: "getCombinedAccessAndFreebusy",
+            start: fbStart.valueOf() / 1000,
+            ids: checkedItems
+        } )
+        .done( function( data ) {
             if ( data.access <= ACCESS_READASK ) {
                  $( "#book-access-msg" ).html( "<p>Komplett information om tillgänglighet kan inte visas för ditt urval av resurser. Ange önskad start- och sluttid nedan för att skicka en intresseförfrågan.</p><p>Ansvarig kommer att höra av sig till dig med besked om tillgänglighet och eventuell bekräftelse av din förfrågan.</p>" );
             } else {
@@ -368,7 +374,7 @@ function toggleItem( itemId ){
                     $( "#book-access-msg" ).append( "<p><b>OBS: Bokningen är preliminär.</b> För ditt urval av resurser kommer bokningen behöva bekräftas av materialansvarig.</p>" ); 
                 }
             }
-            $( "#book-combined-freebusy-bar" ).html( data.freebusyCombined );
+            $( "#book-combined-freebusy-bar" ).html( data.freebusyBar );
             checkTimes();
             $.mobile.loading( "hide", {} );
         } );
@@ -384,11 +390,12 @@ function toggleItem( itemId ){
  */
 function popupItemDetails( itemId ) {
     $.mobile.loading( "show", {} );
-    $.getJSON( "book-part.php", {
-        action: "ajaxItemDetails",
+    $.getJSON( "ajax.php", {
+        action: "getItemDetails",
         id: itemId,
         bookingStep: bookingStep
-    }, function( data, status ) {
+    } )
+    .done( function( data ) {
         $( "#item-caption" ).html( data.caption );
         $( "#item-details" ).html( data.html );
         $( "#popup-item-details" ).popup( 'open', { transition: "pop", y: 0 } );
@@ -612,9 +619,7 @@ $( document ).on( 'pagecreate', "#page-book-sum", function() {
  */
 $( document ).on( 'pageshow', "#page-book-sum", function() {
     if ( $( "#msg-page-book-sum" ).html() ) {
-        setTimeout( function() {
-            $( "#popup-msg-page-book-sum" ).popup( 'open' );
-        }, 500 ); // We need some delay here to make this work on Chrome.
+        $( "#popup-msg-page-book-sum" ).popup( 'open' );
     }
     bookingStep=2;
     $( "#series-panel" ).load( "ajax.php?action=getSeries", function() {
@@ -925,9 +930,7 @@ $( document ).on( 'pagecreate', "#page-admin-section", function() {
 $( document ).on( 'pageshow', "#page-admin-section", function() {
     // Show message if there is any
     if ( $( "#msg-page-admin-section" ).html() ) {
-        setTimeout( function() {
-            $( "#popup-msg-page-admin-section" ).popup( 'open' );
-        }, 500 ); // We need some delay here to make this work on Chrome.
+        $( "#popup-msg-page-admin-section" ).popup( 'open' );
     }
     listSectionAdmins();
     showQuestionOptions( "" );
@@ -1410,9 +1413,7 @@ $( document ).on('pageshow', "#page-admin-category", function() {
 
     // Show message if there is any
     if ( $( "#msg-page-admin-category" ).html() ) {
-        setTimeout( function() {
-            $( "#popup-msg-page-admin-category" ).popup( 'open' );
-        }, 500 ); // We need some delay here to make this work on Chrome.
+        $( "#popup-msg-page-admin-category" ).popup( 'open' );
     }
     chosenAccessId = 0;
 } );
@@ -1754,9 +1755,7 @@ $( document ).on( 'pagecreate', "#page-admin-item", function() {
 $( document ).on( 'pageshow', "#page-admin-item", function() {
     // Show message if there is any
     if ( $( "#msg-page-admin-item" ).html() ) {
-        setTimeout( function() {
-            $( "#popup-msg-page-admin-item" ).popup( 'open' );
-        }, 500 ); // We need some delay here to make this work on Chrome.
+        $( "#popup-msg-page-admin-item" ).popup( 'open' );
     }
 
     // Get reminders and images via ajax
@@ -1816,9 +1815,7 @@ $( document ).on( 'pagecreate', "#page-admin-usage", function() {
 $( document ).on( 'pageshow', "#page-admin-usage", function() {
     // Show message if there is any
     if ( $( "#msg-page-admin-usage" ).html() ) {
-        setTimeout( function() {
-            $( "#popup-msg-page-admin-usage" ).popup( 'open' );
-        }, 500 ); // We need some delay here to make this work on Chrome.
+        $( "#popup-msg-page-admin-usage" ).popup( 'open' );
     }
 
     $( "#stat-details" ).DataTable( {
@@ -1877,9 +1874,7 @@ $( document ).on( 'pagecreate', "#page-super-admin", function() {
 $( document ).on( 'pageshow', "#page-super-admin", function() {
     // Show message if there is any
     if ( $( "#msg-page-super-admin" ).html() ) {
-        setTimeout( function() {
-            $( "#popup-msg-page-super-admin" ).popup( 'open' );
-        }, 500 ); // We need some delay here to make this work on Chrome.
+        $( "#popup-msg-page-super-admin" ).popup( 'open' );
     }
 } );
 
@@ -1937,9 +1932,7 @@ $( document ).on( 'pagecreate', "#page-userdata", function() {
 $( document ).on( 'pageshow', "#page-userdata", function() {
     // Show message if there is any
     if ( $( "#msg-page-userdata" ).html() ) {
-        setTimeout( function() {
-            $( "#popup-msg-page-userdata" ).popup( 'open' );
-        }, 500 ); // We need some delay here to make this work on Chrome.
+        $( "#popup-msg-page-userdata" ).popup( 'open' );
     }
     // Make email input writable
     setTimeout( function() {
