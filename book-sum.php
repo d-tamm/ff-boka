@@ -239,7 +239,7 @@ if ( isset( $_REQUEST[ 'action' ] ) && $_REQUEST[ 'action' ] == "help" ) {
     </form>
             
     </div><!--/main-->
-<!-- TODO: Changing an item during initial booking should not set that item to confirmed -->
+
     <div data-role="popup" id="popup-item-details" class="ui-content" data-overlay-theme="b">
         <h2 id='item-caption'></h2>
         <div class='ui-body ui-body-a' id='book-item-booking-details'>
