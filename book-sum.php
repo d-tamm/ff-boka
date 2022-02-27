@@ -73,60 +73,38 @@ foreach ( $booking->items() as $item ) {
 
 if ( isset( $_REQUEST[ 'action' ] ) && $_REQUEST[ 'action' ] == "help" ) {
     echo <<<EOF
-    <h3>Bokningssammanfattning</h3>
-    <p>Här ser du alla resurser som ingår i din bokning. Du kan ändra tiden på valda resurser
-    genom att klicka på dem, och ta bort dem genom att klicka på krysset i högerkanten.
-    Du kan även lägga till fler resurser med knappen under resurslistan. Vid varje resurs visas
-    statusen såsom slutgiltigt bokad eller måste bekräftas.</p>
-    <p>Om du är bokningsansvarig kan du här även bekräfta eller avvisa förfrågningar på enskilda
-    resurser och sätta pris på dem. När du gjort det är det bra om du skickar en uppdaterad
-    bokningsbekräftelse genom att klickar på knappen <i>Spara ändringar</i> längst ner.</p>
+    <h2>Bokningssammanfattning</h2>
+    <p>Denna sida visar en sammanfattning av bokningen.</p>
+
+    <h3>Resurslista</h3>
+    <p>Här ser du alla resurser som ingår i din bokning. Du kan ändra tiden på valda resurser genom att klicka på dem, och ta bort dem genom att klicka på krysset i högerkanten. Du kan även lägga till fler resurser med knappen under resurslistan. Vid varje resurs visas statusen såsom slutgiltigt bokad eller måste bekräftas.</p>
+    <p>Om du är bokningsansvarig kan du här även bekräfta eller avvisa förfrågningar på enskilda resurser och sätta pris på dem. När du gjort det är det bra om du skickar en uppdaterad bokningsbekräftelse genom att klickar på knappen <i>Spara ändringar</i> längst ner.</p>
 
     <h3>Pris</h3>
-    <p>Under resurslistan visas en sammanfattning av kostnaderna om bokningsansvarig har satt
-    ett pris på någon av resurserna. Om du är bokningsansvarig kan du mata in beloppet som har
-    betalats.</p>
+    <p>Under resurslistan visas en sammanfattning av kostnaderna om bokningsansvarig har satt ett pris på någon av resurserna. Om du är bokningsansvarig kan du mata in beloppet som har betalats.</p>
 
     <h3>Bokningsfrågor</h3>
-    <p>Beroende på vad du håller på att boka kan det finnas ett avsnitt med frågor som ska
-    besvaras. Frågor märkta med en asterisk (<span class="required"></span>) måste du svara på
-    för att kunna boka, övriga frågor är frivilliga.</p>
+    <p>Beroende på vad du håller på att boka kan det finnas ett avsnitt med frågor som ska besvaras. Frågor märkta med en asterisk (<span class="required"></span>) måste du svara på för att kunna boka, övriga frågor är frivilliga.</p>
 
     <h3>Kontaktuppgifter</h3>
-    <p>Om du är inloggad så visas kontaktuppgifterna som tillhör ditt konto. Du kan när som
-    helst ändra dem (även efter att du avslutat bokningen) genom att gå till <a href="userdata.php">Min Sida</a>.</p>
-    <p>Om du bokar som gäst ska du här skriva in ditt namn och dina kontaktuppgifter så vi kan
-    nå dig vid frågor. I bokningsbekräftelsen kommer du att få en länk till bokningen så att du
-    kan komma tillbaka och uppdatera den.</p>
-    <p>Dina kontaktuppgifter kommer att vara synliga för andra inloggade användare, i syfte att
-    ni ska kunna ta kontakt med varandra för eventuell samordning mellan bokningar, hantering av
-    kvarglömda saker mm. Därför måste du bekräfta att du tillåter att dina kontaktuppgifter visas
-    för andra. Informationen visas inte för gäster.</p>
+    <p>Om du är inloggad så visas kontaktuppgifterna som tillhör ditt konto. Du kan när som helst ändra dem (även efter att du avslutat bokningen) genom att gå till <a href="userdata.php">Min Sida</a>.</p>
+    <p>Om du bokar som gäst ska du här skriva in ditt namn och dina kontaktuppgifter så vi kan nå dig vid frågor. I bokningsbekräftelsen kommer du att få en länk till bokningen så att du kan komma tillbaka och uppdatera den.</p>
+    <p>Dina kontaktuppgifter kommer att vara synliga för andra inloggade användare, i syfte att ni ska kunna ta kontakt med varandra för eventuell samordning mellan bokningar, hantering av kvarglömda saker mm. Därför måste du bekräfta att du tillåter att dina kontaktuppgifter visas för andra. Informationen visas inte för gäster.</p>
 
-    <h3>Referens</h3>
-    <p>Här kan du skriva in en valfri kort beskrivande text, så att du lättare kan se vad bokningen
-    avser. Texten kommer att visas som rubrik till bokningen på Min Sida.</p>
+    <h3>Namn till bokningen</h3>
+    <p>Här kan du skriva in en valfri kort beskrivande text, så att du lättare kan se vad bokningen avser. Texten kommer att visas som rubrik till bokningen på Min Sida, samt i epostmeddelanden.</p>
 
     <h3>Meddelande</h3>
-    <p>Längst ner på sidan finns det en kommentarsruta som bokande och bokningsansvarig kan använda
-    för att lämna meddelanden till varandra.</p>
+    <p>Längst ner på sidan finns det en kommentarsruta som bokande och bokningsansvarig kan använda för att lämna meddelanden till varandra. När den bokande ändrar i meddelandefältet så notifieras bokningsansvarig om detta. När bokningsansvarig ändrar något i fältet bör hen klicka på Spara ändringar för att skicka ett meddelande till den bokande (se nedan).</p>
 
     <h3>Knappen Slutföra bokningen / Spara ändringar</h3>
-    <p>Knappen sparar den aktuella bokningen och ändrar status på resurserna till <i>väntar på bekräftelse</i>
-    eller <i>bekräftat</i> beroende på din behörighetsnivå. Sedan skickar systemet ut bekräftelsemejl
-    till dig som bokar, samt vid behov till bokningsansvarig.</p>
+    <p>Knappen sparar den aktuella bokningen och ändrar status på resurserna till <i>väntar på bekräftelse</i> eller <i>bekräftat</i> beroende på din behörighetsnivå. Sedan skickar systemet ut bekräftelsemejl till dig som bokar, samt vid behov till bokningsansvarig.</p>
 
     <h3>Återkommande bokningar</h3>
-    <p>Om du har behörighet att lägga din bokning utan behov av att en administratör godkänner den, så kan
-    du även skapa en bokningsserie. Välj mellan daglig, veckovis eller månadsvis upprepning samt antal
-    tillfällen. När du skapar serien så skapas varje tillfälle som en fristående bokning, där det visas
-    länkar för att hoppa till de andra tillfällena i serien. Om du ändrar en bokning påverkas dock inte
-    de andra tillfällena.</p>
-    <p><b>Lyft ut det här tillfället</b> löser länken mellan den här bokningen och övriga
-    serien utan att ta bort själva tillfället.</p>
+    <p>Om du har behörighet att lägga din bokning utan behov av att en administratör godkänner den, så kan du även skapa en bokningsserie. Välj mellan daglig, veckovis eller månadsvis upprepning samt antal tillfällen. När du skapar serien så skapas varje tillfälle som en fristående bokning, där det visas länkar för att hoppa till de andra tillfällena i serien. Om du ändrar en bokning påverkas dock inte de andra tillfällena.</p>
+    <p><b>Lyft ut det här tillfället</b> löser länken mellan den här bokningen och övriga serien utan att ta bort själva tillfället.</p>
     <p><b>Lös upp serien</b> löser upp serien men lämnar kvar alla tillfällen som olänkade bokningar.</p>
-    <p><b>Radera serien</b> raderar hela serien förutom det första tillfället och alla
-    tillfällen som redan har passerat så att historiken behålls.</p>
+    <p><b>Radera serien</b> raderar hela serien förutom det första tillfället och alla tillfällen som redan har passerat så att historiken behålls.</p>
     EOF;
     die();
 }
@@ -155,9 +133,7 @@ if ( isset( $_REQUEST[ 'action' ] ) && $_REQUEST[ 'action' ] == "help" ) {
     if ( count( $overlap ) ) echo "<p class='ui-body ui-body-c'>Du har lagt in " . ( count( $overlap ) == 1 ? "en resurs" : "några resurser" ) . " flera gånger vid samma tid eller så att tiderna överlappar. De berörda raderna är markerade nedan. Du behöver ta bort dubletten eller justera tiden för att kunna slutföra bokningen.</p>";
 
     // Show teaser for admin if booking is dirty
-    if ( $booking->dirty && $_SESSION[ 'authenticatedUser' ] && $booking->user()->id != $_SESSION[ 'authenticatedUser' ] ) echo "<p class='ui-body ui-body-b' id='book-sum-dirty-msg'>Användaren har ändrat meddelandet eller något svar på en bokningsfråga. Klicka på knappen nedan när du har hanterat ändringarna.
-    <button class='ui-btn' onClick='removeDirty();'>OK</button>
-    </p>";
+    if ( $booking->dirty && $_SESSION[ 'authenticatedUser' ] && $booking->user()->id != $_SESSION[ 'authenticatedUser' ] ) echo "<p class='ui-body ui-body-b' id='book-sum-dirty-msg' onClick='removeDirty();' title='Klicka på notifieringen för att kvittera den.' style='cursor:pointer;'>Användaren har ändrat meddelandet eller något svar på en bokningsfråga.</p>";
     ?>
     
     <ul data-role='listview' id='book-sum-item-list' data-inset='true' data-divider-theme='a' data-split-icon='delete'>
