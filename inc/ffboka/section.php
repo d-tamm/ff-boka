@@ -224,21 +224,19 @@ class Section extends FFBoka {
     }
     
     /**
-     * Return all unconfirmed items in the section.
+     * Return all bookings with unconfirmed items or dirty flag in the section.
      * 
-     * @param User $user If set, only return items which this user can confirm
-     * @return Item[]
+     * @param User $user Only return bookings which this user can confirm
+     * @return int[] Array of bookingIds
      */
-    public function getUnconfirmedItems(User $user=null) : array {
-        $stmt = self::$db->query("SELECT bookedItemId FROM bookings INNER JOIN booked_items USING (bookingId) WHERE status>" . \FFBoka\FFBoka::STATUS_REJECTED . " AND status<" . \FFBoka\FFBoka::STATUS_CONFIRMED . " AND sectionId={$this->id}");
+    public function getUnconfirmedBookings( User $user ) : array {
         $ret = array();
-        while ($row = $stmt->fetch(\PDO::FETCH_OBJ)) {
-            $item = new Item($row->bookedItemId, TRUE);
-            if (is_null($user) || $item->category()->getAccess($user) >= FFBoka::ACCESS_CONFIRM) {
-                $ret[] = $item;
-            }
+        $stmt = self::$db->query( "SELECT bookingId FROM bookings INNER JOIN booked_items USING (bookingId) WHERE ((status>" . FFBoka::STATUS_REJECTED . " AND status<" . FFBoka::STATUS_CONFIRMED . ") OR dirty) AND sectionId={$this->id}" );
+        while ( $row = $stmt->fetch( \PDO::FETCH_OBJ ) ) {
+            $item = new Item( $row->bookedItemId, TRUE );
+            if ( $item->category()->getAccess( $user ) >= FFBoka::ACCESS_CONFIRM ) $ret[] = $row->bookingId;
         }
-        return $ret;
+        return array_unique( $ret );
     }
 
     /**
