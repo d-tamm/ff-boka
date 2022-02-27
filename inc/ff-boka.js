@@ -913,6 +913,16 @@ function scrollItemDate( offset ) {
 }
 
 
+/**
+ * Remove the dirty flag from booking
+ */
+function removeDirty() {
+    $.post( "ajax.php", { action: "removeDirty" } )
+    .done( function( ) {
+        $( "#book-sum-dirty-msg" ).hide();
+    } );
+}
+
 
 
 // ========== admin/index.php ==========

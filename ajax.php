@@ -21,7 +21,7 @@ if ( !isset( $_REQUEST[ 'action' ] ) ) { http_response_code( 400 ); die( "action
 $currentUser = new User( $_SESSION[ 'authenticatedUser' ] ?? 0 );
 
 // Requests that require the bookingId sessions variable
-if ( in_array( $_REQUEST[ 'action' ], [ "getBookSumDetails", "confirmBooking", "repeatCreate", "deleteBooking", "setPaid", "removeItem", "repeatPreview", "unlinkBooking", "unlinkSeries", "deleteSeries", "getSeries" ] ) ) {
+if ( in_array( $_REQUEST[ 'action' ], [ "getBookSumDetails", "confirmBooking", "repeatCreate", "deleteBooking", "setPaid", "removeItem", "repeatPreview", "unlinkBooking", "unlinkSeries", "deleteSeries", "getSeries", "removeDirty" ] ) ) {
     if ( !isset( $_SESSION[ 'bookingId' ] ) ) {
         http_response_code( 406 ); // Not acceptable
         die( "bookingId not set." );
@@ -88,6 +88,7 @@ switch ( $_REQUEST[ 'action' ] ) {
         }
         break;
     case "setPaid":
+    case "removeDirty":
         // User needs to have some admin assignment
         if ( !$booking->section()->showFor( $currentUser, FFBoka::ACCESS_CONFIRM ) ) {
             http_response_code( 403 ); die( "Du har inte behörighet att sätta värdet." ); // Forbidden
@@ -395,13 +396,13 @@ switch ( $_REQUEST[ 'action' ] ) {
         $booking->extMail = $_POST[ 'extMail' ];
         $booking->okShowContactData = $_POST[ 'okShowContactData' ];
         // Check whether there are new, changed booking answers so we need to set the dirty flag
-        if ( isset( $_POST[ 'questionId' ] ) && $leastAccess <= FFBoka::ACCESS_PREBOOK ) {
+        if ( !$booking->dirty && isset( $_POST[ 'questionId' ] ) && $leastAccess <= FFBoka::ACCESS_PREBOOK ) {
             $QA = $booking->answers();
             foreach ( $_POST[ 'questionId' ] as $id ) {
                 $question = new Question( $id );
                 if (
                     $QA[ $id ]->question !== $question->caption ||
-                    $QA[ $id ]->answer !== implode( ", ", isset( $_POST[ "answer-$id" ] ) ? $_POST[ "answer-$id" ] : array() )
+                    $QA[ $id ]->answer !== implode( ", ", isset( $_POST[ "answer-$id" ] ) ?: array() )
                 ) $booking->dirty = true;
             }
         }
@@ -410,7 +411,7 @@ switch ( $_REQUEST[ 'action' ] ) {
         if ( isset( $_POST[ 'questionId' ] ) ) {
             foreach ( $_POST[ "questionId" ] as $id ) {
                 $question = new Question( $id );
-                $booking->addAnswer( $question->caption, implode( ", ", isset( $_POST[ "answer-$id" ] ) ? $_POST[ "answer-$id" ] : array() ) );
+                $booking->addAnswer( $question->caption, implode( ", ", isset( $_POST[ "answer-$id" ] ) ?: array() ) );
             }
         }
         // Set status of pending items, except those which are openly unavailable
@@ -595,6 +596,10 @@ switch ( $_REQUEST[ 'action' ] ) {
             http_response_code( 400 );
             die( "Ogiltig inmatning." );
         }
+        die();
+
+    case "removeDirty":
+        $booking->dirty = false;
         die();
         
     case "removeItem":

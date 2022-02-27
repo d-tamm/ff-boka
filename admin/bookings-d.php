@@ -29,7 +29,7 @@ if ( !$section->showFor( $currentUser, FFBoka::ACCESS_CONFIRM ) ) {
 }
 
 /**
- * Displays the items of a category, including child categories, where user has admin access.
+ * Displays the items of a category, including child categories, if/where user has admin access.
  * The IDs of all items included will be added to $_SESSION['itemIds'] array.
  * @param Category $cat Category to show
  * @param User $user 
@@ -88,8 +88,9 @@ switch ( $_REQUEST[ 'action' ] ) {
             $day->add( new DateInterval( 'P1D' ) );
         };
         // Get Freebusy bars and compile list with unconfirmed items
-        $fbList = array();
-        $unconfirmed = array();
+        $fbList = array(); // freebusy bars, with "item-$id" as keys
+        $unconfirmed = array(); // list of unconfirmed bookings, with booking ID as keys
+        $dirty = false;
         $maxBookedItemId = 0;
         foreach ( $_SESSION[ 'itemIds' ] as $id ) {
             $item = new Item( $id );
@@ -100,22 +101,22 @@ switch ( $_REQUEST[ 'action' ] ) {
                 'minStatus' => FFBoka::STATUS_CONFLICT,
                 'adminView' => TRUE
             ]);
-            foreach ( $item->upcomingBookings( 0 ) as $bi ) {
-                switch ( $bi->status ) {
-                case FFBoka::STATUS_CONFLICT:
-                case FFBoka::STATUS_PREBOOKED:
-                    $booking = $bi->booking();
+            foreach ( $item->upcomingBookings( 0 ) as $bookedItem ) {
+                $booking = $bookedItem->booking();
+                if ( $bookedItem->status == FFBoka::STATUS_CONFLICT || $bookedItem->status == FFBoka::STATUS_PREBOOKED || $booking->dirty ) {
                     if ( !isset( $unconfirmed[ $booking->id ] ) ) $unconfirmed[ $booking->id ] = [
                         "bookingId" => $booking->id,
                         "ref" => $booking->ref,
                         "userName" => $booking->userName,
                         "start" => trim( strftime( "%e/%m", $booking->start() ) ),
                         "items" => [],
-                        "status" => "unconfirmed"
+                        "status" => "unconfirmed",
+                        "dirty" => (bool)$booking->dirty,
                     ];
-                    $unconfirmed[ $booking->id ][ "items" ][] = $bi->caption;
-                    if ( $bi->status == FFBoka::STATUS_CONFLICT ) $unconfirmed[ $booking->id ][ "status" ] = "conflict";
-                    $maxBookedItemId = max( $maxBookedItemId, $bi->bookedItemId );
+                    $dirty = $dirty || $booking->dirty;
+                    $unconfirmed[ $booking->id ][ "items" ][] = $bookedItem->caption;
+                    if ( $bookedItem->status == FFBoka::STATUS_CONFLICT ) $unconfirmed[ $booking->id ][ "status" ] = "conflict";
+                    $maxBookedItemId = max( $maxBookedItemId, $bookedItem->bookedItemId );
                     break;
                 }
             }
@@ -124,6 +125,7 @@ switch ( $_REQUEST[ 'action' ] ) {
             "scale" => $scale,
             "freebusy" => $fbList,
             "unconfirmed" => $unconfirmed,
+            "dirty" => $dirty,
             "maxBookedItemId" => $maxBookedItemId
         ] ) );
         
@@ -239,7 +241,7 @@ switch ( $_REQUEST[ 'action' ] ) {
             action: "ajaxGetFreebusy",
             year: startDate.getFullYear(),
             month: startDate.getMonth() + 1
-        }, function( data, status ) {
+        }, function( data ) {
             $( "#booking-adm-date" ).html( startDate.toLocaleDateString( "sv-SE", dateOptions ) );
             $( "#booking-adm-scale" ).html( data.scale );
             $.each( data.freebusy, function( key, value ) { // key will be "item-nn"
@@ -250,13 +252,15 @@ switch ( $_REQUEST[ 'action' ] ) {
             } else {
                 $( "#indicator-new-bookings" ).show();
             }
-            $( "#indicator-unconfirmed-count" ).text( Object.keys( data.unconfirmed ).length + ( Object.keys( data.unconfirmed ).length > 1 ? " nya" : " ny" ) );
+            newCount = Object.keys( data.unconfirmed ).length + Object.keys( data.dirty ).length;
+            $( "#indicator-unconfirmed-count" ).text( newCount + ( newCount > 1 ? " nya" : " ny" ) );
+            $( "#indicator-unconfirmed-count-label" ).text( newCount > 1 ? "bokningar att bekräfta" : "bokning att bekräfta" );
             $( "#indicator-new-bookings-list" ).html( "" );
             var notificationBody = [];
             $.each( data.unconfirmed, function( index, value ) {
                 $( "#indicator-new-bookings-list" ).append(
-                    "<span class='freebusy-busy " + value.status + "' style='display:inline-block; width:1em;'>&nbsp;</span>" +
-                    "<a class='link-unconfirmed' href='#' data-booking-id='" + value.bookingId + "' title='" + value.items.join( ", " ) + "'> " + value.start + " " + value.userName + ( value.ref ? " (" + value.ref + ")" : "" ) + "</a><br>"
+                    "<span class='freebusy-busy " + value.status + "' style='display:inline-block; width:1em;'>" + ( value.dirty ? "🗈" : "&nbsp;" ) + "</span>" +
+                    "<a class='link-unconfirmed' href='#' data-booking-id='" + value.bookingId + "' title='" + ( value.dirty ? "Ändrat meddelande eller svar\n" : "" ) + value.items.join( ", " ) + "'> " + value.start + " " + value.userName + ( value.ref ? " (" + value.ref + ")" : "" ) + "</a><br>"
                 );
                 notificationBody.push( value.start + " " + value.userName + ( value.ref ? " (" + value.ref + ")" : "" ) );
             } );
@@ -345,7 +349,8 @@ switch ( $_REQUEST[ 'action' ] ) {
 
 <div id='booking-admin'>
     <div id="head">
-        <div id="indicator-new-bookings"><span id="indicator-unconfirmed-count">? nya bokningar</span><span id="indicator-unconfirmed-count-label"> bokning(ar) att bekräfta</span>
+        <div id="indicator-new-bookings">
+            <span id="indicator-unconfirmed-count">-- nya</span> <span id="indicator-unconfirmed-count-label">bokning(ar) att bekräfta</span>
             <div id="indicator-new-bookings-list"></div>
         </div>
         <h1><a href="index.php" title="Till startsidan"><i class='fas fa-home' style='color:white; margin-right:20px;'></i></a> Bokningar i <?= $section->name ?>, <span id='booking-adm-date'></span></h1>

@@ -153,6 +153,11 @@ if ( isset( $_REQUEST[ 'action' ] ) && $_REQUEST[ 'action' ] == "help" ) {
     <?php
     if ( count( $unavail ) ) echo "<p class='ui-body ui-body-c'>Några av de resurser du har valt är inte längre tillgängliga vid den valda tiden. De är markerade nedan. För att kunna slutföra bokningen behöver du ta bort dessa resurser eller ändra tiden till en ledig tid.</p>";
     if ( count( $overlap ) ) echo "<p class='ui-body ui-body-c'>Du har lagt in " . ( count( $overlap ) == 1 ? "en resurs" : "några resurser" ) . " flera gånger vid samma tid eller så att tiderna överlappar. De berörda raderna är markerade nedan. Du behöver ta bort dubletten eller justera tiden för att kunna slutföra bokningen.</p>";
+
+    // Show teaser for admin if booking is dirty
+    if ( $booking->dirty && $_SESSION[ 'authenticatedUser' ] && $booking->user()->id != $_SESSION[ 'authenticatedUser' ] ) echo "<p class='ui-body ui-body-b' id='book-sum-dirty-msg'>Användaren har ändrat meddelandet eller något svar på en bokningsfråga. Klicka på knappen nedan när du har hanterat ändringarna.
+    <button class='ui-btn' onClick='removeDirty();'>OK</button>
+    </p>";
     ?>
     
     <ul data-role='listview' id='book-sum-item-list' data-inset='true' data-divider-theme='a' data-split-icon='delete'>
