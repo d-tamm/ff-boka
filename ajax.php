@@ -422,6 +422,8 @@ switch ( $_REQUEST[ 'action' ] ) {
                 else $item->status = FFBoka::STATUS_PREBOOKED;
             }
         }
+        // If other than booking owner is saving, this can only be an admin, so remove dirty flag.
+        if ( $currentUser->id !== $booking->user()->id ) $booking->dirty = false;
 
         $booking->sendNotifications( $cfg[ 'mail' ], $cfg[ 'url' ] );
         $result = $booking->sendConfirmation( $cfg[ 'mail' ], $cfg[ 'url' ] );
