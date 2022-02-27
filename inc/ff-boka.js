@@ -170,12 +170,13 @@ function scrollDateBookings( offset ) {
     $.getJSON( "bookings-m.php", {
         action: "ajaxGetFreebusy",
         start: startDate.valueOf() / 1000
-    }, function( data, status ) {
+    } )
+    .done( function( data ) {
         $( "#bookings-current-range-readable" ).html( readableRange );
         $( "#bookings-list-unconfirmed" ).html( "" );
         $.each( data.unconfirmed, function( index, value ) {
             $( "#bookings-list-unconfirmed" ).append(
-                "<li><a href='../book-sum.php?bookingId=" + value.bookingId + "' target='_blank'><span class='freebusy-busy " + ( value.conflict ? "conflict" : "unconfirmed" ) + "' style='display:inline-block; width:1em;'>&nbsp;</span> " + value.start + " " + value.userName + ( value.ref ? " (" + value.ref + ")" : "" ) + "<br><p>" + value.items.join( ", " ) + "</p></a></li>" );
+                "<li><a href='../book-sum.php?bookingId=" + value.bookingId + "' target='_blank'><span class='freebusy-busy " + value.status + "' style='display:inline-block; width:1em;'>" + ( value.dirty ? "🗈" : "&nbsp;" ) + "</span> " + value.start + " " + value.userName + ( value.ref ? " (" + value.ref + ")" : "" ) + "<br><p>" + value.items.join( ", " ) + "</p></a></li>" );
         } );
         $( "#bookings-list-unconfirmed" ).listview( "refresh" );
         $( "#bookings-unconfirmed-count" ).text( "(" + Object.keys( data.unconfirmed ).length + ")" );
