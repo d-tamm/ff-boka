@@ -241,7 +241,8 @@ switch ( $_REQUEST[ 'action' ] ) {
             action: "ajaxGetFreebusy",
             year: startDate.getFullYear(),
             month: startDate.getMonth() + 1
-        }, function( data ) {
+        } )
+        .done( function( data ) {
             $( "#booking-adm-date" ).html( startDate.toLocaleDateString( "sv-SE", dateOptions ) );
             $( "#booking-adm-scale" ).html( data.scale );
             $.each( data.freebusy, function( key, value ) { // key will be "item-nn"

@@ -6,21 +6,21 @@ use FFBoka\Category;
 use FFBoka\Item;
 
 session_start();
-require(__DIR__."/../inc/common.php");
+require( __DIR__."/../inc/common.php" );
 global $cfg;
 
-if (isset($_GET['sectionId'])) $_SESSION['sectionId'] = $_GET['sectionId'];
+if ( isset( $_GET[ 'sectionId' ] ) ) $_SESSION[ 'sectionId' ] = $_GET[ 'sectionId' ];
 // This page may only be accessed by registered users 
-if (!$_SESSION['authenticatedUser'] || !$_SESSION['sectionId']) {
-    header("Location: {$cfg['url']}index.php?message=" . urlencode("Du måste logga in för att använda bokningsöversikten.") . "&redirect=" . urlencode("{$cfg['url']}admin/bookings-d.php?sectionId={$_REQUEST['sectionId']}"));
+if ( !$_SESSION[ 'authenticatedUser' ] || !$_SESSION[ 'sectionId' ] ) {
+    header( "Location: {$cfg[ 'url' ]}index.php?message=" . urlencode( "Du måste logga in för att använda bokningsöversikten." ) . "&redirect=" . urlencode( "admin/bookings-d.php?sectionId={$_REQUEST[ 'sectionId' ]}"));
     die();
 }
 // Set current section and user
-$section = new Section($_SESSION['sectionId']);
-$currentUser = new User($_SESSION['authenticatedUser']);
+$section = new Section( $_SESSION[ 'sectionId' ] );
+$currentUser = new User( $_SESSION[ 'authenticatedUser' ] );
 // User must have some sort of admin function
-if (!$section->showFor($currentUser, FFBoka::ACCESS_CONFIRM)) {
-    header("Location: {$cfg['url']}");
+if ( !$section->showFor( $currentUser, FFBoka::ACCESS_CONFIRM ) ) {
+    header( "Location: {$cfg[ 'url' ]}" );
     die();
 }
 
@@ -30,88 +30,87 @@ if (!$section->showFor($currentUser, FFBoka::ACCESS_CONFIRM)) {
  * @param Category $cat Category to show
  * @param User $user
  */
-function showCat(Category $cat, User $user) {
-    if ($cat->showFor($user, FFBoka::ACCESS_CONFIRM)) {
+function showCat( Category $cat, User $user ) : void {
+    if ( $cat->showFor( $user, FFBoka::ACCESS_CONFIRM ) ) {
         // User has access to this or some child category
         echo "<div data-role='collapsible' data-inset='false'>";
-        echo "<h3><div class='cat-list-img'>" . embedImage($cat->thumb) . "</div>" . htmlspecialchars($cat->caption) . "</h3>";
-        if ($cat->getAccess($user) >= FFBoka::ACCESS_CONFIRM) {
+        echo "<h3><div class='cat-list-img'>" . embedImage( $cat->thumb ) . "</div>" . htmlspecialchars( $cat->caption ) . "</h3>";
+        if ( $cat->getAccess( $user ) >= FFBoka::ACCESS_CONFIRM ) {
             // User has sufficient access to this category and its items.
             $items = $cat->items();
-            if (count($items)) {
+            if ( count( $items ) ) {
                 echo "<ul data-role='listview' data-split-icon='info' data-split-theme='a'>";
             }
-            foreach ($items as $item) {
+            foreach ( $items as $item ) {
                 echo "<li class='book-item' id='book-item-{$item->id}'><a href=\"#\">";
-                echo "<h4" . ($item->active ? "" : " inactive") . "'>" . htmlspecialchars($item->caption) . "</h4>";
+                echo "<h4" . ( $item->active ? "" : " inactive" ) . "'>" . htmlspecialchars( $item->caption ) . "</h4>";
                 echo "<div class='freebusy-bar' id='freebusy-item-{$item->id}'></div>";
                 echo "</a><a href='javascript:showItemDetails({$item->id})'></a>";
                 echo "</li>";
-                $_SESSION['itemIds'][] = $item->id;
+                $_SESSION[ 'itemIds' ][] = $item->id;
             }
-            if (count($items)) echo "<br></ul>\n";
+            if ( count( $items ) ) echo "<br></ul>\n";
         }
-        foreach ($cat->children() as $child) showCat($child, $user);
+        foreach ( $cat->children() as $child ) showCat( $child, $user );
         echo "</div>";
     }
 }
 
-if (isset($_REQUEST['action'])) {
-    switch ($_REQUEST['action']) {
+if ( isset( $_REQUEST[ 'action' ] ) ) {
+    switch ( $_REQUEST[ 'action' ] ) {
         case "help":
             echo <<<END
-    Det finns inte någon hjälptext för den här sidan.
-    END;
+            Det finns inte någon hjälptext för den här sidan.
+            END;
             die();
         case "ajaxGetFreebusy":
-            header("Content-Type: application/json");
-            // Get Freebusy bars and compile list with unconfirmed items
+            header( "Content-Type: application/json" );
+            // Get Freebusy bars and compile list with unconfirmed items and dirty bookings
             $fbList = array();
             $unconfirmed = array();
-            foreach ($_SESSION['itemIds'] as $id) {
-                $item = new Item($id);
-                $fbList["item-$id"] = $item->freebusyBar([
-                    'start'=>$_REQUEST['start'],
-                    'scale'=>TRUE,
-                    'minStatus'=>FFBoka::STATUS_CONFLICT,
-                    'adminView'=>TRUE
-                ]);
-                foreach ($item->upcomingBookings(0) as $bi) {
-                    switch ($bi->status) {
-                        case FFBoka::STATUS_CONFLICT:
-                        case FFBoka::STATUS_PREBOOKED:
-                            $booking = $bi->booking();
-                            if (!isset($unconfirmed[$booking->id])) $unconfirmed[$booking->id] = [
-                                "bookingId"=>$booking->id,
-                                "ref"=>$booking->ref,
-                                "userName"=>$booking->userName,
-                                "start"=>trim(strftime("%e/%m", $booking->start())),
-                                "items"=>[],
-                                "conflict"=>false
-                            ];
-                            $unconfirmed[$booking->id]["items"][] = $bi->caption;
-                            if ($bi->status==FFBoka::STATUS_CONFLICT) $unconfirmed[$booking->id]["conflict"] = true;
-                            break;
+            foreach ( $_SESSION[ 'itemIds' ] as $id ) {
+                $item = new Item( $id );
+                $fbList[ "item-$id" ] = $item->freebusyBar([
+                    'start' => $_REQUEST[ 'start' ],
+                    'scale' => TRUE,
+                    'minStatus' => FFBoka::STATUS_CONFLICT,
+                    'adminView' => TRUE
+                ] );
+                foreach ( $item->upcomingBookings( 0 ) as $bookedItem ) {
+                    $booking = $bookedItem->booking();
+                    if ( $bookedItem->status == FFBoka::STATUS_CONFLICT || $bookedItem->status == FFBoka::STATUS_PREBOOKED || $booking->dirty ) {
+                        if ( !isset( $unconfirmed[ $booking->id ] ) ) $unconfirmed[ $booking->id ] = [
+                            "bookingId" => $booking->id,
+                            "ref" => $booking->ref,
+                            "userName" => $booking->userName,
+                            "start" => trim( strftime( "%e/%m", $booking->start() ) ),
+                            "items" => [],
+                            "status" => "unconfirmed",
+                            "dirty" => (bool)$booking->dirty,
+                        ];
+                        $unconfirmed[ $booking->id ][ "items" ][] = $bookedItem->caption;
+                        if ( $bookedItem->status == FFBoka::STATUS_CONFLICT ) $unconfirmed[ $booking->id ][ "status" ] = "conflict";
+                        break;
                     }
                 }
             }
-            die(json_encode([
-                "freebusy"=>$fbList,
-                "unconfirmed"=>$unconfirmed
-            ]));
+            die( json_encode( [
+                "freebusy" => $fbList,
+                "unconfirmed" => $unconfirmed
+            ] ) );
     }
 }
 
 ?><!DOCTYPE html>
 <html>
 <head>
-    <?php htmlHeaders("Friluftsfrämjandets resursbokning", $cfg['url']) ?>
+    <?php htmlHeaders( "Friluftsfrämjandets resursbokning", $cfg[ 'url' ] ) ?>
 </head>
 
 
 <body>
 <div data-role="page" id="page-bookings">
-    <?= head("Bokningar " . htmlspecialchars($section->name), $cfg['url'], $cfg['superAdmins']) ?>
+    <?= head( "Bokningar " . htmlspecialchars( $section->name ), $cfg[ 'url' ], $cfg[ 'superAdmins' ] ) ?>
     <div role="main" class="ui-content">
 
 	<div data-role='collapsible' id='bookings-tab-unconfirmed' data-inset='false'>
@@ -119,9 +118,9 @@ if (isset($_REQUEST['action'])) {
         <ul id="bookings-list-unconfirmed" data-role='listview'></ul>
 	</div>
     <?php 
-    $_SESSION['itemIds'] = array();
-    foreach ($section->getMainCategories() as $cat) {
-        showCat($cat, $currentUser);
+    $_SESSION[ 'itemIds' ] = array();
+    foreach ( $section->getMainCategories() as $cat ) {
+        showCat( $cat, $currentUser );
     }
     ?>
     </div><!-- /main -->
