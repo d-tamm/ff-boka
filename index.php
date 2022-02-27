@@ -283,7 +283,10 @@ if (isset($_REQUEST['message'])) $message = ($message ? "$message<br>" : "") . $
                 if ($section->showFor($currentUser, FFBoka::ACCESS_CATADMIN) ||
                     @array_intersect($_SESSION['assignments'][$section->id], $cfg['sectionAdmins'])) {
                         $unconfirmed = array();
-                        foreach ($section->getUnconfirmedItems($currentUser) as $item) $unconfirmed[$item->booking()->id]++;
+                        foreach ($section->getUnconfirmedBookings($currentUser) as $bookingId) {
+                            if ( !isset( $unconfirmed[ $bookingId ] ) ) $unconfirmed[ $bookingId ] = 0;
+                            $unconfirmed[ $bookingId ]++;
+                        }
                         echo "<a href='admin/?sectionId={$section->id}' class='ui-btn ui-btn-icon-right " . ($unconfirmed ? "ui-btn-c ui-icon-alert" : "ui-icon-gear") . "' data-transition='slideup' title='" . ($unconfirmed ? "Det finns " . count($unconfirmed) . " obekräftade bokningar" : "Öppna administrationssidan") . "'>Admin " . htmlspecialchars($section->name) . ($unconfirmed ? " (" . count($unconfirmed) . ")" : "") . "</a>";
                 }
             } ?>
@@ -329,7 +332,7 @@ if (isset($_REQUEST['message'])) $message = ($message ? "$message<br>" : "") . $
 
         <form id="formLogin" style="padding:10px 20px;" action="index.php" method="post" data-ajax="false">
             <h3>Inloggning</h3>
-            <input type="hidden" name="redirect" id="loginRedirect" value="<?= isset($_REQUEST['redirect']) ? $_REQUEST['redirect'] : "" ?>">
+            <input type="hidden" name="redirect" id="loginRedirect" value="<?= $_REQUEST['redirect'] ?? "" ?>">
             <input name="id" value="" placeholder="Medlemsnummer eller personnummer" required>
             <input name="password" value="" placeholder="Lösenord" type="password">
             <div id="div-remember-me" style="<?= empty($_COOKIE['cookiesOK']) || empty($_SERVER['HTTPS']) ? "display:none;" : "" ?>"><label><input data-mini='true' name='rememberMe' value='1' type='checkbox'> Kom ihåg mig</label></div>
