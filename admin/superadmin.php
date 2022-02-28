@@ -324,7 +324,7 @@ $cfg = $currentCfg;
             <pre><?php print_r($_SESSION); ?></pre>
         </div>
 
-        <div data-role="collapsible" id="admin-section-misc">
+        <div data-role="collapsible" id="admin-section-sections">
             <h2>Lokalavdelningar</h2>
             <ul data-role="listview" data-inset="true" data-filter="true" data-split-icon="delete" data-split-theme="c"><?php
                 $updated = -1;
