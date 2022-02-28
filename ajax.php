@@ -385,7 +385,7 @@ switch ( $_REQUEST[ 'action' ] ) {
         $items = $booking->items();
         $leastAccess = FFBoka::ACCESS_CATADMIN;
         foreach ( $items as $item ) {
-            $leastAccess = min( $minAccess, $item->category()->getAccess( $currentUser ) );
+            $leastAccess = min( $leastAccess, $item->category()->getAccess( $currentUser ) );
         }
         $booking->ref = $_POST[ 'ref' ];
         if ( $booking->commentCust !== $_POST[ 'commentCust' ] && $leastAccess <= FFBoka::ACCESS_PREBOOK ) $booking->dirty = true;
@@ -423,7 +423,7 @@ switch ( $_REQUEST[ 'action' ] ) {
             }
         }
         // If other than booking owner is saving, this can only be an admin, so remove dirty flag.
-        if ( $currentUser->id !== $booking->user()->id ) $booking->dirty = false;
+        if ( $currentUser->id !== $booking->user()->id || $leastAccess > FFBoka::ACCESS_PREBOOK ) $booking->dirty = false;
 
         $booking->sendNotifications( $cfg[ 'mail' ], $cfg[ 'url' ] );
         $result = $booking->sendConfirmation( $cfg[ 'mail' ], $cfg[ 'url' ] );
