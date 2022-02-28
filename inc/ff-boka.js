@@ -176,7 +176,7 @@ function scrollDateBookings( offset ) {
         $( "#bookings-list-unconfirmed" ).html( "" );
         $.each( data.unconfirmed, function( index, value ) {
             $( "#bookings-list-unconfirmed" ).append(
-                "<li><a href='../book-sum.php?bookingId=" + value.bookingId + "' target='_blank'><span class='freebusy-busy " + value.status + "' style='display:inline-block; width:1em;'>" + ( value.dirty ? "🗈" : "&nbsp;" ) + "</span> " + value.start + " " + value.userName + ( value.ref ? " (" + value.ref + ")" : "" ) + "<br><p>" + value.items.join( ", " ) + "</p></a></li>" );
+                "<li><a href='../book-sum.php?bookingId=" + value.bookingId + "' target='_blank'><span class='freebusy-busy " + value.status + "' style='display:inline-block; width:1em;'>" + ( value.dirty ? "🛈" : "&nbsp;" ) + "</span> " + value.start + " " + value.userName + ( value.ref ? " (" + value.ref + ")" : "" ) + "<br><p>" + value.items.join( ", " ) + "</p></a></li>" );
         } );
         $( "#bookings-list-unconfirmed" ).listview( "refresh" );
         $( "#bookings-unconfirmed-count" ).text( "(" + Object.keys( data.unconfirmed ).length + ")" );
