@@ -74,66 +74,73 @@ switch ( $_REQUEST[ 'action' ] ) {
         <p>Att radera ditt konto här påverkar inte ditt konto i aktivitetshanteraren.</p>
         EOF;
         die();
-    case "deleteAccount":
+
+    case "ajaxDeleteAccount":
+        $result = $FF->authenticateUser( $currentUser->id, $_POST[ 'password' ] );
+        if ( $result === FALSE ) {
+            http_response_code( 503 ); // Service unavailable
+            die( "Kan inte verifiera lösenordet just nu. Vänligen försök igen senare." );
+        }
+        if ( $result[ 'authenticated' ] !== TRUE ) {
+            http_response_code( 403 ); // Forbidden
+            die( "Fel lösenord. Vänligen försök igen. Lösenordet du ska ange är samma som du använder på Friluftsfrämjandets hemsida." );
+        }
         if ( $currentUser->delete() ) {
             // We remove the session cookie here. Otherwise, the user would be recreated in index.php
             session_unset();
             session_destroy();
             session_write_close();
             setcookie( session_name(), "", 0, "/" );
-            header( "Location: index.php?logout&action=accountDeleted" );
-            break;
-        } else {
-            $message = "Något gick fel. Kontakta webmaster tack.";
+            die();
         }
-        break;
+        http_response_code( 500 ); // Internal Server Error
+        die( "Något gick fel. Kontakta webmaster tack." );
         
-    case "save user data":
-        // User shall supply name, mail and phone
-        if ( $_POST[ 'name' ] && $_POST[ 'mail' ] && $_POST[ 'phone' ] ) {
-            if ( !filter_var( $_POST[ 'mail' ], FILTER_VALIDATE_EMAIL ) ) {
-                $message = "Epostadressen är ogiltig.";
-                break;
-            }
-            $result = $FF->authenticateUser( $currentUser->id, $_POST[ 'password' ] );
-            if ( $result === FALSE ) {
-                $message = "Kan inte verifiera lösenordet just nu. Vänligen försök igen senare.";
-                break;
-            }
-            if ( $result[ 'authenticated' ] === FALSE ) {
-                $message = "Fel lösenord. Vänligen försök igen. Lösenordet du ska ange är samma som du använder på Friluftsfrämjandets hemsida.";
-                break;
-            }
-            // Put name and phone into currentUser so they get displayed properly
-            $currentUser->name = $_POST[ 'name' ];
-            $currentUser->phone = $_POST[ 'phone' ];
-            if ( $_POST[ 'mail' ] !== $currentUser->mail ) {
-                // Mail address change. Send a verification token.
-                $token = $currentUser->setUnverifiedMail( $_POST[ 'mail' ] );
-                $FF->sendMail(
-                    $_POST[ 'mail' ], // To
-                    "Bekräfta din epostadress", // subject
-                    "confirm_mail_address", // template
-                    array(
-                        "{{name}}" => $currentUser->name,
-                        "{{new_mail}}" => $_POST[ 'mail' ],
-                        "{{link}}" => "{$cfg[ 'url' ]}index.php?t=$token",
-                        "{{expires}}" => strftime( "%c", time() + 86400 )
-                    ),
-                    [], // attachments
-                    $cfg[ 'mail' ],
-                    false // send immediately
-                );
-                $message = "Dina kontaktuppgifter har sparats. Ett meddelande har skickats till adressen {$_POST[ 'mail' ]}. Använd länken i mejlet för att aktivera den nya adressen.<br><br>Hittar du inte mejlet? Kolla i skräpkorgen!";
-                $_REQUEST[ 'expand' ] = "contact";
-            } else {
-                header( "Location: index.php?message=" . urlencode( "Dina kontaktuppgifter har sparats." ) );
-                die();
-            }
-        } else {
-            $message = "Fyll i namn, epostadress och mobilnummer, tack.";
+    case "ajaxGetUserdata":
+        header( "Content-Type: application/json" );
+        die( json_encode( [
+            "name" => $currentUser->name,
+            "mail" => $currentUser->mail,
+            "mailPending" => $currentUser->getUnverifiedMail(),
+            "phone" => $currentUser->phone,
+        ] ) );
+
+    case "ajaxSaveUserdata":
+        $result = $FF->authenticateUser( $currentUser->id, $_POST[ 'password' ] );
+        if ( $result === FALSE ) {
+            http_response_code( 503 ); // Service unavailable
+            die( "Kan inte verifiera lösenordet just nu. Vänligen försök igen senare." );
         }
-        break;
+        if ( $result[ 'authenticated' ] !== TRUE ) {
+            http_response_code( 403 ); // Forbidden
+            die( "Fel lösenord. Vänligen försök igen. Lösenordet du ska ange är samma som du använder på Friluftsfrämjandets hemsida." );
+        }
+        if ( $_POST[ 'mail' ] && !filter_var( $_POST[ 'mail' ], FILTER_VALIDATE_EMAIL ) ) {
+            http_response_code( 400 );
+            die( "Epostadressen är ogiltig." );
+        }
+        if ( $_POST[ 'name' ] ) $currentUser->name = $_POST[ 'name' ];
+        if ( $_POST[ 'phone' ] ) $currentUser->phone = $_POST[ 'phone' ];
+        if ( $_POST[ "mail" ] && $_POST[ 'mail' ] !== $currentUser->mail ) {
+            // Mail address change. Send a verification token.
+            $token = $currentUser->setUnverifiedMail( $_POST[ 'mail' ] );
+            $FF->sendMail(
+                $_POST[ 'mail' ], // To
+                "Bekräfta din epostadress", // subject
+                "confirm_mail_address", // template
+                array(
+                    "{{name}}" => $currentUser->name,
+                    "{{new_mail}}" => $_POST[ 'mail' ],
+                    "{{link}}" => "{$cfg[ 'url' ]}index.php?t=$token",
+                    "{{expires}}" => strftime( "%c", time() + 86400 )
+                ),
+                [], // attachments
+                $cfg[ 'mail' ],
+                false // send immediately
+            );
+            $msg = "Ett meddelande har skickats till adressen " . htmlspecialchars( $_POST[ 'mail' ] ) . ". Använd länken i mejlet för att aktivera den nya adressen.\n\nHittar du inte mejlet? Kolla i skräpkorgen!";
+        }
+        die( "Dina kontaktuppgifter har sparats. $msg" );
         
     case "ajaxSetNotificationOptout":
         header( "Content-Type: application/json" );
@@ -262,46 +269,44 @@ if ( isset( $_GET[ 'first_login' ] ) ) $message = "Välkommen till resursbokning
         <div data-role='collapsible' data-collapsed='<?= isset( $_GET[ 'first_login' ] ) || $_REQUEST[ 'expand' ] == "contact" ? "false" : "true" ?>'>
             <h3>Kontaktuppgifter</h3>
             
-            <form action="userdata.php" method="post" data-ajax="false">
-                <p>Uppgifter om dig så andra vet vem du är och hur de kan få tag i dig.</p>
-                <input type="hidden" name="action" value="save user data">
-                <p>Medlemsnummer: <?= $currentUser->id ?></p>
-                <p>Lokalavdelning: <?= $currentUser->section->name ?></p>
-                <div class="ui-field-contain">
-                    <label for="userdata-name" class="required">Namn:</label>
-                    <input type="text" name="name" id="userdata-name" required placeholder="Namn" value="<?= htmlspecialchars( $_POST[ 'name' ] ?? $currentUser->name ) ?>">
-                </div>
-                <div class="ui-field-contain">
-                    <label>Epost:</label>
-                    <span><?= htmlspecialchars( $currentUser->mail ?: "(ingen epostadress angiven)" ) ?></span>
-                </div>
-                <?php
-                if ( $newMail = $currentUser->getUnverifiedMail() ) {
-                    echo "<p class='ui-body ui-body-a'><small>Du har ett pågående ärende att byta din epostadress till <b>$newMail</b>. Ett meddelande med aktiveringslänk har skickats till den nya adressen. Kolla i din skräppostmapp om du inte hittar mejlet. Behöver du en ny kod? Skriv in adressen igen i fältet nedan!</small><br>";
-                }
-                ?>
-                <div class="ui-field-contain">
-                    <label for="userdata-mail">Ändra epost till:</label>
-                    <input type="email" name="mail" id="userdata-mail" required autocomplete="off" readonly="true" placeholder="Knappa in din (nya) epostadress här" value=""><!-- This field will be set to writable by Javascript, which prevents autofilling -->
-                </div>
-                <div class="ui-field-contain">
-                    <label for="userdata-phone" class="required">Telefon:</label>
-                    <input type="tel" name="phone" id="userdata-phone" required placeholder="Mobilnummer" value="<?= htmlspecialchars( $_POST[ 'phone' ] ?? $currentUser->phone ) ?>">
-                </div>
-                Ange ditt aktuella lösenord nedan för att bekräfta att du vill ändra dina kontaktuppgifter.
-                <div class="ui-field-contain">
-                    <label for="userdata-password" class="required">Lösenord:</label>
-                    <input type="password" name="password" id="userdata-password" required placeholder="Ange ditt FF-lösenord" autocomplete="off">
-                </div>
-                <input type="submit" value="Spara" data-icon="check">
-            </form>
+            <p>Uppgifter om dig så andra vet vem du är och hur de kan få tag i dig. För att kunna använda systemet behöver du lägga in både namn, epost och telefonnummer. Uppgifterna används enbart för kommunikationen inom bokningssystemet.</p>
+            <p>Medlemsnummer: <?= $currentUser->id ?></p>
+            <p>Lokalavdelning: <?= $currentUser->section->name ?></p>
+            <div class="ui-field-contain">
+                <label for="userdata-name" class="required">Namn:</label>
+                <input type="text" id="userdata-name" placeholder="Namn">
+            </div>
+            <div id="userdata-div-mail" class="ui-field-contain">
+                <label class="required">Epost:</label>
+                <span id="userdata-mail"></span>
+            </div>
+            <div class="ui-field-contain">
+                <label id="userdata-lbl-new-mail" for="userdata-mail">Epost:</label>
+                <input type="email" id="userdata-new-mail" autocomplete="off" placeholder="Knappa in din (nya) epostadress här" value=""><!-- This field will be set to writable by Javascript, which prevents autofilling -->
+            </div>
+            <p id="userdata-msg-mail-pending" class='ui-body ui-body-a'><small>Du har ett pågående ärende att använda epostadressen <b id="userdata-mail-pending">...</b>. Ett meddelande med aktiveringslänk har skickats till den nya adressen. Klicka på länken i mejlet för att aktivera adressen. Kolla i din skräppostmapp om du inte hittar mejlet. Behöver du en ny kod? Skriv in adressen igen i fältet ovan!</small></p>
+            <div class="ui-field-contain">
+                <label for="userdata-phone" class="required">Telefon:</label>
+                <input type="tel" id="userdata-phone" placeholder="Mobilnummer">
+            </div>
+            Ange ditt aktuella lösenord nedan för att bekräfta att du vill ändra dina kontaktuppgifter.
+            <div class="ui-field-contain">
+                <label for="userdata-password" class="required">Lösenord:</label>
+                <input type="password" id="userdata-password" placeholder="Ange ditt FF-lösenord" autocomplete="off">
+            </div>
+            <button onClick="saveUserdata();" class="ui-btn ui-btn-icon-right ui-icon-check">Spara</button>
         </div>
     
         <div data-role='collapsible'>
             <h3>Radera kontot</h3>
             <p>Om du inte längre vill använda resursbokningen kan du radera alla dina personuppgifter i systemet. Om du gör det loggas du ut, och ditt konto med alla relaterade uppgifter raderas. Om du åter vill använda tjänsten loggar du in igen med ditt medlemsnummer och måste då ange dina personuppgifter på nytt.</p>
             <p>Att radera ditt konto här påverkar inte ditt konto i aktivitetshanteraren.</p>
-            <button class="ui-btn ui-btn-c" onClick="deleteAccount();" data-ajax='false'>Radera mina uppgifter</button>
+            <button class="ui-btn" onclick="$('#div-delete-account').show();">Radera mitt konto</button>
+            <div class="ui-body ui-body-a" id="div-delete-account" style="display:none;">
+                Ange ditt lösenord för att bekräfta att du vill radera ditt konto.<br><b>OBS, allt data tillhörande ditt konto (t.ex. dina bokningar) raderas och kan inte återställas!</b>
+                <input type="password" id="delete-account-password">
+                <button class="ui-btn ui-btn-c" onClick="deleteAccount();" data-ajax='false'>Radera mina uppgifter</button>
+            </div>
         </div>
 
     </div><!--/collapsibleset-->
