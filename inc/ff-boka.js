@@ -1974,19 +1974,80 @@ $( document ).on( 'pageshow', "#page-userdata", function() {
     if ( $( "#msg-page-userdata" ).html() ) {
         $( "#popup-msg-page-userdata" ).popup( 'open' );
     }
-    // Make email input writable
-    setTimeout( function() {
-        $( "#userdata-mail" ).removeAttr( 'readonly' );
-    }, 500 );
+    getUserdata();
 } );
+
+/**
+ * Save the user data via ajax
+ */
+function saveUserdata() {
+    if ( $( "#userdata-password" ).val() == "" ) {
+        alert( "Ange ditt lösenord, tack." );
+        return;
+    }
+    $.mobile.loading( "show", {} );
+    $.post( "userdata.php", {
+        action: "ajaxSaveUserdata",
+        password: $( "#userdata-password" ).val(),
+        name: $( "#userdata-name" ).val(),
+        mail: $( "#userdata-new-mail" ).val(),
+        phone: $( "#userdata-phone" ).val(),
+    } )
+    .done( function( data ) {
+        $.mobile.loading( "hide", {} );
+        getUserdata();
+        alert( data );
+    } )
+    .fail( function( xhr ) {
+        $.mobile.loading( "hide", {} );
+        alert( xhr.responseText );
+    } );
+}
+
+/**
+ * Retrieve user data via ajax
+ */
+function getUserdata() {
+    $.getJSON( "userdata.php", { action: "ajaxGetUserdata" } )
+    .done( function( data ) {
+        $( "#userdata-name" ).val( data.name );
+        $( "#userdata-phone" ).val( data.phone );
+        if ( data.mail == "") {
+            $( "#userdata-div-mail" ).hide();
+            $( "#userdata-lbl-new-mail" ).addClass( "required" ).text( "Epost:" );
+        } else {
+            $( "#userdata-div-mail" ).show();
+            $( "#userdata-lbl-new-mail" ).removeClass( "required" ).text( "Ändra epost till:" );
+        }
+        $( "#userdata-mail" ).text( data.mail );
+        if ( data.mailPending == "" ) {
+            $( "#userdata-msg-mail-pending" ).hide();
+        } else {
+            $( "#userdata-mail-pending" ).text( data.mailPending );
+            $( "#userdata-msg-mail-pending" ).show();
+        }
+        // Make email input writable
+//        $( "#userdata-mail" ).removeAttr( 'readonly' );
+        $( "#userdata-new-mail" ).val( "" );
+        $( "#userdata-password" ).val( "" );
+    } );
+}
 
 /**
  * Delete user account
  */
 function deleteAccount() {
-    if ( window.confirm( "Bekräfta att du vill radera ditt konto i resursbokningen. Alla dina bokningar och persondata tas bort från systemet och kan inte återställas!" ) ) {
-        location.href = "userdata.php?action=deleteAccount";
-    }
+    $.post( "userdata.php", {
+        action: "ajaxDeleteAccount",
+        password: $( "#delete-account-password" ).val()
+    } )
+    .done( function( ) {
+        alert( "Ditt konto har nu raderats. Välkommen åter!" );
+        $.mobile.changePage( "index.php" );
+    } )
+    .fail( function( xhr ) {
+        alert( xhr.responseText );
+    } );
 }
 
 function setNotificationOptout( catId, notify ) {
