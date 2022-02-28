@@ -260,7 +260,7 @@ switch ( $_REQUEST[ 'action' ] ) {
             var notificationBody = [];
             $.each( data.unconfirmed, function( index, value ) {
                 $( "#indicator-new-bookings-list" ).append(
-                    "<span class='freebusy-busy " + value.status + "' style='display:inline-block; width:1em;'>" + ( value.dirty ? "🗈" : "&nbsp;" ) + "</span>" +
+                    "<span class='freebusy-busy " + value.status + "' style='display:inline-block; width:1em;'>" + ( value.dirty ? "🛈" : "&nbsp;" ) + "</span>" +
                     "<a class='link-unconfirmed' href='#' data-booking-id='" + value.bookingId + "' title='" + ( value.dirty ? "Ändrat meddelande eller svar\n" : "" ) + value.items.join( ", " ) + "'> " + value.start + " " + value.userName + ( value.ref ? " (" + value.ref + ")" : "" ) + "</a><br>"
                 );
                 notificationBody.push( value.start + " " + value.userName + ( value.ref ? " (" + value.ref + ")" : "" ) );
