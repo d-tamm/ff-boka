@@ -594,15 +594,13 @@ $( document ).on( 'pagecreate', "#page-book-sum", function() {
     $( "#form-booking" ).submit( function( event ) {
         var $this = $( this );
         event.preventDefault();
-        var allQuestionsAnswered = true;
         // Validate required checkboxes and radios before submitting the booking
         $.each( reqCheckRadios, function( id, q ) {
-            if ( $( "[name^=answer-"+id+"]:checked" ).length == 0 ) {
+            if ( $( "[name^=answer-" + id + "]:checked" ).length == 0 ) {
                 alert( "Du måste först svara på frågan: " + q );
-                allQuestionsAnswered = false;
+                return false; //FIXME: this does not work. Dialog not displayed on Android. Form sent anyway.
             }
         } );
-        if ( !allQuestionsAnswered ) return false;
         $.mobile.loading( "show", {} );
         $.post( $this.attr( 'action' ), $this.serialize() )
         .done( function( data ) {
