@@ -411,7 +411,7 @@ switch ( $_REQUEST[ 'action' ] ) {
         if ( isset( $_POST[ 'questionId' ] ) ) {
             foreach ( $_POST[ "questionId" ] as $id ) {
                 $question = new Question( $id );
-                $booking->addAnswer( $question->caption, implode( ", ", isset( $_POST[ "answer-$id" ] ) ?: array() ) );
+                $booking->addAnswer( $question->caption, implode( ", ", $_POST[ "answer-$id" ] ?: array() ) );
             }
         }
         // Set status of pending items, except those which are openly unavailable
