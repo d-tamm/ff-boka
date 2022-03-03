@@ -316,9 +316,6 @@ switch ( $_REQUEST[ 'action' ] ) {
             $itemList .= "</p></a>\n<a href='#' onClick='removeItem({$item->bookedItemId});'>Ta bort</a></li>\n";
         }
 
-        // Remember required questions for later input control (see ajax call for confirmBooking)
-        $_SESSION[ 'requiredCheckboxradios' ] = array();
-
         $prevAnswers = $booking->answers();
         $htmlQuestions = "";
         foreach ( $questions as $id => $required ) {
@@ -337,7 +334,6 @@ switch ( $_REQUEST[ 'action' ] ) {
             switch ( $question->type ) {
                 case "radio":
                 case "checkbox":
-                    if ( $required ) $_SESSION[ 'requiredCheckboxradios' ][ $id ] = $question->caption;
                     foreach ( $question->options->choices as $choice ) {
                         $htmlQuestions .= "<label><input type='{$question->type}' name='answer-{$id}[]' value='" . htmlspecialchars( $choice ?: "Ja" ) . "'" . ( $prevAns == ( $choice ?: "Ja" ) ? " checked" : "" ) . "> " . htmlspecialchars( $choice ?: $question->caption ) . ( $required && !$choice ? " <span class='required'></span>" : "" ) . "</label>\n";
                     }
@@ -378,7 +374,24 @@ switch ( $_REQUEST[ 'action' ] ) {
     case "confirmBooking":
     case "repeatCreate":
         // Check if all mandatory questions are answered
-        
+        $required = array();
+        foreach ( $booking->items() as $item ) {
+            foreach ( $item->category()->getQuestions() as $id=>$question ) {
+                if ( $question->required ) $required[] = $id;
+            }
+        }
+        $missing = array();
+        foreach ( array_unique( $required ) as $id ) {
+            if ( !$_POST[ "answer-$id" ][0] ) {
+                $question = new Question( $id );
+                $missing[] = $question->caption;
+            }
+        }
+        if ( !$_POST[ 'okShowContactData'] ) $missing[] = "Ge ditt medgivande att dina kontaktuppgifter visas";
+        if ( $missing ) {
+            http_response_code( 406 ); // Not acceptable
+            die( "<p>För att slutföra bokningen måste du svara på " . ( count( $missing ) == 1 ? "frågan" : "frågorna") . ":</p><ul><li>" . implode( "</li><li>", $missing ) . "</li></ul>" );
+        }
         // Refuse saving if any item is unavailable
         if ( count( $unavail ) + count( $overlap ) > 0 ) {
             http_response_code( 409 ); // Conflict

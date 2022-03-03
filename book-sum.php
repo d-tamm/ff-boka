@@ -165,7 +165,7 @@ if ( isset( $_REQUEST[ 'action' ] ) && $_REQUEST[ 'action' ] == "help" ) {
     </table>
     </div>
     
-    <form id='form-booking' name='formBooking' action="ajax.php" style='margin-top: 20px;'>
+    <form id='form-booking' name='formBooking' action="ajax.php" data-ajax="false" style='margin-top: 20px;'>
         <input type="hidden" name="action" value="confirmBooking">
         
         <div id="book-sum-questions" class='ui-body ui-body-a' style="display:none;"></div>
@@ -195,7 +195,7 @@ if ( isset( $_REQUEST[ 'action' ] ) && $_REQUEST[ 'action' ] == "help" ) {
         <?php } ?>
 
         <label>
-            <input type="checkbox" data-mini="true" required name="okShowContactData" value="1" <?= $booking->okShowContactData==1 ? "checked" : "" ?>><span class="required">Jag medger att mina kontaktuppgifter visas för andra inloggade användare i samband med bokningen</span>
+            <input type="checkbox" data-mini="true" name="okShowContactData" value="1" <?= $booking->okShowContactData==1 ? "checked" : "" ?>><span class="required">Jag medger att mina kontaktuppgifter visas för andra inloggade användare i samband med bokningen</span>
         </label>
 
         <div class="ui-field-contain">

@@ -516,7 +516,7 @@ function checkTimes( save = false ) {
 
 
 // ========== book-sum.php ==========
-var reqCheckRadios, itemsToConfirm, repeatType="";
+var itemsToConfirm, repeatType="";
 
 $( document ).on( 'pagecreate', "#page-book-sum", function() {
     // bind events
@@ -594,13 +594,6 @@ $( document ).on( 'pagecreate', "#page-book-sum", function() {
     $( "#form-booking" ).submit( function( event ) {
         var $this = $( this );
         event.preventDefault();
-        // Validate required checkboxes and radios before submitting the booking
-        $.each( reqCheckRadios, function( id, q ) {
-            if ( $( "[name^=answer-" + id + "]:checked" ).length == 0 ) {
-                alert( "Du måste först svara på frågan: " + q );
-                return false; //FIXME: this does not work. Dialog not displayed on Android. Form sent anyway.
-            }
-        } );
         $.mobile.loading( "show", {} );
         $.post( $this.attr( 'action' ), $this.serialize() )
         .done( function( data ) {
@@ -610,7 +603,8 @@ $( document ).on( 'pagecreate', "#page-book-sum", function() {
         } )
         .fail( function( xhr ) {
             $.mobile.loading( "hide", {} );
-            alert( xhr.responseText );
+            $( "#msg-page-book-sum" ).html( xhr.responseText );
+            $( "#popup-msg-page-book-sum" ).popup( 'open' );
         } );
     } );
 } );
@@ -792,7 +786,6 @@ function getBookSumDetails() {
             $( "#book-sum-questions" ).show();
             $( "#book-sum-questions" ).html( data.questions ).enhanceWithin();
         } else $( "#book-sum-questions" ).hide();
-        reqCheckRadios = data.reqCheckRadios;
         if ( data.showRepeating ) {
             getSeries();
             $( "#book-sum-series" ).show();
