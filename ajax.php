@@ -316,8 +316,10 @@ switch ( $_REQUEST[ 'action' ] ) {
             $itemList .= "</p></a>\n<a href='#' onClick='removeItem({$item->bookedItemId});'>Ta bort</a></li>\n";
         }
 
+        // Remember required questions for later input control (see ajax call for confirmBooking)
+        $_SESSION[ 'requiredCheckboxradios' ] = array();
+
         $prevAnswers = $booking->answers();
-        $requiredCheckboxradios = array();
         $htmlQuestions = "";
         foreach ( $questions as $id => $required ) {
             $question = new Question( $id );
@@ -335,16 +337,16 @@ switch ( $_REQUEST[ 'action' ] ) {
             switch ( $question->type ) {
                 case "radio":
                 case "checkbox":
-                    if ( $required ) $requiredCheckboxradios[ $id ] = $question->caption;
+                    if ( $required ) $_SESSION[ 'requiredCheckboxradios' ][ $id ] = $question->caption;
                     foreach ( $question->options->choices as $choice ) {
-                        $htmlQuestions .= "<label><input type='{$question->type}' name='answer-{$id}[]' value='" . htmlspecialchars( $choice ?: "Ja" ) . "'" . ( $prevAns == ( $choice ?: "Ja" ) ? " checked" : "" ) . "> " . htmlspecialchars( $choice ?: $question->caption ) . ( $required ? " <span class='required'></span>" : "" ) . "</label>\n";
+                        $htmlQuestions .= "<label><input type='{$question->type}' name='answer-{$id}[]' value='" . htmlspecialchars( $choice ?: "Ja" ) . "'" . ( $prevAns == ( $choice ?: "Ja" ) ? " checked" : "" ) . "> " . htmlspecialchars( $choice ?: $question->caption ) . ( $required && !$choice ? " <span class='required'></span>" : "" ) . "</label>\n";
                     }
                     break;
                 case "text":
-                    $htmlQuestions .= "<input" . ( $question->options->length ? " maxlength='{$question->options->length}'" : "" ) . " name='answer-{$id}[]' value='$prevAns'" . ( $required ? " required='true'" : "" ) . ">\n";
+                    $htmlQuestions .= "<input" . ( $question->options->length ? " maxlength='{$question->options->length}'" : "" ) . " name='answer-{$id}[]' value='$prevAns'>\n";
                     break;
                 case "number":
-                    $htmlQuestions .= "<input type='number'" . ( strlen( $question->options->min ) ? " min='{$question->options->min}'" : "" ) . ( $question->options->max ? " max='{$question->options->max}'" : "" ) . " name='answer-{$id}[]' value='$prevAns'" . ( $required ? " required='true'" : "" ) . ">\n";
+                    $htmlQuestions .= "<input type='number'" . ( strlen( $question->options->min ) ? " min='{$question->options->min}'" : "" ) . ( $question->options->max ? " max='{$question->options->max}'" : "" ) . " name='answer-{$id}[]' value='$prevAns'>\n";
                     break;
             }
             $htmlQuestions .= "</fieldset>";
@@ -358,7 +360,6 @@ switch ( $_REQUEST[ 'action' ] ) {
             "itemsToConfirm" => $itemsToConfirm,
             "allConfirmed" => $leastStatus >= FFBoka::STATUS_CONFIRMED,
             "questions" => $htmlQuestions,
-            "reqCheckRadios" => $requiredCheckboxradios,
             "showRepeating" => $showRepeating,
         ] ) );
     
@@ -376,6 +377,8 @@ switch ( $_REQUEST[ 'action' ] ) {
 
     case "confirmBooking":
     case "repeatCreate":
+        // Check if all mandatory questions are answered
+        
         // Refuse saving if any item is unavailable
         if ( count( $unavail ) + count( $overlap ) > 0 ) {
             http_response_code( 409 ); // Conflict
