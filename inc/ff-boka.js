@@ -998,8 +998,11 @@ function showQuestionOptions( type ) {
  */
 function getQuestions() {
     $.mobile.loading( "show", {} );
-    $.get( "ajax.php", { action: "getQuestions" }, function( data, status ) {
+    $.get( "ajax.php", { action: "getQuestions" } )
+    .done( function( data ) {
         $( "#sec-questions" ).html( data ).listview( "refresh" );
+    } )
+    .always( function () {
         $.mobile.loading( "hide", {} );
     } );
 }
