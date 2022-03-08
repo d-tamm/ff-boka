@@ -151,7 +151,7 @@ unset( $_SESSION[ 'catId' ] );
 
     <div data-role="collapsibleset" data-inset="false">
 
-        <div data-role="collapsible" data-collapsed="<?= isset( $_REQUEST[ 'expand' ] ) ? "true" : "false" ?>" style="<?= $accessByAssignment ? "display:none;" : "" ?>>
+        <div data-role="collapsible" data-collapsed="<?= isset( $_REQUEST[ 'expand' ] ) ? "true" : "false" ?>" style="<?= $accessByAssignment ? "display:none;" : "" ?>">
             <h2>Kategorier</h2>
             <ul data-role="listview">
             <?php
