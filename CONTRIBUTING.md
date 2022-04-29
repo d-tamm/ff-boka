@@ -118,11 +118,9 @@ och [composer](https://getcomposer.org).
 * Installera phpMyAdmin eller annat databas-hanteringsverktyg.
 * Skapa en databas-användare `ff-boka` och databasen `ff-boka` och ge användaren full behörighet för databasen.
 * Om du vill installera systemet i din document root:
-  * Öppna en terminal och gå till mappen som ligger över document root (ofta `/var/www`)
-  * Klona det här förrådet med `git clone https://github.com/d-tamm/ff-boka.git`.
-    Det ska skapa en mapp `ff-boka`.
-  * Ta bort den gamla mappen `html` om den finns. OBS, det raderar allt innehåll i den!
-  * Byt mappnamnet på den nya mappen från `ff-boka` till `html` (`mv ff-boka html`).
+  * Öppna en terminal och gå till mappen som ligger över document root (ofta `/var/www`).
+  * Se till att undermappen `html` är tom.
+  * Klona det här förrådet med `git clone https://github.com/d-tamm/ff-boka.git html`.
   * Byt till mappen med `cd html`
 * Om du istället vill installera systemet i en undermapp:
   * Öppna en terminal och gå till document root (ofta `/var/www/html`)
