@@ -108,6 +108,21 @@ Här kommer några tipps för att komma igång:
 * Primärindex bör användas och namnges `xxxId`, inte bara `ID`.
 * Använd beroenden med cascading mellan tabeller så att vi slipper hålla koll på databas-integriteten manuellt.
 
+## Installera i Docker
+* Installera och starta Docker.
+* Installera [git](https://readwrite.com/2013/09/30/understanding-github-a-journey-for-beginners-part-1/) 
+och [composer](https://getcomposer.org).
+* Öppna en terminal och skapa en mapp till projektet, t.ex. `mkdir ~/boka && cd ~/boka`.
+* Klona det här förrådet med `git clone https://github.com/d-tamm/ff-boka.git`. Det skapar undermappen `ff-boka` som länkas till DocumentRoot.
+* Kör `composer install` för att installera några beroenden.
+* Webbservern behöver kunna skapa undermappar i DocumentRoot, t.ex. genom att ändra gruppen (`chgrp -R www-data ff-boka` eller liknande) och ge gruppen skrivrättigheter (`chmod -R g+rw ff-boka`).
+* Kopiera filen `inc/config.sample.php` till `inc/config.php` och se över innehållet. Som dbhost, använd "mariadb". För att få kopplingen
+  till Friluftsfrämjandets API (för inloggningen) att fungera, fråga på Teams. Vi vill inte lägga ut detaljerna här.
+* Ladda ner docker-compose.yml och php-httpd/Dockerfile och spara i projektmappen (här `~/boka`).
+* Se till att lösenordet till databasen i `docker-compose.yml` är samma som i `config.php`.
+* Starta docker: `docker-compose build -d`
+* Med webbläsaren, gå till http://localhost. Om allt fungerar möts du av dialogen som installerar databasen. Du behöver ladda om sidan några gånger tills allt är klart.
+
 ## Installera lokalt
 ff-boka baseras på en så kallad LAMP stack (Linux Apache MariaDB PHP). För att installera systemet, följ stegen nedan.
 Det går nog också att installera en WAMP stack (dvs på Windows), men det har vi inte testat.
@@ -117,18 +132,13 @@ och [composer](https://getcomposer.org).
 * Installera en LAMP stack (Apache, MariaDB, PHP). Kolla i dokumentationen för ditt system för detaljer.
 * Installera phpMyAdmin eller annat databas-hanteringsverktyg.
 * Skapa en databas-användare `ff-boka` och databasen `ff-boka` och ge användaren full behörighet för databasen.
-* Om du vill installera systemet i din document root:
-  * Öppna en terminal och gå till mappen som ligger över document root (ofta `/var/www`)
-  * Klona det här förrådet med `git clone https://github.com/d-tamm/ff-boka.git`.
-    Det ska skapa en mapp `ff-boka`.
-  * Ta bort den gamla mappen `html` om den finns. OBS, det raderar allt innehåll i den!
-  * Byt mappnamnet på den nya mappen från `ff-boka` till `html` (`mv ff-boka html`).
-  * Byt till mappen med `cd html`
+* Öppna en terminal och gå till DocumentRoot (ofta `/var/www/html`).
+* Om du vill installera systemet i DocumentRoot:
+  * Se till att DocumentRoot är tom.
+  * Klona det här förrådet med `git clone https://github.com/d-tamm/ff-boka.git .`.
 * Om du istället vill installera systemet i en undermapp:
-  * Öppna en terminal och gå till document root (ofta `/var/www/html`)
-  * Klona det här förrådet med `git clone https://github.com/d-tamm/ff-boka.git`.
-    Det ska skapa en mapp `ff-boka`.
-  * Byt till mappen med `cd ff-boka`.
+  * Klona det här förrådet med `git clone https://github.com/d-tamm/ff-boka.git xxx` (där xxx är namnet på undermappen).
+  * Byt till undermappen `cd xxx`.
 * Kör `composer install` för att installera några beroenden (dependencies).
 * Installera följande i undermappen vendor:
   * JQueryUI (ladda ner från deras hemsida, packa upp arkivet och flytta mappen så att
@@ -137,6 +147,7 @@ och [composer](https://getcomposer.org).
     `fontawesome` i mappen `vendor`, och flytta dit mapparna `css` och `webfonts` från arkivet.
   * OpenLayers: ladda ner från deras hemsida och lägg innehållet av zip-filen (4 filer) i `vendor/openlayers`.
 * Säkerställ att webbservern har läsrättigheter på alla mappar, och att du har skrivrättigheter.
+  Webbservern behöver även rättigheter att skapa undermappar.
 * Kopiera filen `inc/config.sample.php` till `inc/config.php` och se över innehållet. För att få kopplingen
   till Friluftsfrämjandets API (för inloggningen), fråga på Slack. Vi vill inte lägga ut detaljerna här.
 * Med webbläsaren, gå till din installations startsida, t.ex. http://localhost, för att installera
