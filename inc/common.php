@@ -4,6 +4,7 @@ spl_autoload_register(function($class) {
     include __DIR__ . "/" . strtolower(str_replace("\\", "/", $class)) . ".php";
 });
 
+if ( !file_exists( __DIR__ . "/config.php" ) ) die("Det finns ingen konfigurationsfil än. Kopiera <tt>inc/config.sample.php</tt> till <tt>inc/config.php</tt> och redigera den. Sedan kan du komma tillbaka hit igen.");
 require_once __DIR__ . "/config.php";
 if ($cfg['maintenance'] && basename($_SERVER['PHP_SELF'])!=="superadmin.php") die("<html><head><title>Resursbokning - Underhåll</title></head><body><h1>Underhåll</h1><p>Vi utför underhållsarbeten på bokningssystemet. Välkommen åter inom kort!</body></html>");
 
