@@ -138,17 +138,17 @@ function htmlHeaders(string $title, string $baseUrl, string $mode="mobile") {
     <link rel="apple-touch-icon" type="image/png" sizes="180x180" href="<?= $baseUrl ?>resources/favicon180.png">
     <?php if ($mode=="mobile") { ?>
         <meta name="viewport" content="width=device-width, initial-scale=1"/>
-        <link rel="stylesheet" href="<?= $baseUrl ?>inc/jquery.mobile-1.4.5.min.css" />
-        <link rel="stylesheet" href="<?= $baseUrl ?>css/themes/ff-boka.css" />
-        <link rel="stylesheet" href="<?= $baseUrl ?>css/themes/jquery.mobile.icons.min.css" />
-        <script src="<?= $baseUrl ?>inc/jquery-1.11.1.min.js"></script>
-        <script src="<?= $baseUrl ?>inc/jquery.mobile-1.4.5.min.js"></script>
+        <link rel="stylesheet" href="<?= $baseUrl ?>inc/jquerymobile/jquery.mobile-1.4.5.min.css" />
+        <link rel="stylesheet" href="<?= $baseUrl ?>inc/jquerymobile/themes/ff-boka.min.css" />
+        <link rel="stylesheet" href="<?= $baseUrl ?>inc/jquerymobile/themes/jquery.mobile.icons.min.css" />
+        <script src="<?= $baseUrl ?>vendor/components/jquery/jquery.min.js"></script>
+        <script src="<?= $baseUrl ?>inc/jquerymobile/jquery.mobile-1.4.5.min.js"></script>
     <?php } else { ?>
         <script src="<?= $baseUrl ?>inc/pace.min.js"></script>
-        <link rel="stylesheet" href="<?= $baseUrl ?>vendor/jquery-ui-1.12.1/jquery-ui.min.css">
-        <script src="<?= $baseUrl ?>vendor/jquery-ui-1.12.1/external/jquery/jquery.js"></script>
-        <script src="<?= $baseUrl ?>vendor/jquery-ui-1.12.1/jquery-ui.min.js"></script>
-        <link rel="stylesheet" href="<?= $baseUrl ?>vendor/fontawesome/css/all.css">        
+        <link rel="stylesheet" href="<?= $baseUrl ?>vendor/components/jqueryui/themes/base/jquery-ui.min.css">
+        <script src="<?= $baseUrl ?>vendor/components/jquery/jquery.min.js"></script>
+        <script src="<?= $baseUrl ?>vendor/components/jqueryui/jquery-ui.min.js"></script>
+        <link rel="stylesheet" href="<?= $baseUrl ?>vendor/components/font-awesome/css/all.css">        
     <?php } ?>
     <link rel="stylesheet" href="<?= $baseUrl ?>css/ff-boka.css" />
     <script>
