@@ -109,18 +109,17 @@ Här kommer några tipps för att komma igång:
 * Använd beroenden med cascading mellan tabeller så att vi slipper hålla koll på databas-integriteten manuellt.
 
 ## Installera i Docker
-* Installera och starta Docker.
 * Installera [git](https://readwrite.com/2013/09/30/understanding-github-a-journey-for-beginners-part-1/) 
 och [composer](https://getcomposer.org).
 * Öppna en terminal och skapa en mapp till projektet, t.ex. `mkdir ~/boka && cd ~/boka`.
 * Klona det här förrådet med `git clone https://github.com/d-tamm/ff-boka.git`. Det skapar undermappen `ff-boka` som länkas till DocumentRoot.
 * Kör `composer install` för att installera några beroenden.
 * Webbservern behöver kunna skapa undermappar i DocumentRoot, t.ex. genom att ändra gruppen (`chgrp -R www-data ff-boka` eller liknande) och ge gruppen skrivrättigheter (`chmod -R g+rw ff-boka`).
-* Kopiera filen `inc/config.sample.php` till `inc/config.php` och se över innehållet. Som dbhost, använd "mariadb". För att få kopplingen
-  till Friluftsfrämjandets API (för inloggningen) att fungera, fråga på Teams. Vi vill inte lägga ut detaljerna här.
-* Ladda ner docker-compose.yml och php-httpd/Dockerfile och spara i projektmappen (här `~/boka`).
+* Kopiera filen `inc/config.sample.php` till `inc/config.php` och se över innehållet. Som dbhost, använd "mariadb". För att få kopplingen till Friluftsfrämjandets API (för inloggningen) att fungera, fråga på Teams. Vi vill inte lägga ut detaljerna här.
+* Installera docker och docker-compose, och starta docker som tjänst.
+* Ladda ner `docker-compose.yml` och `php-httpd/Dockerfile` och spara i projektmappen (här `~/boka`).
 * Se till att lösenordet till databasen i `docker-compose.yml` är samma som i `config.php`.
-* Starta docker: `docker-compose build -d`
+* Starta containrarna: `docker-compose up -d --build`
 * Med webbläsaren, gå till http://localhost. Om allt fungerar möts du av dialogen som installerar databasen. Du behöver ladda om sidan några gånger tills allt är klart.
 
 ## Installera lokalt
@@ -145,7 +144,6 @@ och [composer](https://getcomposer.org).
     t.ex. jquery-ui.css ligger på vendor/jquery-ui-1.12.1/jquery-ui.css)
   * FontAwesome: ladda ner från deras hemsida (host yourself), packa upp, skapa en mapp
     `fontawesome` i mappen `vendor`, och flytta dit mapparna `css` och `webfonts` från arkivet.
-  * OpenLayers: ladda ner från deras hemsida och lägg innehållet av zip-filen (4 filer) i `vendor/openlayers`.
 * Säkerställ att webbservern har läsrättigheter på alla mappar, och att du har skrivrättigheter.
   Webbservern behöver även rättigheter att skapa undermappar.
 * Kopiera filen `inc/config.sample.php` till `inc/config.php` och se över innehållet. För att få kopplingen
@@ -153,7 +151,7 @@ och [composer](https://getcomposer.org).
 * Med webbläsaren, gå till din installations startsida, t.ex. http://localhost, för att installera
   databasen. Du behöver ladda om sidan några gånger tills allt är klart.
 * Du behöver också ställa in t.ex. cron för att regelbundet anropa skriptet cron.php. Annars skickas inte
-  några mejl ut från systemet. Använd till exempel cron med följande rad: `*/10 * * * * wget -O- http://localhost/cron.php`
+  några mejl ut från systemet. Använd till exempel cron med följande rad: `*/10 * * * * wget -O http://localhost/cron.php`
   för att anropa skriptet var 10:e minut.
 
 # Engagera dig
