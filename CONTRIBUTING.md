@@ -111,14 +111,13 @@ Här kommer några tipps för att komma igång:
 ## Installera i Docker
 * Installera [git](https://readwrite.com/2013/09/30/understanding-github-a-journey-for-beginners-part-1/) 
 och [composer](https://getcomposer.org).
-* Öppna en terminal och skapa en mapp till projektet, t.ex. `mkdir ~/boka && cd ~/boka`.
-* Klona det här förrådet med `git clone https://github.com/d-tamm/ff-boka.git`. Det skapar undermappen `ff-boka` som länkas till DocumentRoot.
+* Öppna en terminal och skapa en mapp till projektet, t.ex. `mkdir ~/boka && cd ~/boka`. Detta blir DocumentRoot.
+* Klona det här förrådet med `git clone https://github.com/d-tamm/ff-boka.git .`.
 * Kör `composer install` för att installera några beroenden.
-* Webbservern behöver kunna skapa undermappar i DocumentRoot, t.ex. genom att ändra gruppen (`chgrp -R www-data ff-boka` eller liknande) och ge gruppen skrivrättigheter (`chmod -R g+rw ff-boka`).
+* Webbservern behöver kunna skapa undermappar i DocumentRoot, t.ex. genom att ändra gruppen (`chgrp -R www-data .` eller liknande) och ge gruppen skrivrättigheter (`chmod -R g+rw .`).
 * Kopiera filen `inc/config.sample.php` till `inc/config.php` och se över innehållet. Som dbhost, använd "mariadb". För att få kopplingen till Friluftsfrämjandets API (för inloggningen) att fungera, fråga på Teams. Vi vill inte lägga ut detaljerna här.
 * Installera docker och docker-compose, och starta docker som tjänst.
-* Ladda ner `docker-compose.yml` och `php-httpd/Dockerfile` och spara i projektmappen (här `~/boka`).
-* Se till att lösenordet till databasen i `docker-compose.yml` är samma som i `config.php`.
+* Kopiera filen `docker/.env.sample` till `docker/.env` och skriv in samma lösenord till databasen som i `config.php`. OBS, eventuellt behöver du maskera tecken då lösenordet i `.env` tolkas av ett shell.
 * Starta containrarna: `docker-compose up -d --build`
 * Med webbläsaren, gå till http://localhost. Om allt fungerar möts du av dialogen som installerar databasen. Du behöver ladda om sidan några gånger tills allt är klart.
 
