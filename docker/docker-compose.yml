@@ -1,0 +1,37 @@
+version: '3.7'
+
+services:
+    php-httpd:
+        build:
+            context: ./php-httpd
+        ports:
+            - 80:80
+        volumes:
+            - ..:/var/www/html
+
+    cron:
+        build:
+            context: ./cron
+        environment:
+            CRON_ENTRY: "*/5 * * * * wget -O /dev/null http://php-httpd/cron.php"
+
+    mariadb:
+        image: mariadb:10.7.3
+        volumes:
+            - mariadb-volume:/var/lib/mysql
+        environment:
+            TZ: "Europe/Stockholm"
+            MARIADB_RANDOM_ROOT_PASSWORD: 'yes'
+            MARIADB_USER: 'ff-boka'
+            MARIADB_PASSWORD: ${MARIADB_PASSWORD}
+            MARIADB_DATABASE: 'ff-boka'
+
+    phpmyadmin:
+        image: phpmyadmin/phpmyadmin
+        links:
+            - 'mariadb:db'
+        ports:
+            - 8081:80
+
+volumes:
+    mariadb-volume:
