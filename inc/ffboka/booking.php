@@ -5,6 +5,8 @@
  * @license GNU-GPL
  */
 namespace FFBoka;
+
+use Exception;
 use PDO;
 
 /**
@@ -64,6 +66,7 @@ class Booking extends FFBoka {
             case "token":
             case "confirmationSent":
             case "okShowContactData":
+            case "dirty":
                 $stmt = self::$db->query("SELECT $name FROM bookings WHERE bookingId={$this->id}");
                 $row = $stmt->fetch(PDO::FETCH_OBJ);
                 return $row->$name;
@@ -102,6 +105,7 @@ class Booking extends FFBoka {
             case "extMail":
             case "confirmationSent":
             case "okShowContactData":
+            case "dirty";
                 $stmt = self::$db->prepare("UPDATE bookings SET $name=:name WHERE bookingId={$this->id}");
                 if ($name=="repeatId") $stmt->bindValue(":name", $value, \PDO::PARAM_INT);
                 else $stmt->bindValue(":name", $value);
@@ -323,7 +327,10 @@ class Booking extends FFBoka {
             $itemList .= "</tr>";
             // Add attachments to attachment list
             foreach ($cat->files() as $file) {
-                if ($file->attachFile) $attachments[$file->md5] = array("path"=>"uploads/{$file->fileId}", "filename"=>$file->filename);
+                if ($file->attachFile) {
+                    if ( is_readable( $file->filename ) ) $attachments[$file->md5] = array("path"=>"uploads/{$file->fileId}", "filename"=>$file->filename);
+                    else logger( __METHOD__ . " Attachment file {$file->fileId} not found", E_WARNING );
+                }
             }
         }
         // Contact data

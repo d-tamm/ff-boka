@@ -110,12 +110,6 @@ matchande namn och där du har behörighet att boka. Sökningen går inte ner p�
         case "accessDenied":
             $message = "Du har inte tillgång till {$_REQUEST['to']}.";
             break;
-        case "bookingDeleted":
-            $message = "Din bokning har nu tagits bort.";
-            break;
-        case "bookingConfirmed":
-            $message = "Din bokning är nu klar. En bekräftelse har skickats till din epostadress " . htmlspecialchars($_REQUEST['mail']) . ".";
-            break;
         case "ajaxAnswerPoll":
             $poll = new Poll($_REQUEST['pollId']);
             $poll->addVote($_REQUEST['choiceId'], $_SESSION['authenticatedUser']);
@@ -145,7 +139,7 @@ if (isset($_POST['login'])) {
         if ($result === FALSE) {
             $message = "Kan inte få kontakt med inloggningsservern. Vänligen försök igen senare. Om problemet kvarstår, kontakta systemadmin.";
         }
-        elseif ($result['authenticated']) {
+        elseif ($result['authenticated']===true) {
             logger(__METHOD__." User {$result['userId']} logged in with {$_POST['id']}.");
             $_SESSION['authenticatedUser'] = $result['userId'];
             $u = new User($_SESSION['authenticatedUser'], $result['section']);
@@ -236,7 +230,7 @@ if (isset($_REQUEST['message'])) $message = ($message ? "$message<br>" : "") . $
     <?= head("Resursbokning", $cfg['url'], $cfg['superAdmins']) ?>
     <div role="main" class="ui-content">
 
-    <div data-role="popup" data-overlay-theme="b" id="popup-msg-page-start" class="ui-content">
+    <div data-role="popup" data-history="false" data-overlay-theme="b" id="popup-msg-page-start" class="ui-content">
         <p id="msg-page-start"><?= $message ?></p>
         <a href='#' data-rel='back' class='ui-btn ui-btn-icon-left ui-btn-inline ui-icon-check'>OK</a>
     </div>
@@ -289,7 +283,10 @@ if (isset($_REQUEST['message'])) $message = ($message ? "$message<br>" : "") . $
                 if ($section->showFor($currentUser, FFBoka::ACCESS_CATADMIN) ||
                     @array_intersect($_SESSION['assignments'][$section->id], $cfg['sectionAdmins'])) {
                         $unconfirmed = array();
-                        foreach ($section->getUnconfirmedItems($currentUser) as $item) $unconfirmed[$item->booking()->id]++;
+                        foreach ($section->getUnconfirmedBookings($currentUser) as $bookingId) {
+                            if ( !isset( $unconfirmed[ $bookingId ] ) ) $unconfirmed[ $bookingId ] = 0;
+                            $unconfirmed[ $bookingId ]++;
+                        }
                         echo "<a href='admin/?sectionId={$section->id}' class='ui-btn ui-btn-icon-right " . ($unconfirmed ? "ui-btn-c ui-icon-alert" : "ui-icon-gear") . "' data-transition='slideup' title='" . ($unconfirmed ? "Det finns " . count($unconfirmed) . " obekräftade bokningar" : "Öppna administrationssidan") . "'>Admin " . htmlspecialchars($section->name) . ($unconfirmed ? " (" . count($unconfirmed) . ")" : "") . "</a>";
                 }
             } ?>
@@ -335,7 +332,7 @@ if (isset($_REQUEST['message'])) $message = ($message ? "$message<br>" : "") . $
 
         <form id="formLogin" style="padding:10px 20px;" action="index.php" method="post" data-ajax="false">
             <h3>Inloggning</h3>
-            <input type="hidden" name="redirect" id="loginRedirect" value="<?= isset($_REQUEST['redirect']) ? $_REQUEST['redirect'] : "" ?>">
+            <input type="hidden" name="redirect" id="loginRedirect" value="<?= $_REQUEST['redirect'] ?? "" ?>">
             <input name="id" value="" placeholder="Medlemsnummer eller personnummer" required>
             <input name="password" value="" placeholder="Lösenord" type="password">
             <div id="div-remember-me" style="<?= empty($_COOKIE['cookiesOK']) || empty($_SERVER['HTTPS']) ? "display:none;" : "" ?>"><label><input data-mini='true' name='rememberMe' value='1' type='checkbox'> Kom ihåg mig</label></div>

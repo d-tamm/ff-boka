@@ -99,11 +99,12 @@ if ( $userAccess >= FFBoka::ACCESS_CATADMIN ) {
 if ( !isset( $_REQUEST[ 'expand' ] ) ) $_REQUEST[ 'expand' ] = "";
 
 // First admin login from a section? Give some hints on how to get started.
-if (
+$accessByAssignment = (
     isset( $_SESSION[ 'assignments' ][ $section->id ] ) && 
-    count( array_intersect( $_SESSION[ 'assignments' ][ $section->id ], $cfg[ 'sectionAdmins' ] ) ) > 0 && 
-    count( $section->getAdmins() ) == 0
-) {
+    $section->getAccess( $currentUser ) < FFBoka::ACCESS_CATADMIN &&
+    count( array_intersect( $_SESSION[ 'assignments' ][ $section->id ], $cfg[ 'sectionAdmins' ] ) ) > 0
+);
+if ( $accessByAssignment && count( $section->getAdmins() ) == 0 ) {
     $message = "Hej!<br><br>Vill du komma igång med din lokalavdelning? Första steget är att lägga till LA-administratörer.<br><br>Tipps: Använd medlemsnumret i sökrutan!";
 }
 
@@ -121,13 +122,13 @@ unset( $_SESSION[ 'catId' ] );
     <?= head( "LA " . htmlspecialchars( $section->name ), $cfg[ 'url' ], $cfg[ 'superAdmins' ] ) ?>
     <div role="main" class="ui-content">
 
-    <div data-role="popup" data-overlay-theme="b" id="popup-msg-page-admin-section" class="ui-content">
+    <div data-role="popup" data-history="false" data-overlay-theme="b" id="popup-msg-page-admin-section" class="ui-content">
         <p id="msg-page-admin-section"><?= $message ?></p>
         <a href='#' data-rel='back' class='ui-btn ui-btn-icon-left ui-btn-inline ui-corner-all ui-icon-check'>OK</a>
     </div>
 
     <?php
-    if ( $section->getAccess( $currentUser ) < FFBoka::ACCESS_CATADMIN && array_intersect( $_SESSION[ 'assignments' ][ $section->id ], $cfg[ 'sectionAdmins' ] ) ) {
+    if ( $accessByAssignment ) {
         echo "<p class='ui-body ui-body-c'>Du har just nu tillgång till den här administrationssidan genom din roll som " . htmlspecialchars( array_shift( array_intersect( $_SESSION[ 'assignments' ][ $section->id ], $cfg[ 'sectionAdmins' ] ) ) ) . ". Detta ger dig möjlighet att tilldela dig själv och andra administratörsrollen för lokalavdelningen. Det är bara administratörer som kan lägga upp t.ex. kategorier, så om du själv vill lägga upp saker så måste du först tilldela dig själv administratörsrollen i avsnittet <b>Administratörer</b> nedan.</p>";
     }
         
@@ -142,15 +143,15 @@ unset( $_SESSION[ 'catId' ] );
 
     <?php
     $unconfirmed = array();
-    foreach ( $section->getUnconfirmedItems( $currentUser ) as $item ) {
-        if ( !isset( $unconfirmed[ $item->booking()->id ] ) ) $unconfirmed[ $item->booking()->id ] = 0;
-        $unconfirmed[ $item->booking()->id ]++;
+    foreach ( $section->getUnconfirmedBookings( $currentUser ) as $bookingId ) {
+        if ( !isset( $unconfirmed[ $bookingId ] ) ) $unconfirmed[ $bookingId ] = 0;
+        $unconfirmed[ $bookingId ]++;
     } ?>
-    <a class='ui-btn <?= $unconfirmed ? "ui-btn-c" : "ui-btn-b" ?> ui-icon-calendar ui-btn-icon-left' title='<?= $unconfirmed ? "Öppna bokningsadministratören" : "" ?>' href='#' onClick="openBookingAdmin('<?= $cfg[ 'url' ] ?>', <?= $section->id ?>);" data-ajax='false'><?= $unconfirmed ? count( $unconfirmed ) . " obekräftad(e) bokning(ar)" : "Öppna bokningsadmin" ?></a>
+    <a class='ui-btn <?= $unconfirmed ? "ui-btn-c" : "ui-btn-b" ?> ui-icon-calendar ui-btn-icon-left' title='Öppna bokningsadministratören' href='#' onClick="openBookingAdmin('<?= $cfg[ 'url' ] ?>', <?= $section->id ?>);" data-ajax='false'><?= $unconfirmed ? ( count( $unconfirmed ) == 1 ? "1 obekräftad bokning" : count( $unconfirmed ) . " obekräftade bokningar" ) : "Öppna bokningsadmin" ?></a>
 
     <div data-role="collapsibleset" data-inset="false">
 
-        <div data-role="collapsible" data-collapsed="<?= isset( $_REQUEST[ 'expand' ] ) ? "true" : "false" ?>">
+        <div data-role="collapsible" data-collapsed="<?= isset( $_REQUEST[ 'expand' ] ) ? "true" : "false" ?>" style="<?= $accessByAssignment ? "display:none;" : "" ?>">
             <h2>Kategorier</h2>
             <ul data-role="listview">
             <?php
@@ -172,7 +173,7 @@ unset( $_SESSION[ 'catId' ] );
 
         <?php if ( $userAccess & FFBoka::ACCESS_SECTIONADMIN ) { ?>
         
-        <div data-role="collapsible" data-collapsed="<?= $_REQUEST[ 'expand' ]=="admins" ? "false" : "true" ?>">
+        <div data-role="collapsible" data-collapsed="<?= $_REQUEST[ 'expand' ]=="admins" ? "false" : "true" ?>" style="<?= $accessByAssignment ? "display:none;" : "" ?>">
             <h2>Bokningsfrågor</h2>
             <p>Här kan du skapa frågor som sedan kan visas när folk bokar resurser.</p>
             
@@ -233,7 +234,7 @@ unset( $_SESSION[ 'catId' ] );
             </ul>
         </div>
 
-        <div data-role="collapsible">
+        <div data-role="collapsible" style="<?= $accessByAssignment ? "display:none;" : "" ?>">
             <h2 onclick="$('#sec-map').attr('src', 'map.php?sectionId=<?= $section->id ?>');">Övrigt</h2>
 
             <h3>Användning</h3>

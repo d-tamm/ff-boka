@@ -138,7 +138,7 @@ $cfg = $currentCfg;
     <?= head("Super-Admin", $cfg['url'], $cfg['superAdmins']) ?>
     <div role="main" class="ui-content">
 
-    <div data-role="popup" data-overlay-theme="b" id="popup-msg-page-super-admin" class="ui-content">
+    <div data-role="popup" data-history="false" data-overlay-theme="b" id="popup-msg-page-super-admin" class="ui-content">
         <p id="msg-page-super-admin"><?= $message ?></p>
         <a href='#' data-rel='back' class='ui-btn ui-btn-icon-left ui-btn-inline ui-corner-all ui-icon-check'>OK</a>
     </div>
@@ -324,7 +324,7 @@ $cfg = $currentCfg;
             <pre><?php print_r($_SESSION); ?></pre>
         </div>
 
-        <div data-role="collapsible" id="admin-section-misc">
+        <div data-role="collapsible" id="admin-section-sections">
             <h2>Lokalavdelningar</h2>
             <ul data-role="listview" data-inset="true" data-filter="true" data-split-icon="delete" data-split-theme="c"><?php
                 $updated = -1;

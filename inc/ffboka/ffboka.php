@@ -203,7 +203,7 @@ class FFBoka {
      * @param string $userId Member number or personnummer
      * @param string $password
      * @return bool|array(bool authenticated, int userId, string section) Returns FALSE if API does not respond.
-     * Otherwise, authenticated contains whether the credentials were accepted. If accepted, userId
+     * Otherwise, authenticated is TRUE if the credentials were accepted. If accepted, userId
      * will contain the member ID and section will contain the section name.  
      */
     public function authenticateUser($userId, $password) {

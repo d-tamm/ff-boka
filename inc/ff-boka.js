@@ -5,21 +5,21 @@ var toutSetValue,
     weekdays = [ 'sön', 'mån', 'tis', 'ons', 'tor', 'fre', 'lör' ];
 
 // Prevent caching of pages
-$(document).on('pagecontainerhide', function (event, ui) { 
+$( document ).on( 'pagecontainerhide', function ( event, ui ) { 
     ui.prevPage.remove(); 
-});
+} );
 
 function showHelp() {
-    $.get("?action=help", function( data ) {
-        $("#help-content").html(data);
-		$("#popup-help").popup("open", { transition: "slide" });
-    });
+    $.get( "?action=help", function( data ) {
+        $( "#help-content" ).html( data );
+		$( "#popup-help" ).popup( "open", { transition: "slide" } );
+    } );
 }
 
 /** Convert a date into ISO format (YYYY-mm-dd) */
-function dateToISO(date) {
-	return date.getFullYear().toString() + '-' + (date.getMonth() + 1).toString().padStart(2, 0) +
-    '-' + date.getDate().toString().padStart(2, 0);
+function dateToISO( date ) {
+	return date.getFullYear().toString() + '-' + ( date.getMonth() + 1 ).toString().padStart( 2, 0 ) +
+    '-' + date.getDate().toString().padStart( 2, 0 );
 }
 
 /**
@@ -27,15 +27,15 @@ function dateToISO(date) {
  * @param name The name of the GET variable to return
  * @returns The content of the requested variable, or undefined if the variable has no value or does not exist
  */
-function get(name){
-	if(name=(new RegExp('[?&]'+encodeURIComponent(name)+'=([^&]*)')).exec(location.search)) {
-		return decodeURIComponent(name[1]);
+function get( name ) {
+	if ( name = ( new RegExp( '[?&]' + encodeURIComponent( name ) + '=([^&]*)' ) ).exec( location.search ) ) {
+		return decodeURIComponent( name[ 1 ] );
 	}
 }
 
 
-function openBookingAdmin(baseUrl, sectionId) {
-    if (screen.width < 800) {
+function openBookingAdmin( baseUrl, sectionId ) {
+    if ( screen.width < 800 ) {
         location.href= baseUrl + "admin/bookings-m.php?sectionId=" + sectionId;
     } else {
         location.href= baseUrl + "admin/bookings-d.php?sectionId=" + sectionId;
@@ -50,9 +50,9 @@ function openBookingAdmin(baseUrl, sectionId) {
  * @param string cvalue The value to set
  * @param int exdays Expire after x days.
  */
-function setCookie(cname, cvalue, exdays) {
+function setCookie( cname, cvalue, exdays ) {
     var d = new Date();
-    d.setTime(d.getTime() + (exdays * 24 * 60 * 60 * 1000));
+    d.setTime( d.getTime() + ( exdays * 24 * 60 * 60 * 1000 ) );
     var expires = "expires="+d.toUTCString();
     document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/;SameSite=Strict";
 }
@@ -62,16 +62,16 @@ function setCookie(cname, cvalue, exdays) {
  * @param {*} cname The name of the cookie
  * @return Returns the value of the cookie. If the cookie does not exist, returns an empty string.
  */
-function getCookie(cname) {
+function getCookie( cname ) {
     var name = cname + "=";
-    var ca = document.cookie.split(';');
-    for(var i = 0; i < ca.length; i++) {
-        var c = ca[i];
-        while (c.charAt(0) == ' ') {
-            c = c.substring(1);
+    var ca = document.cookie.split( ';' );
+    for ( var i = 0; i < ca.length; i++ ) {
+        var c = ca[ i ];
+        while ( c.charAt( 0 ) == ' ' ) {
+            c = c.substring( 1 );
         }
-        if (c.indexOf(name) == 0) {
-            return c.substring(name.length, c.length);
+        if ( c.indexOf( name ) == 0 ) {
+            return c.substring( name.length, c.length );
         }
     }
     return "";
@@ -79,7 +79,7 @@ function getCookie(cname) {
   
 
 // ========== index.php ==========
-$(document).on('pagecreate', "#page-start", function(e) {
+$( document ).on( 'pagecreate', "#page-start", function( e ) {
     // bind events
 
     /** Global search */
@@ -92,114 +92,113 @@ $(document).on('pagecreate', "#page-start", function(e) {
         if ( value && value.length > 2 ) {
             $ul.html( "<li><div class='ui-loader'><span class='ui-icon ui-icon-loading'></span></div></li>" );
             $ul.listview( "refresh" );
-            $.getJSON("index.php", { action: "ajaxGlobalSearch", q: value }, function(data, status) {
-                if (data.status == "OK") {
+            $.getJSON( "index.php", { action: "ajaxGlobalSearch", q: value }, function( data, status ) {
+                if ( data.status == "OK" ) {
                     $.each( data.sections, function ( i, sec ) {
                         html += "<li class='wrap' data-filtertext='" + value + "'><a href='book-part.php?sectionId=" + sec.id + "'><h2>" + sec.name + "</h2><p>" + sec.matches + "</p></a></li>";
                     });
-                    if (data.sections.length==0) {
+                    if ( data.sections.length == 0 ) {
                         html += "<li class='wrap'>Sökningen på <b>" + value + "</b> gav ingen träff. Försök formulera om din sökning.</li>";
                     }
                 } else html += "<li class='wrap'>Sökningen misslyckades.</li>";
                 $ul.html( html );
                 $ul.listview( "refresh" );
                 $ul.trigger( "updatelayout");
-            });
+            } );
         }
-    });
-});
+    } );
+} );
 
-$(document).on('pageshow', "#page-start", function() {
+$( document ).on( 'pageshow', "#page-start", function() {
     // Show message if there is any
-    if ($("#msg-page-start").html()) {
-        setTimeout(function() {
-            $("#popup-msg-page-start").popup('open');
-        }, 500); // We need some delay here to make this work on Chrome.
+    if ( $( "#msg-page-start" ).html() ) {
+        $( "#popup-msg-page-start" ).popup( 'open' );
     }
-});
+} );
 
-function answerPoll(pollId, choiceId) {
-    $.getJSON("index.php", {
+function answerPoll( pollId, choiceId ) {
+    $.getJSON( "index.php", {
         action: "ajaxAnswerPoll",
         pollId: pollId,
         choiceId: choiceId
-    }, function(data, status) {
-    	$("#poll-page-start").hide();
-        $("#popup-poll-page-start").popup('open');
-        setTimeout(function() { $("#popup-poll-page-start").popup('close'); }, 2000);
-    });
+    }, function( data, status ) {
+    	$( "#poll-page-start" ).hide();
+        $( "#popup-poll-page-start" ).popup( 'open' );
+        setTimeout( function() { $( "#popup-poll-page-start" ).popup( 'close' ); }, 2000 );
+    } );
 }
 
 
 // ========== bookings-m.php ==========
 var startDate;
 
-$(document).on('pagecreate', "#page-bookings", function() {
+$( document ).on( 'pagecreate', "#page-bookings", function() {
     // bind events
-    $(document).on('click', ".freebusy-busy, .link-unconfirmed", function() {
-        window.open("../book-sum.php?bookingId=" + this.dataset.bookingId, "booking"+this.dataset.bookingId);
-    });
+    $( document ).on( 'click', ".freebusy-busy, .link-unconfirmed", function() {
+        window.open( "../book-sum.php?bookingId=" + this.dataset.bookingId, "booking"+this.dataset.bookingId );
+    } );
 });
 
-$(document).on('pageshow', "#page-bookings", function() {
+$( document ).on( 'pageshow', "#page-bookings", function() {
     startDate = new Date();
-    startDate.setHours(0,0,0,0); // Midnight
-    wday = startDate.getDay() ? startDate.getDay()-1 : 6; // Weekday, where Monday=0 ... Sunday=6
-    startDate.setDate(startDate.getDate() - wday); // Should now be last Monday
-    scrollDateBookings(0);
-    if ($("#bookings-list-unconfirmed").html!="") {
-    	$("#bookings-tab-unconfirmed").collapsible("expand");
+    startDate.setHours( 0, 0, 0, 0 ); // Midnight
+    wday = startDate.getDay() ? startDate.getDay() - 1 : 6; // Weekday, where Monday=0 ... Sunday=6
+    startDate.setDate( startDate.getDate() - wday ); // Should now be last Monday
+    scrollDateBookings( 0 );
+    if ($( "#bookings-list-unconfirmed" ).html != "" ) {
+    	$( "#bookings-tab-unconfirmed" ).collapsible( "expand" );
     }
-});
+} );
 
 // Show details for an item
-function showItemDetails(itemId) {
-    window.open("../item-details.php?itemId=" + itemId, "itemDetails" + itemId);
+function showItemDetails( itemId ) {
+    window.open( "../item-details.php?itemId=" + itemId, "itemDetails" + itemId );
 }
 
 // Scroll by x months, and get updated booking information
 // @param int offset Number of days to scroll
-function scrollDateBookings(offset) {
-    $.mobile.loading("show", {});
+function scrollDateBookings( offset ) {
+    $.mobile.loading( "show", {} );
     // Calculate start and end of week
-    startDate.setDate(startDate.getDate() + offset);
-    var endDate = new Date(startDate.valueOf());
-    endDate.setDate(endDate.getDate() + 6);
-    var readableRange = "må " + startDate.getDate() + "/" + (startDate.getMonth()+1);
-    if (startDate.getFullYear() != endDate.getFullYear()) readableRange += " '"+startDate.getFullYear().toString().substr(-2);
-    readableRange += " &ndash; sö " + endDate.getDate() + "/" + (endDate.getMonth()+1) + " '"+endDate.getFullYear().toString().substr(-2);
+    startDate.setDate( startDate.getDate() + offset );
+    var endDate = new Date( startDate.valueOf() );
+    endDate.setDate( endDate.getDate() + 6 );
+    var readableRange = "må " + startDate.getDate() + "/" + ( startDate.getMonth() + 1 );
+    if ( startDate.getFullYear() != endDate.getFullYear() ) readableRange += " '"+startDate.getFullYear().toString().substr( -2 );
+    readableRange += " &ndash; sö " + endDate.getDate() + "/" + ( endDate.getMonth() + 1 ) + " '" + endDate.getFullYear().toString().substr(-2);
     // Get updated freebusy information for new time span
-    $.getJSON("bookings-m.php", {
+    $.getJSON( "bookings-m.php", {
         action: "ajaxGetFreebusy",
-        start: startDate.valueOf()/1000
-    }, function(data, status) {
-        $("#bookings-current-range-readable").html( readableRange );
-        $("#bookings-list-unconfirmed").html("");
-        $.each(data.unconfirmed, function( index, value ) {
-            $("#bookings-list-unconfirmed").append(
-                "<li><a href='../book-sum.php?bookingId=" + value.bookingId + "' target='_blank'><span class='freebusy-busy " + (value.conflict ? "conflict" : "unconfirmed") + "' style='display:inline-block; width:1em;'>&nbsp;</span> " + value.start + " " + value.userName + (value.ref ? " ("+value.ref+")" : "") + "<br><p>" + value.items.join(", ") + "</p></a></li>");
+        start: startDate.valueOf() / 1000
+    } )
+    .done( function( data ) {
+        $( "#bookings-current-range-readable" ).html( readableRange );
+        $( "#bookings-list-unconfirmed" ).html( "" );
+        $.each( data.unconfirmed, function( index, value ) {
+            $( "#bookings-list-unconfirmed" ).append(
+                "<li><a href='../book-sum.php?bookingId=" + value.bookingId + "' target='_blank'><span class='freebusy-busy " + value.status + "' style='display:inline-block; width:1em;'>" + ( value.dirty ? "🛈" : "&nbsp;" ) + "</span> " + value.start + " " + value.userName + ( value.ref ? " (" + value.ref + ")" : "" ) + "<br><p>" + value.items.join( ", " ) + "</p></a></li>" );
+        } );
+        $( "#bookings-list-unconfirmed" ).listview( "refresh" );
+        $( "#bookings-unconfirmed-count" ).text( "(" + Object.keys( data.unconfirmed ).length + ")" );
+        $.each( data.freebusy, function( key, value ) { // key will be "item-nn"
+            $( "#freebusy-" + key ).html( value );
         });
-        $("#bookings-list-unconfirmed").listview("refresh");
-        $("#bookings-unconfirmed-count").text("("+Object.keys(data.unconfirmed).length+")");
-        $.each(data.freebusy, function(key, value) { // key will be "item-nn"
-            $("#freebusy-"+key).html(value);
-        });
-        $.mobile.loading("hide", {});
-    });
+        $.mobile.loading( "hide", {} );
+    } );
 }
 
 // Add a new booking on behalf of another user    
-function addBooking(userId) {
-    $.getJSON("bookings-m.php", {
+function addBooking( userId ) {
+    $.getJSON( "bookings-m.php", {
         action: "ajaxAddBookingOnBehalf",
         userId: userId
-    }, function(data) {
-        if (data.status=="OK") {
-            openSidePanelOrWindow("../book-part.php");
+    }, function( data ) {
+        if ( data.status == "OK" ) {
+            openSidePanelOrWindow( "../book-part.php" );
         }
-        else alert("Något har gått fel. Kontakta systemadmin.");
-        $('#popup-add-booking').dialog('close');
-    });
+        else alert( "Något har gått fel. Kontakta systemadmin." );
+        $( '#popup-add-booking' ).dialog( 'close' );
+    } );
 }
 
 
@@ -210,171 +209,179 @@ var bookingStep,
     fbStart,
     wday,
     startDate,
-    startTime,
+    startHour,
     endDate,
-    endTime,
+    endHour,
     nextDateClick;
 
-$(document).on('pagecreate', "#page-book-part", function() {
+$( document ).on( 'pagecreate', "#page-book-part", function() {
     // bind events
     
     /**
      * User chose start or end time for booking items on freebusy bar
      */
-    $("#book-combined-freebusy-bar ~ .freebusy-tic").click(function(event) {
-        var hour = Math.floor(event.offsetX / parseInt($(this).css('width')) * 24);
-        if (nextDateClick=="start") {
-            startDate = new Date(fbStart.valueOf());
-            startDate.setDate(startDate.getDate() + Number(this.dataset.day));
-            startTime = hour;
+    $( "#book-combined-freebusy-bar ~ .freebusy-tic" ).click( function( event ) {
+        var hour = Math.floor( event.offsetX / parseInt( $( this ).css( 'width' ) ) * 24 );
+        if ( nextDateClick == "start" ) {
+            startDate = new Date( fbStart.valueOf() );
+            startDate.setDate( startDate.getDate() + Number( this.dataset.day ) );
+            startHour = hour;
         } else {
-            endDate = new Date(fbStart.valueOf());
-            endDate.setDate(endDate.getDate() + Number(this.dataset.day));
-            endTime = hour;
+            endDate = new Date( fbStart.valueOf() );
+            endDate.setDate( endDate.getDate() + Number( this.dataset.day ) );
+            endHour = hour;
         }
-        nextDateClick = nextDateClick=="start" ? "end" : "start"; 
-        updateBookedTimeframe();
-    });
+        nextDateClick = nextDateClick == "start" ? "end" : "start"; 
+        updateBookedTimeframe( true );
+    } );
 
     /**
      * User chose a new start date from date picker for booking items
      */
-    $('#book-date-start').change(function(event) {
-		startDate = new Date(this.value+"T00:00:00");
-        if (startDate<fbStart || startDate.valueOf()>fbStart.valueOf()+7*24*60*60) {
+    $( '#book-date-start' ).change( function( event ) {
+		startDate = new Date( this.value + "T00:00:00" );
+        if ( startDate < fbStart || startDate.valueOf() > fbStart.valueOf() + 7 * 24 * 60 * 60 ) {
             // scroll to chosen week
-            fbStart = new Date(this.value);
-            wday = fbStart.getDay() ? fbStart.getDay()-1 : 6; // Weekday, where Monday=0 ... Sunday=6
-            fbStart.setDate(fbStart.getDate() - wday); // Should now be last Monday
-            scrollDate(0);
+            fbStart = new Date( this.value );
+            wday = fbStart.getDay() ? fbStart.getDay() - 1 : 6; // Weekday, where Monday=0 ... Sunday=6
+            fbStart.setDate( fbStart.getDate() - wday ); // Should now be last Monday
+            scrollDate( 0 );
         }
         nextDateClick = "end";
         updateBookedTimeframe();
-    });
+    } );
     
     /**
      * User chose a new end date from date picker for booking items
      */
-    $('#book-date-end').change(function(event) {
-        endDate = new Date(this.value+"T00:00:00");
+    $( '#book-date-end' ).change( function( event ) {
+        endDate = new Date( this.value + "T00:00:00" );
         nextDateClick = "start";
         updateBookedTimeframe();
-    });
+    } );
 
     /**
      * User chose a new start time from dropdown for booking items
      */
-    $('#book-time-start').change(function(event) {
-        startTime = Number(this.value);
+    $( '#book-time-start' ).change( function( event ) {
+        startHour = Number( this.value );
         updateBookedTimeframe();
-    });
+    } );
 
     /**
      * User chose a new end time from dropdown for booking items
      */
-    $('#book-time-end').change(function(event) {
-        endTime = Number(this.value);
+    $( '#book-time-end' ).change( function( event ) {
+        endHour = Number( this.value );
         updateBookedTimeframe();
-    });
-});
+    } );
+} );
 
-$(document).on('pageshow', "#page-book-part", function() {
+$( document ).on( 'pageshow', "#page-book-part", function() {
     // Show message if there is any
-    if ($("#msg-page-book-part").html()) {
-        setTimeout(function() {
-            $("#popup-msg-page-book-part").popup('open');
-        }, 500); // We need some delay here to make this work on Chrome.
+    if ( $( "#msg-page-book-part" ).html() ) {
+        $( "#popup-msg-page-book-part" ).popup( 'open' );
     }
-    bookingStep=1;
+    bookingStep = 1;
     // Uncheck all items
     checkedItems = {};
-    $(".book-item").removeClass("item-checked");
+    $( ".book-item" ).removeClass( "item-checked" );
     // Initialise date chooser
-    if (get('start') && get('end')) {
-    	// If start/end time have been passed as GET parameters startTime and endTime, use them
+    if ( get( 'start' ) && get( 'end' ) ) {
+    	// If start/end time have been passed as GET parameters startHour and endHour, use them
     	// Parameters are expected as unix timestamp in seconds.
-        fbStart = new Date(parseInt(get('start'))*1000);
-        fbStart.setHours(0,0,0,0); // Midnight
-    	startDate = new Date(parseInt(get('start'))*1000);
-    	startTime = startDate.getHours();
-    	startDate.setHours(0,0,0,0);
-    	endDate = new Date(parseInt(get('end'))*1000);
-    	endTime = endDate.getHours();
-    	endDate.setHours(0,0,0,0);
+        fbStart = new Date( parseInt( get( 'start' ) ) * 1000 );
+        fbStart.setHours( 0, 0, 0, 0 ); // Midnight
+    	startDate = new Date( parseInt( get( 'start' ) ) * 1000 );
+    	startHour = startDate.getHours();
+    	startDate.setHours( 0, 0, 0, 0 );
+    	endDate = new Date( parseInt( get( 'end' ) ) * 1000 );
+    	endHour = endDate.getHours();
+    	endDate.setHours( 0, 0, 0, 0 );
     } else {
         fbStart = new Date();
-    	startTime = fbStart.getHours();
-    	endTime = fbStart.getHours();
-        fbStart.setHours(0,0,0,0); // Midnight
-    	startDate = new Date(fbStart.valueOf());
-    	endDate = new Date(fbStart.valueOf());
+    	startHour = fbStart.getHours();
+    	endHour = fbStart.getHours();
+        fbStart.setHours( 0, 0, 0, 0 ); // Midnight
+    	startDate = new Date( fbStart.valueOf() );
+    	endDate = new Date( fbStart.valueOf() );
     }
     nextDateClick = "start";
-    wday = fbStart.getDay() ? fbStart.getDay()-1 : 6; // Weekday, where Monday=0 ... Sunday=6
-    fbStart.setDate(fbStart.getDate() - wday); // Should now be last Monday
-    scrollDate(0);
+    wday = fbStart.getDay() ? fbStart.getDay() - 1 : 6; // Weekday, where Monday=0 ... Sunday=6
+    fbStart.setDate( fbStart.getDate() - wday ); // Should now be last Monday
+    scrollDate( 0 );
     updateBookedTimeframe();
-    if (get('selectItemId')) {
-    	setTimeout(toggleItem, 500, get('selectItemId'));
+    if ( get( 'selectItemId' ) ) {
+    	setTimeout( toggleItem, 500, get( 'selectItemId' ) );
     }
-});
+} );
 
 /**
  * Scrolls the currently shown freebusy bars to another start date
  * @param int offset Number of days to scroll
  */
-function scrollDate(offset) {
-    $.mobile.loading("show", {});
+function scrollDate( offset ) {
+    $.mobile.loading( "show", {} );
     // Calculate start and end of week
-    fbStart.setDate(fbStart.getDate() + offset);
-    var fbEnd = new Date(fbStart.valueOf());
-    fbEnd.setDate(fbEnd.getDate() + 6);
-    var readableRange = "må " + fbStart.getDate() + "/" + (fbStart.getMonth()+1);
-    if (fbStart.getFullYear() != fbEnd.getFullYear()) readableRange += " '"+fbStart.getFullYear().toString().substr(-2);
-    readableRange += " &ndash; sö " + fbEnd.getDate() + "/" + (fbEnd.getMonth()+1) + " '"+fbEnd.getFullYear().toString().substr(-2);
+    fbStart.setDate( fbStart.getDate() + offset );
+    var fbEnd = new Date( fbStart.valueOf() );
+    fbEnd.setDate( fbEnd.getDate() + 6 );
+    var readableRange = "må " + fbStart.getDate() + "/" + ( fbStart.getMonth() + 1 );
+    if ( fbStart.getFullYear() != fbEnd.getFullYear() ) readableRange += " '" + fbStart.getFullYear().toString().substr( -2 );
+    readableRange += " &ndash; sö " + fbEnd.getDate() + "/" + ( fbEnd.getMonth() + 1 ) + " '" + fbEnd.getFullYear().toString().substr( -2 );
     // Get freebusy bars
-    $.getJSON("book-part.php", { action: "ajaxFreebusy", start: fbStart.valueOf()/1000, ids: checkedItems }, function(data, status) {
-        $("#book-current-range-readable").html( readableRange );
-        $.each(data.freebusyBars, function(key, value) { // key will be "item-nn"
-            $("#freebusy-"+key).html(value);
-        });
-        $("#book-combined-freebusy-bar").html(data.freebusyCombined);
+    $.getJSON( "ajax.php", {
+        action: "getFreebusyWholeSection",
+        start: fbStart.valueOf() / 1000,
+        ids: checkedItems
+    } )
+    .done( function( data ) {
+        $( "#book-current-range-readable" ).html( readableRange );
+        $.each( data.freebusyBars, function( key, value ) { // key will be "item-nn"
+            $( "#freebusy-" + key ).html( value );
+        } );
+        $( "#book-combined-freebusy-bar" ).html( data.freebusyCombined );
         updateBookedTimeframe();
-        $.mobile.loading("hide", {});
-    });
+        $.mobile.loading( "hide", {} );
+    } );
 }
 
 /**
  * Toggle the item between unselected and selected state, and get updated combined freebusy data
  * @param itemId ID of item to toggle
  */
-function toggleItem(itemId){
-    if (checkedItems[itemId]) {
-        delete checkedItems[itemId];
+function toggleItem( itemId ){
+    if ( checkedItems[ itemId ] ) {
+        delete checkedItems[ itemId ];
     } else {
-        checkedItems[itemId] = true;
+        checkedItems[ itemId ] = true;
     }
-    $("#book-item-"+itemId).toggleClass("item-checked");
+    $( "#book-item-" + itemId ).toggleClass( "item-checked" );
     
-    if (Object.keys(checkedItems).length>0) {
+    if ( Object.keys( checkedItems ).length > 0 ) {
         // Get access information for all selected items
-        $.mobile.loading("show", {});
-        $.getJSON("book-part.php", { action: "ajaxCombinedAccess", start: fbStart.valueOf()/1000, ids: checkedItems }, function(data, status) {
-            if (data.access <= ACCESS_READASK) {
-                 $("#book-access-msg").html("<p>Komplett information om tillgänglighet kan inte visas för ditt urval av resurser. Ange önskad start- och sluttid nedan för att skicka en intresseförfrågan.</p><p>Ansvarig kommer att höra av sig till dig med besked om tillgänglighet och eventuell bekräftelse av din förfrågan.</p>");
+        $.mobile.loading( "show", {} );
+        $.getJSON( "ajax.php", {
+            action: "getCombinedAccessAndFreebusy",
+            start: fbStart.valueOf() / 1000,
+            ids: checkedItems
+        } )
+        .done( function( data ) {
+            if ( data.access <= ACCESS_READASK ) {
+                 $( "#book-access-msg" ).html( "<p>Komplett information om tillgänglighet kan inte visas för ditt urval av resurser. Ange önskad start- och sluttid nedan för att skicka en intresseförfrågan.</p><p>Ansvarig kommer att höra av sig till dig med besked om tillgänglighet och eventuell bekräftelse av din förfrågan.</p>" );
             } else {
-                $("#book-access-msg").html("");
-                if (data.access <= ACCESS_PREBOOK) {
-                    $("#book-access-msg").append("<p><b>OBS: Bokningen är preliminär.</b> För ditt urval av resurser kommer bokningen behöva bekräftas av materialansvarig.</p>"); 
+                $( "#book-access-msg" ).html( "" );
+                if ( data.access <= ACCESS_PREBOOK ) {
+                    $( "#book-access-msg" ).append( "<p><b>OBS: Bokningen är preliminär.</b> För ditt urval av resurser kommer bokningen behöva bekräftas av materialansvarig.</p>" ); 
                 }
             }
-            $("#book-combined-freebusy-bar").html(data.freebusyCombined);
+            $( "#book-combined-freebusy-bar" ).html( data.freebusyBar );
             checkTimes();
-            $.mobile.loading("hide", {});
-        });
-        $("#book-step2").show();
+            $.mobile.loading( "hide", {} );
+        } );
+        $( "#book-step2" ).show();
     } else {
-        $("#book-step2").hide();
+        $( "#book-step2" ).hide();
     }
 }
 
@@ -382,72 +389,74 @@ function toggleItem(itemId){
  * Show item details in popup
  * @param itemId ID of item to show
  */
-function popupItemDetails(itemId) {
-    $.mobile.loading("show", {});
-    $.getJSON("book-part.php", {
-        action: "ajaxItemDetails",
+function popupItemDetails( itemId ) {
+    $.mobile.loading( "show", {} );
+    $.getJSON( "ajax.php", {
+        action: "getItemDetails",
         id: itemId,
         bookingStep: bookingStep
-    }, function(data, status) {
-        $("#item-caption").html(data.caption);
-        $("#item-details").html(data.html);
-        $("#popup-item-details").popup('open', { transition: "pop", y: 0 });
-        $.mobile.loading("hide", {});
-        if (bookingStep==2 && data.start!==null) {
+    } )
+    .done( function( data ) {
+        $( "#item-caption" ).html( data.caption );
+        $( "#item-details" ).html( data.html );
+        $( "#popup-item-details" ).popup( 'open', { transition: "pop", y: 0 } );
+        $.mobile.loading( "hide", {} );
+        if ( bookingStep == 2 && data.start !== null ) {
             // In step 2, show elements to change the item's booking
-            $("#book-item-booking-details").show();
+            $( "#book-item-booking-details" ).show();
             checkedItems = {};
-            checkedItems[itemId] = true;
+            checkedItems[ itemId ] = true;
             // Initialise date chooser
-            startDate = new Date(Number(data.start)*1000);
-            startTime = startDate.getHours();
-            startDate.setHours(0,0,0,0); // Midnight
-            endDate = new Date(Number(data.end)*1000);
-            endTime = endDate.getHours();
-            endDate.setHours(0,0,0,0); // Midnight
-            fbStart = new Date(startDate.valueOf());
-            wday = fbStart.getDay() ? fbStart.getDay()-1 : 6; // Weekday, where Monday=0 ... Sunday=6
-            fbStart.setDate(fbStart.getDate() - wday); // Should now be last Monday
+            startDate = new Date( Number( data.start ) * 1000 );
+            startHour = startDate.getHours();
+            startDate.setHours( 0, 0, 0, 0 ); // Midnight
+            endDate = new Date( Number( data.end ) * 1000 );
+            endHour = endDate.getHours();
+            endDate.setHours( 0, 0, 0, 0 ); // Midnight
+            fbStart = new Date( startDate.valueOf() );
+            wday = fbStart.getDay() ? fbStart.getDay() - 1 : 6; // Weekday, where Monday=0 ... Sunday=6
+            fbStart.setDate( fbStart.getDate() - wday ); // Should now be last Monday
             nextDateClick = "start";
-            $("#book-item-booked-start").html(startDate.toLocaleDateString("sv-SE") + ' ' + startTime + ':00');
-            $("#book-item-booked-end").html(endDate.toLocaleDateString("sv-SE") + ' ' + endTime + ':00');
-            scrollItemDate(0);
-            $("#book-item-price").val(data.price);
+            $( "#book-item-booked-start" ).html( startDate.toLocaleDateString( "sv-SE" ) + ' ' + startHour + ':00' );
+            $( "#book-item-booked-end" ).html( endDate.toLocaleDateString( "sv-SE" ) + ' ' + endHour + ':00' );
+            scrollItemDate( 0 );
+            $( "#book-item-price" ).val( data.price );
         } else {
-            $("#book-item-booking-details").hide();            
+            $( "#book-item-booking-details" ).hide();
         }
-    });
+    } );
 }
 
 /**
  * Update currently chosen start and end date/time in user interface
+ * @param bool swap whether to swap start and end time if they are in wrong order
  */
-function updateBookedTimeframe() {
-    // swap start and end time if start time is after end time
-    if (endDate.valueOf()+endTime*60*60*1000 < startDate.valueOf()+startTime*60*60*1000) {
-        if (nextDateClick == "start") {
-            var temp = new Date(endDate.valueOf());
-            endDate = new Date(startDate.valueOf());
-            startDate = new Date(temp.valueOf());
-            temp = endTime;
-            endTime = startTime;
-            startTime = temp;
+function updateBookedTimeframe( swap = false ) {
+    if ( endDate.valueOf() + endHour * 60 * 60 * 1000 < startDate.valueOf() + startHour * 60 * 60 * 1000 ) {
+        // swap start and end time if start time is after end time
+        if ( nextDateClick == "start" ) {
+            var temp = new Date( endDate.valueOf() );
+            endDate = new Date( startDate.valueOf() );
+            startDate = new Date( temp.valueOf() );
+            temp = endHour;
+            endHour = startHour;
+            startHour = temp;
         } else {
-            endDate = new Date(startDate.valueOf());
-            endTime = startTime;
+            endDate = new Date( startDate.valueOf() );
+            endHour = startHour;
         }
     }
-    $("#book-date-start").val( dateToISO(startDate) );
-    $("#book-time-start").val( startTime ).selectmenu("refresh");
-    $("#book-date-end").val( dateToISO(endDate) );
-    $("#book-time-end").val( endTime ).selectmenu("refresh");
-    if (nextDateClick=="start") {
-        $("#book-date-chooser-next-click").html("Klicka på önskat startdatum för att ändra datum.");
+    $( "#book-date-start" ).val( dateToISO( startDate ) );
+    $( "#book-time-start" ).val( startHour ).selectmenu( "refresh" );
+    $( "#book-date-end" ).val( dateToISO( endDate ) );
+    $( "#book-time-end" ).val( endHour ).selectmenu( "refresh" );
+    if ( nextDateClick == "start" ) {
+        $( "#book-date-chooser-next-click" ).html( "Klicka på önskat startdatum för att ändra datum." );
     } else {
-        $("#book-date-chooser-next-click").html("Klicka på önskat slutdatum.");
+        $( "#book-date-chooser-next-click" ).html( "Klicka på önskat slutdatum." );
     }
-    $('#book-chosen-timeframe').css('left', ((startDate-fbStart)/1000/60/60+startTime)/24/7*100 + "%");
-    $('#book-chosen-timeframe').css('width', ((endDate-startDate)/1000/60/60-startTime+endTime)/24/7*100 + "%");
+    $( '#book-chosen-timeframe' ).css( 'left', ( ( startDate - fbStart ) / 1000 / 60 / 60 + startHour ) / 24 / 7 * 100 + "%" );
+    $( '#book-chosen-timeframe' ).css( 'width', ( ( endDate - startDate ) / 1000 / 60 / 60 - startHour + endHour ) / 24 / 7 * 100 + "%" );
     checkTimes();
 }
 
@@ -455,214 +464,260 @@ function updateBookedTimeframe() {
  * Check that the chosen range does not collide with existing bookings visible to the user
  * @param bool save Whether to also save the booking and go to booking summary
  */
-function checkTimes(save=false) {
-    $.mobile.loading("show", {});
-    // Send times to server to check availability:
-    $.getJSON("book-part.php", {
-        action: (save ? "ajaxSave" : "ajaxCheckTimes"),
+function checkTimes( save = false ) {
+    var start = startDate.valueOf() / 1000 + startHour * 60 * 60;
+    var end = endDate.valueOf() / 1000 + endHour * 60 * 60;
+    if ( isNaN( start ) || isNaN( end ) ) return;
+    $.mobile.loading( "show", {} );
+    $.getJSON( "ajax.php", {
+        action: ( save ? "saveItem" : "checkTimes"),
         bookingStep: bookingStep,
         ids: checkedItems,
-        start: startDate.valueOf()/1000 + startTime*60*60,
-        end: endDate.valueOf()/1000 + endTime*60*60,
-    }, function(data, status) {
-        $.mobile.loading("hide", {});
-        $("#book-btn-save-part").prop("disabled", !data.timesOK);
-        if (data.timesOK) {
-            if (save && bookingStep==1) {
+        start: start,
+        end: end,
+    })
+    .done( function( data ) {
+        $.mobile.loading( "hide", {} );
+        $( "#book-btn-save-part" ).prop( "disabled", !data.timesOK );
+        if ( data.timesOK ) {
+            if ( save && bookingStep == 1 ) {
                 // Reset times section to prepare for next booking
                 checkedItems = {};
-                $(".book-item").removeClass("item-checked");
-                $("#book-step2").hide();
-                $("#book-date-start").val("");
-                $("#book-time-start").val("");
-                $("#book-date-end").val("");
-                $("#book-time-end").val("");
+                $( ".book-item" ).removeClass( "item-checked" );
+                $( "#book-step2" ).hide();
+                $( "#book-date-start" ).val( "" );
+                $( "#book-time-start" ).val( "" );
+                $( "#book-date-end" ).val( "" );
+                $( "#book-time-end" ).val( "" );
                 // update freebusy
-                scrollDate(0);
-                location.href="book-sum.php";
-            } else if (save && bookingStep==2) {
-                $("#popup-item-details").popup("close");
-				setTimeout(function() { location.reload() },200);
+                scrollDate( 0 );
+                $.mobile.changePage( "book-sum.php" );
             }
-            $("#book-warning-conflict").hide();
+            if ( save && bookingStep == 2 ) {
+                $( "#popup-item-details" ).popup( "close" );
+                getBookSumDetails();
+            }
+            $( "#book-warning-conflict" ).hide();
         } else {
-            if (save) {
-                $("#ul-items-unavail").html("");
-                $.each(data.unavail, function( key, item ) {
-                    $("#ul-items-unavail").append("<li>"+item+"</li>");
+            if ( save ) {
+                $( "#ul-items-unavail" ).html( "" );
+                $.each( data.unavail, function( key, item ) {
+                    $( "#ul-items-unavail" ).append( "<li>" + item + "</li>" );
                 });
-                $("#popup-items-unavail").popup('open', { transition: "pop" });
+                $( "#popup-items-unavail" ).popup( 'open', { transition: "pop" } );
             } else {
-                $("#book-warning-conflict").show();
+                $( "#book-warning-conflict" ).show();
             }
         }
-    });
+    } );
 }
 
 
 
 
 // ========== book-sum.php ==========
-var reqCheckRadios, itemsToConfirm, repeatType="";
+var itemsToConfirm, repeatType="";
 
-$(document).on('pagecreate', "#page-book-sum", function() {
+$( document ).on( 'pagecreate', "#page-book-sum", function() {
     // bind events
     
     /**
      * User changes start or end time for booking item on freebusy bar
      */
-    $("#book-item-select-dates .freebusy-tic").click(function(event) {
-        var hour = Math.floor(event.offsetX / parseInt($(this).css('width')) * 24);
-        if (nextDateClick=="start") {
-            startDate = new Date(fbStart.valueOf());
-            startDate.setDate(startDate.getDate() + Number(this.dataset.day));
-            startTime = hour;
+    $( "#book-item-select-dates .freebusy-tic" ).click( function( event ) {
+        var hour = Math.floor( event.offsetX / parseInt( $( this ).css( 'width' ) ) * 24 );
+        if ( nextDateClick == "start" ) {
+            startDate = new Date( fbStart.valueOf() );
+            startDate.setDate( startDate.getDate() + Number( this.dataset.day ) );
+            startHour = hour;
         } else {
-            endDate = new Date(fbStart.valueOf());
-            endDate.setDate(endDate.getDate() + Number(this.dataset.day));
-            endTime = hour;
+            endDate = new Date( fbStart.valueOf() );
+            endDate.setDate( endDate.getDate() + Number( this.dataset.day ) );
+            endHour = hour;
         }
-        nextDateClick = nextDateClick=="start" ? "end" : "start"; 
-        updateBookedTimeframe();
-    });
+        nextDateClick = nextDateClick == "start" ? "end" : "start"; 
+        updateBookedTimeframe( true );
+    } );
 
 	/** User changed number of occurences in the booking series dialog */
-    $(document).on('input', '#repeat-count', function() {
-		if (repeatType!="") {
-	        clearTimeout(toutUpdateRepeatPreview);
-	        toutUpdateRepeatPreview = setTimeout(repeatPreview, 600, this.value, repeatType);
+    $( document ).on( 'input', '#repeat-count', function() {
+		if ( repeatType != "" ) {
+	        clearTimeout( toutUpdateRepeatPreview );
+	        toutUpdateRepeatPreview = setTimeout( repeatPreview, 600, this.value, repeatType );
 		}
-	});
+	} );
 
     /**
      * User chose a new start date from date picker for booking items
      */
-    $('#book-date-start').change(function(event) {
-        startDate = new Date(this.value+"T00:00:00");
-        if (startDate<fbStart || startDate.valueOf()>fbStart.valueOf()+7*24*60*60) {
+    $( '#book-date-start' ).change( function( event ) {
+        startDate = new Date( this.value + "T00:00:00" );
+        if ( startDate < fbStart || startDate.valueOf() > fbStart.valueOf() + 7 * 24 * 60 * 60 ) {
             // scroll to chosen week
-            fbStart = new Date(this.value);
+            fbStart = new Date( this.value );
             wday = fbStart.getDay() ? fbStart.getDay()-1 : 6; // Weekday, where Monday=0 ... Sunday=6
-            fbStart.setDate(fbStart.getDate() - wday); // Should now be last Monday
-            scrollDate(0);
+            fbStart.setDate( fbStart.getDate() - wday ); // Should now be last Monday
+            scrollDate( 0 );
         }
         nextDateClick = "end";
         updateBookedTimeframe();
-    });
+    } );
     
     /**
      * User chose a new end date from date picker for booking items
      */
-    $('#book-date-end').change(function(event) {
-        endDate = new Date(this.value+"T00:00:00");
+    $( '#book-date-end' ).change( function( event ) {
+        endDate = new Date( this.value + "T00:00:00" );
         nextDateClick = "start";
         updateBookedTimeframe();
-    });
+    } );
 
     /**
      * User chose a new start time from dropdown for booking items
      */
-    $('#book-time-start').change(function(event) {
-        startTime = Number(this.value);
+    $( '#book-time-start' ).change( function( event ) {
+        startHour = Number( this.value );
         updateBookedTimeframe();
-    });
+    } );
 
     /**
      * User chose a new end time from dropdown for booking items
      */
-    $('#book-time-end').change(function(event) {
-        endTime = Number(this.value);
+    $( '#book-time-end' ).change( function( event ) {
+        endHour = Number( this.value );
         updateBookedTimeframe();
-    });
+    } );
     
     /**
-     * Validate required checkboxes and radios before submitting the booking
+     * Sending of booking request via ajax
      */
-    $("#form-booking").submit(function(event) {
-        $.each(reqCheckRadios, function( id, q ) {
-            if ($("[name^=answer-"+id+"]:checked").length == 0) {
-                alert("Du måste först svara på frågan: "+q);
-                event.preventDefault();
-                return false;
-            }
-        });
-        return true;
-    });
-});
+    $( "#form-booking" ).submit( function( event ) {
+        var $this = $( this );
+        event.preventDefault();
+        $.mobile.loading( "show", {} );
+        $.post( $this.attr( 'action' ), $this.serialize() )
+        .done( function( data ) {
+            $.mobile.loading( "hide", {} );
+            if ( data != "" ) alert ( data );
+            $.mobile.changePage( "index.php" );
+        } )
+        .fail( function( xhr ) {
+            $.mobile.loading( "hide", {} );
+            $( "#msg-page-book-sum" ).html( xhr.responseText );
+            $( "#popup-msg-page-book-sum" ).popup( 'open' );
+        } );
+    } );
+} );
 
 /**
  * Show message if there is any
  */
-$(document).on('pageshow', "#page-book-sum", function() {
-    if ($("#msg-page-book-sum").html()) {
-        setTimeout(function() {
-            $("#popup-msg-page-book-sum").popup('open');
-        }, 500); // We need some delay here to make this work on Chrome.
+$( document ).on( 'pageshow', "#page-book-sum", function() {
+    if ( $( "#msg-page-book-sum" ).html() ) {
+        $( "#popup-msg-page-book-sum" ).popup( 'open' );
     }
     bookingStep=2;
-});
+    getBookSumDetails();
+} );
+
+/**
+ * Get the html section for repeating bookings (series)
+ */
+function getSeries() {
+    $.get( "ajax.php", { action: "getSeries" } )
+    .done( function( data ) {
+        $( '#series-panel' ).html( data ).enhanceWithin();
+    } );
+}
 
 /**
  * Get a preview for a new booking series
  * @param int count Number of bookings in the series, including the original one
  * @param int type Type of repetition (day|week|month)
  */
-function repeatPreview(count, type) {
-    $.mobile.loading("show", {});
-    $.getJSON("book-sum.php", {
-        action: "ajaxRepeatPreview",
+function repeatPreview( count, type ) {
+    $.mobile.loading( "show", {} );
+    $.get( "ajax.php", {
+        action: "repeatPreview",
         count: count,
 		type: type
-    }, function(data, status) {
-        $.mobile.loading("hide", {});
-        if (data.error) alert(data.error);
-        else $('#repeat-preview').html(data.html);
-		$('#repeat-create').prop("disabled", false);
-    });
+    } )
+    .done( function( data ) {
+        $.mobile.loading( "hide", {} );
+        $( '#repeat-preview' ).html( data );
+		$( '#repeat-create' ).prop( "disabled", false );
+    } )
+    .fail( function( xhr ) {
+        $.mobile.loading( "hide", {} );
+        alert( xhr.responseText );
+    } );
 }
 
 /** User chose to create a booking series */
 function repeatCreate() {
-    var form = document.forms.formBooking;
-    form.elements.action.value = "repeatCreate";
-    form.submit();
+    document.forms.formBooking.elements.action.value = "repeatCreate";
+    $.mobile.loading( "show", {} );
+    $.post( $("#form-booking").attr( 'action' ), $("#form-booking").serialize() )
+    .done( function( data ) {
+        $.mobile.loading( "hide", {} );
+        getSeries();
+        if ( data != "" ) alert ( data );
+    } )
+    .fail( function( xhr ) {
+        $.mobile.loading( "hide", {} );
+        alert( xhr.responseText );
+    } );
 }
 
 /** Remove the booking from its booking series (but keep it) */
 function unlinkBooking() {
-    $.mobile.loading("show", {});
-    $.getJSON("book-sum.php", {
-        action: "ajaxUnlinkBooking"
-    }, function(data, status) {
-        $.mobile.loading("hide", {});
-        $('#series-panel').html(data.html).enhanceWithin();
-		alert("Bokningen har nu tagits bort från bokningsserien.");
-    });
+    $.mobile.loading( "show", {} );
+    $.post( "ajax.php", {
+        action: "unlinkBooking"
+    } )
+    .done( function( data ) {
+        $.mobile.loading( "hide", {} );
+        $( '#series-panel' ).html( data ).enhanceWithin();
+		alert( "Bokningen har nu tagits bort från bokningsserien." );
+    } )
+    .fail( function( xhr ) {
+        $.mobile.loading( "hide", {} );
+        alert( xhr.responseText );
+    } );
 }
 
 /** Remove all bookings from series (but keep them) */
 function unlinkSeries() {
-    $.mobile.loading("show", {});
-    $.getJSON("book-sum.php", {
-        action: "ajaxUnlinkSeries"
-    }, function(data, status) {
-        $.mobile.loading("hide", {});
-        $('#series-panel').html(data.html).enhanceWithin();
-		alert("Bokningen har nu tagits bort från bokningsserien.");
-    });
+    $.mobile.loading( "show", {} );
+    $.post( "ajax.php", {
+        action: "unlinkSeries"
+    } )
+    .done( function( data ) {
+        $.mobile.loading( "hide", {} );
+        $( '#series-panel' ).html( data ).enhanceWithin();
+    } )
+    .fail( function( xhr ) {
+        $.mobile.loading( "hide", {} );
+        alert( xhr.responseText );
+    } );
 }
 
 function deleteSeries() {
-	if (confirm("OBS! Om du fortsätter raderas alla kommande tillfällen i den här serien. Tillfällen som har passerat samt det första tillfället i serien raderas dock inte. Vill du fortsätta?")) {
-	    $.mobile.loading("show", {});
-	    $.getJSON("book-sum.php", {
-	        action: "ajaxDeleteSeries"
-	    }, function(data, status) {
-	        $.mobile.loading("hide", {});
-			alert("Bokningsserien har nu raderats, förutom det första tillfället samt de tillfällen som har passerat.");
-			if (data.gotoBookingId) location.href="book-sum.php?bookingId="+data.gotoBookingId;
-			else $('#series-panel').html(data.html).enhanceWithin();
-	    });
+	if ( confirm( "OBS! Om du fortsätter raderas alla kommande tillfällen i den här serien. Tillfällen som har passerat samt det första tillfället i serien raderas dock inte. Vill du fortsätta?" ) ) {
+	    $.mobile.loading( "show", {} );
+	    $.post( "ajax.php", {
+	        action: "deleteSeries"
+	    } )
+        .done( function( data ) {
+	        $.mobile.loading( "hide", {} );
+			getSeries();
+			alert( "Bokningsserien har nu raderats, förutom det första tillfället samt de tillfällen som redan har passerat." );
+			if ( data ) $.mobile.changePage( data );
+	    } )
+        .fail( function( xhr ) {
+	        $.mobile.loading( "hide", {} );
+            alert( xhr.responseText );
+        } );
 	}
 }
 
@@ -670,125 +725,159 @@ function deleteSeries() {
  * Remove a single item from booking
  * @param int bookedItemId ID of item to remove
  */
-function removeItem(bookedItemId) {
-    $.mobile.loading("show", {});
-    $.getJSON("book-sum.php", {
-        action: "ajaxRemoveItem",
+function removeItem( bookedItemId ) {
+    $.mobile.loading( "show", {} );
+    $.post( "ajax.php", {
+        action: "removeItem",
         bookedItemId: bookedItemId
-    }, function(data, status) {
-        $.mobile.loading("hide", {});
-        if (data.error) alert(data.error);
-        else location.reload();
-    });
+    } )
+    .done( function() {
+        $.mobile.loading( "hide", {} );
+        getBookSumDetails();
+    } )
+    .fail( function( xhr ) {
+        $.mobile.loading( "hide", {} );
+        alert( xhr.responseText );
+    } );
 }
 
 /**
  * Set the price for a booked item
  * @param bookedItemId
  */
-function setItemPrice(bookedItemId, lastPrice) {
-    var price = prompt("Pris för den här resursen (hela kr):", lastPrice);
-    if (price==="" || price) { // otherwise user hit cancel
-        $.mobile.loading("show", {});
-        $.getJSON("book-sum.php", {
-            action: "ajaxSetItemPrice",
+function setItemPrice( bookedItemId, lastPrice ) {
+    var price = prompt( "Pris för den här resursen (hela kr):", lastPrice );
+    if ( price === "" || price ) { // otherwise user hit cancel
+        $.mobile.loading( "show", {} );
+        $.post( "ajax.php", {
+            action: "setItemPrice",
             bookedItemId: bookedItemId,
             price: price
-        }, function(data, status) {
-            $.mobile.loading("hide", {});
-            if (data.error) alert(data.error);
-            else location.reload();
-        });
+        } )
+        .done( function() {
+            $.mobile.loading( "hide", {} );
+            getBookSumDetails();
+        } )
+        .fail( function( xhr ) {
+            $.mobile.loading( "hide", {} );
+            alert( xhr.responseText );
+        } );
     }
+}
+
+/**
+ * Get list of booked items in booking step 2
+ */
+function getBookSumDetails() {
+    $.getJSON( "ajax.php", { action: "getBookSumDetails" } )
+    .done( function( data ) {
+        $( "#book-sum-item-list" ).html( data.itemList ).listview( "refresh" );
+        if ( data.price ) $( "#book-sum-pay-state" ).show();
+        else $( "#book-sum-pay-state" ).hide();
+        if ( data.allConfirmed ) $( "#book-sum-price-prel" ).hide();
+        else $( "#book-sum-price-prel" ).show();
+        if ( data.itemsToConfirm.length ) $( "#btn-confirm-all-items" ).show();
+        else $( "#btn-confirm-all-items" ).hide();
+        $( "#book-sum-price" ).text( data.price );
+        $( "#book-sum-paid" ).text( data.paid );
+        $( "#book-sum-to-pay" ).text( data.price - data.paid );
+        itemsToConfirm = data.itemsToConfirm;
+        if ( data.questions != "" ) {
+            $( "#book-sum-questions" ).show();
+            $( "#book-sum-questions" ).html( data.questions ).enhanceWithin();
+        } else $( "#book-sum-questions" ).hide();
+        if ( data.showRepeating ) {
+            getSeries();
+            $( "#book-sum-series" ).show();
+        } else $( "#book-sum-series" ).hide();
+    } );
 }
 
 /**
  * Function for admins to input how much the client has paid.
  */
-function setPaid(lastPaid) {
-    var paid = prompt("Hur mycket är betalt? (hela kronor)", lastPaid);
-    if (paid==="" || paid) { // otherwise user hit cancel
-        $.mobile.loading("show", {});
-        $.getJSON("book-sum.php", {
-            action: "ajaxSetPaid",
+function setPaid( lastPaid ) {
+    var paid = prompt( "Hur mycket är betalt? (hela kronor)", lastPaid );
+    if ( paid === "" || paid ) { // otherwise user hit cancel
+        $.mobile.loading( "show", {} );
+        $.post( "ajax.php", {
+            action: "setPaid",
             paid: paid
-        }, function(data, status) {
-            $.mobile.loading("hide", {});
-            if (data.error) alert(data.error);
-            else location.reload();
-        });
+        } )
+        .done( function() {
+            $.mobile.loading( "hide", {} );
+            getBookSumDetails();
+        } )
+        .fail( function( xhr ) {
+            $.mobile.loading( "hide", {} );
+            alert( xhr.responseText );
+        } );
     }
 }
 
 /**
  * Delete the whole booking
  * @param userId Used to redirect to userdata page for logged in users, or index for guests
- * @param baseUrl Base URL of the installation (for redirection after successful deletion)
  */
-function deleteBooking(userId=0, baseUrl) {
-    if (confirm("Är du säker på att du vill ta bort din bokning?")) {
-        $.mobile.loading("show", {});
-        $.getJSON("book-sum.php", { action: "ajaxDeleteBooking" }, function(data, status) {
-            $.mobile.loading("hide", {});
-            if (data.error) alert(data.error);
-            else if (userId) location.href = baseUrl + "userdata.php?action=bookingDeleted";
-            else location.href = baseUrl + "index.php?action=bookingDeleted";
-        });
+function deleteBooking( userId=0 ) {
+    if ( confirm( "Är du säker på att du vill ta bort din bokning?" ) ) {
+        $.mobile.loading( "show", {} );
+        $.post( "ajax.php", { action: "deleteBooking" } )
+        .done( function( data ) {
+            $.mobile.loading( "hide", {} );
+            alert( "Bokningen har nu raderats." );
+            if ( userId ) $.mobile.changePage( "userdata.php" );
+            else $.mobile.changePage( "index.php" );
+        } )
+        .fail( function( xhr ) {
+            $.mobile.loading( "hide", {} );
+            alert( xhr.responseText );
+        } );
     }
     return false;
 }
 
 /**
- * Mark an item as confirmed
+ * Mark an item as confirmed or rejected
  * @param int bookedItemId ID of item to confirm
+ * @param int status Can be either FFBoka::STATUS_REJECTED (1) or FFBoka::STATUS_CONFIRMED (4)
  */
-function confirmBookedItem(bookedItemId) {
-    $.mobile.loading("show", {});
-    $.getJSON("book-sum.php", { action: "ajaxConfirmBookedItem", bookedItemId: bookedItemId }, function(data, status) {
-        $.mobile.loading("hide", {});
-        if (data.error) alert(data.error);
-        else {
-			// Remove item from array of items to confirm
-			itemsToConfirm.splice(itemsToConfirm.indexOf(bookedItemId), 1);
-			// Update user interface
-            $("#book-item-status-"+bookedItemId).html("Bekräftat");
-            $("#book-item-btn-confirm-"+bookedItemId).hide();
-            $("#book-item-btn-reject-"+bookedItemId).hide();
-        	if (data.allManaged == true) {
-				$("#btn-confirm-all-items").hide();
-				alert("Alla obekräftade poster i bokningen har nu hanterats. Om du har justerat några start- eller sluttider bör du skriva något om det i meddelande-rutan längre ner. Skicka också gärna en uppdaterad bokningsbekräftelse genom att klicka på 'Spara ändringar' längst ner på sidan.");
-			}
+function handleBookedItem( bookedItemId, status ) {
+    $.mobile.loading( "show", {} );
+    $.post( "ajax.php", { action: "handleBookedItem", bookedItemId: bookedItemId, status: status } )
+    .done( function( data ) {
+        $.mobile.loading( "hide", {} );
+        // Remove item from array of items to confirm
+        itemsToConfirm.splice( itemsToConfirm.indexOf( bookedItemId ), 1 );
+        // Update user interface
+        $( "#book-item-status-" + bookedItemId ).html( status == 4 ? "Bekräftat" : "Avböjt" );
+        if ( status == 1 ) {
+            $( "li#item-" + bookedItemId ).addClass( "rejected" );
+            $( "li#item-" + bookedItemId + " a" ).removeClass( "ui-btn-c" ).addClass( "ui-btn-a" );
+            $( "#book-item-btn-confirm-" + bookedItemId ).parent().hide();
+        } else {
+            $( "#book-item-btn-confirm-" + bookedItemId ).hide();
+            $( "#book-item-btn-reject-" + bookedItemId ).hide();
         }
-    });
+        if ( itemsToConfirm.length == 0 ) {
+            $( "#btn-confirm-all-items" ).hide();
+            alert( "Alla obekräftade poster i bokningen har nu hanterats. Om du har ändrat eller avböjt några resurser bör du skriva något om det i kommentarsfältet nedan så att användaren/kunden förstår vad som händer. Klicka sedan på 'Slutför bokningen' längst ner på sidan för att skicka ut en uppdaterad bokningsbekräftelse." );
+        }
+    } )
+    .fail( function( xhr ) {
+        $.mobile.loading( "hide", {} );
+        alert( xhr.responseText );
+    } );
 }
+
 
 /**
  * Mark all items in booking as confirmed
  */
-function confirmAllItems() {
-	$.each(itemsToConfirm, function(index, bookedItemId) {
-		confirmBookedItem(bookedItemId);
-	});
-}
-
-/**
- * Mark an item as rejected
- * @param int bookedItemId ID of item to reject
- */
-function rejectBookedItem(bookedItemId) {
-    $.mobile.loading("show", {});
-    $.getJSON("book-sum.php", { action: "ajaxRejectBookedItem", bookedItemId: bookedItemId }, function(data, status) {
-        $.mobile.loading("hide", {});
-        if (data.error) alert(data.error);
-        else {
-            $("#book-item-status-"+bookedItemId).html("Avböjt");
-            $("li#item-"+bookedItemId).addClass("rejected");
-            $("li#item-"+bookedItemId+" a").removeClass("ui-btn-c").addClass("ui-btn-a");
-            $("#book-item-btn-confirm-"+bookedItemId).parent().hide();
-        	if (data.allManaged == true) alert("Alla obekräftade poster i bokningen har nu hanterats. Kom ihåg att skriva en förklaring i meddelande-fältet längre ner på sidan så att den bokande förstår varför du har avböjt den här posten. Klicka sedan på 'Slutför bokningen' längst ner på sidan för att skicka ut en uppdaterad bokningsbekräftelse.");
-        	else alert("Du har nekat bokningsförfrågan för den här posten.\n\nKom ihåg att skriva en förklaring i meddelande-fältet längre ner på sidan så att den bokande förstår varför du har avböjt den här posten. Du kan sedan välja att skicka ut en uppdaterad bokningsbekräftelse genom att klicka på 'Slutför bokningen' längst ner, eller först göra fler justeringar på bokningen.");
-        }
-    });
+ function confirmAllItems() {
+	$.each( itemsToConfirm, function( index, bookedItemId ) {
+		handleBookedItem( bookedItemId, 4 );
+	} );
 }
 
 
@@ -796,31 +885,42 @@ function rejectBookedItem(bookedItemId) {
  * Scrolls the freebusy bar of a single booked item to another start date
  * @param int offset Number of days to scroll
  */
-function scrollItemDate(offset) {
-    $.mobile.loading("show", {});
+function scrollItemDate( offset ) {
+    $.mobile.loading( "show", {} );
     // Calculate start and end of week
-    fbStart.setDate(fbStart.getDate() + offset);
-    var fbEnd = new Date(fbStart.valueOf());
-    fbEnd.setDate(fbEnd.getDate() + 6);
-    var readableRange = "må " + fbStart.getDate() + "/" + (fbStart.getMonth()+1);
-    if (fbStart.getFullYear() != fbEnd.getFullYear()) readableRange += " '"+fbStart.getFullYear().toString().substr(-2);
-    readableRange += " &ndash; sö " + fbEnd.getDate() + "/" + (fbEnd.getMonth()+1) + " '"+fbEnd.getFullYear().toString().substr(-2);
+    fbStart.setDate( fbStart.getDate() + offset );
+    var fbEnd = new Date( fbStart.valueOf() );
+    fbEnd.setDate( fbEnd.getDate() + 6 );
+    var readableRange = "må " + fbStart.getDate() + "/" + ( fbStart.getMonth() + 1 );
+    if ( fbStart.getFullYear() != fbEnd.getFullYear() ) readableRange += " '" + fbStart.getFullYear().toString().substr( -2 );
+    readableRange += " &ndash; sö " + fbEnd.getDate() + "/" + ( fbEnd.getMonth() + 1 ) + " '" + fbEnd.getFullYear().toString().substr(-2);
     // Get freebusy bar
-    $.getJSON("book-sum.php", { action: "ajaxFreebusyItem", start: fbStart.valueOf()/1000 }, function(data, status) {
-        $("#book-current-range-readable").html( readableRange );
-        $("#book-freebusy-bar-item").html( data.freebusyBar );
+    $.get( "ajax.php", { action: "freebusyItem", start: fbStart.valueOf()/1000 } )
+    .done( function( data ) {
+        $( "#book-current-range-readable" ).html( readableRange );
+        $( "#book-freebusy-bar-item" ).html( data );
         updateBookedTimeframe();
-        $.mobile.loading("hide", {});
-    });
+        $.mobile.loading( "hide", {} );
+    } );
 }
 
+
+/**
+ * Remove the dirty flag from booking
+ */
+function removeDirty() {
+    $.post( "ajax.php", { action: "removeDirty" } )
+    .done( function( ) {
+        $( "#book-sum-dirty-msg" ).hide();
+    } );
+}
 
 
 
 // ========== admin/index.php ==========
 var questionId, questionType;
 
-$(document).on('pagecreate', "#page-admin-section", function() {
+$( document ).on( 'pagecreate', "#page-admin-section", function() {
     // bind events
     
     /**
@@ -835,62 +935,60 @@ $(document).on('pagecreate', "#page-admin-section", function() {
         if ( value && value.length > 2 ) {
             $ul.html( "<li><div class='ui-loader'><span class='ui-icon ui-icon-loading'></span></div></li>" );
             $ul.listview( "refresh" );
-            $.getJSON("ajax.php", {action: "findUser", q: value}, function(data, status) {
+            $.getJSON( "ajax.php", { action: "findUser", q: value }, function( data, status ) {
                 $.each( data, function ( i, val ) {
                     html += "<li style='cursor:pointer;' title='Lägg till " + val.name + " som LA-admin' onClick='addAdmin(" + val.userId + ");'>" + val.userId + " " + (val.name ? val.name : "(inget namn tillgängligt)") + "</li>";
-                });
-                if (data.length==0) {
-                    if (Number(value)) html += "<li style='cursor:pointer;' title='Lägg till medlem med medlemsnummer " + Number(value) + " som LA-admin' onClick='addAdmin(" + Number(value) + ");'>" + Number(value) + " (skapa ny användare)</li>";
+                } );
+                if ( data.length == 0 ) {
+                    if ( Number( value ) ) html += "<li style='cursor:pointer;' title='Lägg till medlem med medlemsnummer " + Number( value ) + " som LA-admin' onClick='addAdmin(" + Number( value ) + ");'>" + Number( value ) + " (skapa ny användare)</li>";
                     else html += "<li>Sökningen på <i>" + value + "</i> gav ingen träff. Testa ange medlemsnummer istället.</li>";
                 }
                 $ul.html( html );
                 $ul.listview( "refresh" );
                 $ul.trigger( "updatelayout");
-            });
+            } );
         }
-    });
+    } );
 
     /**
      * Update question options when user changes question type 
      */
-    $("input[type=radio][name=sec-question-type]").click( function() {
-        showQuestionOptions(this.value);
-    });
-});
+    $( "input[type=radio][name=sec-question-type]" ).click( function() {
+        showQuestionOptions( this.value );
+    } );
+} );
 
-$(document).on('pageshow', "#page-admin-section", function() {
+$( document ).on( 'pageshow', "#page-admin-section", function() {
     // Show message if there is any
-    if ($("#msg-page-admin-section").html()) {
-        setTimeout(function() {
-            $("#popup-msg-page-admin-section").popup('open');
-        }, 500); // We need some delay here to make this work on Chrome.
+    if ( $( "#msg-page-admin-section" ).html() ) {
+        $( "#popup-msg-page-admin-section" ).popup( 'open' );
     }
     listSectionAdmins();
-    showQuestionOptions("");
+    showQuestionOptions( "" );
     questionId = 0;
     questionType = "";
     getQuestions();
-});
+} );
 
 /**
  * Update booking question options
  * @param type Question type to show options for (radio|checkbox|text|number)
  */
-function showQuestionOptions(type) {
+function showQuestionOptions( type ) {
     questionType = type;
-    $("#sec-question-opts-checkboxradio").hide();
-    $("#sec-question-opts-text").hide();
-    $("#sec-question-opts-number").hide();
-    switch (questionType) {
+    $( "#sec-question-opts-checkboxradio" ).hide();
+    $( "#sec-question-opts-text" ).hide();
+    $( "#sec-question-opts-number" ).hide();
+    switch ( questionType ) {
     case "radio":
     case "checkbox":
-        $("#sec-question-opts-checkboxradio").show();
+        $( "#sec-question-opts-checkboxradio" ).show();
         break;
     case "text":
-        $("#sec-question-opts-text").show();
+        $( "#sec-question-opts-text" ).show();
         break;
     case "number":
-        $("#sec-question-opts-number").show();
+        $( "#sec-question-opts-number" ).show();
         break;
     }
 }
@@ -899,51 +997,54 @@ function showQuestionOptions(type) {
  * Get a list of all questions defined in section
  */
 function getQuestions() {
-    $.mobile.loading("show", {});
-    $.get("ajax.php", { action: "getQuestions" }, function(data, status) {
-        $("#sec-questions").html(data).listview("refresh");
-        $.mobile.loading("hide", {});
-    });
+    $.mobile.loading( "show", {} );
+    $.get( "ajax.php", { action: "getQuestions" } )
+    .done( function( data ) {
+        $( "#sec-questions" ).html( data ).listview( "refresh" );
+    } )
+    .always( function () {
+        $.mobile.loading( "hide", {} );
+    } );
 }
 
 /**
  * Clear all inputs for booking questions
  */
 function clearQuestionInputs() {
-    $("#sec-question-caption").val("");
-    $("#sec-question-choices").val("");
-    $("#sec-question-length").val("");
-    $("#sec-question-min").val("");
-    $("#sec-question-max").val("");
+    $( "#sec-question-caption" ).val( "" );
+    $( "#sec-question-choices" ).val( "" );
+    $( "#sec-question-length" ).val( "" );
+    $( "#sec-question-min" ).val( "" );
+    $( "#sec-question-max" ).val( "" );
 }
 
 /**
  * Save currently edited booking question
  */
 function saveQuestion() {
-    if ($("#sec-question-caption").val()=="") {
-        alert("Du måste skriva in frågan.");
+    if ( $( "#sec-question-caption" ).val() == "" ) {
+        alert( "Du måste skriva in frågan." );
        return;
     }
-    if (questionType=="") {
-        alert("Välj en frågetyp först.");
+    if ( questionType == "" ) {
+        alert( "Välj en frågetyp först." );
         return;
     }
-    $.mobile.loading("show", {});
-    $.getJSON("ajax.php", {
+    $.mobile.loading( "show", {} );
+    $.getJSON( "ajax.php", {
         action: "saveQuestion",
         id: questionId,
-        caption: $("#sec-question-caption").val(),
+        caption: $( "#sec-question-caption" ).val(),
         type: questionType,
-        choices: $("#sec-question-choices").val(),
-        length: $("#sec-question-length").val(),
-        min: $("#sec-question-min").val(),
-        max: $("#sec-question-max").val()  
-    }, function(data, status) {
-        $("#popup-section-question").popup('close', { transition: "pop" } );
-        $.mobile.loading("hide", {});
+        choices: $( "#sec-question-choices" ).val(),
+        length: $( "#sec-question-length" ).val(),
+        min: $( "#sec-question-min" ).val(),
+        max: $( "#sec-question-max" ).val()  
+    }, function( data, status ) {
+        $( "#popup-section-question" ).popup( 'close', { transition: "pop" } );
+        $.mobile.loading( "hide", {} );
         getQuestions();
-    });
+    } );
 }
 
 /**
@@ -951,46 +1052,46 @@ function saveQuestion() {
  * @param id ID of question to delete
  * @returns
  */
-function deleteQuestion(id) {
-$.mobile.loading("show", {});
-    $.getJSON("ajax.php", { action: "deleteQuestion", id: id }, function(data, status) {
-    $.mobile.loading("hide", {});
+function deleteQuestion( id ) {
+$.mobile.loading( "show", {} );
+    $.getJSON( "ajax.php", { action: "deleteQuestion", id: id }, function( data, status ) {
+    $.mobile.loading( "hide", {} );
     getQuestions();
-   });
+   } );
 }
 
 /**
  * Show a popup for editing a booking question
  * @param id ID of booking question to edit
  */
-function showQuestion(id) {
+function showQuestion( id ) {
     questionId = id;
     clearQuestionInputs();
-    if (id==0) {
-        showQuestionOptions("");
-        $("input[type=radio][name=sec-question-type]").removeAttr("checked").checkboxradio("refresh");
-        $("#popup-section-question").popup('open', { transition: "pop" } );
+    if ( id == 0 ) {
+        showQuestionOptions( "" );
+        $( "input[type=radio][name=sec-question-type]" ).removeAttr( "checked" ).checkboxradio( "refresh" );
+        $( "#popup-section-question" ).popup( 'open', { transition: "pop" } );
     } else {
-        $.mobile.loading("show", {});
-        $.getJSON("ajax.php", { action: "getQuestion", id: id }, function(data, status) {
+        $.mobile.loading( "show", {} );
+        $.getJSON( "ajax.php", { action: "getQuestion", id: id }, function( data, status ) {
             questionId = data.id;
-            $("#sec-question-caption").val( data.caption );
-            showQuestionOptions(data.type);
-            $("input[name=sec-question-type]").prop("checked", false);
-            $("#sec-question-type-"+data.type).prop("checked", "checked");
-            $("input[name=sec-question-type]").checkboxradio("refresh");
-            switch (data.type) {
+            $( "#sec-question-caption" ).val( data.caption );
+            showQuestionOptions( data.type );
+            $( "input[name=sec-question-type]" ).prop( "checked", false );
+            $( "#sec-question-type-" + data.type ).prop( "checked", "checked" );
+            $( "input[name=sec-question-type]" ).checkboxradio( "refresh" );
+            switch ( data.type ) {
                 case "radio":
                 case "checkbox":
-                    $("#sec-question-choices").val(data.options.choices.join("\n")); break;
+                    $( "#sec-question-choices" ).val( data.options.choices.join( "\n" ) ); break;
                 case "text":
-                    $("#sec-question-length").val(data.options.length); break;
+                    $( "#sec-question-length" ).val( data.options.length ); break;
                 case "number":
-                    $("#sec-question-min").val(data.options.min); $("#sec-question-max").val(data.options.max); break;
+                    $( "#sec-question-min" ).val( data.options.min ); $( "#sec-question-max" ).val( data.options.max ); break;
             }
-            $.mobile.loading("hide", {});
-            $("#popup-section-question").popup('open', { transition: "pop" } );
-        });
+            $.mobile.loading( "hide", {} );
+            $( "#popup-section-question" ).popup( 'open', { transition: "pop" } );
+        } );
     }
 }
 
@@ -1001,11 +1102,10 @@ function listSectionAdmins() {
     $.get( "ajax.php", { action: "listSectionAdmins" } )
     .done( function( data ) {
         $( "#ul-sec-admins" ).html( data ).listview( "refresh" );
-    })
+    } )
     .fail( function() {
         $( "#ul-sec-admins" ).html( "<li>Serverfel</li>" ).listview( "refresh" );
-    });
-
+    } );
 }
 
 /**
@@ -1022,11 +1122,13 @@ function addAdmin( userId ) {
             $("#sec-adm-autocomplete").html( "" );
             listSectionAdmins();
         }
-    }).fail( function( xhr ) {
+    } )
+    .fail( function( xhr ) {
         alert( xhr.responseText );
-    }).always( function() {
+    } )
+    .always( function() {
         $.mobile.loading( "hide", {} );
-    });
+    } );
 }
 
 /**
@@ -1041,10 +1143,10 @@ function removeAdmin( userId, currentUserId, name ) {
         .done( function( data ) {
             if ( currentUserId == userId ) { location.reload(); }
             else { listSectionAdmins(); }
-        })
+        } )
         .fail( function() {
             alert( "Kunde inte ta bort behörigheten." );
-        });
+        } );
     }
 }
 
@@ -1055,71 +1157,71 @@ function removeAdmin( userId, currentUserId, name ) {
 var chosenAccessId;
 var t, $tag_box;
 
-$(document).on('pagecreate', "#page-admin-category", function() {
+$( document ).on( 'pagecreate', "#page-admin-category", function() {
     // bind events
 
     /**
      * Set timeout for saving category caption
      */
-    $(document).off('input', "#cat-caption").on('input', "#cat-caption", function() {
-        clearTimeout(toutSetValue);
-        toutSetValue = setTimeout(setCatProp, 1000, "caption", this.value);
-    });
+    $( document ).off( 'input', "#cat-caption" ).on( 'input', "#cat-caption", function() {
+        clearTimeout( toutSetValue );
+        toutSetValue = setTimeout( setCatProp, 1000, "caption", this.value );
+    } );
 
     /**
      * Set timeout for saving changed parent category
      */
-    $(document).off('change', "#cat-parentId").on('change', "#cat-parentId", function() {
-        setCatProp("parentId", this.value);
-    });
+    $( document ).off( 'change', "#cat-parentId" ).on('change', "#cat-parentId", function() {
+        setCatProp( "parentId", this.value );
+    } );
 
     /**
      * Set timeout for saving prebook message
      */
-    $(document).off('input', "#cat-prebookMsg").on('input', "#cat-prebookMsg", function() {
-        clearTimeout(toutSetValue);
-        toutSetValue = setTimeout(setCatProp, 1000, "prebookMsg", this.value);
-    });
+    $( document ).off( 'input', "#cat-prebookMsg" ).on( 'input', "#cat-prebookMsg", function() {
+        clearTimeout( toutSetValue );
+        toutSetValue = setTimeout( setCatProp, 1000, "prebookMsg", this.value );
+    } );
 
     /**
      * Set timeout for saving postbook message
      */
-    $(document).off('input', "#cat-postbookMsg").on('input', "#cat-postbookMsg", function() {
-        clearTimeout(toutSetValue);
-        toutSetValue = setTimeout(setCatProp, 1000, "postbookMsg", this.value);
-    });
+    $( document ).off( 'input', "#cat-postbookMsg" ).on( 'input', "#cat-postbookMsg", function() {
+        clearTimeout( toutSetValue );
+        toutSetValue = setTimeout( setCatProp, 1000, "postbookMsg", this.value );
+    } );
 
     /**
      * Set timeout for saving buffer time after/around bookings
      */
-    $(document).off('input', "#cat-bufferAfterBooking").on('input', "#cat-bufferAfterBooking", function() {
-        clearTimeout(toutSetValue);
-        toutSetValue = setTimeout(setCatProp, 1000, "bufferAfterBooking", this.value);
-    });
+    $( document ).off( 'input', "#cat-bufferAfterBooking" ).on( 'input', "#cat-bufferAfterBooking", function() {
+        clearTimeout( toutSetValue );
+        toutSetValue = setTimeout( setCatProp, 1000, "bufferAfterBooking", this.value );
+    } );
 
     /**
      * Set contact name
      */
-    $(document).off('input', "#cat-contactName").on('input', "#cat-contactName", function() {
-        clearTimeout(toutSetValue);
-        toutSetValue = setTimeout(setCatProp, 1000, "contactName", this.value);
-    });
+    $( document ).off( 'input', "#cat-contactName" ).on( 'input', "#cat-contactName", function() {
+        clearTimeout( toutSetValue );
+        toutSetValue = setTimeout( setCatProp, 1000, "contactName", this.value );
+    } );
 
     /**
      * Set contact phone
      */
-    $(document).off('input', "#cat-contactPhone").on('input', "#cat-contactPhone", function() {
-        clearTimeout(toutSetValue);
-        toutSetValue = setTimeout(setCatProp, 1000, "contactPhone", this.value);
-    });
+    $( document ).off( 'input', "#cat-contactPhone" ).on( 'input', "#cat-contactPhone", function() {
+        clearTimeout( toutSetValue );
+        toutSetValue = setTimeout( setCatProp, 1000, "contactPhone", this.value );
+    } );
 
     /**
      * Set contact mail
      */
-    $(document).off('input', "#cat-contactMail").on('input', "#cat-contactMail", function() {
-        clearTimeout(toutSetValue);
-        toutSetValue = setTimeout(setCatProp, 1000, "contactMail", this.value);
-    });
+    $( document ).off( 'input', "#cat-contactMail" ).on( 'input', "#cat-contactMail", function() {
+        clearTimeout( toutSetValue );
+        toutSetValue = setTimeout( setCatProp, 1000, "contactMail", this.value );
+    } );
 
     /**
      * Save new category image
@@ -1138,97 +1240,100 @@ $(document).on('pagecreate', "#page-admin-category", function() {
             data: fd,
             contentType: false,
             processData: false
-        } ).done( function( data ) {
+        } )
+        .done( function( data ) {
             var d = new Date();
             $('#cat-img-preview').attr("src", "../image.php?type=category&id=" + data + "&" + d.getTime()).show().trigger( "updatelayout" );
-        }).fail( function( xhr ) {
+        } )
+        .fail( function( xhr ) {
             alert( xhr.responseText );
-        }).always( function() {
+        } )
+        .always( function() {
             $.mobile.loading( "hide", {} );
-        });
-    });
+        } );
+    } );
 
     /**
      * Get suggestions of users for category contact person
      */
-    $(document).off("input", "#cat-contact-autocomplete-input").on("input", "#cat-contact-autocomplete-input", function ( e, data ) {
-        clearTimeout(toutSearch);
+    $( document ).off( "input", "#cat-contact-autocomplete-input" ).on( "input", "#cat-contact-autocomplete-input", function ( e, data ) {
+        clearTimeout( toutSearch );
         var value = this.value;
-        toutSearch = setTimeout(function() {
-	        var $ul = $("#cat-contact-autocomplete"),
+        toutSearch = setTimeout( function() {
+	        var $ul = $( "#cat-contact-autocomplete" ),
 	            html = "";
 	        $ul.html( "" );
 	        if ( value && value.length > 2 ) {
 	            $ul.html( "<li><div class='ui-loader'><span class='ui-icon ui-icon-loading'></span></div></li>" );
 	            $ul.listview( "refresh" );
-	            $.getJSON("ajax.php", {action: "findUser", q: value}, function(data, status) {
+	            $.getJSON( "ajax.php", { action: "findUser", q: value }, function( data, status ) {
 	                $.each( data, function ( i, val ) {
 	                    html += "<li style='cursor:pointer;' title='Sätt " + val['name'] + " som kontaktperson' onClick=\"setCatProp('contactUserId', " + val['userId'] + ");\">" + val['userId'] + " " + (val['name'] ? val['name'] : "(ingen persondata tillgänglig)") + "</li>";
-	                });
-	                if (data.length==0) {
-	                    if (Number(value)) html += "<li style='cursor:pointer;' title='Sätt medlem med medlemsnummer " + Number(value) + " som kontaktperson' onClick=\"setCatProp('contactUserId', " + Number(value) + ");\">" + Number(value) + " (ny användare)</li>";
+	                } );
+	                if ( data.length == 0 ) {
+	                    if ( Number( value ) ) html += "<li style='cursor:pointer;' title='Sätt medlem med medlemsnummer " + Number( value ) + " som kontaktperson' onClick=\"setCatProp('contactUserId', " + Number( value ) + ");\">" + Number( value ) + " (ny användare)</li>";
 	                    else html += "<li>Sökningen på <i>" + value + "</i> gav ingen träff</li>";
 	                }
 	                $ul.html( html );
 	                $ul.listview( "refresh" );
 	                $ul.trigger( "updatelayout");
-	            });
+	            } );
 	        }
-        }, 300);
-    });
+        }, 300 );
+    } );
 
     /**
      * Get suggestions of users for adding category admins
      */
-    $(document).off("input", "#cat-adm-autocomplete-input").on("input", "#cat-adm-autocomplete-input", function(e, data) {
-        clearTimeout(toutSearch);
+    $( document ).off( "input", "#cat-adm-autocomplete-input" ).on( "input", "#cat-adm-autocomplete-input", function( e, data ) {
+        clearTimeout( toutSearch );
         var value = this.value;
-        toutSearch = setTimeout(function() {
-            var $ul = $("#cat-adm-autocomplete"),
+        toutSearch = setTimeout( function() {
+            var $ul = $( "#cat-adm-autocomplete" ),
 	            html = "";
 	        $ul.html( "" );
 	        if ( value && value.length > 2 ) {
 	            $ul.html( "<li><div class='ui-loader'><span class='ui-icon ui-icon-loading'></span></div></li>" );
 	            $ul.listview( "refresh" );
-	            $.getJSON("ajax.php", {action: "findUser", q: value}, function(data, status) {
+	            $.getJSON( "ajax.php", { action: "findUser", q: value }, function( data, status ) {
 	                $.each( data, function ( i, val ) {
 	                    html += "<label><input type='radio' class='cat-access-id' name='id' value='" + val['userId'] + "'>" + val['userId'] + " " + (val['name'] ? val['name'] : "(ingen persondata tillgänglig)") + "</label>";
 	                });
-	                if (data.length==0) {
-	                    if (Number(value)) html += "<label><input type='radio' class='cat-access-id' name='id' value='" + Number(value) + "'>" + Number(value) + " (ny användare)</label>";
+	                if (data.length == 0) {
+	                    if ( Number( value ) ) html += "<label><input type='radio' class='cat-access-id' name='id' value='" + Number( value ) + "'>" + Number( value ) + " (ny användare)</label>";
 	                    else html += "<li>Sökningen på <i>" + value + "</i> gav ingen träff</li>";
 	                }
 	                $ul.html( html );
 	                $ul.trigger( "create");
-	            });
+	            } );
 	        }
-        }, 300);
-    });
+        }, 300 );
+    } );
 
     /**
      * Step 1 of adding category admin
      * Triggered when user choses group or specific user for new access rights (step 1)
      * Remembers choice and shows step 2. Disables admin levels if group is chosen.
      */
-    $(document).off("change", ".cat-access-id").on("change", ".cat-access-id", function(e, data) {
-        $(".cat-access-level").attr("checked", false).checkboxradio("refresh");
+    $( document ).off( "change", ".cat-access-id" ).on( "change", ".cat-access-id", function( e, data ) {
+        $( ".cat-access-level" ).attr( "checked", false ).checkboxradio( "refresh" );
         chosenAccessId = this.value;
-		if (this.value=="") $("#cat-access-levels").hide();
-        else $("#cat-access-levels").show();
+		if ( this.value == "" ) $( "#cat-access-levels" ).hide();
+        else $( "#cat-access-levels" ).show();
         // Enable admin levels only for specific members and some groups
-		if (this.value.search(/^(accessExternal|accessMember|accessLocal|Valfritt uppdrag|Hjälpledare.*|Ledare)$/) == -1) {
-			$("input[type='radio'].cat-access-level-adm").checkboxradio('enable');
+		if ( this.value.search( /^(accessExternal|accessMember|accessLocal|Valfritt uppdrag|Hjälpledare.*|Ledare)$/ ) == -1 ) {
+			$( "input[type='radio'].cat-access-level-adm" ).checkboxradio( 'enable' );
 		} else {
-			$("input[type='radio'].cat-access-level-adm").checkboxradio('disable');
+			$( "input[type='radio'].cat-access-level-adm" ).checkboxradio( 'disable' );
 		}
-    });
+    } );
 
     /**
      * Step 2 of adding new category admin
      * Triggered when user choses access level (step 2)
      * Saves new admin and clears input fields.
      */
-    $(document).off("change", ".cat-access-level").on("change", ".cat-access-level", function() {
+    $( document ).off( "change", ".cat-access-level" ).on( "change", ".cat-access-level", function() {
         $.mobile.loading( "show", {} );
         $( "#cat-access-levels" ).hide();
         $( "select.cat-access-id" ).val( "" ).selectmenu( "refresh" );
@@ -1237,29 +1342,29 @@ $(document).on('pagecreate', "#page-admin-category", function() {
         $.getJSON( "ajax.php", { action: "setCatAccess", id: chosenAccessId, access: this.value } )
         .done( function( data ) {
             $.mobile.loading( "hide", {} );
-            $( "#assigned-cat-access a.ajax-input").addClass('change-confirmed');
-            setTimeout(function(){ $("#assigned-cat-access a.ajax-input").removeClass("change-confirmed"); }, 1500);
+            $( "#assigned-cat-access a.ajax-input" ).addClass( 'change-confirmed' );
+            setTimeout( function() { $("#assigned-cat-access a.ajax-input" ).removeClass( "change-confirmed" ); }, 1500 );
             if ( data.notice != "") alert( data.notice );
             getCatAccess();
-        });
-    });
+        } );
+    } );
 
     /**
      * Delete category
      */
-    $(document).off('click', "#delete-cat").on('click', "#delete-cat", function() {
+    $( document ).off( 'click', "#delete-cat" ).on( 'click', "#delete-cat", function() {
         if ( confirm( "Du håller på att ta bort kategorin och alla poster i den. Fortsätta?" ) ) {
             $.mobile.loading( "show", {} );
             $.get( "ajax.php", { action: "deleteCat" } )
             .done( function() {
-                $.mobile.loading("hide", {});
+                $.mobile.loading( "hide", {} );
                 location.href="index.php";
-            })
+            } )
             .fail( function() {
                 alert( "Kunde inte radera kategorin. Kontakta administratören, tack." );
-            });
+            } );
         }
-    });
+    } );
     
     /**
      * Save new attachment file
@@ -1272,58 +1377,66 @@ $(document).on('pagecreate', "#page-admin-category", function() {
         fd.append( 'action', "addCatFile" );
         $.mobile.loading( "show", {} );
 
-        $.ajax({
+        $.ajax( {
             url: 'ajax.php',
             type: 'post',
             data: fd,
             contentType: false,
             processData: false,
-        }).done( function() {
-            $( "#cat-file-file" )[ 0 ].value="";
+        } )
+        .done( function() {
+            $( "#cat-file-file" )[ 0 ].value = "";
             getCatFiles();
-        }).fail( function( xhr ) {
+        } )
+        .fail( function( xhr ) {
             alert( xhr.responseText );
-        }).always( function() {
+        } )
+        .always( function() {
             $.mobile.loading( "hide", {} );
-        });
-    });
-});
+        } );
+    } );
+} );
 
-$(document).on('pageshow', "#page-admin-category", function() {
-    t = $("#cat-sendAlertTo").tagging({
-        "forbidden-chars": ["<", ">", " ", ","],
+$( document ).on('pageshow', "#page-admin-category", function() {
+    t = $( "#cat-sendAlertTo" ).tagging( {
+        "forbidden-chars": [ "<", ">", " ", "," ],
         "edit-on-delete": false,
         "tag-char": "✉"
-    });
-    $sendAlertTo = t[0]; // This is the $tag_box object of the first captured div
+    } );
+    $sendAlertTo = t[ 0 ]; // This is the $tag_box object of the first captured div
 
     $sendAlertTo.on( "add:after", function ( elem, text, tagging ) {
         $.mobile.loading( "show", {} );
         $.get( "ajax.php", {
             action: "addAlert", 
             sendAlertTo1: text
-        }).done( function( data ) {
+        } )
+        .done( function( data ) {
             $( "#cat-saved-indicator" ).addClass( "saved" );
             setTimeout( function(){ $( "#cat-saved-indicator" ).removeClass( "saved" ); }, 2500 );
-        }).fail( function( xhr ) {
+        } )
+        .fail( function( xhr ) {
             alert( xhr.responseText );
             $( "#cat-sendAlertTo" ).tagging( "remove", text );
-        }).always( function() {
+        } )
+        .always( function() {
             $.mobile.loading( "hide", {} );
-        });
-    });
+        } );
+    } );
     $sendAlertTo.on( "remove:after", function( elem, text, tagging) {
-        $.mobile.loading("show", {});
+        $.mobile.loading( "show", {} );
         $.getJSON("ajax.php", {
             action: "deleteAlert", 
             sendAlertTo1: text
-        }).done(function() {
-            $("#cat-saved-indicator").addClass("saved");
-            setTimeout(function(){ $("#cat-saved-indicator").removeClass("saved"); }, 2500);
-        }).always(function() {
-            $.mobile.loading("hide", {});
-        });
-    });
+        } )
+        .done( function() {
+            $( "#cat-saved-indicator" ).addClass( "saved" );
+            setTimeout( function() { $( "#cat-saved-indicator" ).removeClass( "saved" ); }, 2500 );
+        } )
+        .always( function() {
+            $.mobile.loading( "hide", {} );
+        } );
+    } );
 
     // Get some ajax content
     getCatContactData();
@@ -1333,13 +1446,11 @@ $(document).on('pageshow', "#page-admin-category", function() {
     getCatQuestions();
 
     // Show message if there is any
-    if ($("#msg-page-admin-category").html()) {
-        setTimeout(function() {
-            $("#popup-msg-page-admin-category").popup('open');
-        }, 500); // We need some delay here to make this work on Chrome.
+    if ( $( "#msg-page-admin-category" ).html() ) {
+        $( "#popup-msg-page-admin-category" ).popup( 'open' );
     }
-    chosenAccessId=0;
-});
+    chosenAccessId = 0;
+} );
 
 /**
  * Retrieve all category permissions
@@ -1350,7 +1461,7 @@ function getCatAccess() {
     .done( function( data ) {
         $( "#assigned-cat-access" ).html( data.html ).enhanceWithin();
         $.mobile.loading( "hide", {} );
-    });
+    } );
 }
 
 /**
@@ -1361,10 +1472,10 @@ function unsetAccess( id ) {
     $.mobile.loading( "show", {} );
     $.getJSON( "ajax.php", { action: "setCatAccess", id: id, access: "NULL" } )
     .done( function( data ) {
-        $.mobile.loading("hide", {});
+        $.mobile.loading( "hide", {} );
         if ( data.notice != "" ) alert( data.notice );
         getCatAccess();
-    });
+    } );
 }
 
 /**
@@ -1387,7 +1498,7 @@ function getCatContactData() {
         $( "#cat-contactMail" ).val( data.contactMail );
         if ( data.contactType == "user" ) $( "#btn-unset-contact-user" ).show();
         else $( "#btn-unset-contact-user" ).hide();
-    });
+    } );
 }
 
 /**
@@ -1401,14 +1512,15 @@ function setCatProp( name, val ) {
     	action: "setCatProp", 
     	name: name, 
     	value: val
-	}).done( function( data ) {
+	} )
+    .done( function( data ) {
         $.mobile.loading( "hide", {} );
-        if ( data.status=="OK" ) {
-            if ( name=="parentId" ) { location.href="?" + Math.round( Math.random() * 100000 ); return false; }
+        if ( data.status == "OK" ) {
+            if ( name == "parentId" ) { location.href = "?" + Math.round( Math.random() * 100000 ); return false; }
             $( "#cat-contact-autocomplete-input" ).val( "" );
             $( "#cat-contact-autocomplete" ).html( "" );
             if ( name == "contactMail" ) $( "#cat-contactMailInvalid").hide();
-            if (name=="caption") {
+            if (name == "caption") {
                 $( "#page-caption" ).text( val );
                 $( "#cat-breadcrumb-last" ).text( val );
             }
@@ -1420,10 +1532,11 @@ function setCatProp( name, val ) {
         } else if ( data.status == "contactMailInvalid" ) {
             $( "#cat-contactMailInvalid" ).show();
         }
-    }).fail(function() {
-        $.mobile.loading("hide", {});
-    	alert("Kan inte spara ändringen.");
-    });
+    } )
+    .fail( function() {
+        $.mobile.loading( "hide", {} );
+    	alert( "Kan inte spara ändringen." );
+    } );
 }
 
 /**
@@ -1435,7 +1548,7 @@ function getCatFiles() {
     .done( function( data ) {
         $.mobile.loading( "hide", {} );
         $( "#cat-attachments" ).html( data ).enhanceWithin();
-    });
+    } );
 }
 
 /**
@@ -1451,34 +1564,39 @@ function setCatFileProp( fileId, name, value ) {
     	fileId: fileId,
     	name: name,
     	value: value
-	}).done( function( data ) {
-        if (name=="caption") $("#cat-file-header-"+fileId).text(value);
-        $("#cat-saved-indicator").addClass("saved");
-        setTimeout(function(){ $("#cat-saved-indicator").removeClass("saved"); }, 2500);
-    }).fail(function() {
-    	alert("Servern accepterar inte förfrågan.");
-    }).always( function() {
-        $.mobile.loading("hide", {});
-    });
+	} )
+    .done( function( data ) {
+        if ( name == "caption" ) $( "#cat-file-header-" + fileId ).text( value );
+        $( "#cat-saved-indicator" ).addClass( "saved" );
+        setTimeout( function() { $( "#cat-saved-indicator" ).removeClass( "saved" ); }, 2500 );
+    } )
+    .fail( function() {
+    	alert( "Servern accepterar inte förfrågan." );
+    } )
+    .always( function() {
+        $.mobile.loading( "hide", {} );
+    } );
 }
 
 /**
  * Remove an attachment from category
  * @param fileId ID of the attachment to remove
  */
-function catFileDelete(fileId) {
-	if (confirm("Vill du ta bort bilagan?")) {
-	    $.mobile.loading("show", {});
-	    $.get("ajax.php", {
+function catFileDelete( fileId ) {
+	if (confirm( "Vill du ta bort bilagan?" ) ) {
+	    $.mobile.loading( "show", {} );
+	    $.get( "ajax.php", {
 	    	action: "deleteCatFile",
 	    	fileId: fileId
-		}).done(function( data ) {
-	        $.mobile.loading("hide", {});
+		} )
+        .done( function( data ) {
+	        $.mobile.loading( "hide", {} );
 	        getCatFiles();
-	    }).fail(function() {
-	        $.mobile.loading("hide", {});
-	    	alert("Servern accepterar inte förfrågan.");
-	    });
+	    } )
+        .fail( function() {
+	        $.mobile.loading( "hide", {} );
+	    	alert( "Servern accepterar inte förfrågan." );
+	    } );
 	}
 }
 
@@ -1486,7 +1604,7 @@ function getCatQuestions() {
     $.get( "ajax.php", { action: "getCatQuestions" } )
     .done( function( data ) {
         $( "#cat-questions" ).html( data ).listview( "refresh" );
-    });
+    } );
 }
 
 /**
@@ -1499,7 +1617,7 @@ function toggleQuestion( id ) {
     .done( function() {
         getCatQuestions();
         $.mobile.loading( "hide", {} );
-    });
+    } );
 }
 
 /**
@@ -1513,7 +1631,7 @@ function getReminders( reminderClass ) {
     .fail( function() {
         if ( xhr.status==403 ) location.href = "../index.php?action=sessionExpired";
         $( "#reminders" ).html( "<li><i>Kan inte hämta påminnelser.</i></li>" );
-    });
+    } );
 }
 
 function editReminder( reminderClass, id ) {
@@ -1523,11 +1641,11 @@ function editReminder( reminderClass, id ) {
         $( "#reminder-message" ).val( data ? data.message : "Fel: Påminnelsen hittades inte" );
         $( "#reminder-offset" ).val( data.offset ).selectmenu( "refresh", true );
         $( "#reminder-anchor" ).val( data.anchor ).selectmenu( "refresh", true );
-        $( "#popup-reminder" ).popup('open');    
-    })
+        $( "#popup-reminder" ).popup( 'open' );
+    } )
     .fail( function( data, txtStatus, xhr ) {
-        if ( xhr.status==403 ) location.href = "../index.php?action=sessionExpired";
-    });
+        if ( xhr.status == 403 ) location.href = "../index.php?action=sessionExpired";
+    } );
 }
 
 function saveReminder( reminderClass ) {
@@ -1542,7 +1660,7 @@ function saveReminder( reminderClass ) {
     .done( function() {
         getReminders( reminderClass );
         $("#popup-reminder").popup('close');
-    });
+    } );
 }
 
 function deleteReminder( reminderClass, id ) {
@@ -1550,15 +1668,15 @@ function deleteReminder( reminderClass, id ) {
         action: "deleteReminder",
         class: reminderClass,
         id: id,
-    })
+    } )
     .done( function() {
         getReminders( reminderClass );
         $( "#popup-reminder" ).popup( 'close' );
-    })
+    } )
     .fail( function() {
         console.log( "Failed to delete reminder." );
         $( "#popup-reminder" ).popup( 'close' );
-    });
+    } );
 }
 
 // ========== admin/item.php ==========
@@ -1571,7 +1689,7 @@ $( document ).on( 'pagecreate', "#page-admin-item", function() {
     $( "#item-caption" ).on( 'input', function() {
         clearTimeout( toutSetValue );
         toutSetValue = setTimeout( setItemProp, 1000, "caption", this.value );
-    });
+    } );
     
     /**
      * Set timeout for saving item description
@@ -1579,7 +1697,7 @@ $( document ).on( 'pagecreate', "#page-admin-item", function() {
     $( "#item-description" ).on( 'input', function() {
         clearTimeout( toutSetValue );
         toutSetValue = setTimeout( setItemProp, 1000, "description", this.value );
-    });
+    } );
 
     /**
      * Set timeout for saving item postbook message
@@ -1587,14 +1705,14 @@ $( document ).on( 'pagecreate', "#page-admin-item", function() {
      $( "#item-postbookMsg" ).on( 'input', function() {
         clearTimeout( toutSetValue );
         toutSetValue = setTimeout( setItemProp, 1000, "postbookMsg", this.value );
-    });
+    } );
 
     /**
      * Save item active state
      */
     $( "#item-active" ).click( function() {
         setItemProp( "active", this.checked ? 1 : 0 );
-    });
+    } );
     
     /**
      * Set timeout for saving item internal note
@@ -1602,7 +1720,7 @@ $( document ).on( 'pagecreate', "#page-admin-item", function() {
     $( "#item-note" ).on( 'input', function() {
         clearTimeout( toutSetValue );
         toutSetValue = setTimeout( setItemProp, 1000, "note", this.value );
-    });
+    } );
 
     /**
      * Delete item
@@ -1611,12 +1729,13 @@ $( document ).on( 'pagecreate', "#page-admin-item", function() {
         if ( confirm( "Du håller på att ta bort utrustningen. Fortsätta?" ) ) {
             $.get( "ajax.php", { action: "deleteItem" } )
             .done( function() {
-                location.href="category.php?expand=items";
-            }).fail( function() {
+                location.href = "category.php?expand=items";
+            } )
+            .fail( function() {
                 alert( "Något har gått fel." );
-            });
+            } );
         }
-    });
+    } );
 
     /**
      * Add a new image to item
@@ -1628,24 +1747,27 @@ $( document ).on( 'pagecreate', "#page-admin-item", function() {
         fd.append( 'image', file );
         fd.append( 'action', "addItemImage" );
         $.mobile.loading( "show", {} );
-        $.ajax({
+        $.ajax( {
             url: 'ajax.php',
             type: 'post',
             data: fd,
             contentType: false,
             processData: false,
-        }).done( function( data ) {
+        } )
+        .done( function( data ) {
+            // Clear image input (aka the whole form)
             e = $( "#file-item-img" );
-            e.wrap('<form></form>').closest('form').get(0).reset();
+            e.wrap( '<form></form>' ).closest( 'form' ).get( 0 ).reset();
             e.unwrap();
-//            $( "#file-item-img" ).replaceWith( $( "#file-item-img" ).val( '' ).clone( true ) );
             getItemImages();
-        }).fail( function( xhr ) {
+        } )
+        .fail( function( xhr ) {
             alert( xhr.responseText );
-        }).always( function() {
+        } )
+        .always( function() {
             $.mobile.loading( "hide", {} );
-        });
-    });
+        } );
+    } );
     
     /**
      * Save item image caption
@@ -1655,27 +1777,25 @@ $( document ).on( 'pagecreate', "#page-admin-item", function() {
         clearTimeout( toutSetValue );
         toutSetValue = setTimeout( function() {
             $.get( "ajax.php",
-                { action: 'saveItemImgCaption', id: $( _this ).data( 'id' ), caption: _this.value })
+                { action: 'saveItemImgCaption', id: $( _this ).data( 'id' ), caption: _this.value } )
             .done( function( data ) {
                 $( "#item-saved-indicator" ).addClass( "saved" );
                 setTimeout( function() { $( "#item-saved-indicator" ).removeClass( "saved" ); }, 1000 );
-            });
-        }, 1000);
-    });
-});
+            } );
+        }, 1000 );
+    } );
+} );
 
-$(document).on( 'pageshow', "#page-admin-item", function() {
+$( document ).on( 'pageshow', "#page-admin-item", function() {
     // Show message if there is any
     if ( $( "#msg-page-admin-item" ).html() ) {
-        setTimeout( function() {
-            $( "#popup-msg-page-admin-item" ).popup( 'open' );
-        }, 500 ); // We need some delay here to make this work on Chrome.
+        $( "#popup-msg-page-admin-item" ).popup( 'open' );
     }
 
     // Get reminders and images via ajax
     getReminders( "item" );
     getItemImages();
-});
+} );
 
 /**
  * Save an item property
@@ -1685,13 +1805,15 @@ $(document).on( 'pageshow', "#page-admin-item", function() {
 function setItemProp( name, val ) {
     $.get( "ajax.php",
         { action: "saveItemProp", name: name, value: val }
-    ).done( function() {
+    )
+    .done( function() {
         if ( name == "caption" ) $( "#page-caption" ).text( val );
         $( "#item-saved-indicator" ).addClass( "saved" );
         setTimeout( function() { $( "#item-saved-indicator" ).removeClass( "saved" ); }, 1000 );
-    }).fail( function() {
+    } )
+    .fail( function() {
         alert( "Kan inte spara ändringen." );
-    });
+    } );
 }
 
 /**
@@ -1702,190 +1824,247 @@ function deleteImage( id ) {
     if ( confirm( "Vill du ta bort denna bild?" ) ) {
         $.get( "ajax.php",
             { action: "deleteItemImage", id: id }
-        ).done( function( data ) {
+        )
+        .done( function( data ) {
             getItemImages();
-        });
+        } );
     }
 }
 
 function getItemImages() {
     $.get( "ajax.php",
         { action: "getItemImages" }
-    ).done( function( data ) {
+    )
+    .done( function( data ) {
         $( '#item-images' ).html( data ).enhanceWithin();
-    });
+    } );
 }
 
 
 // ========== admin/usage.php ==========
-$(document).on('pagecreate', "#page-admin-usage", function() {
+$( document ).on( 'pagecreate', "#page-admin-usage", function() {
     // Bind events
-});
+} );
 
-$(document).on('pageshow', "#page-admin-usage", function() {
+$( document ).on( 'pageshow', "#page-admin-usage", function() {
     // Show message if there is any
-    if ($("#msg-page-admin-usage").html()) {
-        setTimeout(function() {
-            $("#popup-msg-page-admin-usage").popup('open');
-        }, 500); // We need some delay here to make this work on Chrome.
+    if ( $( "#msg-page-admin-usage" ).html() ) {
+        $( "#popup-msg-page-admin-usage" ).popup( 'open' );
     }
 
-    $("#stat-details").DataTable({
-        "info":false,
-        "searching":false,
-        "order": [[0, 'asc'], [1, 'asc']],
+    $( "#stat-details" ).DataTable( {
+        "info": false,
+        "searching": false,
+        "order": [ [0, 'asc' ], [ 1, 'asc' ] ],
         language: { url:'//cdn.datatables.net/plug-ins/1.10.24/i18n/Swedish.json' },
         "columns": [
             null,
             null,
-            {"orderSequence": ["desc", "asc"]},
-            {"orderSequence": ["desc", "asc"]},
+            { "orderSequence": [ "desc", "asc" ] },
+            { "orderSequence": [ "desc", "asc" ] },
         ]
-    });
-});
+    } );
+} );
 
 
 //========== superadmin.php ==========
-$(document).on('pagecreate', "#page-super-admin", function() {
+$( document ).on( 'pagecreate', "#page-super-admin", function() {
     // Bind events
     
-	$(".superadmin-login-post").on("click", function() {
-		$("#admin-impersonate-userId").val(this.dataset.userid);
-		$("#admin-section-misc").collapsible("expand");
-	});
+	$( ".superadmin-login-post" ).on( "click", function() {
+		$( "#admin-impersonate-userId" ).val( this.dataset.userid );
+		$( "#admin-section-misc" ).collapsible( "expand" );
+	} );
 	
-	$("#sectionadmin-sectionlist").on('change', function() {
-		$.getJSON("?action=ajaxMakeMeAdmin&sectionId=" + this.value, function(data, status) {
-			if (data.error) alert(data.error);
+	$( "#sectionadmin-sectionlist" ).on( 'change', function() {
+		$.getJSON( "?action=ajaxMakeMeAdmin&sectionId=" + this.value, function( data, status ) {
+			if ( data.error ) alert( data.error );
 			else location.href = "index.php?sectionId=" + data.sectionId;
-		});
-	});
+		} );
+	} );
 	
-	$("#admin-impersonate-start").on("click", function() {
-		$.getJSON("?action=ajaxImpersonate&userId=" + $("#admin-impersonate-userId").val(), function(data,status) {
-			if (data.error) alert(data.error);
+	$( "#admin-impersonate-start" ).on( "click", function() {
+		$.getJSON( "?action=ajaxImpersonate&userId=" + $( "#admin-impersonate-userId" ).val(), function( data, status ) {
+			if ( data.error ) alert( data.error );
 			else location.href = "../index.php?login";
-		});
-	});
+		} );
+	} );
 	
     /**
      * Add a new poll
      */
-    $("#add-poll").on('click', function() {
-        $.getJSON("?action=ajaxAddPoll", function(data, status) {
-        	$("#super-admin-poll-id").val(data.id);
-        	$("#super-admin-poll-question").val(data.question);
-        	$("#super-admin-poll-choices").val(data.choices.join("\n"));
-        	$("#super-admin-poll-expires").val(data.expires);
-            $("#super-admin-poll-targetgroup").val(data.targetGroup).selectmenu("refresh", true);
-	        $("#popup-super-admin-poll").popup('open');
-        });
-    });
-});
+    $( "#add-poll" ).on( 'click', function() {
+        $.getJSON( "?action=ajaxAddPoll", function( data, status ) {
+        	$( "#super-admin-poll-id" ).val( data.id );
+        	$( "#super-admin-poll-question" ).val( data.question );
+        	$( "#super-admin-poll-choices" ).val( data.choices.join( "\n" ) );
+        	$( "#super-admin-poll-expires" ).val( data.expires );
+            $( "#super-admin-poll-targetgroup" ).val( data.targetGroup ).selectmenu( "refresh", true );
+	        $( "#popup-super-admin-poll" ).popup( 'open' );
+        } );
+    } );
+} );
 
-$(document).on('pageshow', "#page-super-admin", function() {
+$( document ).on( 'pageshow', "#page-super-admin", function() {
     // Show message if there is any
-    if ($("#msg-page-super-admin").html()) {
-        setTimeout(function() {
-            $("#popup-msg-page-super-admin").popup('open');
-        }, 500); // We need some delay here to make this work on Chrome.
+    if ( $( "#msg-page-super-admin" ).html() ) {
+        $( "#popup-msg-page-super-admin" ).popup( 'open' );
     }
-});
+} );
 
-function gotoSection(sectionId, name) {
-    if (confirm(`Om du fortsätter läggs du till som LA-admin på LA ${name}, så att du kan rensa bort kategorier. Sedan kan du återvända hit och ta bort lokalavdelningen. Vill du det?`)) {
-        $.getJSON("superadmin.php", { action: "ajaxMakeMeAdmin", sectionId: sectionId }, function(data, status) {
-            location.href="index.php?sectionId="+sectionId;
-        });
+function gotoSection( sectionId, name ) {
+    if ( confirm( `Om du fortsätter läggs du till som LA-admin på LA ${name}, så att du kan rensa bort kategorier. Sedan kan du återvända hit och ta bort lokalavdelningen. Vill du det?` ) ) {
+        $.getJSON( "superadmin.php", { action: "ajaxMakeMeAdmin", sectionId: sectionId }, function( data, status ) {
+            location.href = "index.php?sectionId=" + sectionId;
+        } );
     }
 }
 
-function deleteSection(sectionId, name) {
-    var input = prompt(`OBS! Du håller på att radera lokalavdelningen ${name}. Allt innehåll knytet till ${name} kommer att tas bort, såsom kategorier, behörigheter och resurser. Återställning kan bara ske från backupfiler!\n\nBekräfta genom att knappa in avdelningens ID som är ${sectionId}`);
-    if (input != null) {
-        if (input == sectionId) {
-	        $.getJSON("superadmin.php", { action: "ajaxDeleteSection", sectionId: sectionId }, function(data, status) {
-                if (data.status == "OK") {
-                    $("#admin-section-" + data.sectionId).hide();
-                } else alert("Något har gått fel. " + data.error);
-            });
-        } else alert("Fel ID.");
+function deleteSection( sectionId, name ) {
+    var input = prompt( `OBS! Du håller på att radera lokalavdelningen ${name}. Allt innehåll knytet till ${name} kommer att tas bort, såsom kategorier, behörigheter och resurser. Återställning kan bara ske från backupfiler!\n\nBekräfta genom att knappa in avdelningens ID som är ${sectionId}` );
+    if ( input != null ) {
+        if ( input == sectionId ) {
+	        $.getJSON( "superadmin.php", { action: "ajaxDeleteSection", sectionId: sectionId }, function( data, status ) {
+                if ( data.status == "OK" ) {
+                    $( "#admin-section-" + data.sectionId ).hide();
+                } else alert( "Något har gått fel. " + data.error );
+            } );
+        } else alert( "Fel ID." );
     }
 }
 
-function editPoll(id) {
-    $.getJSON("?action=ajaxGetPoll&id="+id, function(data, status) {
-    	$("#super-admin-poll-id").val(data.id);
-    	$("#super-admin-poll-question").val(data.question);
-    	$("#super-admin-poll-choices").val(data.choices.join("\n"));
-    	$("#super-admin-poll-expires").val(data.expires);
-        $("#super-admin-poll-targetgroup").val(data.targetGroup).selectmenu("refresh", true);
-        $("#popup-super-admin-poll").popup('open');
-    });
+function editPoll( id ) {
+    $.getJSON( "?action=ajaxGetPoll&id=" + id, function( data, status ) {
+    	$( "#super-admin-poll-id" ).val( data.id );
+    	$( "#super-admin-poll-question" ).val( data.question );
+    	$( "#super-admin-poll-choices" ).val( data.choices.join( "\n" ) );
+    	$( "#super-admin-poll-expires" ).val( data.expires );
+        $( "#super-admin-poll-targetgroup" ).val( data.targetGroup ).selectmenu( "refresh", true );
+        $( "#popup-super-admin-poll" ).popup( 'open' );
+    } );
 }
 
-function showPollResults(id) {
-    $.getJSON("?action=ajaxGetPoll&id="+id, function(data, status) {
-    	$("#super-admin-pollresults-question").html(data.question);
-    	$("#super-admin-pollresults-votes").html("<tr><th>Svar</th><th colspan=2>Antal</th></tr>");
+function showPollResults( id ) {
+    $.getJSON( "?action=ajaxGetPoll&id=" + id, function( data, status ) {
+    	$( "#super-admin-pollresults-question" ).html( data.question );
+    	$( "#super-admin-pollresults-votes" ).html( "<tr><th>Svar</th><th colspan=2>Antal</th></tr>" );
     	var voteCount = 0;
-    	$.each(data.choices, function(index, value) {
-    		voteCount += data.votes[index];
-    		$("#super-admin-pollresults-votes").append("<tr><td>" + value + "</td><td title='" + data.votes[index] + " röster' style='width:40%;'><span style='display:inline-block; align:right; background-color:gray; width:" + (data.votes[index]/data.voteMax*100) + "%'>&nbsp;</span></td><td>" + data.votes[index] + "</td></tr>");
-    	});
-        $("#popup-super-admin-pollresults").popup('open');
-    });
+    	$.each( data.choices, function( index, value ) {
+    		voteCount += data.votes[ index ];
+    		$( "#super-admin-pollresults-votes" ).append( "<tr><td>" + value + "</td><td title='" + data.votes[ index ] + " röster' style='width:40%;'><span style='display:inline-block; align:right; background-color:gray; width:" + ( data.votes[ index ] / data.voteMax * 100 ) + "%'>&nbsp;</span></td><td>" + data.votes[ index ] + "</td></tr>" );
+    	} );
+        $( "#popup-super-admin-pollresults" ).popup( 'open' );
+    } );
 }
 
 
 // ========== userdata.php ==========
-$(document).on('pagecreate', "#page-userdata", function() {
+$( document ).on( 'pagecreate', "#page-userdata", function() {
     // Bind events
-});
+} );
 
-$(document).on('pageshow', "#page-userdata", function() {
+$( document ).on( 'pageshow', "#page-userdata", function() {
     // Show message if there is any
-    if ($("#msg-page-userdata").html()) {
-        setTimeout(function() {
-            $("#popup-msg-page-userdata").popup('open');
-        }, 500); // We need some delay here to make this work on Chrome.
+    if ( $( "#msg-page-userdata" ).html() ) {
+        $( "#popup-msg-page-userdata" ).popup( 'open' );
     }
-    // Make email input writable
-    setTimeout(function() {
-        $("#userdata-mail").removeAttr('readonly');
-    }, 500);
-});
+    getUserdata();
+} );
+
+/**
+ * Save the user data via ajax
+ */
+function saveUserdata() {
+    if ( $( "#userdata-password" ).val() == "" ) {
+        alert( "Ange ditt lösenord, tack." );
+        return;
+    }
+    $.mobile.loading( "show", {} );
+    $.post( "userdata.php", {
+        action: "ajaxSaveUserdata",
+        password: $( "#userdata-password" ).val(),
+        name: $( "#userdata-name" ).val(),
+        mail: $( "#userdata-new-mail" ).val(),
+        phone: $( "#userdata-phone" ).val(),
+    } )
+    .done( function( data ) {
+        $.mobile.loading( "hide", {} );
+        getUserdata();
+        alert( data );
+    } )
+    .fail( function( xhr ) {
+        $.mobile.loading( "hide", {} );
+        alert( xhr.responseText );
+    } );
+}
+
+/**
+ * Retrieve user data via ajax
+ */
+function getUserdata() {
+    $.getJSON( "userdata.php", { action: "ajaxGetUserdata" } )
+    .done( function( data ) {
+        $( "#userdata-name" ).val( data.name );
+        $( "#userdata-phone" ).val( data.phone );
+        if ( data.mail == "") {
+            $( "#userdata-div-mail" ).hide();
+            $( "#userdata-lbl-new-mail" ).addClass( "required" ).text( "Epost:" );
+        } else {
+            $( "#userdata-div-mail" ).show();
+            $( "#userdata-lbl-new-mail" ).removeClass( "required" ).text( "Ändra epost till:" );
+        }
+        $( "#userdata-mail" ).text( data.mail );
+        if ( data.mailPending == "" ) {
+            $( "#userdata-msg-mail-pending" ).hide();
+        } else {
+            $( "#userdata-mail-pending" ).text( data.mailPending );
+            $( "#userdata-msg-mail-pending" ).show();
+        }
+        // Make email input writable
+//        $( "#userdata-mail" ).removeAttr( 'readonly' );
+        $( "#userdata-new-mail" ).val( "" );
+        $( "#userdata-password" ).val( "" );
+    } );
+}
 
 /**
  * Delete user account
  */
 function deleteAccount() {
-    if (window.confirm("Bekräfta att du vill radera ditt konto i resursbokningen. Alla dina bokningar och persondata tas bort från systemet och kan inte återställas!")) {
-        location.href="userdata.php?action=deleteAccount";
-    }
+    $.post( "userdata.php", {
+        action: "ajaxDeleteAccount",
+        password: $( "#delete-account-password" ).val()
+    } )
+    .done( function( ) {
+        alert( "Ditt konto har nu raderats. Välkommen åter!" );
+        $.mobile.changePage( "index.php" );
+    } )
+    .fail( function( xhr ) {
+        alert( xhr.responseText );
+    } );
 }
 
-function setNotificationOptout(catId, notify) {
-    $.getJSON("?action=ajaxSetNotificationOptout&catId=" + catId + "&notify=" + notify, function(data, status) {
-        switch (data.status) {
+function setNotificationOptout( catId, notify ) {
+    $.getJSON( "?action=ajaxSetNotificationOptout&catId=" + catId + "&notify=" + notify, function( data, status ) {
+        switch ( data.status ) {
         case "warning":
-            alert(data.warning); break;
+            alert( data.warning ); break;
         case "error":
-            alert(data.error); break;
+            alert( data.error ); break;
         }
-    });
+    } );
     
 }
 
-function removePersistentLogin(elem, selector) {
-    $.getJSON("?action=ajaxRemovePersistentLogin&selector=" + encodeURIComponent(selector), function(data, status) {
-        switch (data.status) {
+function removePersistentLogin( elem, selector ) {
+    $.getJSON( "?action=ajaxRemovePersistentLogin&selector=" + encodeURIComponent(selector), function( data, status ) {
+        switch ( data.status ) {
         case "OK":
             elem.remove();
             break;
         case "error":
-            alert(data.error);
+            alert( data.error );
             break;
         }
-    });
+    } );
 }
