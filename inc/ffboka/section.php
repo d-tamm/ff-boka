@@ -231,7 +231,7 @@ class Section extends FFBoka {
      */
     public function getUnconfirmedBookings( User $user ) : array {
         $ret = array();
-        $stmt = self::$db->query( "SELECT bookingId FROM bookings INNER JOIN booked_items USING (bookingId) WHERE ((status>" . FFBoka::STATUS_REJECTED . " AND status<" . FFBoka::STATUS_CONFIRMED . ") OR dirty) AND sectionId={$this->id}" );
+        $stmt = self::$db->query( "SELECT bookingId, bookedItemId FROM bookings INNER JOIN booked_items USING (bookingId) WHERE ((status>" . FFBoka::STATUS_REJECTED . " AND status<" . FFBoka::STATUS_CONFIRMED . ") OR (status>" . FFBoka::STATUS_PENDING . " AND dirty)) AND sectionId={$this->id}" );
         while ( $row = $stmt->fetch( \PDO::FETCH_OBJ ) ) {
             $item = new Item( $row->bookedItemId, TRUE );
             if ( $item->category()->getAccess( $user ) >= FFBoka::ACCESS_CONFIRM ) $ret[] = $row->bookingId;
