@@ -282,7 +282,7 @@ if ( isset( $_GET[ 'first_login' ] ) ) $message = "Välkommen till resursbokning
             </div>
             <div class="ui-field-contain">
                 <label id="userdata-lbl-new-mail" for="userdata-mail">Epost:</label>
-                <input type="email" id="userdata-new-mail" autocomplete="off" readonly="true" placeholder="Knappa in din (nya) epostadress här" value=""><!-- This field will be set to writable by Javascript, which prevents autofilling -->
+                <input type="email" id="userdata-new-mail" autocomplete="off" placeholder="Knappa in din (nya) epostadress här" value=""><!-- This field will be set to writable by Javascript, which prevents autofilling -->
             </div>
             <p id="userdata-msg-mail-pending" class='ui-body ui-body-a'><small>Du har ett pågående ärende att använda epostadressen <b id="userdata-mail-pending">...</b>. Ett meddelande med aktiveringslänk har skickats till den nya adressen. Klicka på länken i mejlet för att aktivera adressen. Kolla i din skräppostmapp om du inte hittar mejlet. Behöver du en ny kod? Skriv in adressen igen i fältet ovan!</small></p>
             <div class="ui-field-contain">
