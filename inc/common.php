@@ -77,8 +77,7 @@ function connectDb(string $host, string $dbname, string $user, string $pass, int
     $row = $stmt->fetch(PDO::FETCH_OBJ);
     $curVer = (int)$row->value;
     if ($curVer > $reqVer) {
-        logger(__METHOD__." Wrong database version found.", E_ERROR);
-        die("<html><body><h1>Wrong Database Version</h1><p>The current database version (v $curVer) is higher than the expected one (v $reqVer). I cannot downgrade the database.</p></body></html>");
+        logger(__METHOD__." Wrong database version found.", E_WARNING);
     } elseif ($curVer < $reqVer) {
         echo(str_pad("<html><body><h1>Database Upgrade</h1><p>The current database version (v $curVer) is lower than the expected one (v $reqVer). I will now try to upgrade the database to v $reqVer. Please wait...</p>", 4096)); flush();
         while ($curVer < $reqVer) {
