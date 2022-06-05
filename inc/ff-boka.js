@@ -2021,7 +2021,7 @@ function getUserdata() {
             $( "#userdata-msg-mail-pending" ).show();
         }
         // Make email input writable
-//        $( "#userdata-mail" ).removeAttr( 'readonly' );
+        $( "#userdata-mail" ).removeAttr( 'readonly' );
         $( "#userdata-new-mail" ).val( "" );
         $( "#userdata-password" ).val( "" );
     } );
