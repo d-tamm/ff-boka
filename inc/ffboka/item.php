@@ -388,7 +388,7 @@ class Item extends FFBoka {
                     if ($rowPrice->price <= $row->paid) $class .= " paid";
                 }
             }
-            $title = strftime("%F kl %H:00", $row->unixStart) . " till " . strftime("%F kl %H:00", $row->unixEnd);
+            $title = date("Y-m-d \k\l H:00", $row->unixStart) . " till " . date("Y-m-d \k\l H:00", $row->unixEnd);
             if ($adminView) $title .= "\n" . htmlspecialchars($row->extName ? $row->extName : $row->username) . "\n" . htmlspecialchars($row->ref) . (is_null($row->price) ? "\nInget pris satt" : "\nPris: {$row->price} kr");
             $ret .= "<div class='$class' data-booking-id='{$row->bookingId}' data-booked-item-id='{$row->bookedItemId}' " . ($includeTokens ? "data-token='{$row->token}' " : "") . "style='left:" . number_format(($row->unixStart - $start) / $secs * 100, 2, ".", "") . "%; width:" . number_format(($row->unixEnd - $row->unixStart) / $secs * 100, 2, ".", "") . "%;' title='$title'></div>";
         }

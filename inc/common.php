@@ -302,9 +302,9 @@ function logger(string $message, int $level=E_NOTICE) {
         $logFile = $cfg['logFile'];
         // Log rotation
         if (filesize($logFile) > ($cfg['logMaxSize'] ? $cfg['logMaxSize'] : 1024*1024)) {
-            error_log(strftime("%F %T") . " INFO Log rotation. Closing this log file.\n", 3, $logFile);
+            error_log(date("Y-m-d H:i:s") . " INFO Log rotation. Closing this log file.\n", 3, $logFile);
             rename($logFile, "$logFile.1");
-            error_log(strftime("%F %T") . " INFO Start of new log file.\n", 3, $logFile);
+            error_log(date("Y-m-d H:i:s") . " INFO Start of new log file.\n", 3, $logFile);
         }
     } else { // system log file
         $logFile = "";
@@ -315,7 +315,7 @@ function logger(string $message, int $level=E_NOTICE) {
         default: $sLevel = "NOTICE";
     }
     if ($logFile === "") error_log("ff-boka $sLevel $message\n");
-    else error_log(strftime("%F %T") . " $sLevel $message\n", 3, $logFile);
+    else error_log(date("Y-m-d H:i:s") . " $sLevel $message\n", 3, $logFile);
 }
 
 /**

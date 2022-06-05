@@ -42,7 +42,7 @@ switch ($_REQUEST['action']) {
     }
 }
 
-$year = $_GET['year'] ?? strftime("%Y");
+$year = $_GET[ 'year' ] ?? date( "Y" );
 $sum = $section->usageOverview($year);
 
 ?><!DOCTYPE html>
