@@ -411,13 +411,13 @@ class FFBoka {
      * @return string
      */
     static function formatDateSpan(int $start, int $end, bool $includeWeekday=false) {
-        $wday = $includeWeekday ? "%a " : "";
-        if (strftime("%F", $start) == strftime("%F", $end)) {
+        $wday = $includeWeekday ? "D " : "";
+        if (date("Ymd", $start) == date("Ymd", $end)) {
             // Start and end on same day
-            return strftime("$wday%F kl %H:00", $start) . "-". strftime("%H:00", $end);
+            return date($wday."Y-m-d \k\l H:00 - ", $start) . date("H:00", $end);
         } else {
             // Start and end on different days
-            return strftime("$wday%F kl %H:00", $start) . " till " . strftime("%a %F kl %H:00", $end);
+            return date($wday."Y-m-d \k\l H:00", $start) . " till " . date($wday."Y-m-d \k\l H:00", $end);
         }
     }
 

@@ -299,7 +299,7 @@ switch ( $_REQUEST[ 'action' ] ) {
                 $itemList .= "</div>";
             }
             $itemList .= "<a href='#' onClick='popupItemDetails({$item->bookedItemId});'" . ( $showEditButtons ? " class='has-edit-buttons'" : "" ) . ">" . embedImage( $item->getFeaturedImage()->thumb ) . "<h3 style='white-space:normal;'>" . htmlspecialchars( $item->caption ) . "</h3><p style='overflow:auto; white-space:normal; margin-bottom:0px;'>";
-            $itemList .= strftime( "%F kl %H", $item->start ) . " &mdash; " . strftime( "%F kl %H", $item->end ) . "<br>\n";
+            $itemList .= date( "Y-m-d \k\l H", $item->start ) . " &mdash; " . date( "Y-m-d \k\l H", $item->end ) . "<br>\n";
             if ( $unavail ) $itemList .= "<span id='book-item-status-{$item->bookedItemId}'>Inte tillgänglig</span>";
             elseif ( array_key_exists( $item->id, $overlap ) ) $itemList .= "Överlappar";
             else {
@@ -532,7 +532,7 @@ switch ( $_REQUEST[ 'action' ] ) {
             // Table with booked items
             $mailItems .= "<tr>
                 <td>" . htmlspecialchars( $item->caption ) . "</td>
-                <td>" . strftime( "%a %F kl %k:00", $item->start ) . " till " . strftime( "%a %F kl %k:00", $item->end ) . "</td>
+                <td>" . date( "D Y-m-d \k\l H", $item->start ) . ":00 till " . date( "D Y-m-d \k\l H", $item->end ) . ":00</td>
                 </tr>";
         }
         if ( $booking->userId == $currentUser->id ) $statusText = "Din bokning <i>" . htmlspecialchars( $booking->ref ) . "</i> har nu raderats.";
@@ -767,7 +767,7 @@ function showBookingSeries( \FFBoka\Booking $booking ) {
         } else {
             $ret .= "<p>Nedan finns länkar till övriga tillfällen i serien:</p><ul data-role='listview' data-inset='true'>";
             foreach ( $series as $b ) {
-                $ret .= "<li><a href='book-sum.php?bookingId={$b->id}'>" . ( is_null( $start = $b->start() ) ? "(bokning utan resurser)" : strftime( "%F", $start ) ) . "</a></li>";
+                $ret .= "<li><a href='book-sum.php?bookingId={$b->id}'>" . ( is_null( $start = $b->start() ) ? "(bokning utan resurser)" : date( "Y-m-d", $start ) ) . "</a></li>";
             }
             $ret .= "</ul>";
         }

@@ -132,7 +132,7 @@ switch ( $_REQUEST[ 'action' ] ) {
                     "{{name}}" => $currentUser->name,
                     "{{new_mail}}" => $_POST[ 'mail' ],
                     "{{link}}" => "{$cfg[ 'url' ]}index.php?t=$token",
-                    "{{expires}}" => strftime( "%c", time() + 86400 )
+                    "{{expires}}" => date( "Y-m-d H:i", time() + 86400 )
                 ),
                 [], // attachments
                 $cfg[ 'mail' ],
@@ -217,7 +217,7 @@ if ( isset( $_GET[ 'first_login' ] ) ) $message = "Välkommen till resursbokning
                     }
                     $html = "<li><a href='book-sum.php?bookingId={$b->id}'>\n" .
                         htmlspecialchars( $b->ref ?: "" ) .
-                        "<p>" . ( is_null( $b->repeatId ) ? "" : "🔄 " ) . "<b>" . ( is_null( $start ) ? "Bokningen är tom" : strftime( "%F kl %k:00", $start ) . " &mdash; " . strftime( "%F kl %k:00", $end ) ) . "</b></p>\n" .
+                        "<p>" . ( is_null( $b->repeatId ) ? "" : "🔄 " ) . "<b>" . ( is_null( $start ) ? "Bokningen är tom" : date( "Y-m-d \k\l H:00", $start ) . " &mdash; " . date( "Y-m-d \k\l H:00", $end ) ) . "</b></p>\n" .
                         "<p>$html</p>" .
                         "<p>Bokat {$b->timestamp} i LA {$b->section()->name}</p>\n" .
                         "</a></li>";
@@ -259,7 +259,7 @@ if ( isset( $_GET[ 'first_login' ] ) ) $message = "Välkommen till resursbokning
             $logins = $currentUser->persistentLogins();
             if ( $logins ) {
                 foreach ( $logins as $login ) {
-                    echo "<li class='wrap'><a href='#' style='white-space:normal; font-weight:normal;'>" . htmlspecialchars( resolveUserAgent( $login->userAgent, $db ) ) . ( $login->selector == explode( ":", $_COOKIE[ 'remember' ] )[ 0 ] ? " <i>(den här inloggningen)</i>" : "" ) . "<br>Förfaller " . strftime( "%F", $login->expires ) . "</a><a href='#' onClick=\"removePersistentLogin(this.parentElement, '" . htmlspecialchars( $login->selector ) . "');\" title='Logga ut'></a></li>";
+                    echo "<li class='wrap'><a href='#' style='white-space:normal; font-weight:normal;'>" . htmlspecialchars( resolveUserAgent( $login->userAgent, $db ) ) . ( $login->selector == explode( ":", $_COOKIE[ 'remember' ] )[ 0 ] ? " <i>(den här inloggningen)</i>" : "" ) . "<br>Förfaller " . date( "Y-m-d", $login->expires ) . "</a><a href='#' onClick=\"removePersistentLogin(this.parentElement, '" . htmlspecialchars( $login->selector ) . "');\" title='Logga ut'></a></li>";
                 }
             } else echo "<li style='white-space:normal'>Just nu har du inte några sådana permanenta inloggningar.</li>";
             ?>

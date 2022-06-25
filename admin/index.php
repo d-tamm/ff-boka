@@ -249,8 +249,8 @@ unset( $_SESSION[ 'catId' ] );
                     <th align='left'>Bokningar</th><?php
                     $data = [];
                     for ( $i = 0; $i <= 3; $i++ ) {
-                        $data[] = $section->usageOverview( strftime( "%Y" ) - $i );
-                        echo "<th align='right'>". ( strftime( "%Y" ) - $i ) ."</th>";
+                        $data[] = $section->usageOverview( date( "Y" ) - $i );
+                        echo "<th align='right'>". ( date( "Y" ) - $i ) ."</th>";
                     } ?>
                 </tr>
                 <tr>

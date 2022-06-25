@@ -1,12 +1,11 @@
 /vendor/
 debug.log
-config.php
+/inc/config.php
+/docker/.env
 /.buildpath
 /.directory
 /.project
 /.settings
 /inc/jquery-ui-1.12.1/
-/cron.last
-/update/
 /img/
 /uploads/

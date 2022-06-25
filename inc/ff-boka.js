@@ -1968,7 +1968,9 @@ $( document ).on( 'pageshow', "#page-userdata", function() {
     if ( $( "#msg-page-userdata" ).html() ) {
         $( "#popup-msg-page-userdata" ).popup( 'open' );
     }
-    getUserdata();
+    setTimeout( function() { // wait a short time to effectively clear email and password fields
+        getUserdata();
+    }, 200 );
 } );
 
 /**
@@ -2021,7 +2023,6 @@ function getUserdata() {
             $( "#userdata-msg-mail-pending" ).show();
         }
         // Make email input writable
-//        $( "#userdata-mail" ).removeAttr( 'readonly' );
         $( "#userdata-new-mail" ).val( "" );
         $( "#userdata-password" ).val( "" );
     } );

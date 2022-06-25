@@ -4,6 +4,7 @@ spl_autoload_register(function($class) {
     include __DIR__ . "/" . strtolower(str_replace("\\", "/", $class)) . ".php";
 });
 
+if ( !file_exists( __DIR__ . "/config.php" ) ) die("Det finns ingen konfigurationsfil än. Kopiera <tt>inc/config.sample.php</tt> till <tt>inc/config.php</tt> och redigera den. Sedan kan du komma tillbaka hit igen.");
 require_once __DIR__ . "/config.php";
 if ($cfg['maintenance'] && basename($_SERVER['PHP_SELF'])!=="superadmin.php") die("<html><head><title>Resursbokning - Underhåll</title></head><body><h1>Underhåll</h1><p>Vi utför underhållsarbeten på bokningssystemet. Välkommen åter inom kort!</body></html>");
 
@@ -14,6 +15,8 @@ require __DIR__ . "/version.php";
 // Set locale
 setlocale(LC_ALL, $cfg['locale']);
 date_default_timezone_set ( $cfg['timezone'] );
+$date_fmt = new IntlDateFormatter( 'sv-SE', IntlDateFormatter::FULL, IntlDateFormatter::FULL, $cfg['timezone'], null );
+logger(date("D Y-m-d \k\l H:00"));
 
 // $message is used on several pages. Good to initialise.
 $message = "";
@@ -58,7 +61,7 @@ function connectDb(string $host, string $dbname, string $user, string $pass, int
     try {
         $db = new PDO("mysql:host=$host;port=$port;dbname=$dbname;charset=utf8", $user, $pass);
     } catch (PDOException $e) {
-        logger(__METHOD__." Can't connect to database. " . $db->errorInfo()[2], E_ERROR);
+        logger(__METHOD__." Can't connect to database. " . $e->getMessage(), E_ERROR);
         die("<html><body><h1>Can't Connect to Database</h1><p>If this is a fresh installation, create a database named <tt>$dbname</tt> on host <tt>$host</tt>, and create a user named <tt>$user</tt> with complete access to that database. Set the user's password in <tt>config.php</tt>. You can also change the database and user name there.</p><p>When done, <a href='javascript:location.reload();'>reload this page</a> to continue installation.</p></body></html>");
     }
     $stmt = $db->query("SELECT value FROM config WHERE name='db-version'");
@@ -76,8 +79,7 @@ function connectDb(string $host, string $dbname, string $user, string $pass, int
     $row = $stmt->fetch(PDO::FETCH_OBJ);
     $curVer = (int)$row->value;
     if ($curVer > $reqVer) {
-        logger(__METHOD__." Wrong database version found.", E_ERROR);
-        die("<html><body><h1>Wrong Database Version</h1><p>The current database version (v $curVer) is higher than the expected one (v $reqVer). I cannot downgrade the database.</p></body></html>");
+        logger(__METHOD__." Wrong database version found.", E_WARNING);
     } elseif ($curVer < $reqVer) {
         echo(str_pad("<html><body><h1>Database Upgrade</h1><p>The current database version (v $curVer) is lower than the expected one (v $reqVer). I will now try to upgrade the database to v $reqVer. Please wait...</p>", 4096)); flush();
         while ($curVer < $reqVer) {
@@ -137,17 +139,17 @@ function htmlHeaders(string $title, string $baseUrl, string $mode="mobile") {
     <link rel="apple-touch-icon" type="image/png" sizes="180x180" href="<?= $baseUrl ?>resources/favicon180.png">
     <?php if ($mode=="mobile") { ?>
         <meta name="viewport" content="width=device-width, initial-scale=1"/>
-        <link rel="stylesheet" href="<?= $baseUrl ?>inc/jquery.mobile-1.4.5.min.css" />
-        <link rel="stylesheet" href="<?= $baseUrl ?>css/themes/ff-boka.css" />
-        <link rel="stylesheet" href="<?= $baseUrl ?>css/themes/jquery.mobile.icons.min.css" />
-        <script src="<?= $baseUrl ?>inc/jquery-1.11.1.min.js"></script>
-        <script src="<?= $baseUrl ?>inc/jquery.mobile-1.4.5.min.js"></script>
+        <link rel="stylesheet" href="<?= $baseUrl ?>inc/jquerymobile/jquery.mobile-1.4.5.min.css" />
+        <link rel="stylesheet" href="<?= $baseUrl ?>inc/jquerymobile/themes/ff-boka.min.css" />
+        <link rel="stylesheet" href="<?= $baseUrl ?>inc/jquerymobile/themes/jquery.mobile.icons.min.css" />
+        <script src="<?= $baseUrl ?>vendor/components/jquery/jquery.min.js"></script>
+        <script src="<?= $baseUrl ?>inc/jquerymobile/jquery.mobile-1.4.5.min.js"></script>
     <?php } else { ?>
         <script src="<?= $baseUrl ?>inc/pace.min.js"></script>
-        <link rel="stylesheet" href="<?= $baseUrl ?>vendor/jquery-ui-1.12.1/jquery-ui.min.css">
-        <script src="<?= $baseUrl ?>vendor/jquery-ui-1.12.1/external/jquery/jquery.js"></script>
-        <script src="<?= $baseUrl ?>vendor/jquery-ui-1.12.1/jquery-ui.min.js"></script>
-        <link rel="stylesheet" href="<?= $baseUrl ?>vendor/fontawesome/css/all.css">        
+        <link rel="stylesheet" href="<?= $baseUrl ?>vendor/components/jqueryui/themes/base/jquery-ui.min.css">
+        <script src="<?= $baseUrl ?>vendor/components/jquery/jquery.min.js"></script>
+        <script src="<?= $baseUrl ?>vendor/components/jqueryui/jquery-ui.min.js"></script>
+        <link rel="stylesheet" href="<?= $baseUrl ?>vendor/components/font-awesome/css/all.css">        
     <?php } ?>
     <link rel="stylesheet" href="<?= $baseUrl ?>css/ff-boka.css" />
     <script>
@@ -302,9 +304,9 @@ function logger(string $message, int $level=E_NOTICE) {
         $logFile = $cfg['logFile'];
         // Log rotation
         if (filesize($logFile) > ($cfg['logMaxSize'] ? $cfg['logMaxSize'] : 1024*1024)) {
-            error_log(strftime("%F %T") . " INFO Log rotation. Closing this log file.\n", 3, $logFile);
+            error_log(date("Y-m-d H:i:s") . " INFO Log rotation. Closing this log file.\n", 3, $logFile);
             rename($logFile, "$logFile.1");
-            error_log(strftime("%F %T") . " INFO Start of new log file.\n", 3, $logFile);
+            error_log(date("Y-m-d H:i:s") . " INFO Start of new log file.\n", 3, $logFile);
         }
     } else { // system log file
         $logFile = "";
@@ -315,7 +317,7 @@ function logger(string $message, int $level=E_NOTICE) {
         default: $sLevel = "NOTICE";
     }
     if ($logFile === "") error_log("ff-boka $sLevel $message\n");
-    else error_log(strftime("%F %T") . " $sLevel $message\n", 3, $logFile);
+    else error_log(date("Y-m-d H:i:s") . " $sLevel $message\n", 3, $logFile);
 }
 
 /**

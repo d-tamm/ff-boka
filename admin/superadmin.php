@@ -206,7 +206,6 @@ $cfg = $currentCfg;
             <ul><?php
                 echo class_exists("PDO") ? "" : "<li style='color:red;'><strong>PDO saknas.</strong> Behövs för databasen</li>";
                 echo extension_loaded("pdo_mysql") ? "" : "<li style='color:red;'><strong>pdo_mysql saknas.</strong> Behövs för databasen</li>";
-                echo class_exists("ZipArchive") ? "" : "<li style='color:red;'><strong>Zip saknas.</strong> Används t.ex. vid uppgradering</li>";
                 echo class_exists("\PHPMailer\PHPMailer\PHPMailer") ? "" : "<li style='color:red;'><strong>PHPMailer saknas.</strong> Används för att skicka mejl</li>";
                 foreach (get_loaded_extensions() as $ext) echo "<li>$ext</li>\n";
                 ?>

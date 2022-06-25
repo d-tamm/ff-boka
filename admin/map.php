@@ -6,12 +6,12 @@ $color = "blue";
 
 ?><html>
 <head>
-    <script src="<?= $cfg['url'] ?>inc/jquery-1.11.1.min.js"></script>
+    <script src="<?= $cfg['url'] ?>vendor/components/jquery/jquery.min.js"></script>
 </head>
 <body>
     <div style="height:100%;" id="mapdiv"></div>
-    <script src="../vendor/openlayers/ol.js"></script>
-    <link rel="stylesheet" href="../vendor/openlayers/ol.css">
+    <script src="../inc/openlayers/ol.js"></script>
+    <link rel="stylesheet" href="../inc/openlayers/ol.css">
     <script>
         var homeStyle = new ol.style.Style({
             image: new ol.style.Icon({

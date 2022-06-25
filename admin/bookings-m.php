@@ -83,7 +83,7 @@ if ( isset( $_REQUEST[ 'action' ] ) ) {
                             "bookingId" => $booking->id,
                             "ref" => $booking->ref,
                             "userName" => $booking->userName,
-                            "start" => trim( strftime( "%e/%m", $booking->start() ) ),
+                            "start" => trim( date( "j/n", $booking->start() ) ),
                             "items" => [],
                             "status" => "unconfirmed",
                             "dirty" => (bool)$booking->dirty,
