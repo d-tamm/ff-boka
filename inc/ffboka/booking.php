@@ -326,10 +326,10 @@ class Booking extends FFBoka {
             $itemList .= "<td>" . implode(" ", $msgRef) . "</td>";
             $itemList .= "</tr>";
             // Add attachments to attachment list
-            foreach ($cat->files() as $file) {
-                if ($file->attachFile) {
-                    if ( is_readable( $file->filename ) ) $attachments[$file->md5] = array("path"=>"uploads/{$file->fileId}", "filename"=>$file->filename);
-                    else logger( __METHOD__ . " Attachment file {$file->fileId} not found", E_WARNING );
+            foreach ( $cat->files() as $file ) {
+                if ($file->attachFile ) {
+                    if ( is_readable( __DIR__ . "/../../uploads/" . $file->fileId ) ) $attachments[ $file->md5 ] = array( "path" => "uploads/{$file->fileId}", "filename" => $file->filename );
+                    else logger( __METHOD__ . " Attachment file uploads/{$file->fileId} not found", E_WARNING );
                 }
             }
         }
