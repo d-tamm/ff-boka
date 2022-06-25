@@ -7,6 +7,8 @@ RUN apt-get update && apt-get install -y \
         libpng-dev \
         libjpeg62-turbo-dev \
         libwebp-dev \
+        libicu-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
-    && docker-php-ext-install -j$(nproc) gd pdo pdo_mysql
+    && docker-php-ext-configure intl \
+    && docker-php-ext-install -j$(nproc) gd pdo pdo_mysql intl
 RUN a2enmod rewrite
