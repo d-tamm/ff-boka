@@ -411,12 +411,12 @@ class Category extends FFBoka {
      * @return array of objects {fileId, catId, filename, md5, displayLink, attachFile}.
      *    The array keys are the md5 checksums, so no double files should be returned.
      */
-    public function files(bool $includeParents=FALSE) : array {
-        if ($includeParents) $ret = $this->parent()->files(TRUE);
-        else $ret = array();
-        $stmt = self::$db->query("SELECT * FROM cat_files WHERE catId={$this->id}");
-        while ($row = $stmt->fetch(\PDO::FETCH_OBJ)) {
-            $ret[$row->md5] = $row;
+    public function files( bool $includeParents = FALSE ) : array {
+        $ret = array();
+        if ( $includeParents && !is_null( $parent = $this->parent() ) ) $ret = $parent->files( TRUE );
+        $stmt = self::$db->query( "SELECT * FROM cat_files WHERE catId={$this->id}" );
+        while ( $row = $stmt->fetch( \PDO::FETCH_OBJ ) ) {
+            $ret[ $row->md5 ] = $row;
         }
         return $ret;
     }
