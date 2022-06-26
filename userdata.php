@@ -196,7 +196,7 @@ if ( isset( $_GET[ 'first_login' ] ) ) $message = "Välkommen till resursbokning
             usort( $bookingIds, function( $b1, $b2 ) {
                 $booking1 = new Booking( $b1 );
                 $booking2 = new Booking( $b2 );
-                return ( $booking2->start() - $booking1->start() );
+                return ( $booking1->start() - $booking2->start() );
             } );
             if ( count( $bookingIds ) ) {
                 // Sort the bookings in unconfirmed, upcoming and completed
