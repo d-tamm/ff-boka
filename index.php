@@ -281,7 +281,7 @@ if ( isset( $_REQUEST[ 'message' ] ) ) $message = ( $message ? "$message<br>" : 
             // Show a list of all sections where user has admin role
             foreach ( $FF->getAllSections() as $section ) {
                 if ( $section->showFor( $currentUser, FFBoka::ACCESS_CATADMIN ) ||
-                    @array_intersect( $_SESSION[ 'assignments' ][ $section->id ], $cfg[ 'sectionAdmins' ] ) ) {
+                    @array_intersect( $_SESSION[ 'assignments' ][ $section->id ] ?? [], $cfg[ 'sectionAdmins' ] ) ) {
                         $unconfirmed = array();
                         foreach ( $section->getUnconfirmedBookings( $currentUser ) as $bookingId ) {
                             if ( !isset( $unconfirmed[ $bookingId ] ) ) $unconfirmed[ $bookingId ] = 0;
