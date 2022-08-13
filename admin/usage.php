@@ -5,36 +5,36 @@ use FFBoka\Section;
 use FFBoka\User;
 
 session_start();
-require(__DIR__."/../inc/common.php");
+require( __DIR__ . "/../inc/common.php" );
 global $cfg, $FF;
 
 // Set current section
-if (!$_SESSION['sectionId']) {
-    header("Location: {$cfg['url']}");
+if ( !$_SESSION[ 'sectionId' ] ) {
+    header( "Location: {$cfg[ 'url' ]}" );
     die();
 }
-$section = new Section($_SESSION['sectionId']);
+$section = new Section( $_SESSION[ 'sectionId' ] );
 
 // This page may only be accessed by registered users
-if (!$_SESSION['authenticatedUser']) {
-    header("Location: {$cfg['url']}?action=accessDenied&to=" . urlencode("administrationssidan för {$section->name}"));
+if ( !$_SESSION[ 'authenticatedUser' ] ) {
+    header( "Location: {$cfg[ 'url' ]}?action=accessDenied&to=" . urlencode( "administrationssidan för {$section->name}" ) );
     die();
 }
 // Only allow users which have at least some admin role in this section
-$currentUser = new User($_SESSION['authenticatedUser']);
+$currentUser = new User( $_SESSION[ 'authenticatedUser' ] );
 if (
-    !$section->showFor($currentUser, FFBoka::ACCESS_CATADMIN) && 
-    (!isset($_SESSION['assignments'][$section->id]) || !array_intersect($_SESSION['assignments'][$section->id], $cfg['sectionAdmins']))
+    !$section->showFor( $currentUser, FFBoka::ACCESS_CATADMIN ) && 
+    ( !isset( $_SESSION[ 'assignments' ][ $section->id ]) || !array_intersect( $_SESSION[ 'assignments' ][ $section->id ], $cfg[ 'sectionAdmins' ] ) )
 ) {
-    header("Location: {$cfg['url']}?action=accessDenied&to=" . urlencode("administrationssidan för {$section->name}"));
+    header( "Location: {$cfg[ 'url' ]}?action=accessDenied&to=" . urlencode( "administrationssidan för {$section->name}" ) );
     die();
 }
-$userAccess = $section->getAccess($currentUser);
+$userAccess = $section->getAccess( $currentUser );
 
-if (isset($_REQUEST['message'])) $message = $_REQUEST['message'];
+if ( isset( $_REQUEST[ 'message' ] ) ) $message = $_REQUEST[ 'message' ];
 
-if (isset($_REQUEST['action'])) {
-switch ($_REQUEST['action']) {
+if ( isset( $_REQUEST[ 'action' ] ) ) {
+switch ( $_REQUEST[ 'action' ] ) {
     case "help":
         echo "<p>Här visas användningsstatistiken för din lokalavdelning. Använd knapparna längst upp för att bläddra mellan åren. Du kan även klicka på kolumnhuvuden för att sortera tabellen enligt dina önskemål.</p>
         <p>Summan på sista raden visar antalet bokningar. Detta är inte summan av värdena i kolumnen eftersom varje bokning kan innehålla flera resurser. Summan i sista kolumnen (bokad tid) är dock summan av alla resurser.</p>";
@@ -43,12 +43,12 @@ switch ($_REQUEST['action']) {
 }
 
 $year = $_GET[ 'year' ] ?? date( "Y" );
-$sum = $section->usageOverview($year);
+$sum = $section->usageOverview( $year );
 
 ?><!DOCTYPE html>
 <html>
 <head>
-    <?php htmlHeaders("Friluftsfrämjandets resursbokning - Användningsstatistik ".$section->name, $cfg['url']) ?>
+    <?php htmlHeaders( "Friluftsfrämjandets resursbokning - Användningsstatistik " . $section->name, $cfg[ 'url' ] ) ?>
     <link rel="stylesheet" type="text/css" href="//cdn.datatables.net/1.10.24/css/jquery.dataTables.css">
     <script src="//cdn.datatables.net/1.10.24/js/jquery.dataTables.min.js"></script>
 </head>
@@ -56,7 +56,7 @@ $sum = $section->usageOverview($year);
 
 <body>
 <div data-role="page" id="page-admin-usage">
-    <?= head("Användningsstatistik", $cfg['url'], $cfg['superAdmins']) ?>
+    <?= head( "Användningsstatistik", $cfg[ 'url' ], $cfg[ 'superAdmins' ] ) ?>
     <div role="main" class="ui-content">
 
     <div data-role="popup" data-history="false" data-overlay-theme="b" id="popup-msg-page-admin-usage" class="ui-content">
@@ -83,7 +83,7 @@ $sum = $section->usageOverview($year);
             </tr>
         </thead>
         <tbody>
-        <?php foreach ($section->usageDetails($year) as $item) { ?>
+        <?php foreach ( $section->usageDetails( $year ) as $item ) { ?>
             <tr>
                 <td><a href="category.php?catId=<?= $item->catId ?>"><?= $item->category ?></a></td>
                 <td><a href="item.php?catId=<?= $item->catId ?>&amp;itemId=<?= $item->itemId ?>"><?= $item->item ?></a></td>

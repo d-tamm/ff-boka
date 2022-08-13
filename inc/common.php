@@ -1,21 +1,21 @@
 <?php
 require_once __DIR__ . "/../vendor/autoload.php";
-spl_autoload_register(function($class) {
-    include __DIR__ . "/" . strtolower(str_replace("\\", "/", $class)) . ".php";
-});
+spl_autoload_register( function( $class ) {
+    include __DIR__ . "/" . strtolower( str_replace( "\\", "/", $class ) ) . ".php";
+} );
 
-if ( !file_exists( __DIR__ . "/config.php" ) ) die("Det finns ingen konfigurationsfil än. Kopiera <tt>inc/config.sample.php</tt> till <tt>inc/config.php</tt> och redigera den. Sedan kan du komma tillbaka hit igen.");
+if ( !file_exists( __DIR__ . "/config.php" ) ) die( "Det finns ingen konfigurationsfil än. Kopiera <tt>inc/config.sample.php</tt> till <tt>inc/config.php</tt> och redigera den. Sedan kan du komma tillbaka hit igen." );
 require_once __DIR__ . "/config.php";
-if ($cfg['maintenance'] && basename($_SERVER['PHP_SELF'])!=="superadmin.php") die("<html><head><title>Resursbokning - Underhåll</title></head><body><h1>Underhåll</h1><p>Vi utför underhållsarbeten på bokningssystemet. Välkommen åter inom kort!</body></html>");
+if ( $cfg[ 'maintenance' ] && basename( $_SERVER[ 'PHP_SELF' ] ) !== "superadmin.php" ) die( "<html><head><title>Resursbokning - Underhåll</title></head><body><h1>Underhåll</h1><p>Vi utför underhållsarbeten på bokningssystemet. Välkommen åter inom kort!</body></html>" );
 
 global $cfg;
 
 require __DIR__ . "/version.php";
 
 // Set locale
-setlocale(LC_ALL, $cfg['locale']);
-date_default_timezone_set ( $cfg['timezone'] );
-$date_fmt = new IntlDateFormatter( 'sv-SE', IntlDateFormatter::FULL, IntlDateFormatter::FULL, $cfg['timezone'], null );
+setlocale( LC_ALL, $cfg[ 'locale' ] );
+date_default_timezone_set ( $cfg[ 'timezone' ] );
+$date_fmt = new IntlDateFormatter( 'sv-SE', IntlDateFormatter::FULL, IntlDateFormatter::FULL, $cfg[ 'timezone' ], null );
 //logger(date("D Y-m-d \k\l H:00"));
 
 // $message is used on several pages. Good to initialise.
@@ -30,17 +30,17 @@ use FFBoka\FFBoka;
 use FFBoka\User;
 
 // Connect to database
-$db = connectDb($cfg['dbhost'], $cfg['dbname'], $cfg['dbuser'], $cfg['dbpass'], $dbVersion, $cfg['dbport']);
+$db = connectDb( $cfg[ 'dbhost' ], $cfg[ 'dbname' ], $cfg[ 'dbuser' ], $cfg[ 'dbpass' ], $dbVersion, $cfg[ 'dbport' ] );
 // Switch off strict mode
-$db->exec("SET SESSION sql_mode = ''");
+$db->exec( "SET SESSION sql_mode = ''" );
 
 // Create FF object
-$FF = new FFBoka($cfg['ff-api'], $db, $cfg['sectionAdmins'], $cfg['timezone']);
+$FF = new FFBoka( $cfg[ 'ff-api' ], $db, $cfg[ 'sectionAdmins' ], $cfg[ 'timezone' ] );
 
 // Check if there is a persistent login cookie
 //https://stackoverflow.com/questions/3128985/php-login-system-remember-me-persistent-cookie
-if (!isset($_SESSION['authenticatedUser']) && !empty($_COOKIE['remember'])) {
-    User::restorePersistentLogin($_COOKIE['remember'], $cfg['TtlPersistentLogin']);
+if ( !isset( $_SESSION[ 'authenticatedUser' ] ) && !empty( $_COOKIE[ 'remember' ] ) ) {
+    User::restorePersistentLogin( $_COOKIE[ 'remember' ], $cfg[ 'TtlPersistentLogin' ] );
 }
 
 /**
@@ -56,64 +56,64 @@ if (!isset($_SESSION['authenticatedUser']) && !empty($_COOKIE['remember'])) {
  * @param int $port Database port
  * @return PDO $db Connection to the database 
  */
-function connectDb(string $host, string $dbname, string $user, string $pass, int $reqVer, int $port=3306) {
+function connectDb( string $host, string $dbname, string $user, string $pass, int $reqVer, int $port = 3306 ) {
     // Try to connect to the database
     try {
-        $db = new PDO("mysql:host=$host;port=$port;dbname=$dbname;charset=utf8", $user, $pass);
-    } catch (PDOException $e) {
-        logger(__METHOD__." Can't connect to database. " . $e->getMessage(), E_ERROR);
-        die("<html><body><h1>Can't Connect to Database</h1><p>If this is a fresh installation, create a database named <tt>$dbname</tt> on host <tt>$host</tt>, and create a user named <tt>$user</tt> with complete access to that database. Set the user's password in <tt>config.php</tt>. You can also change the database and user name there.</p><p>When done, <a href='javascript:location.reload();'>reload this page</a> to continue installation.</p></body></html>");
+        $db = new PDO( "mysql:host=$host;port=$port;dbname=$dbname;charset=utf8", $user, $pass );
+    } catch ( PDOException $e ) {
+        logger( __METHOD__ . " Can't connect to database. " . $e->getMessage(), E_ERROR );
+        die( "<html><body><h1>Can't Connect to Database</h1><p>If this is a fresh installation, create a database named <tt>$dbname</tt> on host <tt>$host</tt>, and create a user named <tt>$user</tt> with complete access to that database. Set the user's password in <tt>config.php</tt>. You can also change the database and user name there.</p><p>When done, <a href='javascript:location.reload();'>reload this page</a> to continue installation.</p></body></html>" );
     }
-    $stmt = $db->query("SELECT value FROM config WHERE name='db-version'");
-    if ($stmt === FALSE) {
+    $stmt = $db->query( "SELECT value FROM config WHERE name='db-version'" );
+    if ( $stmt === FALSE ) {
         // No tables? Try to install base skeleton
-        echo(str_pad("<html><body><h1>Empty Database Found</h1><p>The database seems to be empty. Trying to install base skeleton. Please wait...</p>",4096)); flush();
-        if ($db->exec(file_get_contents(__DIR__ . "/../resources/db/skeleton.sql"))===FALSE) {
-            logger(__METHOD__." Failed to install db base skeleton.", E_ERROR);
-            die("<p>It seems that this did not work. :(</p>");
+        echo( str_pad( "<html><body><h1>Empty Database Found</h1><p>The database seems to be empty. Trying to install base skeleton. Please wait...</p>", 4096 ) ); flush();
+        if ( $db->exec( file_get_contents( __DIR__ . "/../resources/db/skeleton.sql" ) ) === FALSE ) {
+            logger( __METHOD__ . " Failed to install db base skeleton.", E_ERROR );
+            die( "<p>It seems that this did not work. :(</p>" );
         }
-        logger(__METHOD__." Base database skeleton installed.");
-        die("<p>Finished.</p><p>You may <a href='javascript:location.reload();'>reload this page</a> to continue.</p></body></html>");
+        logger( __METHOD__ . " Base database skeleton installed." );
+        die( "<p>Finished.</p><p>You may <a href='javascript:location.reload();'>reload this page</a> to continue.</p></body></html>" );
     }
     // Continue checking the db version
-    $row = $stmt->fetch(PDO::FETCH_OBJ);
+    $row = $stmt->fetch( PDO::FETCH_OBJ );
     $curVer = (int)$row->value;
-    if ($curVer > $reqVer) {
-        logger(__METHOD__." Wrong database version found.", E_WARNING);
-    } elseif ($curVer < $reqVer) {
-        echo(str_pad("<html><body><h1>Database Upgrade</h1><p>The current database version (v $curVer) is lower than the expected one (v $reqVer). I will now try to upgrade the database to v $reqVer. Please wait...</p>", 4096)); flush();
-        while ($curVer < $reqVer) {
+    if ( $curVer > $reqVer ) {
+        logger( __METHOD__ . " Wrong database version found.", E_WARNING );
+    } elseif ( $curVer < $reqVer ) {
+        echo( str_pad( "<html><body><h1>Database Upgrade</h1><p>The current database version (v $curVer) is lower than the expected one (v $reqVer). I will now try to upgrade the database to v $reqVer. Please wait...</p>", 4096 ) ); flush();
+        while ( $curVer < $reqVer ) {
             // Check that upgrade sql file exists
             $curVer++;
-            if (!is_readable(__DIR__ . "/../resources/db/$curVer.sql")) {
-                logger(__METHOD__." Cannot find database upgrade file.", E_ERROR);
-                die("<p><b>Oops... Cannot find database upgrade file to v $curVer.</b> Please take contact with the maintainers of the repository who should have supplied the file /resources/db/$curVer.sql.</p><p><a href='javascript:location.reload();'>Retry</a></p></body></html>");
+            if ( !is_readable( __DIR__ . "/../resources/db/$curVer.sql" ) ) {
+                logger( __METHOD__ . " Cannot find database upgrade file.", E_ERROR );
+                die( "<p><b>Oops... Cannot find database upgrade file to v $curVer.</b> Please take contact with the maintainers of the repository who should have supplied the file /resources/db/$curVer.sql.</p><p><a href='javascript:location.reload();'>Retry</a></p></body></html>" );
             }
-            echo(str_pad("<h3>Upgrading from v " . ($curVer-1) . " to v $curVer...</h3>", 4096)); flush();
+            echo( str_pad( "<h3>Upgrading from v " . ($curVer-1) . " to v $curVer...</h3>", 4096 ) ); flush();
             // If exists, include php code related to db upgrade
-            if (is_readable(__DIR__ . "/../resources/db/$curVer.php")) {
+            if ( is_readable( __DIR__ . "/../resources/db/$curVer.php" ) ) {
                 // Setting flag which should be evaluated in the included script in order to ensure
                 // that the script does not get executed from other calls.
-                $_SESSION['dbUpgradeToVer'] = $curVer;
-                include(__DIR__ . "/../resources/db/$curVer.php");
+                $_SESSION[ 'dbUpgradeToVer' ] = $curVer;
+                include( __DIR__ . "/../resources/db/$curVer.php" );
             }
             // Apply SQL upgrade
-            if ($db->exec(file_get_contents(__DIR__ . "/../resources/db/$curVer.sql"))===FALSE) {
-                logger(__METHOD__." Failed to install database upgrade. " . $db->errorInfo()[2], E_ERROR);
-                die("<p><b>It seems that this did not work. :(</b></p>");
+            if ( $db->exec( file_get_contents( __DIR__ . "/../resources/db/$curVer.sql")) === FALSE ) {
+                logger( __METHOD__ . " Failed to install database upgrade. " . $db->errorInfo()[ 2 ], E_ERROR );
+                die( "<p><b>It seems that this did not work. :(</b></p>" );
             }
             // Double check success by checking DB version number
-            $stmt = $db->query("SELECT value FROM config WHERE name='db-version'");
-            $ver = $stmt->fetch(PDO::FETCH_OBJ);
-            if ($ver->value == $curVer) {
-                logger(__METHOD__." Database upgraded to version $curVer");
+            $stmt = $db->query( "SELECT value FROM config WHERE name='db-version'" );
+            $ver = $stmt->fetch( PDO::FETCH_OBJ );
+            if ( $ver->value == $curVer ) {
+                logger( __METHOD__ . " Database upgraded to version $curVer" );
                 echo "<p>Successful upgrade to version $curVer.</p>";
             } else {
-                logger(__METHOD__." Database versions do not match after upgrade.", E_ERROR);
+                logger( __METHOD__ . " Database versions do not match after upgrade.", E_ERROR );
                 echo "<p><b>Upgrade to version $curVer has failed.</b></p>";
             }
         }
-        die("<p>Finished.</p><p>If you do not see any error messages, you may <a href='javascript:location.reload();'>reload this page</a> to continue.</p></body></html>");
+        die( "<p>Finished.</p><p>If you do not see any error messages, you may <a href='javascript:location.reload();'>reload this page</a> to continue.</p></body></html>" );
     }
     return $db;
 }
@@ -124,7 +124,7 @@ function connectDb(string $host, string $dbname, string $user, string $pass, int
  * @param string $baseUrl Base URL of the installation
  * @param string $mode mobile|desktop
  */
-function htmlHeaders(string $title, string $baseUrl, string $mode="mobile") { 
+function htmlHeaders( string $title, string $baseUrl, string $mode = "mobile" ) { 
     // output meta tags and include stylesheets, jquery etc    ?>
     <title><?= $title ?></title>
     <meta charset="UTF-8">
@@ -176,20 +176,20 @@ function htmlHeaders(string $title, string $baseUrl, string $mode="mobile") {
  * @param string $baseUrl Base URL of the installation
  * @param array[int] $superAdmins Member IDs giving superadmin access 
  */
-function head(string $caption, string $baseUrl, $superAdmins=array()) {
+function head( string $caption, string $baseUrl, $superAdmins = array() ) {
     // Declare side panel
     ?>
     <div data-role="panel" data-theme="b" data-position-fixed="true" data-display="push" id="navpanel">
         <ul data-role="listview">
             <li data-icon="home"><a href="<?= $baseUrl ?>index.php" data-transition='slide' data-direction='reverse' data-rel="close">Startsida</a></li><?php
-            if (isset($_SESSION['authenticatedUser'])) { ?>
+            if ( isset( $_SESSION[ 'authenticatedUser' ] ) ) { ?>
                 <li data-icon="user"><a href="<?= $baseUrl ?>userdata.php" data-transition='slide' data-rel="close">Min sida</a></li>
                 <li data-icon="power"><a href="<?= $baseUrl ?>index.php?logout" data-rel="close">Logga ut</a></li><?php
-                if (in_array($_SESSION['authenticatedUser'], $superAdmins)) {
+                if ( in_array( $_SESSION[ 'authenticatedUser' ], $superAdmins ) ) {
                     echo "<li data-icon='alert'><a href='{$baseUrl}admin/superadmin.php' data-transition='slide' data-rel='close'>Super-Admin</a></li>";
                 }
-                if (isset($_SESSION['impersonate_realUserId'])) {
-                    echo "<li data-icon='action'><a href='{$baseUrl}?action=exit_impersonate' data-transition='slide' data-rel='close' data-ajax='false'>Sluta imitera {$_SESSION['authenticatedUser']}</a></li>";
+                if ( isset( $_SESSION[ 'impersonate_realUserId' ] ) ) {
+                    echo "<li data-icon='action'><a href='{$baseUrl}?action=exit_impersonate' data-transition='slide' data-rel='close' data-ajax='false'>Sluta imitera {$_SESSION[ 'authenticatedUser' ]}</a></li>";
                 }
             } ?>
             <li data-icon="info"><a href="<?= $baseUrl ?>cookies.php" data-transition='slide' data-rel="close">Om kakor (cookies)</a></li>
@@ -201,14 +201,14 @@ function head(string $caption, string $baseUrl, $superAdmins=array()) {
         <a href='#navpanel' data-rel='popup' data-transition='pop' data-role='button' data-icon='bars' data-iconpos='notext' class='ui-btn-left ui-nodisc-icon ui-alt-icon'>Meny</a>
         <a href='javascript:showHelp();' data-transition='slide' data-rel='popup' data-role='button' data-icon='help' data-iconpos='notext' class='ui-btn-right ui-nodisc-icon ui-alt-icon'>Hjälp</a>
         <?php
-        if (!isset($_COOKIE['cookiesOK'])) { // Display cookie chooser ?>
+        if ( !isset( $_COOKIE[ 'cookiesOK' ] ) ) { // Display cookie chooser ?>
             <div id="divCookieConsent" data-theme='b' class='ui-bar ui-bar-b' style='font-weight:normal;'>
                 För att vissa funktioner på denna webbplats ska fungera använder vi kakor. <a href='<?= $baseUrl ?>cookies.php' data-role='none'>Läs mer om kakor.</a><br>
                 <button onClick="var d=new Date(); d.setTime(d.getTime()+365*24*60*60*1000); document.cookie='cookiesOK=1; expires='+d.toUTCString()+'; Path=/'; $('#divCookieConsent').hide(); $('#div-remember-me').show();">Tillåt kakor</button>
                 <button onClick="document.cookie='cookiesOK=0; path=/'; $('#divCookieConsent').hide();$('#div-remember-me').hide();">Avböj kakor</button>
             </div>
         <?php } 
-        if (strpos($_SERVER['HTTP_USER_AGENT'], 'MSIE') || strpos($_SERVER['HTTP_USER_AGENT'], 'Trident/7')) echo "<div class='ui-bar ui-bar-b' style='font-weight:normal;'><b>Dags att uppgradera din webbläsare.</b> Du använder Internet Explorer, en föråldrad webbläsare som är dålig på att följa webbstandarder. Vi har valt att inte längre slösa vår tid på att stödja den, och bokningssystemet kommer kanske inte att fungera med den. Vänligen använd en annan webbläsare. Vi rekommenderar Firefox eller Chrome.</div>";
+        if ( strpos( $_SERVER[ 'HTTP_USER_AGENT' ], 'MSIE' ) || strpos( $_SERVER[ 'HTTP_USER_AGENT' ], 'Trident/7' ) ) echo "<div class='ui-bar ui-bar-b' style='font-weight:normal;'><b>Dags att uppgradera din webbläsare.</b> Du använder Internet Explorer, en föråldrad webbläsare som är dålig på att följa webbstandarder. Vi har valt att inte längre slösa vår tid på att stödja den, och bokningssystemet kommer kanske inte att fungera med den. Vänligen använd en annan webbläsare. Vi rekommenderar Firefox eller Chrome.</div>";
         ?>
     </div>
     
@@ -226,22 +226,22 @@ function head(string $caption, string $baseUrl, $superAdmins=array()) {
  * @param string $overlay Name of overlay image file (accepted|rejected|new)
  * @return string HTML img tag with embedded base64 encoded data
  */
-function embedImage($data, $overlay="") {
+function embedImage( $data, $overlay = "" ) {
     // Returns string for embedded img tag.
-    if (!in_array($overlay, array("accepted", "rejected", "new"))) $overlay="";
-    if (!$data) $data = file_get_contents(__DIR__."/../resources/noimage.png");
-    $info = getimagesizefromstring($data);
-    if ($overlay) {
-        $imgOverlay = imagecreatefrompng(__DIR__."/img/overlay_$overlay.png");
-        $image = imagecreatefromstring($data);
-        imagecopy($image, $imgOverlay, 0, 0, 0, 0, $info[0], $info[1]);
+    if ( !in_array( $overlay, array( "accepted", "rejected", "new" ) ) ) $overlay = "";
+    if ( !$data ) $data = file_get_contents( __DIR__ . "/../resources/noimage.png" );
+    $info = getimagesizefromstring( $data );
+    if ( $overlay ) {
+        $imgOverlay = imagecreatefrompng( __DIR__ . "/img/overlay_$overlay.png" );
+        $image = imagecreatefromstring( $data );
+        imagecopy( $image, $imgOverlay, 0, 0, 0, 0, $info[ 0 ], $info[ 1 ] );
         // Convert to string
         ob_start();
-        imagepng($image, NULL);
+        imagepng( $image, NULL );
         $data = ob_get_contents();
         ob_end_clean();        
     }
-    return("<img src='data:" . $info['mime'] . ";base64," . base64_encode($data) . "'>");
+    return( "<img src='data:" . $info[ 'mime' ] . ";base64," . base64_encode( $data ) . "'>" );
 }
 
 /**
@@ -250,10 +250,10 @@ function embedImage($data, $overlay="") {
  * @param string $subject Subject to pass to the mail program
  * @return string HTML A href mailto link
  */
-function obfuscatedMaillink(string $to, string $subject="") {
+function obfuscatedMaillink( string $to, string $subject = "" ) {
     // Obfuscates email addresses.
-    $id = "obfmail".substr(sha1($to), 0, 8);
-    return "<span id='$id'></span><script>$('#$id').html(\"<a href='mailto:\" + atob('" . base64_encode($to) . "') + \"" . ($subject ? "?subject=".rawurlencode($subject) : "") . "'>\"+atob('" . base64_encode($to) . "')+\"</a>\");</script>";
+    $id = "obfmail" . substr( sha1( $to ), 0, 8 );
+    return "<span id='$id'></span><script>$('#$id').html(\"<a href='mailto:\" + atob('" . base64_encode( $to ) . "') + \"" . ( $subject ? "?subject=".rawurlencode( $subject ) : "" ) . "'>\"+atob('" . base64_encode( $to ) . "')+\"</a>\");</script>";
 }
 
 /**
@@ -264,30 +264,30 @@ function obfuscatedMaillink(string $to, string $subject="") {
  *        The following tags will be replaced: %browser% %version% %platform% %platform_version% %platform_bits% %device_type% 
  * @return string
  */
-function resolveUserAgent(string $userAgent, PDO $db, string $format='%browser% %version% på %platform% %platform_version%, %platform_bits% bits (%device_type%)') {
+function resolveUserAgent( string $userAgent, PDO $db, string $format='%browser% %version% på %platform% %platform_version%, %platform_bits% bits (%device_type%)' ) {
     $ret = $format;
-    $stmt = $db->prepare("SELECT * FROM user_agents WHERE uaHash=?");
-    $stmt->execute(array(sha1($userAgent)));
-    if ($row = $stmt->fetch(PDO::FETCH_OBJ)) {
+    $stmt = $db->prepare( "SELECT * FROM user_agents WHERE uaHash=?" );
+    $stmt->execute( array( sha1( $userAgent ) ) );
+    if ( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
         // Found userAgent in database. Return a readable representation of it
-        if ($row->browser=="") $row->browser = "Okänd webbläsare"; 
-        if ($row->platform=="") $row->platform = "Okänd plattform";
-        if ($row->platform_bits=="") $row->platform_bits = "?";
-        if ($row->device_type=="") $row->device_type = "-";
-        $ret = str_replace("%browser%", $row->browser, $ret);
-        $ret = str_replace("%version%", $row->version, $ret);
-        $ret = str_replace("%platform%", $row->platform, $ret);
-        $ret = str_replace("%platform_version%", $row->platform_version, $ret);
-        $ret = str_replace("%platform_bits%", $row->platform_bits, $ret);
-        $ret = str_replace("%device_type%", $row->device_type, $ret);
+        if ( $row->browser == "" ) $row->browser = "Okänd webbläsare"; 
+        if ( $row->platform == "" ) $row->platform = "Okänd plattform";
+        if ( $row->platform_bits == "" ) $row->platform_bits = "?";
+        if ( $row->device_type == "" ) $row->device_type = "-";
+        $ret = str_replace( "%browser%", $row->browser, $ret );
+        $ret = str_replace( "%version%", $row->version, $ret );
+        $ret = str_replace( "%platform%", $row->platform, $ret );
+        $ret = str_replace( "%platform_version%", $row->platform_version, $ret );
+        $ret = str_replace( "%platform_bits%", $row->platform_bits, $ret );
+        $ret = str_replace( "%device_type%", $row->device_type, $ret );
         return $ret;
     } else {
         // This userAgent is not yet known. Save it in database an let it be resolved by cron job later.
-        $stmt = $db->prepare("INSERT INTO user_agents SET uaHash=:hash, userAgent=:ua");
-        $stmt->execute(array(
-            ":hash" => sha1($userAgent),
+        $stmt = $db->prepare( "INSERT INTO user_agents SET uaHash=:hash, userAgent=:ua" );
+        $stmt->execute( array(
+            ":hash" => sha1( $userAgent ),
             ":ua" => $userAgent
-        ));
+        ) );
         return $userAgent;
     }
 }
@@ -297,27 +297,27 @@ function resolveUserAgent(string $userAgent, PDO $db, string $format='%browser% 
  * @param string $message The message to log.
  * @param int $level Will be prefixed to the message. Either E_NOTICE, E_WARNING or E_ERROR
  */
-function logger(string $message, int $level=E_NOTICE) {
+function logger( string $message, int $level = E_NOTICE ) {
     global $cfg;
     // check write permissions on parent directory
-    if ($cfg['logFile'] && is_writable(dirname($cfg['logFile']))) { // custom log file
-        $logFile = $cfg['logFile'];
+    if ( $cfg[ 'logFile' ] && is_writable( dirname( $cfg[ 'logFile' ] ) ) ) { // custom log file
+        $logFile = $cfg[ 'logFile' ];
         // Log rotation
-        if (filesize($logFile) > ($cfg['logMaxSize'] ? $cfg['logMaxSize'] : 1024*1024)) {
-            error_log(date("Y-m-d H:i:s") . " INFO Log rotation. Closing this log file.\n", 3, $logFile);
-            rename($logFile, "$logFile.1");
-            error_log(date("Y-m-d H:i:s") . " INFO Start of new log file.\n", 3, $logFile);
+        if ( filesize( $logFile ) > ( $cfg[ 'logMaxSize' ] ?? 1024 * 1024 ) ) {
+            error_log( date( "Y-m-d H:i:s" ) . " INFO Log rotation. Closing this log file.\n", 3, $logFile );
+            rename( $logFile, "$logFile.1" );
+            error_log( date( "Y-m-d H:i:s" ) . " INFO Start of new log file.\n", 3, $logFile );
         }
     } else { // system log file
         $logFile = "";
     }
-    switch ($level) {
+    switch ( $level ) {
         case E_WARNING: $sLevel = "WARNING"; break;
         case E_ERROR: $sLevel = "ERROR"; break;
         default: $sLevel = "NOTICE";
     }
-    if ($logFile === "") error_log("ff-boka $sLevel $message\n");
-    else error_log(date("Y-m-d H:i:s") . " $sLevel $message\n", 3, $logFile);
+    if ( $logFile === "" ) error_log( "ff-boka $sLevel $message\n" );
+    else error_log( date( "Y-m-d H:i:s" ) . " $sLevel $message\n", 3, $logFile );
 }
 
 /**
@@ -328,16 +328,16 @@ function logger(string $message, int $level=E_NOTICE) {
  * @param array $arr2 An array to compare keys against.
  * @return array
  */
-function diff_key_recursive (array $arr1, array $arr2) {
-    $diff = array_diff_key($arr1, $arr2);
-    $intersect = array_intersect_key($arr1, $arr2);
+function diff_key_recursive ( array $arr1, array $arr2 ) {
+    $diff = array_diff_key( $arr1, $arr2 );
+    $intersect = array_intersect_key( $arr1, $arr2 );
     
-    foreach ($intersect as $k => $v) {
-        if (is_array($arr1[$k]) && is_array($arr2[$k])) {
-            $d = diff_key_recursive($arr1[$k], $arr2[$k]);
+    foreach ( $intersect as $k => $v ) {
+        if ( is_array( $arr1[ $k ] ) && is_array( $arr2[ $k ] ) ) {
+            $d = diff_key_recursive( $arr1[ $k ], $arr2[ $k ] );
             
-            if ($d) {
-                $diff[$k] = $d;
+            if ( $d ) {
+                $diff[ $k ] = $d;
             }
         }
     }

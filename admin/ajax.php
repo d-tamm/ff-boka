@@ -11,7 +11,7 @@ use FFBoka\User;
 
 
 session_start();
-require( __DIR__."/../inc/common.php" );
+require( __DIR__ . "/../inc/common.php" );
 global $cfg, $FF;
 
 // Section and userId must be known

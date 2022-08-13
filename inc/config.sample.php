@@ -68,10 +68,10 @@ $cfg = array(
     "timezone" => "Europe/Stockholm",
     
     // Section bound assignments always giving admin access to section
-    "sectionAdmins" => array('Ordförande', 'Vice ordförande'),
+    "sectionAdmins" => array( 'Ordförande', 'Vice ordförande' ),
     
     // UserIDs of users with superAdmin access (will display a superAdmin section on Admin page)
-    "superAdmins" => array(0),
+    "superAdmins" => array( 0 ),
     
     // Textual representations of access levels
     "catAccessLevels" => array(
@@ -88,7 +88,7 @@ $cfg = array(
     "DoSDelay" => 300,   // delay in seconds after DoSCount unsuccessful logins
     
     // How long shall persistent login ("remember me") be valid? (seconds)
-    "TtlPersistentLogin" => 60*60*24*365,
+    "TtlPersistentLogin" => 60 * 60 * 24 * 365,
     
     // When to do recurring jobs
     "cronDaily" => 2, // Hour of day 0...23
@@ -96,9 +96,9 @@ $cfg = array(
     "cronMonthly" => 1, // Day of month, 1...31
 
     // Name and location of log file. Use an absolute path. If not set or not writable, logging will be directed to the php log file.
-    "logFile" => realpath(__DIR__."/../..") . "/ff-boka.log",
+    "logFile" => realpath( __DIR__ . "/../.." ) . "/ff-boka.log",
     // Max log file size in bytes. Defaults to 1 MB if not set.
-    "logMaxSize" => 1024*1024,
+    "logMaxSize" => 1024 * 1024,
 
     // Welcome messages on landing page
     "welcomeMsg" => "<p class='ui-body ui-body-b'>Välkommen till Friluftsfrämjandets nya resursbokningssystem! Om du behöver hjälp, klicka på <b>?</b> uppe till höger.</p>",

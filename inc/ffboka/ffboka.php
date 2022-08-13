@@ -81,13 +81,13 @@ class FFBoka {
      * @param string[] $sectionAdmins Section level assignments giving sections admin access
      * @param string $timezone Timezone for e.g. freebusy display (Europe/Stockholm)
      */
-    function __construct($api, PDO $db, $sectionAdmins, $timezone) {
-        self::$apiAuthUrl = $api['authUrl'];
-        self::$apiAuthKey = $api['authKey'];
-        self::$apiFeedUserAss = $api['feedUrl'] . $api['feedUserAss'];
-        self::$apiFeedSec = $api['feedUrl'] . $api['feedSec'];
-        self::$apiFeedSocnr = $api['feedUrl'] . $api['feedSocnr'];
-        self::$apiFeedAllAss = $api['feedUrl'] . $api['feedAss'];
+    function __construct( $api, PDO $db, $sectionAdmins, $timezone ) {
+        self::$apiAuthUrl = $api[ 'authUrl' ];
+        self::$apiAuthKey = $api[ 'authKey' ];
+        self::$apiFeedUserAss = $api[ 'feedUrl' ] . $api[ 'feedUserAss' ];
+        self::$apiFeedSec = $api[ 'feedUrl' ] . $api[ 'feedSec' ];
+        self::$apiFeedSocnr = $api[ 'feedUrl' ] . $api[ 'feedSocnr' ];
+        self::$apiFeedAllAss = $api[ 'feedUrl' ] . $api[ 'feedAss' ];
         self::$db = $db;
         self::$sectionAdmins = $sectionAdmins;
         self::$timezone = $timezone;
@@ -98,25 +98,25 @@ class FFBoka {
      * Get an updated list of all sections from API.
      */
     public function updateSectionList() {
-        logger(__METHOD__." Getting updated section list from API...");
-        $data = json_decode(file_get_contents(self::$apiFeedSec));
-        logger(__METHOD__." API returned " . count($data->results) . " sections.");
+        logger( __METHOD__ . " Getting updated section list from API..." );
+        $data = json_decode( file_get_contents( self::$apiFeedSec ) );
+        logger( __METHOD__ . " API returned " . count( $data->results ) . " sections." );
         // We may not remove and re-add entries because that would cause linked records in other
         // tables to be removed. So we need to use ON DUPLICATE KEY clause and keep track of last change date.
-        $stmt = self::$db->prepare("INSERT INTO sections SET sectionID=:sectionID, name=:name1, timestamp=NULL ON DUPLICATE KEY UPDATE name=:name2, timestamp=NULL");
-        foreach ($data->results as $section) {
-            if ($section->cint_nummer && $section->cint_name) {
-                if (!$stmt->execute(array(
+        $stmt = self::$db->prepare( "INSERT INTO sections SET sectionID=:sectionID, name=:name1, timestamp=NULL ON DUPLICATE KEY UPDATE name=:name2, timestamp=NULL" );
+        foreach ( $data->results as $section ) {
+            if ( $section->cint_nummer && $section->cint_name ) {
+                if ( !$stmt->execute( array(
                     ":sectionID" => $section->cint_nummer,
                     ":name1" => $section->cint_name,
                     ":name2" => $section->cint_name,
-                ))) logger(__METHOD__." Failed to update section {$section->cint_nummer} {$section->cint_name}. " . self::$db->errorInfo()[2], E_ERROR);                ;
+                ) ) ) logger( __METHOD__ . " Failed to update section {$section->cint_nummer} {$section->cint_name}. " . self::$db->errorInfo()[ 2 ], E_ERROR );                ;
             }
         }
         // Check for outdated records
-        $stmt = self::$db->query("SELECT `sectionID`, `name` FROM sections WHERE TIMESTAMPDIFF(SECOND, `timestamp`, NOW())>100");
-        while ($row = $stmt->fetch(PDO::FETCH_OBJ)) {
-            logger(__METHOD__." Section {$row->name} ({$row->sectionID}) has not been updated from API and may need to be removed manually.", E_WARNING);
+        $stmt = self::$db->query( "SELECT `sectionID`, `name` FROM sections WHERE TIMESTAMPDIFF(SECOND, `timestamp`, NOW())>100" );
+        while ( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
+            logger( __METHOD__ . " Section {$row->name} ({$row->sectionID}) has not been updated from API and may need to be removed manually.", E_WARNING );
         }
     }
     
@@ -124,32 +124,32 @@ class FFBoka {
      * Get an updated list of all assignments from API.
      */
     public function updateAssignmentList() {
-        logger(__METHOD__." Updating assignments from API...");
-        $data = json_decode(file_get_contents(self::$apiFeedAllAss));
-        logger(__METHOD__." API returned " . count($data->results) . " assignments.");
+        logger( __METHOD__ . " Updating assignments from API..." );
+        $data = json_decode( file_get_contents( self::$apiFeedAllAss ) );
+        logger( __METHOD__ . " API returned " . count( $data->results ) . " assignments." );
         // We may not remove and re-add entries because that would break linked records in other
         // tables. So we need to use ON DUPLICATE KEY clause and keep track of last change date.
-        $stmt = self::$db->prepare("INSERT INTO assignments SET assName=:assName, sort=:sort, timestamp=NULL ON DUPLICATE KEY UPDATE timestamp=NULL");
-        foreach ($data->results as $ass) {
-            if ($ass->cint_name && $ass->cint_assignment_party_type->value && $ass->cint_assignment_party_type->value == FFBoka::TYPE_SECTION) {
-                if (!$stmt->execute(array(
-                    ":assName"   => $ass->cint_name,
+        $stmt = self::$db->prepare( "INSERT INTO assignments SET assName=:assName, sort=:sort, timestamp=NULL ON DUPLICATE KEY UPDATE timestamp=NULL" );
+        foreach ( $data->results as $ass ) {
+            if ( $ass->cint_name && $ass->cint_assignment_party_type->value && $ass->cint_assignment_party_type->value == FFBoka::TYPE_SECTION ) {
+                if ( !$stmt->execute( [
+                    ":assName" => $ass->cint_name,
                     ":sort" => 2
-                ))) logger(__METHOD__." Failed to add assignment: " . $stmt->errorInfo()[2], E_ERROR);
-                if (strpos($ass->cint_name, ":") !== FALSE) {
+            ] ) ) logger( __METHOD__ . " Failed to add assignment: " . $stmt->errorInfo()[ 2 ], E_ERROR );
+                if ( strpos( $ass->cint_name, ":" ) !== FALSE ) {
                     // This is a sub-assignment to a principal assignment (e.g. Ledare: Mulle).
                     // Save the principal assignment with the string left of the colon.
-                    if (!$stmt->execute(array(
-                        ":assName"   => substr($ass->cint_name, 0, strpos($ass->cint_name, ":")),
+                    if ( !$stmt->execute( [
+                        ":assName"   => substr( $ass->cint_name, 0, strpos( $ass->cint_name, ":" ) ),
                         ":sort" => 1
-                    ))) logger(__METHOD__." Failed to add/update assignment: " . $stmt->errorInfo()[2], E_ERROR);
+                    ])) logger( __METHOD__ . " Failed to add/update assignment: " . $stmt->errorInfo()[ 2 ], E_ERROR );
                 }
             }
         }
         // Check for outdated records
-        $stmt = self::$db->query("SELECT assName FROM assignments WHERE sort>0 AND TIMESTAMPDIFF(SECOND, timestamp, NOW())>100");
-        while ($row = $stmt->fetch(PDO::FETCH_OBJ)) {
-            logger(__METHOD__." Assignment {$row->assName} has not been updated from API and may need to be removed manually.", E_WARNING);
+        $stmt = self::$db->query( "SELECT assName FROM assignments WHERE sort>0 AND TIMESTAMPDIFF(SECOND, timestamp, NOW())>100" );
+        while ( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
+            logger( __METHOD__ . " Assignment {$row->assName} has not been updated from API and may need to be removed manually.", E_WARNING );
         }
     }
     
@@ -158,8 +158,8 @@ class FFBoka {
      * @return string[]
      */
     public function getAllAssignments() {
-        $stmt = self::$db->query("SELECT assName FROM assignments ORDER BY sort, assName");
-        return $stmt->fetchAll(\PDO::FETCH_COLUMN);
+        $stmt = self::$db->query( "SELECT assName FROM assignments ORDER BY sort, assName" );
+        return $stmt->fetchAll( \PDO::FETCH_COLUMN );
     }
     
     /**
@@ -168,18 +168,18 @@ class FFBoka {
      * @param string $sort Can be "name" (sorted alphabetically) or "n2s" (sorted north to south)
      * @return Section[] Array of sections in alphabetical order
      */
-    public function getAllSections(int $showFirst=0, string $sort="name") {
-        switch ($sort) {
+    public function getAllSections( int $showFirst = 0, string $sort = "name" ) {
+        switch ( $sort ) {
             case "n2s":
-                $stmt = self::$db->prepare("SELECT sectionId FROM sections ORDER BY sectionId!=?, `lat` DESC");
+                $stmt = self::$db->prepare( "SELECT sectionId FROM sections ORDER BY sectionId!=?, `lat` DESC" );
                 break;
             default:
-                $stmt = self::$db->prepare("SELECT sectionId FROM sections ORDER BY sectionId!=?, `name`");
+                $stmt = self::$db->prepare( "SELECT sectionId FROM sections ORDER BY sectionId!=?, `name`" );
         }
-        $stmt->execute(array($showFirst));
+        $stmt->execute( array( $showFirst ) );
         $sections = array();
-        while ($row = $stmt->fetch(PDO::FETCH_OBJ)) {
-            $sections[] = new Section($row->sectionId);
+        while ( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
+            $sections[] = new Section( $row->sectionId );
         }
         return $sections;
     }
@@ -190,10 +190,10 @@ class FFBoka {
      * @param string $sectionName
      * @return int|boolean The sectionId of the section, or FALSE if no match is found.
      */
-    public function getSectionIdByName(string $sectionName) {
-        $stmt = self::$db->prepare("SELECT sectionId FROM sections WHERE name=?");
-        $stmt->execute(array($sectionName));
-        if ($row = $stmt->fetch(\PDO::FETCH_OBJ)) return $row->sectionId;
+    public function getSectionIdByName( string $sectionName ) {
+        $stmt = self::$db->prepare( "SELECT sectionId FROM sections WHERE name=?" );
+        $stmt->execute( array( $sectionName ) );
+        if ( $row = $stmt->fetch( \PDO::FETCH_OBJ ) ) return $row->sectionId;
         else return FALSE;
     }
 
@@ -206,30 +206,30 @@ class FFBoka {
      * Otherwise, authenticated is TRUE if the credentials were accepted. If accepted, userId
      * will contain the member ID and section will contain the section name.  
      */
-    public function authenticateUser($userId, $password) {
+    public function authenticateUser( $userId, $password ) {
         $matches = array();
-        $userId = trim($userId);
-        if (preg_match("/^(19|20)?(\d{6})-?(\d{4})$/", $userId, $matches)) {
+        $userId = trim( $userId );
+        if ( preg_match( "/^(19|20)?(\d{6})-?(\d{4})$/", $userId, $matches ) ) {
             // $userId is given as personnummer.
             // Convert to 10 digits if given as 12 digits
-            $userId = $matches[2].$matches[3];
+            $userId = $matches[ 2 ].$matches[ 3 ];
             // Convert to member number via API
-            $data = json_decode(@file_get_contents(self::$apiFeedSocnr . $userId));
-            if ($data === FALSE) {
-                logger(__METHOD__." Cannot authenticate user. No contact to API.", E_ERROR);
+            $data = json_decode( @file_get_contents( self::$apiFeedSocnr . $userId ) );
+            if ( $data === FALSE ) {
+                logger( __METHOD__ . " Cannot authenticate user. No contact to API.", E_ERROR );
                 return FALSE;
-            } elseif ($data->results) {
-                $userId = $data->results[0]->cint_username;
+            } elseif ( $data->results ) {
+                $userId = $data->results[ 0 ]->cint_username;
             } else {
-                return array("authenticated" => FALSE, "section" => NULL);
+                return array( "authenticated" => FALSE, "section" => NULL );
             }
-        } elseif (filter_var($userId, FILTER_VALIDATE_EMAIL)) {
+        } elseif ( filter_var( $userId, FILTER_VALIDATE_EMAIL ) ) {
             // $userId given as email address. Look it up in the users table
-            $stmt = self::$db->prepare("SELECT userId FROM users WHERE mail=? LIMIT 1");
-            $stmt->execute(array($userId));
-            if ($row = $stmt->fetch(\PDO::FETCH_OBJ)) $userId = $row->userId;
+            $stmt = self::$db->prepare( "SELECT userId FROM users WHERE mail=? LIMIT 1" );
+            $stmt->execute( array( $userId ) );
+            if ( $row = $stmt->fetch( \PDO::FETCH_OBJ ) ) $userId = $row->userId;
             else {
-                return array("authenticated" => false, "section" => NULL);
+                return array( "authenticated" => false, "section" => NULL );
             }
         }
         // Check password via API and get home section
@@ -239,20 +239,20 @@ class FFBoka {
                              "Cache-Control: no-cache\r\n".
                 "Ocp-Apim-Subscription-Key: " . self::$apiAuthKey . "\r\n",
                 'method'  => 'POST',
-                'content' => json_encode([ 'membernumber' => $userId, 'password' => $password ])
+                'content' => json_encode( [ 'membernumber' => $userId, 'password' => $password ] )
             )
         );
-        $context  = stream_context_create($options);
-        $result = @file_get_contents(self::$apiAuthUrl, false, $context);
-        if ($result === FALSE) {
-            logger(__METHOD__." Can't verify password via API. No answer from API.", E_ERROR);
+        $context  = stream_context_create( $options );
+        $result = @file_get_contents( self::$apiAuthUrl, false, $context );
+        if ( $result === FALSE ) {
+            logger( __METHOD__ . " Can't verify password via API. No answer from API.", E_ERROR );
             return FALSE;
         }
-        $result = json_decode($result);
+        $result = json_decode( $result );
         return array(
-            "authenticated"=>$result->isMember,
-            "userId"=>$userId,
-            "section"=>$result->isMemberOfLokalavdelning
+            "authenticated" => $result->isMember,
+            "userId" => $userId,
+            "section" => $result->isMemberOfLokalavdelning
         );
     }
     
@@ -263,8 +263,8 @@ class FFBoka {
      * @return [[int id, string name], ...]
      */
     public function getAllUsers() {
-        $stmt = self::$db->query("SELECT userId, name FROM users ORDER BY name");
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $stmt = self::$db->query( "SELECT userId, name FROM users ORDER BY name" );
+        return $stmt->fetchAll( PDO::FETCH_ASSOC );
     }
     
     
@@ -274,11 +274,11 @@ class FFBoka {
      * @return [[int id, string name], ...] Returns an array with IDs and names rather than User objects, avoiding many API requests
      */
     public function findUser($q) {
-        $stmt = self::$db->prepare("SELECT userId, name FROM users WHERE userId LIKE ? OR name LIKE ?");
-        $stmt->execute(array("%$q%", "%$q%"));
+        $stmt = self::$db->prepare( "SELECT userId, name FROM users WHERE userId LIKE ? OR name LIKE ?" );
+        $stmt->execute( array( "%$q%", "%$q%" ) );
         $ret = array();
-        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-            $ret[] = array("userId"=>$row['userId'], "name"=>htmlspecialchars($row['name']));
+        while ( $row = $stmt->fetch( PDO::FETCH_ASSOC ) ) {
+            $ret[] = array( "userId" => $row[ 'userId' ], "name" => htmlspecialchars( $row[ 'name' ] ) );
         }
         return $ret;
     }
@@ -293,50 +293,50 @@ class FFBoka {
      * @return ['image'=>string, 'thumb'=>string, 'error'=>string] String representations
      *  of a full-size and a thumbnail version of the image.
      */
-    protected function imgFileToString($file, $maxSize=0, $thumbSize=80, $maxFileSize=0) {
-        if (!is_uploaded_file($file['tmp_name'])) {
-            logger(__METHOD__." Trying to set image to a file which is not an uploaded file.", E_WARNING);
-            return [ "error"=>"Ogiltig begäran." ];
+    protected function imgFileToString( $file, $maxSize = 0, $thumbSize = 80, $maxFileSize = 0 ) {
+        if ( !is_uploaded_file( $file[ 'tmp_name' ] ) ) {
+            logger( __METHOD__ . " Trying to set image to a file which is not an uploaded file.", E_WARNING );
+            return [ "error" => "Ogiltig begäran." ];
         }
         // reject files that are too big
-        if ($maxFileSize) {
-            if (filesize($file['tmp_name'])>$maxFileSize) return array("error"=>"Filen är för stor. Maximal accepterad storlek är " . round($maxFileSize/1024/1024, 0) . " kB.");
+        if ( $maxFileSize ) {
+            if ( filesize( $file[ 'tmp_name' ] ) > $maxFileSize ) return array( "error" => "Filen är för stor. Maximal accepterad storlek är " . round( $maxFileSize / 1024 / 1024, 0 ) . " kB." );
         }
         // Get the picture and its size
-        $src = @imagecreatefromstring(file_get_contents($file['tmp_name']));
-        if (!$src) return array("error"=>"Filformatet stöds inte. Försök med en jpg- eller png-bild.");
-        $size = @getimagesize($file['tmp_name']);
-        if (!$size) {
-            logger("Failed to load image for resizing.", E_WARNING);
-            return array("error"=>"Kan inte läsa filformatet.");
+        $src = @imagecreatefromstring( file_get_contents( $file[ 'tmp_name' ] ) );
+        if ( !$src ) return array( "error" => "Filformatet stöds inte. Försök med en jpg- eller png-bild." );
+        $size = @getimagesize( $file[ 'tmp_name' ] );
+        if ( !$size ) {
+            logger( "Failed to load image for resizing.", E_WARNING );
+            return array( "error" => "Kan inte läsa filformatet." );
         }
-        $ratio = $size[0]/$size[1];
-        if ($maxSize && ($size[0]>$maxSize || $size[1]>$maxSize)) { // Resize
-            if ($ratio > 1) { // portrait
-                $tmp = imagecreatetruecolor($maxSize, $maxSize/$ratio);
-                imagecopyresampled($tmp, $src, 0, 0, 0, 0, $maxSize, $maxSize/$ratio, $size[0], $size[1]);
+        $ratio = $size[ 0 ] / $size[ 1 ];
+        if ( $maxSize && ( $size[ 0 ] > $maxSize || $size[ 1 ] > $maxSize ) ) { // Resize
+            if ( $ratio > 1 ) { // portrait
+                $tmp = imagecreatetruecolor( $maxSize, $maxSize / $ratio );
+                imagecopyresampled( $tmp, $src, 0, 0, 0, 0, $maxSize, $maxSize / $ratio, $size[ 0 ], $size[ 1 ] );
             } else { // landscape
-                $tmp = imagecreatetruecolor($maxSize*$ratio, $maxSize);
-                imagecopyresampled($tmp, $src, 0, 0, 0, 0, $maxSize*$ratio, $maxSize, $size[0], $size[1]);
+                $tmp = imagecreatetruecolor( $maxSize * $ratio, $maxSize );
+                imagecopyresampled( $tmp, $src, 0, 0, 0, 0, $maxSize * $ratio, $maxSize, $size[ 0 ], $size[ 1 ] );
             }
         } else {
             $tmp = $src;
         }
         // Get rescaled jpeg picture as string
         ob_start();
-        imagejpeg($tmp);
+        imagejpeg( $tmp );
         $image = ob_get_clean();
         // Make a square thumbnail
-        $tmp = imagecreatetruecolor($thumbSize, $thumbSize);
-        $bg = imagecolorallocatealpha($tmp, 255, 255, 255, 127);
-        imagefill($tmp, 0, 0, $bg);
-        $offset = ($size[0]-$size[1])/2/($size[0]+$size[1])*$thumbSize;
-        imagecopyresampled($tmp, $src, -$offset, $offset, 0, 0, $thumbSize+2*$offset, $thumbSize-2*$offset, $size[0], $size[1]);
+        $tmp = imagecreatetruecolor( $thumbSize, $thumbSize );
+        $bg = imagecolorallocatealpha( $tmp, 255, 255, 255, 127 );
+        imagefill( $tmp, 0, 0, $bg );
+        $offset = ( $size[ 0 ] - $size[ 1 ] ) / 2 / ( $size[ 0 ] + $size[ 1 ] ) * $thumbSize;
+        imagecopyresampled( $tmp, $src, -$offset, $offset, 0, 0, $thumbSize + 2 * $offset, $thumbSize - 2 * $offset, $size[ 0 ], $size[ 1 ]);
         // Get thumbnail as string
         ob_start();
-        imagepng($tmp);
+        imagepng( $tmp );
         $thumb = ob_get_clean();
-        return array("image"=>$image, "thumb"=>$thumb);
+        return array( "image" => $image, "thumb" => $thumb );
     }
     
     
@@ -349,19 +349,19 @@ class FFBoka {
      * @throws \Exception if database operation fails
      * @return string The generated token
      */
-    protected function createToken(string $useFor, int $forId, string $data="", int $ttl=86400) {
+    protected function createToken( string $useFor, int $forId, string $data = "", int $ttl = 86400 ) {
         // generate 40 character random token
-        for ($token = '', $i = 0, $z = strlen($a = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789')-1; $i < 40; $x = rand(0,$z), $token .= $a[$x], $i++);
-        $stmt = self::$db->prepare("REPLACE INTO tokens SET token=SHA1('$token'), ttl=$ttl, useFor=:useFor, forId=:forId, data=:data");
-        if (!$stmt->execute(array(
-            ":data"=>$data,
-            ":useFor"=>$useFor,
-            ":forId"=>$forId,
-        ))) {
-            logger(__METHOD__." Failed to create token. " . $stmt->errorInfo()[2], E_ERROR);
-            throw new \Exception((string) $stmt->errorInfo()[2]);
+        for ( $token = '', $i = 0, $z = strlen( $a = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789' ) - 1; $i < 40; $x = rand( 0, $z ), $token .= $a[ $x ], $i++ );
+        $stmt = self::$db->prepare( "REPLACE INTO tokens SET token=SHA1('$token'), ttl=$ttl, useFor=:useFor, forId=:forId, data=:data" );
+        if ( !$stmt->execute( [
+            ":data" => $data,
+            ":useFor" => $useFor,
+            ":forId" => $forId,
+        ] ) ) {
+            logger( __METHOD__ . " Failed to create token. " . $stmt->errorInfo()[ 2 ], E_ERROR );
+            throw new \Exception( ( string ) $stmt->errorInfo()[ 2 ] );
         }
-        return($token);
+        return( $token );
     }
     
     /**
@@ -369,9 +369,9 @@ class FFBoka {
      * @param string $token
      * @return bool TRUE on success
      */
-    public function deleteToken(string $token) {
-        $stmt = self::$db->prepare("DELETE FROM tokens WHERE token=?");
-        return $stmt->execute(array($token));
+    public function deleteToken( string $token ) {
+        $stmt = self::$db->prepare( "DELETE FROM tokens WHERE token=?" );
+        return $stmt->execute( array( $token ) );
     }
     
     /**
@@ -380,25 +380,25 @@ class FFBoka {
      * @throws \Exception if token not found or expired
      * @return object { unixtime, token, timestamp, ttl, useFor, forId, data }
      */
-    public function getToken(string $token) {
-        $stmt = self::$db->query("SELECT UNIX_TIMESTAMP(timestamp) AS unixtime, tokens.* FROM tokens WHERE token='" . sha1($token) . "'");
-        if (!$row = $stmt->fetch(PDO::FETCH_OBJ)) throw new \Exception("Ogiltig kod.");
-        elseif (time() > $row->unixtime + $row->ttl) throw new \Exception("Koden har förfallit.");
+    public function getToken( string $token ) {
+        $stmt = self::$db->query( "SELECT UNIX_TIMESTAMP(timestamp) AS unixtime, tokens.* FROM tokens WHERE token='" . sha1( $token ) . "'" );
+        if ( !$row = $stmt->fetch( PDO::FETCH_OBJ ) ) throw new \Exception( "Ogiltig kod." );
+        elseif ( time() > $row->unixtime + $row->ttl ) throw new \Exception( "Koden har förfallit." );
         else return $row;
     }
     
     /**
      * Formats the given amount of bytes in a human-readable way
      * @param int $bytes
-     * @param int $precision
+     * @param int $precision Number of digits after point
      * @return string
      */
-    static function formatBytes(int $bytes, int $precision=1) {
-        $units = array("B", "kB", "MB", "GB", "TB");
-        $pow = floor(($bytes ? log($bytes) : 0) / log(1024));
-        $pow = min($pow, count($units) - 1);
-        $bytes /= (1 << (10*$pow));
-        return round($bytes, $precision) . " " . $units[$pow];
+    static function formatBytes( int $bytes, int $precision = 1 ) {
+        $units = array( "B", "kB", "MB", "GB", "TB" );
+        $pow = floor( ( $bytes ? log( $bytes ) : 0 ) / log( 1024 ) );
+        $pow = min( $pow, count( $units ) - 1 );
+        $bytes /= ( 1 << ( 10 * $pow ) );
+        return round( $bytes, $precision ) . " " . $units[ $pow ];
     }
     
     /**
@@ -410,14 +410,14 @@ class FFBoka {
      * @param bool $includeWeekday Whether to include the weekday
      * @return string
      */
-    static function formatDateSpan(int $start, int $end, bool $includeWeekday=false) {
+    static function formatDateSpan( int $start, int $end, bool $includeWeekday = false ) {
         $wday = $includeWeekday ? "D " : "";
-        if (date("Ymd", $start) == date("Ymd", $end)) {
+        if ( date( "Ymd", $start ) == date( "Ymd", $end ) ) {
             // Start and end on same day
-            return date($wday."Y-m-d \k\l H:00 - ", $start) . date("H:00", $end);
+            return date( $wday . "Y-m-d \k\l H:00 - ", $start ) . date( "H:00", $end );
         } else {
             // Start and end on different days
-            return date($wday."Y-m-d \k\l H:00", $start) . " till " . date($wday."Y-m-d \k\l H:00", $end);
+            return date( $wday . "Y-m-d \k\l H:00", $start ) . " till " . date( $wday . "Y-m-d \k\l H:00", $end );
         }
     }
 
@@ -432,15 +432,15 @@ class FFBoka {
         $offset = abs( $offset );
         $parts = [];
         $months = intdiv( $offset, 2592000 ); // 2592000 seconds per month
-        if ( $months ) $parts[] = $months . ( $months==1 ? " månad" : " månader" );
+        if ( $months ) $parts[] = $months . ( $months == 1 ? " månad" : " månader" );
         $weeks = intdiv( $offset - $months * 2592000, 604800 ); // 604800 seconds per week
-        if ( $weeks ) $parts[] = $weeks . ( $weeks==1 ? " vecka" : " veckor" );
+        if ( $weeks ) $parts[] = $weeks . ( $weeks == 1 ? " vecka" : " veckor" );
         $days = intdiv( $offset - $months * 2592000 - $weeks * 604800, 86400 ); // 86400 seconds per day
-        if ( $days ) $parts[] = $days . ( $days==1 ? " dag" : " dagar" );
+        if ( $days ) $parts[] = $days . ( $days == 1 ? " dag" : " dagar" );
         $hours = intdiv( $offset - $months * 2592000 - $weeks * 604800 - $days * 86400, 3600 ); // 3600 seconds per hour
-        if ( $hours ) $parts[] = $hours . ( $hours==1 ? " timme" : " timmar" );
+        if ( $hours ) $parts[] = $hours . ( $hours == 1 ? " timme" : " timmar" );
         $minutes = intdiv( $offset - $months * 2592000 - $weeks * 604800 - $days * 86400 - $hours * 3600, 60 );
-        if ( $minutes ) $parts[] = $minutes . ( $minutes==1 ? " minut" : " minuter" );
+        if ( $minutes ) $parts[] = $minutes . ( $minutes == 1 ? " minut" : " minuter" );
         if ( count( $parts ) ) return implode( ", ", $parts ) . " " . $beforeAfter;
         return "vid";
     }
@@ -450,8 +450,8 @@ class FFBoka {
      * @return \FFBoka\Poll
      */
     public function addPoll() {
-        self::$db->exec("INSERT INTO polls SET question='Ny enkät', choices='" . json_encode(["Option 1", "Option 2"]) . "', votes='[0,0]'");
-        return new Poll(self::$db->lastInsertId());
+        self::$db->exec( "INSERT INTO polls SET question='Ny enkät', choices='" . json_encode( [ "Option 1", "Option 2" ] ) . "', votes='[0,0]'" );
+        return new Poll( self::$db->lastInsertId() );
     }
     
     /**
@@ -459,20 +459,20 @@ class FFBoka {
      * @param string $only Set to "active" to only get non-expired polls, or "expired" to only get expired polls
      * @return \FFBoka\Poll[]
      */
-    public function polls(string $only=NULL) {
-        switch ($only) {
+    public function polls( string $only = NULL ) {
+        switch ( $only ) {
         case "active":
-            $stmt = self::$db->query("SELECT pollId FROM polls WHERE expires IS NULL OR expires > NOW()");
+            $stmt = self::$db->query( "SELECT pollId FROM polls WHERE expires IS NULL OR expires > NOW()" );
             break;
         case "expired":
-            $stmt = self::$db->query("SELECT pollId FROM polls WHERE expires <= NOW() ORDER BY expires DESC");
+            $stmt = self::$db->query( "SELECT pollId FROM polls WHERE expires <= NOW() ORDER BY expires DESC" );
             break;
         default:
-            $stmt = self::$db->query("SELECT pollId FROM polls ORDER BY expires IS NULL, expires DESC");
+            $stmt = self::$db->query( "SELECT pollId FROM polls ORDER BY expires IS NULL, expires DESC" );
         }
         $polls = array();
-        while ($row = $stmt->fetch(\PDO::FETCH_OBJ)) {
-            $polls[] = new Poll($row->pollId);
+        while ( $row = $stmt->fetch( \PDO::FETCH_OBJ ) ) {
+            $polls[] = new Poll( $row->pollId );
         }
         return $polls;
     }
@@ -482,9 +482,9 @@ class FFBoka {
      * @return int
      */
     public function getNextRepeatId() {
-        $stmt = self::$db->query("SELECT 0+MAX(repeatId) lastId FROM bookings");
-        $row = $stmt->fetch(\PDO::FETCH_OBJ);
-        if (is_null($row->lastId)) return 1;
+        $stmt = self::$db->query( "SELECT 0+MAX(repeatId) lastId FROM bookings" );
+        $row = $stmt->fetch( \PDO::FETCH_OBJ );
+        if ( is_null( $row->lastId ) ) return 1;
         else return $row->lastId + 1;
     }
 
@@ -493,22 +493,22 @@ class FFBoka {
      * Send all emails from the mail queue
      * @param array $mailOptions Array with email config, containing the keys: from, fromName, replyTo, SMTPHost, SMTPPort, SMTPUser, SMTPPass
      */
-    public function sendQueuedMails(array $mailOptions) {
-        $stmt = self::$db->query("SELECT * FROM mailq");
-        $rows = $stmt->fetchAll(PDO::FETCH_OBJ);
-        if (count($rows)) logger(__METHOD__." Sending mails from mail queue...");
-        foreach ($rows as $row) {
-            if ($row->fromName) $mailOptions['fromName'] = $row->fromName;
-            if ($row->replyTo) $mailOptions['replyTo'] = $row->replyTo;
+    public function sendQueuedMails( array $mailOptions ) {
+        $stmt = self::$db->query( "SELECT * FROM mailq" );
+        $rows = $stmt->fetchAll( PDO::FETCH_OBJ );
+        if  (count( $rows ) ) logger( __METHOD__ . " Sending mails from mail queue..." );
+        foreach ( $rows as $row ) {
+            if ( $row->fromName ) $mailOptions[ 'fromName' ] = $row->fromName;
+            if ( $row->replyTo ) $mailOptions[ 'replyTo' ] = $row->replyTo;
             $this->sendMail(
                 $row->to, // To
                 $row->subject, // Subject
                 $row->body, // Body
                 [], // replace
-                json_decode($row->attachments), // attachments
+                json_decode( $row->attachments ), // attachments
                 $mailOptions,
                 false // dont queue, send now
-            ) && self::$db->exec("DELETE FROM mailq WHERE mailqId={$row->mailqId}");
+            ) && self::$db->exec( "DELETE FROM mailq WHERE mailqId={$row->mailqId}" );
         }
     }
 
@@ -524,69 +524,69 @@ class FFBoka {
      * @param bool $queue Add to queue (true, default) or send immediately (false)
      * @return bool True or queue ID on success, false if mail could not be sent/queued.
      */
-    public function sendMail(string $to, string $subject, string $templateBody, array $replace=[], array $attachments=[], array $mailOptions=[], bool $queue=true) {
+    public function sendMail( string $to, string $subject, string $templateBody, array $replace = [], array $attachments = [], array $mailOptions = [], bool $queue = true ) {
         // Get template
-        if (is_readable(__DIR__."/../../templates/$templateBody.html")) {
-            $body = file_get_contents(__DIR__."/../../templates/$templateBody.html");
+        if ( is_readable( __DIR__ . "/../../templates/$templateBody.html" ) ) {
+            $body = file_get_contents( __DIR__ . "/../../templates/$templateBody.html" );
         } else {
             $body = $templateBody;
         }
         // Replace placeholders
-        $body = str_replace(array_keys($replace), array_values($replace), $body);
+        $body = str_replace( array_keys( $replace ), array_values( $replace ), $body );
 
-        if ($queue) {
+        if ( $queue ) {
             // Place mail into mail queue
-            $stmt = self::$db->prepare("INSERT INTO mailq SET fromName=:fromName, `to`=:to, replyTo=:replyTo, subject=:subject, body=:body, attachments=:attachments");
-            if (!$stmt->execute(array(
-                ":fromName" => $mailOptions['fromName'],
+            $stmt = self::$db->prepare( "INSERT INTO mailq SET fromName=:fromName, `to`=:to, replyTo=:replyTo, subject=:subject, body=:body, attachments=:attachments" );
+            if ( !$stmt->execute( array(
+                ":fromName" => $mailOptions[ 'fromName' ],
                 ":to"       => $to,
-                ":replyTo"  => $mailOptions['replyTo'],
+                ":replyTo"  => $mailOptions[ 'replyTo' ],
                 ":subject"  => $subject,
                 ":body"     => $body,
-                ":attachments" => json_encode($attachments)
-            ))) {
-                logger(__METHOD__." Failed to queue mail. " . $stmt->errorInfo()[2], E_ERROR);
+                ":attachments" => json_encode( $attachments )
+            ) ) ) {
+                logger( __METHOD__ . " Failed to queue mail. " . $stmt->errorInfo()[ 2 ], E_ERROR );
                 return false;
             }
             return self::$db->lastInsertId();
         } else {
             // Send message now
             try {
-                $mail = new PHPMailer(true);
+                $mail = new PHPMailer( true );
                 $mail->XMailer = ' '; // Don't advertise that we are using PHPMailer
                 // Add attachments
-                foreach ($attachments as $att) {
-                    $mail->addAttachment(__DIR__ . "/../../" . $att['path'], $att['filename']);
+                foreach ( $attachments as $att ) {
+                    $mail->addAttachment( __DIR__ . "/../../" . $att[ 'path' ], $att[ 'filename' ] );
                 }
                 //Server settings
                 $mail->SMTPDebug = 0;
-                $mail->Debugoutput = function($str, $level) { logger("PHPMailer level $level, message: $str"); };
+                $mail->Debugoutput = function( $str, $level ) { logger( "PHPMailer level $level, message: $str" ); };
                 $mail->isSMTP();
-                $mail->Host = $mailOptions['SMTPHost'];
-                $mail->Port = $mailOptions['SMTPPort'];
+                $mail->Host = $mailOptions[ 'SMTPHost' ];
+                $mail->Port = $mailOptions[ 'SMTPPort' ];
                 $mail->SMTPAuth = true;
-                $mail->Username = $mailOptions['SMTPUser'];
-                $mail->Password = $mailOptions['SMTPPass'];
+                $mail->Username = $mailOptions[ 'SMTPUser' ];
+                $mail->Password = $mailOptions[ 'SMTPPass' ];
                 $mail->SMTPSecure = 'tls';   // Enable TLS encryption, `ssl` also accepted
                 // Message content
                 $mail->CharSet ="UTF-8";
-                $mail->setFrom($mailOptions['from'], $mailOptions['fromName']);
-                $mail->Sender = $mailOptions['SMTPUser'];
-                $mail->addAddress($to);
-                $mail->addReplyTo($mailOptions['replyTo']);
-                $mail->isHTML(true);
+                $mail->setFrom( $mailOptions[ 'from' ], $mailOptions[ 'fromName' ] );
+                $mail->Sender = $mailOptions[ 'SMTPUser' ];
+                $mail->addAddress( $to );
+                $mail->addReplyTo( $mailOptions[ 'replyTo' ] );
+                $mail->isHTML( true );
                 $mail->Subject = $subject;
                 $mail->Body = $body;
-                $mail->AltBody = strip_tags(str_replace(array("</p>", "<br>"), array("</p>\r\n\r\n", "\r\n"), $body));
-                if (!$mail->send()) {
-                    logger(__METHOD__." Failed to send mail '$subject' to $to. " . $mail->ErrorInfo, E_WARNING);
+                $mail->AltBody = strip_tags( str_replace( array( "</p>", "<br>" ), array( "</p>\r\n\r\n", "\r\n" ), $body ) );
+                if ( !$mail->send() ) {
+                    logger( __METHOD__ . " Failed to send mail '$subject' to $to. " . $mail->ErrorInfo, E_WARNING );
                     return false;
                 }
-            } catch (Exception $e) {
-                logger(__METHOD__." Failed to send mail '$subject' to $to. " . $mail->ErrorInfo, E_WARNING);
+            } catch ( Exception $e ) {
+                logger( __METHOD__ . " Failed to send mail '$subject' to $to. " . $mail->ErrorInfo, E_WARNING );
                 return false;
             }
-            logger(__METHOD__." Mail '$subject' has been sent to $to.");
+            logger( __METHOD__ . " Mail '$subject' has been sent to $to." );
             return true;
         }
     }
@@ -599,12 +599,12 @@ class FFBoka {
      * @return float Number between 0 (no match) and 100 (perfect match) If $haystack starts with $needle,
      *  returns 100, if it contains $needle otherwise, 90.
      */
-    public function compareStrings(string $haystack, string $needle) : int {
-        $pos = stripos($haystack, $needle);
-        if ($pos === false) { // No direct match. Calculate string similarity.
-            similar_text(strtolower($haystack), strtolower($needle), $percent);
+    public function compareStrings( string $haystack, string $needle ) : int {
+        $pos = stripos( $haystack, $needle );
+        if ( $pos === false ) { // No direct match. Calculate string similarity.
+            similar_text( strtolower( $haystack ), strtolower( $needle ), $percent );
             return $percent;
-        } elseif ($pos === 0) { // Best match: caption starts with $search
+        } elseif ( $pos === 0 ) { // Best match: caption starts with $search
             return 100;
         } else { // Medium match: caption contains $search
             return 90;

@@ -18,14 +18,14 @@ class Poll extends FFBoka {
      * Initialize poll with ID and get some static properties.
      * @param int $id ID of requested poll
      */
-    public function __construct($id){
-        $stmt = self::$db->prepare("SELECT pollId FROM polls WHERE pollId=?");
-        $stmt->execute(array($id));
-        if ($row = $stmt->fetch(PDO::FETCH_OBJ)) {
+    public function __construct( $id ) {
+        $stmt = self::$db->prepare( "SELECT pollId FROM polls WHERE pollId=?" );
+        $stmt->execute( array( $id ) );
+        if ( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
             $this->id = $row->pollId;
         } else {
-            logger(__METHOD__." Trying to instatiate non-existing poll with id $id", E_WARNING);
-            throw new \Exception("Poll with ID $id does not exist.");
+            logger( __METHOD__ . " Trying to instatiate non-existing poll with id $id", E_WARNING );
+            throw new \Exception( "Poll with ID $id does not exist." );
         }
     }
     
@@ -38,36 +38,36 @@ class Poll extends FFBoka {
      * @throws \Exception if an invalid property name is used.
      * @return string Set value on success, false on failure.
      */
-    public function __set($name, $value) {
-        switch ($name) {
+    public function __set( $name, $value ) {
+        switch ( $name ) {
             case "choices":
                 // Choices are passed as array. Convert to string.
-                $value = json_encode($value);
+                $value = json_encode( $value );
                 // continue
             case "question":
-                $stmt = self::$db->prepare("UPDATE polls SET $name=? WHERE pollId={$this->id}");
-                if ($stmt->execute(array($value))) {
+                $stmt = self::$db->prepare( "UPDATE polls SET $name=? WHERE pollId={$this->id}" );
+                if ( $stmt->execute( array( $value ) ) ) {
                     // Reset vote counts if question or choices are changed.
-                    self::$db->exec("DELETE FROM poll_answers WHERE pollId={$this->id}");
-                    $this->setVotes(array_fill(0, count($this->choices), 0));
+                    self::$db->exec( "DELETE FROM poll_answers WHERE pollId={$this->id}" );
+                    $this->setVotes( array_fill( 0, count( $this->choices ), 0 ) );
                     return $value;
                 }
                 break;
             case "expires":
             case "targetGroup":
-                if ($name=="expires" && (is_null($value) || $value==="")) {
-                    if(self::$db->exec("UPDATE polls SET $name=NULL WHERE pollId={$this->id}") !== FALSE) return true;
-                    logger(__METHOD__." Failed to set Poll property $name to NULL. " . self::$db->errorInfo()[2], E_ERROR);
+                if ( $name == "expires" && ( is_null( $value ) || $value === "" ) ) {
+                    if ( self::$db->exec( "UPDATE polls SET $name=NULL WHERE pollId={$this->id}" ) !== FALSE ) return true;
+                    logger( __METHOD__ . " Failed to set Poll property $name to NULL. " . self::$db->errorInfo()[ 2 ], E_ERROR );
                 } else {
-                    $stmt = self::$db->prepare("UPDATE polls SET $name=? WHERE pollId={$this->id}");
-                    if ($stmt->execute(array($value))) return $value;
+                    $stmt = self::$db->prepare( "UPDATE polls SET $name=? WHERE pollId={$this->id}" );
+                    if ( $stmt->execute( array( $value ) ) ) return $value;
                 }
                 break;
             default:
-                logger(__METHOD__." Use of undefined Poll property $name.", E_ERROR);
-                throw new \Exception("Use of undefined Poll property $name");
+                logger( __METHOD__ . " Use of undefined Poll property $name.", E_ERROR );
+                throw new \Exception( "Use of undefined Poll property $name" );
         }
-        logger(__METHOD__." Failed to set Poll property $name to $value. " . $stmt->errorInfo()[2], E_ERROR);
+        logger( __METHOD__ . " Failed to set Poll property $name to $value. " . $stmt->errorInfo()[ 2 ], E_ERROR );
         return false;
     }
     
@@ -80,8 +80,8 @@ class Poll extends FFBoka {
      *  Returns NULL for expires if poll does not expire.
      *  Returns array for 'choices' and 'votes'.
      */
-    public function __get($name) {
-        switch ($name) {
+    public function __get( $name ) {
+        switch ( $name ) {
             case "id":
                 return $this->id;
             case "question":
@@ -89,15 +89,15 @@ class Poll extends FFBoka {
             case "targetGroup":
             case "choices":
             case "votes":
-                $stmt = self::$db->query("SELECT $name FROM polls WHERE pollId={$this->id}");
-                $row = $stmt->fetch(PDO::FETCH_ASSOC);
-                if ($name == 'choices' || $name == 'votes') return json_decode($row[$name]);
-                else return $row[$name];
+                $stmt = self::$db->query( "SELECT $name FROM polls WHERE pollId={$this->id}" );
+                $row = $stmt->fetch( PDO::FETCH_ASSOC );
+                if ( $name == 'choices' || $name == 'votes' ) return json_decode( $row[ $name ] );
+                else return $row[ $name ];
             case "voteMax":
-                return max($this->votes);
+                return max( $this->votes );
             default:
-                logger(__METHOD__." Use of undefined Poll property $name.", E_WARNING);
-                throw new \Exception("Use of undefined poll property $name");
+                logger( __METHOD__ . " Use of undefined Poll property $name.", E_WARNING );
+                throw new \Exception( "Use of undefined poll property $name" );
         }
     }
 
@@ -108,19 +108,19 @@ class Poll extends FFBoka {
      * @throws \Exception if invalid offset is used.
      * @return int Number of choices after adding the new one
      */
-    public function addChoice(string $choice, int $offset=NULL) {
+    public function addChoice( string $choice, int $offset = NULL ) {
         $choices = $this->choices;
         $votes = $this->votes;
-        if (is_null($offset)) $offset = count($choices);
-        if ($offset < 0 || $offset > count($choices)) {
-            logger(__METHOD__." Offset $offset for new poll choice out of bounds.", E_WARNING);
-            throw new \Exception("Offset $offset out of bounds.");
+        if ( is_null( $offset ) ) $offset = count( $choices );
+        if ( $offset < 0 || $offset > count( $choices ) ) {
+            logger( __METHOD__ . " Offset $offset for new poll choice out of bounds.", E_WARNING );
+            throw new \Exception( "Offset $offset out of bounds." );
         }
-        array_splice($choices, $offset, 0, $choice);
-        array_splice($votes, $offset, 0, 0);
+        array_splice( $choices, $offset, 0, $choice );
+        array_splice( $votes, $offset, 0, 0 );
         $this->choices = $choices;
-        $this->setVotes($votes);
-        return count($choices);
+        $this->setVotes( $votes );
+        return count( $choices );
     }
     
     /**
@@ -129,26 +129,26 @@ class Poll extends FFBoka {
      * @throws \Exception if invalid offset is used.
      * @return int Number of choices left after removing.
      */
-    public function removeChoice(int $offset) {
+    public function removeChoice( int $offset ) {
         $choices = $this->choices;
         $votes = $this->votes;
-        if ($offset < 0 || $offset >= count($choices)) {
-            logger(__METHOD__." Offset $offset to remove poll chooice out of bounds.", E_WARNING);
-            throw new \Exception("Offset $offset out of bounds.");
+        if ( $offset < 0 || $offset >= count( $choices ) ) {
+            logger( __METHOD__ . " Offset $offset to remove poll chooice out of bounds.", E_WARNING );
+            throw new \Exception( "Offset $offset out of bounds." );
         }
-        array_splice($choices, $offset, 1);
-        array_splice($votes, $offset, 1);
+        array_splice( $choices, $offset, 1 );
+        array_splice( $votes, $offset, 1 );
         $this->choices = $choices;
-        $this->setVotes($votes);
-        return count($choices);
+        $this->setVotes( $votes );
+        return count( $choices );
     }
     
     /**
      * Save the votes for the poll
      * @param array $votes Array of integers
      */
-    private function setVotes(array $votes) {
-        self::$db->query("UPDATE polls SET votes='" . json_encode($votes) . "' WHERE pollId={$this->id}");
+    private function setVotes( array $votes ) {
+        self::$db->query( "UPDATE polls SET votes='" . json_encode( $votes ) . "' WHERE pollId={$this->id}" );
     }
     
     /**
@@ -157,16 +157,16 @@ class Poll extends FFBoka {
      * @param int $userId Id of user who has voted
      * @throws \Exception if choice number is invalid
      */
-    public function addVote(int $choice, int $userId) {
+    public function addVote( int $choice, int $userId ) {
         $votes = $this->votes;
-        if ($choice < 0 || $choice >= count($votes)) {
-            logger(__METHOD__." Choice number $choice out of bounds.", E_WARNING);
-            throw new \Exception("Choice number $choice out of bounds.");
+        if ( $choice < 0 || $choice >= count( $votes ) ) {
+            logger( __METHOD__ . " Choice number $choice out of bounds.", E_WARNING );
+            throw new \Exception( "Choice number $choice out of bounds." );
         }
-        $votes[$choice]++;
-        $this->setVotes($votes);
+        $votes[ $choice ]++;
+        $this->setVotes( $votes );
         // Record that this user has voted
-        if (!self::$db->exec("INSERT INTO poll_answers SET pollId={$this->id}, userId=$userId")) logger(__METHOD__." Failed to record that user has voted. " . self::$db->errorInfo()[2], E_ERROR);
+        if ( !self::$db->exec( "INSERT INTO poll_answers SET pollId={$this->id}, userId=$userId" ) ) logger( __METHOD__ . " Failed to record that user has voted. " . self::$db->errorInfo()[ 2 ], E_ERROR );
     }
     
     /**
@@ -174,8 +174,8 @@ class Poll extends FFBoka {
      * @return bool Returns true if successful, false on error
      */
     public function delete() {
-        if (self::$db->exec("DELETE FROM polls WHERE pollId={$this->id}")) return true;
-        logger(__METHOD__." Failed to delete poll. " . self::$db->errorInfo()[2], E_ERROR);
+        if ( self::$db->exec( "DELETE FROM polls WHERE pollId={$this->id}" ) ) return true;
+        logger( __METHOD__ . " Failed to delete poll. " . self::$db->errorInfo()[ 2 ], E_ERROR );
         return false;
     }
     
