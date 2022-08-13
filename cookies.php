@@ -2,28 +2,28 @@
 use FFBoka\User;
 
 session_start();
-require("inc/common.php");
+require( "inc/common.php" );
 global $cfg;
 
-if (isset($_SESSION['authenticatedUser'])) {
-    $currentUser = new User($_SESSION['authenticatedUser']);
+if ( isset( $_SESSION[ 'authenticatedUser' ] ) ) {
+    $currentUser = new User( $_SESSION[ 'authenticatedUser' ] );
 }
 
-if (isset($_REQUEST['action'])) {
-switch ($_REQUEST['action']) {
+if ( isset( $_REQUEST[ 'action' ] ) ) {
+switch ( $_REQUEST[ 'action' ] ) {
     case "help":
-        die("Mer hjälp än texten på sidan finns inte här.");
-}}
+        die( "Mer hjälp än texten på sidan finns inte här." );
+} }
 
 ?><!DOCTYPE html>
 <html>
 <head>
-    <?php htmlHeaders("Friluftsfrämjandets resursbokning - Kakor", $cfg['url']) ?>
+    <?php htmlHeaders( "Friluftsfrämjandets resursbokning - Kakor", $cfg[ 'url' ] ) ?>
 </head>
 
 <body>
 <div data-role="page" id="page-cookies">
-    <?= head("Om kakor", $cfg['url'], $cfg['superAdmins']) ?>
+    <?= head( "Om kakor", $cfg[ 'url' ], $cfg[ 'superAdmins' ] ) ?>
     <div role="main" class="ui-content">
 
     <p>För att få den här webbplatsen att fungera ordentligt skickar vi ibland små filer till din dator. Dessa filer kallas kakor eller ”cookies”. De flesta större webbplatser gör på samma sätt.</p>

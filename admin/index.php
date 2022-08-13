@@ -16,7 +16,7 @@ function findCatsWithoutAdmin( Category $cat, &$catsWithoutAdmin ) : void {
     $admins = $cat->admins( FFBoka::ACCESS_CONFIRM );
     if ( count( $admins ) == 0 && $cat->sendAlertTo == "" ) {
         if ( count( $cat->items() ) > 0 ) {
-            $catsWithoutAdmin[$cat->id] = $cat->caption;
+            $catsWithoutAdmin[ $cat->id ] = $cat->caption;
         } else {
             foreach ( $cat->children() as $child ) {
                 findCatsWithoutAdmin( $child, $catsWithoutAdmin );
@@ -27,7 +27,7 @@ function findCatsWithoutAdmin( Category $cat, &$catsWithoutAdmin ) : void {
 
 
 session_start();
-require( __DIR__."/../inc/common.php" );
+require( __DIR__ . "/../inc/common.php" );
 global $cfg, $FF;
 
 // Set current section
@@ -50,13 +50,13 @@ if (
     !$section->showFor( $currentUser, FFBoka::ACCESS_CATADMIN ) && 
     ( !isset( $_SESSION[ 'assignments' ][ $section->id ] ) || !array_intersect( $_SESSION[ 'assignments' ][ $section->id ], $cfg[ 'sectionAdmins' ] ) )
 ) {
-    header( "Location: {$cfg['url']}?action=accessDenied&to=" . urlencode( "administrationssidan för {$section->name}" ) );
+    header( "Location: {$cfg[ 'url' ]}?action=accessDenied&to=" . urlencode( "administrationssidan för {$section->name}" ) );
     die();
 }
 
 if (isset( $_GET[ 'action' ] ) && $_GET[ 'action' ] == "help") {
-    $allAss = $cfg['sectionAdmins'];
-    $oneAss = array_pop($allAss);
+    $allAss = $cfg[ 'sectionAdmins' ];
+    $oneAss = array_pop( $allAss );
     $admins = ( $allAss ? implode( ", ", $allAss ) . " och " : "") . $oneAss;
     $ret = <<<EOF
     <p>Den här sidan är navet för att administrera din lokalavdelnings bokningssystem. Beroende på din behörighetsnivå kommer du att se några eller alla av följande avsnitt.</p>
@@ -83,7 +83,7 @@ if (isset( $_GET[ 'action' ] ) && $_GET[ 'action' ] == "help") {
 }
 
 $userAccess = $section->getAccess( $currentUser );
-if ( isset( $_SESSION['assignments'][$section->id] ) && is_array( $_SESSION['assignments'][$section->id] ) ) {
+if ( isset( $_SESSION[ 'assignments' ][ $section->id ] ) && is_array( $_SESSION[ 'assignments' ][ $section->id ] ) ) {
     if ( array_intersect( $_SESSION[ 'assignments' ][ $section->id ], $cfg[ 'sectionAdmins' ] ) ) $userAccess = FFBoka::ACCESS_SECTIONADMIN;
 }
 
@@ -147,7 +147,7 @@ unset( $_SESSION[ 'catId' ] );
         if ( !isset( $unconfirmed[ $bookingId ] ) ) $unconfirmed[ $bookingId ] = 0;
         $unconfirmed[ $bookingId ]++;
     } ?>
-    <a class='ui-btn <?= $unconfirmed ? "ui-btn-c" : "ui-btn-b" ?> ui-icon-calendar ui-btn-icon-left' title='Öppna bokningsadministratören' href='#' onClick="openBookingAdmin('<?= $cfg[ 'url' ] ?>', <?= $section->id ?>);" data-ajax='false'><?= $unconfirmed ? ( count( $unconfirmed ) == 1 ? "1 obekräftad bokning" : count( $unconfirmed ) . " obekräftade bokningar" ) : "Öppna bokningsadmin" ?></a>
+    <a class='ui-btn <?= $unconfirmed ? "ui-btn-c" : "ui-btn-b" ?> ui-icon-calendar ui-btn-icon-left' title='Öppna bokningsadministratören' href='#' onClick="openBookingAdmin( '<?= $cfg[ 'url' ] ?>', <?= $section->id ?> );" data-ajax='false'><?= $unconfirmed ? ( count( $unconfirmed ) == 1 ? "1 obekräftad bokning" : count( $unconfirmed ) . " obekräftade bokningar" ) : "Öppna bokningsadmin" ?></a>
 
     <div data-role="collapsibleset" data-inset="false">
 
@@ -173,7 +173,7 @@ unset( $_SESSION[ 'catId' ] );
 
         <?php if ( $userAccess & FFBoka::ACCESS_SECTIONADMIN ) { ?>
         
-        <div data-role="collapsible" data-collapsed="<?= $_REQUEST[ 'expand' ]=="admins" ? "false" : "true" ?>" style="<?= $accessByAssignment ? "display:none;" : "" ?>">
+        <div data-role="collapsible" data-collapsed="<?= $_REQUEST[ 'expand' ] == "admins" ? "false" : "true" ?>" style="<?= $accessByAssignment ? "display:none;" : "" ?>">
             <h2>Bokningsfrågor</h2>
             <p>Här kan du skapa frågor som sedan kan visas när folk bokar resurser.</p>
             

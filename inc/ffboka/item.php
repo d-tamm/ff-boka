@@ -26,15 +26,15 @@ class Item extends FFBoka {
      * @param int $id ID of requested item. If 0|FALSE|"" or invalid, returns a dummy item with id=0.
      * @param bool $bookedItem If TRUE, item will belong to a booking and $id is interpreted as bookedItemId instead
      */
-    public function __construct($id, $bookedItem=FALSE){
-        if ($id) { // Try to return an existing item from database
-            if ($bookedItem) $stmt = self::$db->prepare("SELECT bookedItemId, bookingId, itemId, catId FROM booked_items INNER JOIN items USING (itemId) WHERE bookedItemId=?");
-            else $stmt = self::$db->prepare("SELECT itemId, catId FROM items WHERE itemId=?");
-            $stmt->execute(array($id));
-            if ($row = $stmt->fetch(PDO::FETCH_OBJ)) {
+    public function __construct( $id, $bookedItem = FALSE ) {
+        if ( $id ) { // Try to return an existing item from database
+            if ( $bookedItem ) $stmt = self::$db->prepare( "SELECT bookedItemId, bookingId, itemId, catId FROM booked_items INNER JOIN items USING (itemId) WHERE bookedItemId=?" );
+            else $stmt = self::$db->prepare( "SELECT itemId, catId FROM items WHERE itemId=?" );
+            $stmt->execute( array( $id ) );
+            if ( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
                 $this->id = $row->itemId;
                 $this->catId = $row->catId;
-                if ($bookedItem) {
+                if ( $bookedItem ) {
                     $this->bookedItemId = $row->bookedItemId;
                     $this->bookingId = $row->bookingId;
                 }
@@ -53,11 +53,11 @@ class Item extends FFBoka {
      * @throws \Exception
      * @return string|boolean
      */
-    public function __set($name, $value) {
-        switch ($name) {
+    public function __set( $name, $value ) {
+        switch ( $name ) {
             case "catId":
                 // May only be set on dummy Item
-                if ($this->id) throw new \Exception("Cannot change category for existing item.");
+                if ( $this->id ) throw new \Exception( "Cannot change category for existing item." );
                 $this->catId = $value;
                 return $value;
             case "caption":
@@ -66,10 +66,10 @@ class Item extends FFBoka {
             case "active":
             case "note":
             case "imageId":
-                if (!$this->id) throw new \Exception("Cannot set property $name on dummy item.");
-                $stmt = self::$db->prepare("UPDATE items SET $name=? WHERE itemId={$this->id}");
-                if ($stmt->execute(array($value))) return $value;
-                logger(__METHOD__." Failed to set Item property $name to $value. " . $stmt->errorInfo()[2], E_ERROR);
+                if ( !$this->id ) throw new \Exception( "Cannot set property $name on dummy item." );
+                $stmt = self::$db->prepare( "UPDATE items SET $name=? WHERE itemId={$this->id}" );
+                if ( $stmt->execute( array( $value ) ) ) return $value;
+                logger( __METHOD__ . " Failed to set Item property $name to $value. " . $stmt->errorInfo()[ 2 ], E_ERROR );
                 break;
                 
             case "price":
@@ -77,17 +77,17 @@ class Item extends FFBoka {
             case "start": // int|string Start time as Unix timestamp or string
             case "end": // int|string Start time as Unix timestamp or string
             case "remindersSent": // string[]
-                if ($this->bookedItemId) {
-                    if ($name=="remindersSent") $value = json_encode( $value );
-                    if (($name=="start" || $name=="end") && is_numeric($value)) $stmt = self::$db->prepare("UPDATE booked_items SET $name=FROM_UNIXTIME(?) WHERE bookedItemId={$this->bookedItemId}");
-                    else $stmt = self::$db->prepare("UPDATE booked_items SET $name=? WHERE bookedItemId={$this->bookedItemId}");
-                    if ($stmt->execute(array($value))) return $this->$name;
-                    logger(__METHOD__." Failed to set Item property $name to $value. " . $stmt->errorInfo()[2], E_ERROR);
-                } else throw new \Exception("Cannot set $name property on item without bookedItemId.");
+                if ( $this->bookedItemId ) {
+                    if ( $name == "remindersSent" ) $value = json_encode( $value );
+                    if ( ( $name == "start" || $name == "end" ) && is_numeric( $value ) ) $stmt = self::$db->prepare( "UPDATE booked_items SET $name=FROM_UNIXTIME(?) WHERE bookedItemId={$this->bookedItemId}" );
+                    else $stmt = self::$db->prepare( "UPDATE booked_items SET $name=? WHERE bookedItemId={$this->bookedItemId}" );
+                    if ( $stmt->execute( array( $value ) ) ) return $this->$name;
+                    logger( __METHOD__ . " Failed to set Item property $name to $value. " . $stmt->errorInfo()[ 2 ], E_ERROR );
+                } else throw new \Exception( "Cannot set $name property on item without bookedItemId." );
                 
             default:
-                logger(__METHOD__." Use of undefined Item property $name", E_WARNING);
-                throw new \Exception("Use of undefined Item property $name");
+                logger( __METHOD__ . " Use of undefined Item property $name", E_WARNING );
+                throw new \Exception( "Use of undefined Item property $name" );
         }
         return false;
     }
@@ -97,10 +97,10 @@ class Item extends FFBoka {
      * @param Image $img
      * @throws \Exception if the image does not belong to the item
      */
-    public function setFeaturedImage(Image $img) {
-        if ($img->itemId == $this->id) {
-            logger(__METHOD__." Trying to set an image to be the featured image of an item it does not belong to.", E_WARNING);
-            throw new \Exception("Cannot set an image to featured image which does not belong to the item.");
+    public function setFeaturedImage( Image $img ) {
+        if ( $img->itemId == $this->id ) {
+            logger( __METHOD__ . " Trying to set an image to be the featured image of an item it does not belong to.", E_WARNING );
+            throw new \Exception( "Cannot set an image to featured image which does not belong to the item." );
         }
         $this->imageId = $img->id;
     }
@@ -111,8 +111,8 @@ class Item extends FFBoka {
      * @throws \Exception
      * @return string|int Value of the property.
      */
-    public function __get($name) {
-        switch ($name) {
+    public function __get( $name ) {
+        switch ( $name ) {
             case "id":
             case "catId":
             case "bookedItemId":
@@ -124,9 +124,9 @@ class Item extends FFBoka {
             case "active":
             case "note":
             case "imageId":
-                if (!$this->id) return "";
-                $stmt = self::$db->query("SELECT $name FROM items WHERE itemId={$this->id}");
-                $row = $stmt->fetch(PDO::FETCH_OBJ);
+                if ( !$this->id ) return "";
+                $stmt = self::$db->query( "SELECT $name FROM items WHERE itemId={$this->id}" );
+                $row = $stmt->fetch( PDO::FETCH_OBJ );
                 return $row->$name;
                 
             case "price":
@@ -134,19 +134,19 @@ class Item extends FFBoka {
             case "start": // booking start time (as unix timestamp) of booked item
             case "end": // booking end time (as unix timestamp) of booked item
             case "remindersSent": // string[]
-                if ($this->bookedItemId) {
-                    if ($name=="start" || $name=="end") $stmt = self::$db->query("SELECT UNIX_TIMESTAMP($name) $name FROM booked_items WHERE bookedItemId={$this->bookedItemId}");
-                    else $stmt = self::$db->query("SELECT $name FROM booked_items WHERE bookedItemId={$this->bookedItemId}");
-                    $row = $stmt->fetch(PDO::FETCH_OBJ);
+                if ( $this->bookedItemId ) {
+                    if ( $name == "start" || $name == "end" ) $stmt = self::$db->query("SELECT UNIX_TIMESTAMP($name) $name FROM booked_items WHERE bookedItemId={$this->bookedItemId}" );
+                    else $stmt = self::$db->query( "SELECT $name FROM booked_items WHERE bookedItemId={$this->bookedItemId}" );
+                    $row = $stmt->fetch( PDO::FETCH_OBJ );
                     if ( $name == "remindersSent" ) return json_decode( $row->$name, true );
                     return $row->$name;
                 } else {
-                    logger(__METHOD__." Trying to get item property $name for item which is not a booked item.", E_WARNING);
-                    throw new \Exception("Cannot get $name property on item without bookedItemId.");
+                    logger( __METHOD__ . " Trying to get item property $name for item which is not a booked item.", E_WARNING );
+                    throw new \Exception( "Cannot get $name property on item without bookedItemId." );
                 }
             default:
-                logger(__METHOD__." Use of undefined Item property $name", E_WARNING);
-                throw new \Exception("Use of undefined Item property $name");
+                logger( __METHOD__ . " Use of undefined Item property $name", E_WARNING );
+                throw new \Exception( "Use of undefined Item property $name" );
         }
     }
 
@@ -155,7 +155,7 @@ class Item extends FFBoka {
      * @return \FFBoka\Category
      */
     public function category() {
-        return new Category($this->catId);
+        return new Category( $this->catId );
     }
     
 
@@ -166,7 +166,7 @@ class Item extends FFBoka {
      * @param bool $tieInSectionAdmin Whether to also include admin role set on section level
      * @return integer Bitfield of granted access rights. For an empty (fake) category, returns ACCESS_CATADMIN.
      */
-    public function getAccess( User $user, bool $tieInSectionAdmin=TRUE ) : int {
+    public function getAccess( User $user, bool $tieInSectionAdmin = TRUE ) : int {
         return $this->category()->getAccess( $user, $tieInSectionAdmin );
     }
 
@@ -176,12 +176,12 @@ class Item extends FFBoka {
      * @param Category $cat
      * @return bool True if the item is in this category or a child category of this category
      */
-    public function isBelowCategory(Category $cat) {
+    public function isBelowCategory( Category $cat ) {
         $childCat = $this->category();
         do {
-            if ($childCat->id === $cat->id) return TRUE;
+            if ( $childCat->id === $cat->id ) return TRUE;
             $childCat = $childCat->parent();
-        } while (!is_null($childCat));
+        } while ( !is_null( $childCat ) );
         return FALSE;
     }
     
@@ -190,10 +190,10 @@ class Item extends FFBoka {
      * @param Category $cat Category to move the item to.
      * @return bool True on success, false on failure
      */
-    public function moveToCat(Category $cat) {
-        $stmt = self::$db->prepare("UPDATE items SET catId=? WHERE itemId={$this->id}");
-        if ($stmt->execute([ $cat->id ])) return true;
-        logger(__METHOD__." Failed to move item {$this->id} to category {$cat->id}. " . $stmt->errorInfo()[2], E_ERROR);
+    public function moveToCat( Category $cat ) {
+        $stmt = self::$db->prepare( "UPDATE items SET catId=? WHERE itemId={$this->id}" );
+        if ( $stmt->execute( [ $cat->id ] ) ) return true;
+        logger( __METHOD__ . " Failed to move item {$this->id} to category {$cat->id}. " . $stmt->errorInfo()[ 2 ], E_ERROR );
         return false;
     }
 
@@ -202,7 +202,7 @@ class Item extends FFBoka {
      * @return \FFBoka\Booking|false
      */
     public function booking() {
-        if ($this->bookingId) return new Booking($this->bookingId);
+        if ( $this->bookingId ) return new Booking( $this->bookingId );
         else return FALSE;
     }
 
@@ -211,25 +211,25 @@ class Item extends FFBoka {
      * @param int $days Number of days in future to return bookings for. If set to 0, all (even past) bookings are returned
      * @return Item[] Array of bookedItems.
      */
-    public function upcomingBookings(int $days=365) {
+    public function upcomingBookings( int $days = 365 ) {
         // Get freebusy information.
-        if ($days) $timeConstraint = "AND (
+        if ( $days ) $timeConstraint = "AND (
             (start>NOW() AND start<DATE_ADD(NOW(), INTERVAL :days DAY)) OR (end>NOW() AND end<DATE_ADD(NOW(), INTERVAL :days DAY)) OR (start<NOW() AND end>DATE_ADD(NOW(), INTERVAL :days DAY))
             )";
         else $timeConstraint = "";
-        $stmt = self::$db->prepare("
+        $stmt = self::$db->prepare( "
             SELECT bookedItemId
             FROM booked_items
             WHERE
                 itemId={$this->id}
                 AND status>0
                 $timeConstraint
-            ORDER BY start");
-        if ($days) $stmt->execute(array( ":days"=>$days ));
-        else $stmt->execute(array());
+            ORDER BY start" );
+        if ( $days ) $stmt->execute( array( ":days" => $days ) );
+        else $stmt->execute( array() );
         $ret = array();
-        while ($row = $stmt->fetch(PDO::FETCH_OBJ)) {
-            $ret[] = new Item($row->bookedItemId, TRUE);
+        while ( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
+            $ret[] = new Item( $row->bookedItemId, TRUE );
         }
         return $ret;
     }
@@ -240,10 +240,10 @@ class Item extends FFBoka {
      */
     public function delete() {
         // Full size image will be removed from file system by cron
-        if (self::$db->exec("DELETE FROM items WHERE itemId={$this->id}")) {
+        if (self::$db->exec( "DELETE FROM items WHERE itemId={$this->id}" ) ) {
             return TRUE;
         } else {
-            logger(__METHOD__." Failed to delete item. ".self::$db->errorInfo()[2], E_ERROR);
+            logger( __METHOD__ . " Failed to delete item. " . self::$db->errorInfo()[ 2 ], E_ERROR );
             return false;
         }
     }
@@ -253,12 +253,12 @@ class Item extends FFBoka {
      * @return boolean True on success, false on failure
      */
     public function removeFromBooking() {
-        if (self::$db->exec("DELETE FROM booked_items WHERE bookedItemId={$this->bookedItemId}")) {
-            unset($this->bookedItemId);
-            unset($this->bookingId);
+        if ( self::$db->exec( "DELETE FROM booked_items WHERE bookedItemId={$this->bookedItemId}" ) ) {
+            unset( $this->bookedItemId );
+            unset( $this->bookingId );
             return TRUE;
         } else {
-            logger(__METHOD__." Failed to remove item from booking. ".self::$db->errorInfo()[2], E_ERROR);
+            logger( __METHOD__ ." Failed to remove item from booking. " . self::$db->errorInfo()[ 2 ], E_ERROR );
             return false;
         }
     }
@@ -272,19 +272,19 @@ class Item extends FFBoka {
     public function copy() {
         $newItem = $this->category()->addItem();
         // If old caption ends on "(nn)", increase nn. Otherwise, add (kopia) to the caption.
-        if (preg_match('/(.*\(?)([0-9]+)(\)?)$/', $this->caption, $matches)) $newItem->caption = $matches[1] . ($matches[2]+1) . $matches[3];
+        if ( preg_match( '/(.*\(?)([0-9]+)(\)?)$/', $this->caption, $matches ) ) $newItem->caption = $matches[ 1 ] . ( $matches[ 2 ] + 1 ) . $matches[ 3 ];
         else $newItem->caption = $this->caption . " (kopia)";
         $newItem->description = $this->description;
         $newItem->postbookMsg = $this->postbookMsg;
         $newItem->note = $this->note;
         // copy the associated item images
-        foreach ($this->images() as $image) {
-            if (!self::$db->exec("INSERT INTO item_images (itemId, thumb, caption) SELECT {$newItem->id}, thumb, caption FROM item_images WHERE imageId={$image->id}")) logger(__METHOD__." Failed to copy item image. " . self::$db->errorInfo()[2], E_ERROR);
+        foreach ( $this->images() as $image ) {
+            if ( !self::$db->exec( "INSERT INTO item_images (itemId, thumb, caption) SELECT {$newItem->id}, thumb, caption FROM item_images WHERE imageId={$image->id}" ) ) logger( __METHOD__ . " Failed to copy item image. " . self::$db->errorInfo()[ 2 ], E_ERROR );
             $newImageId = self::$db->lastInsertId();
             // Copy full size image file
-            copy(__DIR__ . "/../../img/item/{$image->id}", __DIR__ . "/../../img/item/$newImageId");
-            if ($image->id == $this->imageId) { // set featured image
-                if (!self::$db->exec("UPDATE items SET imageId=$newImageId WHERE itemId={$newItem->id}")) logger(__METHOD__." Failed to set featured image in copied item. " . self::$db->errorInfo()[2], E_ERROR);
+            copy( __DIR__ . "/../../img/item/{$image->id}", __DIR__ . "/../../img/item/$newImageId" );
+            if ( $image->id == $this->imageId ) { // set featured image
+                if ( !self::$db->exec( "UPDATE items SET imageId=$newImageId WHERE itemId={$newItem->id}" ) ) logger( __METHOD__ . " Failed to set featured image in copied item. " . self::$db->errorInfo()[ 2 ], E_ERROR );
             }
         }
         return $newItem;
@@ -296,11 +296,11 @@ class Item extends FFBoka {
      * @return \FFBoka\Image
      */
     public function addImage() {
-        if (self::$db->exec("INSERT INTO item_images SET itemId={$this->id}")) {
-            return new Image(self::$db->lastInsertId());
+        if ( self::$db->exec( "INSERT INTO item_images SET itemId={$this->id}" ) ) {
+            return new Image( self::$db->lastInsertId() );
         } else {
-            logger(__METHOD__." Failed to create item image. ".self::$db->errorInfo()[2], E_ERROR);
-            throw new \Exception("Failed to create item image.");
+            logger( __METHOD__ . " Failed to create item image. " . self::$db->errorInfo()[ 2 ], E_ERROR );
+            throw new \Exception( "Failed to create item image." );
         }
     }
     
@@ -310,9 +310,9 @@ class Item extends FFBoka {
      */
     public function images() {
         $images = array();
-        $stmt = self::$db->query("SELECT imageId FROM item_images WHERE itemId={$this->id}");
-        while ($image = $stmt->fetch(\PDO::FETCH_OBJ)) {
-            $images[] = new Image($image->imageId);
+        $stmt = self::$db->query( "SELECT imageId FROM item_images WHERE itemId={$this->id}" );
+        while ( $image = $stmt->fetch( \PDO::FETCH_OBJ ) ) {
+            $images[] = new Image( $image->imageId );
         }
         return $images;
     }
@@ -322,7 +322,7 @@ class Item extends FFBoka {
      * @return \FFBoka\Image
      */
     public function getFeaturedImage() {
-        return new Image($this->imageId);
+        return new Image( $this->imageId );
     }
     
     /**
@@ -336,20 +336,20 @@ class Item extends FFBoka {
      * <b>adminView</b> If true, shows the price in title of blocked bars and adds classes for unconfirmed and conflict. 
      * @return string HTML code showing blocks of free and busy times
      */
-    function freebusyBar($params=[]) {
+    function freebusyBar( $params = [] ) {
         $start = 0;
         $scale = FALSE;
         $days = 7;
         $minStatus = FFBoka::STATUS_PREBOOKED;
         $includeTokens = FALSE;
         $adminView = FALSE;
-        extract($params, EXTR_IF_EXISTS);
+        extract( $params, EXTR_IF_EXISTS );
         // Store start date as user defined variable because it is used multiple times
         $secs = $days * 24 * 60 * 60;
-        $stmt = self::$db->prepare("SET @start = :start");
-        $stmt->execute(array(":start"=>$start));
+        $stmt = self::$db->prepare( "SET @start = :start" );
+        $stmt->execute( array( ":start" => $start ) );
         // Get freebusy information.
-        $stmt = self::$db->query("
+        $stmt = self::$db->query( "
             SELECT bookingId, bookedItemId, status, ref, price, paid, token, bufferAfterBooking, DATE_SUB(start, INTERVAL bufferAfterBooking HOUR) start, UNIX_TIMESTAMP(start) unixStart, DATE_ADD(end, INTERVAL bufferAfterBooking HOUR) end, UNIX_TIMESTAMP(end) unixEnd, users.name username, extName 
             FROM booked_items 
             INNER JOIN bookings USING (bookingId) 
@@ -358,7 +358,7 @@ class Item extends FFBoka {
             LEFT JOIN users using (userId)
             WHERE 
                 itemId={$this->id} " . 
-                (isset($this->bookedItemId) ? "AND bookedItemId != {$this->bookedItemId} " : "") . " 
+                ( isset( $this->bookedItemId ) ? "AND bookedItemId != {$this->bookedItemId} " : "" ) . " 
             AND 
                 booked_items.status>=$minStatus 
             AND (
@@ -369,30 +369,30 @@ class Item extends FFBoka {
                     ) OR (
                         UNIX_TIMESTAMP(end)+bufferAfterBooking*3600>@start AND UNIX_TIMESTAMP(end)+bufferAfterBooking*3600<@start+$secs
                     )
-                )");
+                )" );
 
         $ret = "";
-        if ($scale) $ret .= self::freebusyWeekends($start, $days);
-        while ($row = $stmt->fetch(\PDO::FETCH_OBJ)) {
-            if ($row->bufferAfterBooking) {
-                $ret .= "<div class='freebusy-blocked' style='left:" . number_format(($row->unixStart-$start-$row->bufferAfterBooking*3600)/$secs*100, 2, ".", "") . "%; width:" . number_format(($row->unixEnd - $row->unixStart + 2*$row->bufferAfterBooking*3600)/$secs*100, 2, ".", "") . "%' title='ej bokbar'></div>";
+        if ( $scale ) $ret .= self::freebusyWeekends( $start, $days );
+        while ( $row = $stmt->fetch( \PDO::FETCH_OBJ ) ) {
+            if ( $row->bufferAfterBooking ) {
+                $ret .= "<div class='freebusy-blocked' style='left:" . number_format( ( $row->unixStart - $start - $row->bufferAfterBooking * 3600 ) / $secs * 100, 2, ".", "" ) . "%; width:" . number_format( ( $row->unixEnd - $row->unixStart + 2 * $row->bufferAfterBooking * 3600 ) / $secs * 100, 2, ".", "" ) . "%' title='ej bokbar'></div>";
             }
             $class = "freebusy-busy";
-            if ($adminView) {
-                if ($row->status==FFBoka::STATUS_PREBOOKED) $class .= " unconfirmed";
-                if ($row->status==FFBoka::STATUS_CONFLICT) $class .= " conflict";
-                if ($row->price) {
+            if ( $adminView ) {
+                if ( $row->status == FFBoka::STATUS_PREBOOKED ) $class .= " unconfirmed";
+                if ( $row->status == FFBoka::STATUS_CONFLICT ) $class .= " conflict";
+                if ( $row->price ) {
                     $class .= " has-price";
-                    $stmtPrice = self::$db->query("SELECT SUM(price) price FROM booked_items WHERE bookingId={$row->bookingId} AND NOT price IS NULL");
-                    $rowPrice = $stmtPrice->fetch(PDO::FETCH_OBJ);
-                    if ($rowPrice->price <= $row->paid) $class .= " paid";
+                    $stmtPrice = self::$db->query( "SELECT SUM(price) price FROM booked_items WHERE bookingId={$row->bookingId} AND NOT price IS NULL" );
+                    $rowPrice = $stmtPrice->fetch( PDO::FETCH_OBJ );
+                    if ( $rowPrice->price <= $row->paid ) $class .= " paid";
                 }
             }
-            $title = date("Y-m-d \k\l H:00", $row->unixStart) . " till " . date("Y-m-d \k\l H:00", $row->unixEnd);
-            if ($adminView) $title .= "\n" . htmlspecialchars($row->extName ? $row->extName : $row->username) . "\n" . htmlspecialchars($row->ref) . (is_null($row->price) ? "\nInget pris satt" : "\nPris: {$row->price} kr");
-            $ret .= "<div class='$class' data-booking-id='{$row->bookingId}' data-booked-item-id='{$row->bookedItemId}' " . ($includeTokens ? "data-token='{$row->token}' " : "") . "style='left:" . number_format(($row->unixStart - $start) / $secs * 100, 2, ".", "") . "%; width:" . number_format(($row->unixEnd - $row->unixStart) / $secs * 100, 2, ".", "") . "%;' title='$title'></div>";
+            $title = date( "Y-m-d \k\l H:00", $row->unixStart ) . " till " . date( "Y-m-d \k\l H:00", $row->unixEnd );
+            if ( $adminView ) $title .= "\n" . htmlspecialchars( $row->extName ? $row->extName : $row->username ) . "\n" . htmlspecialchars( $row->ref ) . ( is_null( $row->price ) ? "\nInget pris satt" : "\nPris: {$row->price} kr" );
+            $ret .= "<div class='$class' data-booking-id='{$row->bookingId}' data-booked-item-id='{$row->bookedItemId}' " . ( $includeTokens ? "data-token='{$row->token}' " : "" ) . "style='left:" . number_format( ( $row->unixStart - $start ) / $secs * 100, 2, ".", "" ) . "%; width:" . number_format( ( $row->unixEnd - $row->unixStart ) / $secs * 100, 2, ".", "" ) . "%;' title='$title'></div>";
         }
-        if ($scale) $ret .= self::freebusyScale(false, $days);
+        if ( $scale ) $ret .= self::freebusyScale( false, $days );
         return $ret;
     }
 
@@ -402,12 +402,12 @@ class Item extends FFBoka {
      * @param int $days Number of days to show
      * @return string HTML code
      */
-    public static function freebusyScale(bool $weekdays = FALSE, int $days=7) {
-        $dayNames = $weekdays ? array("<span>mån</span>","<span>tis</span>","<span>ons</span>","<span>tor</span>","<span>fre</span>","<span>lör</span>","<span>sön</span>") : array_fill(0,$days,"");
+    public static function freebusyScale( bool $weekdays = FALSE, int $days = 7 ) {
+        $dayNames = $weekdays ? array( "<span>mån</span>", "<span>tis</span>", "<span>ons</span>", "<span>tor</span>", "<span>fre</span>", "<span>lör</span>", "<span>sön</span>" ) : array_fill( 0, $days, "" );
         $noborder = "border-left:none;";
         $ret = "";
-        for ($day=0; $day<$days; $day++) {
-            $ret .= "<div class='freebusy-tic' data-day='$day' style='$noborder " . ($weekdays ? "width:" . number_format(100/$days, 2) . "%; " : "") . "left:" . number_format(100/$days*$day, 2) . "%;'>{$dayNames[$day]}</div>";
+        for ( $day = 0; $day < $days; $day++ ) {
+            $ret .= "<div class='freebusy-tic' data-day='$day' style='$noborder " . ( $weekdays ? "width:" . number_format( 100 / $days, 2 ) . "%; " : "" ) . "left:" . number_format( 100 / $days * $day, 2 ) . "%;'>{$dayNames[ $day ]}</div>";
             $noborder = "";
         }
         return $ret;
@@ -419,14 +419,14 @@ class Item extends FFBoka {
      * @param int $days Number of days in freebusy bar
      * @return string HTML code
      */
-    public static function freebusyWeekends(int $start, int $days=7) {
-        $date = new \DateTime("@$start");
-        $date->setTimezone(new \DateTimeZone(self::$timezone));
+    public static function freebusyWeekends( int $start, int $days = 7 ) {
+        $date = new \DateTime( "@$start" );
+        $date->setTimezone( new \DateTimeZone( self::$timezone ) );
         $ret = "";
-        for ($day=0; $day<$days; $day++) {
-            if ($date->format('N') > 5) $ret .= "<div data-day='" . ($day+1) . "' class='freebusy-weekend' style='left:" . number_format(100/$days*$day, 2) . "%; width:" . number_format(100/$days, 2) . "%;'></div>";
-            else $ret .= "<div data-day='" . ($day+1) . "' class='freebusy-week' style='left:" . number_format(100/$days*$day, 2) . "%; width:" . number_format(100/$days, 2) . "%;'></div>";
-            $date->add(new \DateInterval("P1D"));
+        for ( $day=0; $day < $days; $day++ ) {
+            if ( $date->format( 'N' ) > 5 ) $ret .= "<div data-day='" . ( $day + 1 ) . "' class='freebusy-weekend' style='left:" . number_format( 100 / $days * $day, 2 ) . "%; width:" . number_format( 100 / $days, 2 ) . "%;'></div>";
+            else $ret .= "<div data-day='" . ( $day + 1 ) . "' class='freebusy-week' style='left:" . number_format( 100 / $days * $day, 2 ) . "%; width:" . number_format( 100 / $days, 2 ) . "%;'></div>";
+            $date->add( new \DateInterval( "P1D" ) );
         }
         return $ret;
     }
@@ -446,17 +446,17 @@ class Item extends FFBoka {
      * @param int $end Unix timestamp
      * @return boolean False if there is any booking partly or completely inside the given range
      */
-    public function isAvailable(int $start, int $end) {
-        $stmt = self::$db->prepare("SET @start = :start, @end = :end");
-        $stmt->execute(array(":start"=>$start, ":end"=>$end));
-        $stmt = self::$db->query("
+    public function isAvailable( int $start, int $end ) {
+        $stmt = self::$db->prepare( "SET @start = :start, @end = :end" );
+        $stmt->execute( array( ":start" => $start, ":end" => $end ) );
+        $stmt = self::$db->query( "
             SELECT bookingId FROM booked_items 
                 INNER JOIN bookings USING (bookingId) 
                 INNER JOIN items USING (itemId)
                 INNER JOIN categories USING (catId)
             WHERE
                 itemId={$this->id} " . 
-                (isset($this->bookedItemId) ? "AND bookedItemId != {$this->bookedItemId} " : "") . 
+                ( isset( $this->bookedItemId ) ? "AND bookedItemId != {$this->bookedItemId} " : "" ) . 
                 "AND booked_items.status>=" . FFBoka::STATUS_PREBOOKED . " 
                 AND (
                     (UNIX_TIMESTAMP(start)-bufferAfterBooking*3600<=@start AND UNIX_TIMESTAMP(end)+bufferAfterBooking*3600>=@end) 
@@ -467,8 +467,8 @@ class Item extends FFBoka {
                         UNIX_TIMESTAMP(end)+bufferAfterBooking*3600>@start 
                         AND UNIX_TIMESTAMP(end)+bufferAfterBooking*3600<=@end
                     )
-                )");
-        return ($stmt->rowCount()===0);
+                )" );
+        return ( $stmt->rowCount() === 0 );
     }
 
     /**
@@ -520,7 +520,7 @@ class Item extends FFBoka {
             return false;
         }
         // Save changes
-        $stmt = self::$db->prepare("UPDATE item_reminders SET offset=:offset, anchor=:anchor, message=:message WHERE itemId={$this->id} AND id=:id");
+        $stmt = self::$db->prepare( "UPDATE item_reminders SET offset=:offset, anchor=:anchor, message=:message WHERE itemId={$this->id} AND id=:id" );
         if ( !$stmt->execute( [
             ":offset" => $offset,
             ":anchor" => $anchor,

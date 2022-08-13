@@ -20,20 +20,20 @@ class Question extends FFBoka {
      * @param int $id ID of the question
      * @throws \Exception if no or an invalid $id is passed.
      */
-    public function __construct($id) {
-        if ($id) { // Try to return an existing booking from database
-            $stmt = self::$db->prepare("SELECT questionId, sectionId FROM questions WHERE questionId=?");
-            $stmt->execute(array($id));
-            if ($row = $stmt->fetch(PDO::FETCH_OBJ)) {
+    public function __construct( $id ) {
+        if ( $id ) { // Try to return an existing booking from database
+            $stmt = self::$db->prepare( "SELECT questionId, sectionId FROM questions WHERE questionId=?" );
+            $stmt->execute( array( $id ) );
+            if ( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
                 $this->id = $row->questionId;
                 $this->sectionId = $row->sectionId;
             } else {
-                logger(__METHOD__." Tried to instatiate Question with invalid id $id.", E_ERROR);
-                throw new \Exception("Can't instatiate Question with ID $id.");
+                logger( __METHOD__ . " Tried to instatiate Question with invalid id $id.", E_ERROR );
+                throw new \Exception( "Can't instatiate Question with ID $id." );
             }
         } else {
-            logger(__METHOD__." Tried to instatiate Question without ID.", E_ERROR);
-            throw new \Exception("Can't instatiate Question without ID.");
+            logger( __METHOD__ . " Tried to instatiate Question without ID.", E_ERROR );
+            throw new \Exception( "Can't instatiate Question without ID." );
         }
     }
     
@@ -43,23 +43,23 @@ class Question extends FFBoka {
      * @throws \Exception
      * @return number|string
      */
-    public function __get($name) {
-        switch ($name) {
+    public function __get( $name ) {
+        switch ( $name ) {
             case "id":
             case "sectionId":
                 return $this->$name;
             case "type":
             case "caption":
-                $stmt = self::$db->query("SELECT $name FROM questions WHERE questionId={$this->id}");
-                $row = $stmt->fetch(PDO::FETCH_OBJ);
+                $stmt = self::$db->query( "SELECT $name FROM questions WHERE questionId={$this->id}" );
+                $row = $stmt->fetch( PDO::FETCH_OBJ );
                 return $row->$name;
             case "options":
-                $stmt = self::$db->query("SELECT $name FROM questions WHERE questionId={$this->id}");
-                $row = $stmt->fetch(PDO::FETCH_OBJ);
-                return json_decode($row->$name);
+                $stmt = self::$db->query( "SELECT $name FROM questions WHERE questionId={$this->id}" );
+                $row = $stmt->fetch( PDO::FETCH_OBJ );
+                return json_decode( $row->$name );
             default:
-                logger(__METHOD__." Use of undefined Question propterty $name.", E_ERROR);
-                throw new \Exception("Use of undefined Question property $name");
+                logger( __METHOD__ . " Use of undefined Question propterty $name.", E_ERROR );
+                throw new \Exception( "Use of undefined Question property $name" );
         }
     }
     
@@ -68,18 +68,18 @@ class Question extends FFBoka {
      * @return string
      */
     public function optionsReadable() {
-        switch ($this->type) {
+        switch ( $this->type ) {
             case "radio":
-                return htmlspecialchars(implode(" | ", $this->options->choices));
+                return htmlspecialchars( implode( " | ", $this->options->choices ) );
             case "checkbox":
-                return htmlspecialchars(implode(" | ", $this->options->choices)) . " (flera val möjliga)";
+                return htmlspecialchars( implode( " | ", $this->options->choices ) ) . " (flera val möjliga)";
             case "text":
-                return "Text" . ($this->options->length ? ", max {$this->options->length} tecken" : ", valfri längd");
+                return "Text" . ( $this->options->length ? ", max {$this->options->length} tecken" : ", valfri längd" );
             case "number":
                 $ret = "Siffra";
-                if (is_numeric($this->options->min) && is_numeric($this->options->max)) $ret .= " mellan {$this->options->min} och {$this->options->max}";
-                elseif (is_numeric($this->options->min)) $ret .= ", minst {$this->options->min}";
-                elseif (is_numeric($this->options->max)) $ret .= ", max {$this->options->max}";
+                if ( is_numeric( $this->options->min ) && is_numeric( $this->options->max ) ) $ret .= " mellan {$this->options->min} och {$this->options->max}";
+                elseif ( is_numeric( $this->options->min ) ) $ret .= ", minst {$this->options->min}";
+                elseif ( is_numeric( $this->options->max ) ) $ret .= ", max {$this->options->max}";
                 else $ret .= " utan begränsning";
                 return $ret;
         }
@@ -91,18 +91,18 @@ class Question extends FFBoka {
      * @param int|string $value Property value.
      * @return string Set value on success, false on failure.
      */
-    public function __set($name, $value) {
-        switch ($name) {
+    public function __set( $name, $value ) {
+        switch ( $name ) {
             case "type":
             case "caption":
             case "options":
-                $stmt = self::$db->prepare("UPDATE questions SET $name=? WHERE questionId={$this->id}");
-                if ($stmt->execute(array($value))) return $value;
-                logger(__METHOD__." Failed to set Question property $name to $value. " . $stmt->errorInfo()[2], E_ERROR);
+                $stmt = self::$db->prepare( "UPDATE questions SET $name=? WHERE questionId={$this->id}" );
+                if ( $stmt->execute( array( $value ) ) ) return $value;
+                logger( __METHOD__ . " Failed to set Question property $name to $value. " . $stmt->errorInfo()[ 2 ], E_ERROR );
                 break;
             default:
-                logger(__METHOD__." Use of undefined Question propterty $name.", E_ERROR);
-                throw new \Exception("Use of undefined Question property $name");
+                logger( __METHOD__ . " Use of undefined Question propterty $name.", E_ERROR );
+                throw new \Exception( "Use of undefined Question property $name" );
         }
         return false;
     }
@@ -112,8 +112,8 @@ class Question extends FFBoka {
      * @return bool Success
      */
     public function delete() {
-        if (self::$db->exec("DELETE FROM questions WHERE questionId={$this->id}")) return true;
-        logger(__METHOD__." Failed to delete question. " . self::$db->errorInfo()[2], E_ERROR);
+        if ( self::$db->exec( "DELETE FROM questions WHERE questionId={$this->id}" ) ) return true;
+        logger (__METHOD__ . " Failed to delete question. " . self::$db->errorInfo()[ 2 ], E_ERROR );
         return false;
     }
 }
