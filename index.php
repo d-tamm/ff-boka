@@ -195,7 +195,7 @@ if ( isset( $_REQUEST[ 't' ] ) ) {
 if ( isset( $_SESSION[ 'authenticatedUser' ] ) ) {
     $currentUser = new User( $_SESSION[ 'authenticatedUser' ] );
     // Redirect impersonated Ordförande etc on first login
-    if ( $_SESSION[ 'impersonate_realUserId' ] && isset( $_GET[ 'login' ] ) && count( array_intersect( $_SESSION[ 'assignments' ][ $currentUser->section->id ], $cfg[ 'sectionAdmins' ] ) ) > 0 && count( $currentUser->section->getAdmins() ) == 0 ) {
+    if ( isset( $_SESSION[ 'impersonate_realUserId' ] ) && isset( $_GET[ 'login' ] ) && count( array_intersect( $_SESSION[ 'assignments' ][ $currentUser->section->id ], $cfg[ 'sectionAdmins' ] ) ) > 0 && count( $currentUser->section->getAdmins() ) == 0 ) {
         header( "Location: admin/index.php?sectionId=" . $currentUser->section->id . "&expand=admins" );
         die();
     }
