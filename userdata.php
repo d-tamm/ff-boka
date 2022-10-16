@@ -228,7 +228,7 @@ if ( isset( $_GET[ 'first_login' ] ) ) $message = "Välkommen till resursbokning
                 }
                 if ( $pending ) echo "<li data-role='list-divider'>Ej slutförda bokningar</li>$pending";
                 if ( $unconfirmed ) echo "<li data-role='list-divider'>Obekräftade bokningar</li>$unconfirmed";
-                if ( $upcoming ) echo "<li data-role='list-divider'>Kommande bokningar</li>$upcoming";
+                if ( $upcoming ) echo "<li data-role='list-divider'>Aktuella bokningar</li>$upcoming";
                 if ( $completed ) echo "<li data-role='list-divider'>Avslutade bokningar</li>$completed";
             } else {
                 echo "<li>Du har inga bokningar.</li>";
