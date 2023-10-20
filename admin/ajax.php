@@ -502,11 +502,15 @@ case "saveItemProp":
         default:
             http_response_code( 405 ); // Method not allowed
             logger( __METHOD__ . " Tried to set invalid item property {$_REQUEST[ 'name' ]}.", E_WARNING );
+            die( "Invalid item property." );
     }
     die();
 
 case "deleteItem":
-    if ( !$item->delete() ) http_response_code( 404 ); // Not found
+    if ( !$item->delete() ) {
+        http_response_code( 404 ); // Not found
+        die( "Kunde inte radera resursen." );
+    }
     die();
     
 case "getItemImages":
@@ -553,7 +557,7 @@ case "saveItemImgCaption":
 
 default:
     http_response_code( 405 ); // Method not allowed
-    die();
+    die( "Kommandot finns inte." );
 }
     
 
