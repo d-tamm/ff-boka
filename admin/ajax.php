@@ -539,7 +539,7 @@ case "addItemImage":
         die();
     }
     http_response_code( 406 ); // Not acceptable
-    die();
+    die( "Bilden accepterades inte. Försök med en mindre bild." );
     
 case "deleteItemImage":
     $image = new Image( $_GET[ 'id' ] );
