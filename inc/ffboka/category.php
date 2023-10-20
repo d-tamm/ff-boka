@@ -473,6 +473,7 @@ class Category extends FFBoka {
             $access = FFBoka::ACCESS_NONE;
             $groupPerms = array_column( $this->groupPerms( TRUE ), "access", "assName" );
             if ( isset( $_SESSION[ 'assignments' ][ $this->sectionId ] ) ) {
+                if ( array_key_exists( "Valfritt uppdrag", $groupPerms ) ) $access = $access | $groupPerms[ "Valfritt uppdrag" ];
                 foreach ( $_SESSION[ 'assignments' ][ $this->sectionId ] as $assName ) {
                     if ( array_key_exists( $assName, $groupPerms ) ) $access = $access | $groupPerms[ $assName ];
                 }
