@@ -1124,7 +1124,7 @@ function addAdmin( userId ) {
         }
     } )
     .fail( function( xhr ) {
-        alert( xhr.responseText );
+        alert( `${xhr.responseText}\n${xhr.status} ${xhr.statusText}` );
     } )
     .always( function() {
         $.mobile.loading( "hide", {} );
