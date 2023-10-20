@@ -40,7 +40,7 @@ switch ($_REQUEST[ 'action' ]) {
             ( !isset( $_SESSION[ 'assignments' ][ $section->id ] ) || !array_intersect( $_SESSION[ 'assignments' ][ $section->id ], $cfg[ 'sectionAdmins' ] ) )
         ) {
             http_response_code( 403 ); // Forbidden
-            die();
+            die( "Du har inte behörighet till funktionen." );
         }
         break;
 
@@ -51,7 +51,7 @@ switch ($_REQUEST[ 'action' ]) {
     case "deleteQuestion":
         if ( $section->getAccess( $currentUser ) < FFBoka::ACCESS_SECTIONADMIN ) {
             http_response_code( 403 ); // Forbidden
-            die();
+            die( "Du har inte behörighet till funktionen." );
         }
         break;
 
@@ -73,12 +73,12 @@ switch ($_REQUEST[ 'action' ]) {
         // CatId must be known
         if ( !isset( $_SESSION[ 'catId' ] ) ) {
             http_response_code( 400 ); // Bad request
-            die();
+            die( "Inget kategori-ID angivet." );
         }
         $cat = new Category( $_SESSION[ 'catId' ] );
         if ( $cat->getAccess( $currentUser ) < FFBoka::ACCESS_CATADMIN ) {
             http_response_code( 403 ); // Forbidden
-            die();
+            die( "Du har inte behörighet till funktionen." );
         }
         break;
 
@@ -166,7 +166,7 @@ case "addSectionAdmin":
         die( $currentUser->id );
     }
     http_response_code( 404 ); // Not found
-    die( "Kunde inte lägga till administratören. Är den kanske redan med i listan?" );
+    die( "Kunde inte lägga till administratören. Är den kanske redan med i listan? Försök ladda om sidan." );
 
 case "listSectionAdmins":
     header( "Content-Type: text/html" );
@@ -179,12 +179,12 @@ case "listSectionAdmins":
     die();
     
 case "removeSectionAdmin":
-    if ( !isset( $_REQUEST[ 'id' ] ) ) { http_response_code( 400 ); die(); } // Bad request
-    if ( !$section->removeAdmin( $_REQUEST[ 'id' ] ) ) { http_response_code( 500 ); die(); } // Internal server error
+    if ( !isset( $_REQUEST[ 'id' ] ) ) { http_response_code( 400 ); die( "Inget ID angivet." ); } // Bad request
+    if ( !$section->removeAdmin( $_REQUEST[ 'id' ] ) ) { http_response_code( 500 ); die( "Kan inte ta bort admin." ); } // Internal server error
     die();
     
 case "getQuestion":
-    if ( !isset( $_REQUEST[ 'id' ] ) ) { http_response_code( 400 ); die(); } // Bad request
+    if ( !isset( $_REQUEST[ 'id' ] ) ) { http_response_code( 400 ); die( "Inget ID angivet." ); } // Bad request
     header( "Content-Type: text/plain" );
     $question = new Question( $_REQUEST[ 'id' ] );
     die( json_encode( [
@@ -204,7 +204,7 @@ case "getQuestions":
     die();
     
 case "saveQuestion":
-    if ( !isset( $_REQUEST[ 'id' ] ) || !isset( $_REQUEST[ 'caption' ] ) || !isset( $_REQUEST[ 'type' ] ) ) { http_response_code( 400 ); die(); } // Bad request
+    if ( !isset( $_REQUEST[ 'id' ] ) || !isset( $_REQUEST[ 'caption' ] ) || !isset( $_REQUEST[ 'type' ] ) ) { http_response_code( 400 ); die( "Id, caption eller type ej angivet." ); } // Bad request
     header( "Content-Type: application/json" );
     if ( $_REQUEST[ 'id' ] == 0 ) $question = $section->addQuestion();
     else $question = new Question( $_REQUEST[ 'id' ] );
@@ -213,19 +213,19 @@ case "saveQuestion":
     switch ( $question->type ) {
         case "radio":
         case "checkbox":
-            if ( !isset( $_REQUEST[ 'choices' ] ) ) { http_response_code( 400 ); die(); } // Bad request
+            if ( !isset( $_REQUEST[ 'choices' ] ) ) { http_response_code( 400 ); die( "Ofullständig fråga, saknar choices." ); } // Bad request
             $question->options = json_encode( [ "choices" => explode("\n", $_REQUEST[ 'choices' ] ) ]); break;
         case "text":
-            if ( !isset( $_REQUEST[ 'length' ] ) ) { http_response_code( 400 ); die(); } // Bad request
+            if ( !isset( $_REQUEST[ 'length' ] ) ) { http_response_code( 400 ); die( "Ofullständig fråga, saknar length." ); } // Bad request
             $question->options = json_encode( [ "length" => $_REQUEST[ 'length' ] ] ); break;
         case "number":
-            if ( !isset( $_REQUEST[ 'min' ] ) || !isset( $_REQUEST[ 'max' ] ) ) { http_response_code( 400 ); die(); } // Bad request
+            if ( !isset( $_REQUEST[ 'min' ] ) || !isset( $_REQUEST[ 'max' ] ) ) { http_response_code( 400 ); die( "Ofullständig fråga, saknar 'min'."); } // Bad request
             $question->options = json_encode( [ "min" => $_REQUEST[ 'min' ], "max" => $_REQUEST[ 'max' ] ] ); break;
     }
     die ( json_encode( "OK" ) );
     
 case "deleteQuestion":
-    if ( !isset( $_REQUEST[ 'id' ] ) ) { http_response_code( 400 ); die(); } // Bad request
+    if ( !isset( $_REQUEST[ 'id' ] ) ) { http_response_code( 400 ); die( "ID ej angivet." ); } // Bad request
     header( "Content-Type: application/json" );
     $question = new Question( $_REQUEST[ 'id' ] );
     die( json_encode( $question->delete() ) );
@@ -264,19 +264,19 @@ case "getReminders":
     die();
 
 case "getReminder":
-    if ( !isset( $_GET[ 'id' ] ) ) { http_response_code( 400 ); die(); } // Bad request
+    if ( !isset( $_GET[ 'id' ] ) ) { http_response_code( 400 ); die( "ID ej angivet." ); } // Bad request
     header( "Content-Type: application/json" );
     if ( $_GET[ 'id' ] == 0 ) die( json_encode( [ "id"=>0, "message"=>"Ny påminnelse", "offset"=>0, "anchor"=>"start" ] ));
     die( json_encode( $catOrItem->getReminder( $_GET[ 'id' ] ) ) );
 
 case "saveReminder":
-    if ( !isset( $_GET[ 'id' ] ) || !isset( $_GET[ 'offset' ] ) || !isset( $_GET[ 'message' ] ) ) { http_response_code( 400 ); die(); } // Bad request
+    if ( !isset( $_GET[ 'id' ] ) || !isset( $_GET[ 'offset' ] ) || !isset( $_GET[ 'message' ] ) ) { http_response_code( 400 ); die( "Ofullständig fråga, saknar ID, offset eller message." ); } // Bad request
     header( "Content-Type: application/json" );
     die( json_encode( $catOrItem->editReminder( $_GET[ 'id' ], $_GET[ 'offset' ], $_GET[ 'anchor' ], $_GET[ 'message' ] ) ) );
 
 case "deleteReminder":
-    if ( !isset( $_GET[ 'id' ] ) ) { http_response_code( 400 ); die(); } // Bad request
-    if ( !$catOrItem->deleteReminder( $_GET[ 'id' ] ) ) http_response_code( 500 ); // Internal server error
+    if ( !isset( $_GET[ 'id' ] ) ) { http_response_code( 400 ); die( "ID ej angivet." ); } // Bad request
+    if ( !$catOrItem->deleteReminder( $_GET[ 'id' ] ) ) { http_response_code( 500 ); die( "Kan inte ta bort påminnelsen." ); } // Internal server error
     die();
 
 
@@ -307,7 +307,7 @@ case "setCatProp":
         die( json_encode( [ "status" => "OK" ] ) );
     default:
         logger( __FILE__ . "Trying to set unknown category property via ajax.", "ERROR" );
-        http_response_code( 400 ); die(); // Bad request
+        http_response_code( 400 ); die( "Unknown category property." ); // Bad request
     }
 
 case "getCatContactData":
@@ -322,7 +322,7 @@ case "getCatContactData":
     ] ) );
 
 case "addAlert":
-    if ( !isset( $_GET[ 'sendAlertTo1' ] ) ) { http_response_code( 400 ); die(); } // Bad request
+    if ( !isset( $_GET[ 'sendAlertTo1' ] ) ) { http_response_code( 400 ); die( "sendAlertTo1 ej angivet." ); } // Bad request
     // Validate input
     if ( filter_var( $_GET[ 'sendAlertTo1' ], FILTER_VALIDATE_EMAIL ) === false) {
         http_response_code( 415 ); // Unsupported media type
@@ -335,7 +335,7 @@ case "addAlert":
     die();
 
 case "deleteAlert":
-    if ( !isset( $_GET[ 'sendAlertTo1' ] ) ) { http_response_code( 400 ); die(); } // Bad request
+    if ( !isset( $_GET[ 'sendAlertTo1' ] ) ) { http_response_code( 400 ); die( "sendAlertTo1 ej angivet." ); } // Bad request
     $alerts = explode( ", ", $cat->sendAlertTo );
     if ( ( $key = array_search( $_GET[ 'sendAlertTo1' ], $alerts ) ) !== false ) {
         unset( $alerts[ $key ] );
@@ -375,7 +375,7 @@ case "getCatAccess":
     die( json_encode( [ "html" => "<p><i>Inga behörigheter har tilldelats än. Använd alternativen ovan för att tilldela behörigheter.</i></p>" ] ) );
 
 case "setCatAccess":
-    if ( !isset( $_GET[ 'id' ] ) ) { http_response_code( 400 ); die(); } // Bad request
+    if ( !isset( $_GET[ 'id' ] ) ) { http_response_code( 400 ); die( "ID ej angivet. "); } // Bad request
     $notice = "";
     switch ( $_GET[ 'id' ] ) {
     case "accessExternal":
@@ -441,7 +441,7 @@ case "getCatQuestions":
     die( "<p><i>Inga frågor har lagts upp i din lokalavdelning än. Om du vill att någon fråga ska visas vid bokning i denna kategori, be LA-administratören att lägga upp frågan. Detta ska göras på LA-nivå. När detta har gjorts kommer upplagda frågor att dyka upp här så du kan välja ut de frågor som ska visas med din kategori.</i></p>" );
     
 case "toggleQuestion":
-    if ( !isset( $_REQUEST[ 'id' ] ) ) { http_response_code( 400 ); die(); } // Bad request
+    if ( !isset( $_REQUEST[ 'id' ] ) ) { http_response_code( 400 ); die( "ID ej angivet." ); } // Bad request
     // empty -> show -> show+required -> empty
     // inherited -> show+required -> inherited
     // inherited+required -> show -> inherited+required
