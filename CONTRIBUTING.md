@@ -13,6 +13,7 @@
   * [HTML](#html)
   * [CSS](#css)
   * [SQL, databas](#sql-databas)
+* [Installera i Docker](#installera-i-docker)
 * [Installera lokalt](#installera-lokalt)
 * [Engagera dig](#engagera-dig)
 
