@@ -139,11 +139,6 @@ och [composer](https://getcomposer.org).
   * Klona det här förrådet med `git clone https://github.com/d-tamm/ff-boka.git xxx` (där xxx är namnet på undermappen).
   * Byt till undermappen `cd xxx`.
 * Kör `composer install` för att installera några beroenden (dependencies).
-* Installera följande i undermappen vendor:
-  * JQueryUI (ladda ner från deras hemsida, packa upp arkivet och flytta mappen så att
-    t.ex. jquery-ui.css ligger på vendor/jquery-ui-1.12.1/jquery-ui.css)
-  * FontAwesome: ladda ner från deras hemsida (host yourself), packa upp, skapa en mapp
-    `fontawesome` i mappen `vendor`, och flytta dit mapparna `css` och `webfonts` från arkivet.
 * Säkerställ att webbservern har läsrättigheter på alla mappar, och att du har skrivrättigheter.
   Webbservern behöver även rättigheter att skapa undermappar.
 * Kopiera filen `inc/config.sample.php` till `inc/config.php` och se över innehållet. För att få kopplingen
