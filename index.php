@@ -145,6 +145,8 @@ if ( isset( $_POST[ 'login' ] ) ) {
             $u = new User( $_SESSION[ 'authenticatedUser' ], $result[ 'section' ] );
             $u->getAssignments();
             $u->updateLastLogin();
+// TODO: handle IPv6 addresses
+$_SERVER['REMOTE_ADDR']='1.1.1.1';
             $stmt = $db->prepare( "INSERT INTO logins (ip, login, userId, success, userAgent) VALUES (INET_ATON('{$_SERVER[ 'REMOTE_ADDR' ]}'), ?, {$result[ 'userId' ]}, 1, '{$_SERVER[ 'HTTP_USER_AGENT' ]}')" );
             $stmt->execute( array( $_POST[ 'id' ] ) );
             // If requested, set persistent login cookie
