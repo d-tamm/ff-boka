@@ -306,7 +306,7 @@ $cfg = $currentCfg;
             <table class="alternate-rows">
             <tr><th>timestamp</th><th>IP</th><th>user</th><th>LA</th><th>succ</th><th>userAgent</th></tr>
             <?php
-            $stmt = $db->query( "SELECT logins.timestamp timestamp, INET_NTOA(ip) ip, login, userId, users.name name, sections.name section, success, userAgent FROM logins LEFT JOIN users USING (userId) LEFT JOIN sections USING (sectionId) ORDER BY timestamp DESC LIMIT 50" );
+            $stmt = $db->query( "SELECT logins.timestamp timestamp, ip, login, userId, users.name name, sections.name section, success, userAgent FROM logins LEFT JOIN users USING (userId) LEFT JOIN sections USING (sectionId) ORDER BY timestamp DESC LIMIT 50" );
             while ( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
                 echo "<tr><td>{$row->timestamp}</td>
                     <td>{$row->ip}</td>

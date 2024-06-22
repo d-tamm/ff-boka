@@ -130,7 +130,7 @@ matchande namn och där du har behörighet att boka. Sökningen går inte ner p�
 if ( isset( $_POST[ 'login' ] ) ) {
     // User trying to log in.
     // Reject DoS attacks by throttling
-    $stmt = $db->query( "SELECT * FROM logins WHERE INET_NTOA(IP)='{$_SERVER['REMOTE_ADDR']}' AND TIMESTAMPDIFF(SECOND, timestamp, NOW()) < {$cfg['DoSDelay']} AND NOT success" );
+    $stmt = $db->query( "SELECT * FROM logins WHERE ip='{$_SERVER['REMOTE_ADDR']}' AND TIMESTAMPDIFF(SECOND, timestamp, NOW()) < {$cfg['DoSDelay']} AND NOT success" );
     if ( $stmt->rowCount() > $cfg[ 'DoSCount' ] ) {
         // Too many attempts. We do not even bother to log this to login log.
         $message = "För många inloggningsförsök. Försök igen om " . (int)($cfg[ 'DoSDelay' ] / 60 ) . " minuter.";
@@ -145,10 +145,11 @@ if ( isset( $_POST[ 'login' ] ) ) {
             $u = new User( $_SESSION[ 'authenticatedUser' ], $result[ 'section' ] );
             $u->getAssignments();
             $u->updateLastLogin();
-// TODO: handle IPv6 addresses
-$_SERVER['REMOTE_ADDR']='1.1.1.1';
-            $stmt = $db->prepare( "INSERT INTO logins (ip, login, userId, success, userAgent) VALUES (INET_ATON('{$_SERVER[ 'REMOTE_ADDR' ]}'), ?, {$result[ 'userId' ]}, 1, '{$_SERVER[ 'HTTP_USER_AGENT' ]}')" );
-            $stmt->execute( array( $_POST[ 'id' ] ) );
+            $stmt = $db->prepare( "INSERT INTO logins (ip, login, userId, success, userAgent) VALUES (?, ?, {$result[ 'userId' ]}, 1, '{$_SERVER[ 'HTTP_USER_AGENT' ]}')" );
+            $stmt->execute( [
+                $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'],
+                $_POST[ 'id' ]
+            ] );
             // If requested, set persistent login cookie
             if ( isset( $_POST[ 'rememberMe' ] ) ) {
                 if ( $u->createPersistentLogin( $cfg[ 'TtlPersistentLogin' ] ) === FALSE ) die( "Kan inte skapa permanent inloggning." );
@@ -168,8 +169,11 @@ $_SERVER['REMOTE_ADDR']='1.1.1.1';
             // Password wrong.
             logger( __METHOD__ . " User failed to login with {$_POST['id']}." );
             $message = "Fel medlemsnummer eller lösenord.";
-            $stmt = $db->prepare( "INSERT INTO logins (ip, login, success, userAgent) VALUES (INET_ATON('{$_SERVER[ 'REMOTE_ADDR' ]}'), ?, 0, '{$_SERVER[ 'HTTP_USER_AGENT' ]}')" );
-            $stmt->execute( array( $_POST[ 'id' ] ) );
+            $stmt = $db->prepare( "INSERT INTO logins (ip, login, success, userAgent) VALUES (?, ?, 0, '{$_SERVER[ 'HTTP_USER_AGENT' ]}')" );
+            $stmt->execute( [
+                $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'],
+                $_POST[ 'id' ]
+            ] );
         }
     }
 }
