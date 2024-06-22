@@ -249,6 +249,10 @@ class FFBoka {
             return FALSE;
         }
         $result = json_decode( $result );
+        if ( $result->error ) {
+            logger( __METHOD__ . " Error from login API: " . $result->error, E_ERROR );
+            return FALSE;
+        }
         return array(
             "authenticated" => $result->isMember,
             "userId" => $userId,
