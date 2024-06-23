@@ -201,13 +201,6 @@ function head( string $caption, string $baseUrl, $superAdmins = array() ) {
         <a href='#navpanel' data-rel='popup' data-transition='pop' data-role='button' data-icon='bars' data-iconpos='notext' class='ui-btn-left ui-nodisc-icon ui-alt-icon'>Meny</a>
         <a href='javascript:showHelp();' data-transition='slide' data-rel='popup' data-role='button' data-icon='help' data-iconpos='notext' class='ui-btn-right ui-nodisc-icon ui-alt-icon'>Hjälp</a>
         <?php
-        if ( !isset( $_COOKIE[ 'cookiesOK' ] ) ) { // Display cookie chooser ?>
-            <div id="divCookieConsent" data-theme='b' class='ui-bar ui-bar-b' style='font-weight:normal;'>
-                För att vissa funktioner på denna webbplats ska fungera använder vi kakor. <a href='<?= $baseUrl ?>cookies.php' data-role='none'>Läs mer om kakor.</a><br>
-                <button onClick="var d=new Date(); d.setTime(d.getTime()+365*24*60*60*1000); document.cookie='cookiesOK=1; expires='+d.toUTCString()+'; Path=/'; $('#divCookieConsent').hide(); $('#div-remember-me').show();">Tillåt kakor</button>
-                <button onClick="document.cookie='cookiesOK=0; path=/'; $('#divCookieConsent').hide();$('#div-remember-me').hide();">Avböj kakor</button>
-            </div>
-        <?php } 
         if ( strpos( $_SERVER[ 'HTTP_USER_AGENT' ], 'MSIE' ) || strpos( $_SERVER[ 'HTTP_USER_AGENT' ], 'Trident/7' ) ) echo "<div class='ui-bar ui-bar-b' style='font-weight:normal;'><b>Dags att uppgradera din webbläsare.</b> Du använder Internet Explorer, en föråldrad webbläsare som är dålig på att följa webbstandarder. Vi har valt att inte längre slösa vår tid på att stödja den, och bokningssystemet kommer kanske inte att fungera med den. Vänligen använd en annan webbläsare. Vi rekommenderar Firefox eller Chrome.</div>";
         ?>
     </div>
