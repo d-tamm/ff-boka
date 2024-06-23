@@ -774,7 +774,7 @@ class Category extends FFBoka {
             logger( __METHOD__ . " Tried to save a reminder with invalid anchor $anchor", E_ERROR );
             return false;
         }
-        $stmt = self::$db->prepare( "UPDATE cat_reminders SET offset=:offset, anchor=:anchor, message=:message WHERE catId={$this->id} AND id=:id" );
+        $stmt = self::$db->prepare( "UPDATE cat_reminders SET `offset`=:offset, `anchor`=:anchor, `message`=:message WHERE catId={$this->id} AND id=:id" );
         if ( !$stmt->execute( [
             ":offset" => $offset,
             ":anchor" => $anchor,

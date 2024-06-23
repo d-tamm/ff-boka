@@ -520,7 +520,7 @@ class Item extends FFBoka {
             return false;
         }
         // Save changes
-        $stmt = self::$db->prepare( "UPDATE item_reminders SET offset=:offset, anchor=:anchor, message=:message WHERE itemId={$this->id} AND id=:id" );
+        $stmt = self::$db->prepare( "UPDATE item_reminders SET `offset`=:offset, `anchor`=:anchor, `message`=:message WHERE itemId={$this->id} AND id=:id" );
         if ( !$stmt->execute( [
             ":offset" => $offset,
             ":anchor" => $anchor,
