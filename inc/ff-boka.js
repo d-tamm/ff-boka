@@ -2032,15 +2032,22 @@ function getUserdata() {
  * Delete user account
  */
 function deleteAccount() {
+    if ( $( "#delete-account-password" ).val() == "" ) {
+        alert( "Ange ditt lösenord för att radera kontot." );
+        return;
+    }
+    $.mobile.loading( "show", {} );
     $.post( "userdata.php", {
         action: "ajaxDeleteAccount",
         password: $( "#delete-account-password" ).val()
     } )
     .done( function( ) {
+        $.mobile.loading( "hide", {} );
         alert( "Ditt konto har nu raderats. Välkommen åter!" );
         $.mobile.changePage( "index.php" );
     } )
     .fail( function( xhr ) {
+        $.mobile.loading( "hide", {} );
         alert( xhr.responseText );
     } );
 }

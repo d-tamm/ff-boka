@@ -82,7 +82,7 @@ switch ( $_REQUEST[ 'action' ] ) {
             die( "Kan inte verifiera lösenordet just nu. Vänligen försök igen senare." );
         }
         if ( $result[ 'authenticated' ] !== TRUE ) {
-            http_response_code( 403 ); // Forbidden
+            http_response_code( 401 ); // Unauthorized
             die( "Fel lösenord. Vänligen försök igen. Lösenordet du ska ange är samma som du använder på Friluftsfrämjandets hemsida." );
         }
         if ( $currentUser->delete() ) {
