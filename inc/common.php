@@ -263,7 +263,7 @@ function resolveUserAgent( string $userAgent, PDO $db, string $format='%browser%
     $stmt->execute( array( sha1( $userAgent ) ) );
     if ( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
         // Found userAgent in database. Return a readable representation of it
-        if ( $row->browser == "" ) $row->browser = "Okänd webbläsare"; 
+        if ( $row->browser == "" ) return "($userAgent)";
         if ( $row->platform == "" ) $row->platform = "Okänd plattform";
         if ( $row->platform_bits == "" ) $row->platform_bits = "?";
         if ( $row->device_type == "" ) $row->device_type = "-";
