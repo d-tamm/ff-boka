@@ -253,7 +253,7 @@ class FFBoka {
             logger( __METHOD__ . " Error from login API: " . $result->error, E_ERROR );
             return FALSE;
         }
-        return array(
+       return array(
             "authenticated" => $result->isMember,
             "userId" => $userId,
             "section" => $result->isMemberOfLokalavdelning
@@ -415,14 +415,18 @@ class FFBoka {
      * @return string
      */
     static function formatDateSpan( int $start, int $end, bool $includeWeekday = false ) {
-        $wday = $includeWeekday ? "D " : "";
-        if ( date( "Ymd", $start ) == date( "Ymd", $end ) ) {
+        $fmt_start = new \IntlDateFormatter( 'sv-SE', \IntlDateFormatter::SHORT, \IntlDateFormatter::NONE, self::$timezone, null );
+        $fmt_end = new \IntlDateFormatter( 'sv-SE', \IntlDateFormatter::SHORT, \IntlDateFormatter::NONE, self::$timezone, null );
+        $wd = $includeWeekday ? "E " : "";
+        if ( $fmt_start->format( $start ) == $fmt_end->format( $end ) ) {
             // Start and end on same day
-            return date( $wday . "Y-m-d \k\l H:00 - ", $start ) . date( "H:00", $end );
+            $fmt_start->setPattern( "{$wd}y-MM-dd 'kl' HH:mm-" );
+            $fmt_end->setPattern( "HH:mm" );
         } else {
-            // Start and end on different days
-            return date( $wday . "Y-m-d \k\l H:00", $start ) . " till " . date( $wday . "Y-m-d \k\l H:00", $end );
+            $fmt_start->setPattern( "{$wd}y-MM-dd 'kl' HH:mm 'till' " );
+            $fmt_end->setPattern( "{$wd}y-MM-dd 'kl' HH:mm" );
         }
+        return $fmt_start->format( $start ) . $fmt_end->format( $end );
     }
 
     /**

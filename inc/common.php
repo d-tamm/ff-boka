@@ -15,8 +15,6 @@ require __DIR__ . "/version.php";
 // Set locale
 setlocale( LC_ALL, $cfg[ 'locale' ] );
 date_default_timezone_set ( $cfg[ 'timezone' ] );
-$date_fmt = new IntlDateFormatter( 'sv-SE', IntlDateFormatter::FULL, IntlDateFormatter::FULL, $cfg[ 'timezone' ], null );
-//logger(date("D Y-m-d \k\l H:00"));
 
 // $message is used on several pages. Good to initialise.
 $message = "";

@@ -140,7 +140,7 @@ if ( isset( $_POST[ 'login' ] ) ) {
             $message = "Kan inte få kontakt med inloggningsservern. Vänligen försök igen senare. Om problemet kvarstår, kontakta systemadmin.";
         }
         elseif ( $result[ 'authenticated' ] === true ) {
-            logger( __METHOD__ . " User {$result[ 'userId' ]} logged in with {$_POST[ 'id' ]}." );
+            logger( __METHOD__ . " User {$result[ 'userId' ]} (LA {$result['section']}) logged in with {$_POST[ 'id' ]}." );
             $_SESSION[ 'authenticatedUser' ] = $result[ 'userId' ];
             $u = new User( $_SESSION[ 'authenticatedUser' ], $result[ 'section' ] );
             $u->getAssignments();
