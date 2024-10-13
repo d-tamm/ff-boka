@@ -11,7 +11,7 @@ use FFBoka\User;
 
 
 session_start();
-require( __DIR__ . "/../inc/common.php" );
+require __DIR__ . "/../inc/common.php";
 global $cfg, $FF;
 
 // Section and userId must be known
@@ -381,7 +381,7 @@ case "setCatAccess":
     case "accessExternal":
     case "accessMember":
     case "accessLocal":
-        $cat->{$_GET[ 'id' ]} = ( $_GET[ 'access' ] === "NULL" ? NULL : $_GET[ 'access' ] );
+        $cat->{$_GET[ 'id' ]} = $_GET[ 'access' ] === "NULL" ? NULL : $_GET[ 'access' ];
         break;
     default:
         $cat->setAccess( $_GET[ 'id' ], $_GET[ 'access' ] === "NULL" ? NULL : $_GET[ 'access' ] );

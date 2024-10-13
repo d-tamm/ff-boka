@@ -207,7 +207,7 @@ class FFBoka {
      * will contain the member ID and section will contain the section name.  
      */
     public function authenticateUser( $userId, $password ) {
-        $matches = array();
+        $matches = [];
         $userId = trim( $userId );
         if ( preg_match( "/^(19|20)?(\d{6})-?(\d{4})$/", $userId, $matches ) ) {
             // $userId is given as personnummer.

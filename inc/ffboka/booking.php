@@ -15,9 +15,9 @@ use PDO;
  */
 class Booking extends FFBoka {
     
-    private $id;
-    private $userId;
-    private $sectionId;
+    private $_id;
+    private $_userId;
+    private $_sectionId;
     
     /**
      * Booking instantiation. 
@@ -27,18 +27,18 @@ class Booking extends FFBoka {
     public function __construct( $id ) {
         if ( $id ) { // Try to return an existing booking from database
             $stmt = self::$db->prepare( "SELECT bookingId, sectionId, userId FROM bookings WHERE bookingId=?" );
-            $stmt->execute( array( $id ) );
+            $stmt->execute( [ $id ] );
             if ( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
-                $this->id = $row->bookingId;
-                $this->sectionId = $row->sectionId;
-                $this->userId = $row->userId;
+                $this->_id = $row->bookingId;
+                $this->_sectionId = $row->sectionId;
+                $this->_userId = $row->userId;
             } else {
                 logger( __METHOD__ . " Failed to instantiate Booking with ID $id.", E_WARNING );
-                throw new \Exception( "Can't instatiate Booking with ID $id." );
+                throw new Exception( "Can't instatiate Booking with ID $id." );
             }
         } else {
             logger( __METHOD__ . " Tried to instatiate a Booking without ID.", E_ERROR );
-            throw new \Exception( "Can't instatiate Booking without ID." );
+            throw new Exception( "Can't instatiate Booking without ID." );
         }
     }
     
@@ -46,14 +46,16 @@ class Booking extends FFBoka {
      * Getter function for Booking properties
      * @param string $name Name of the property to retrieve
      * @throws \Exception if undefined property is given
-     * @return number|string|NULL
+     * @return number|string|null
      */
     public function __get( $name ) {
         switch ( $name ) {
             case "id":
+                return $this->_id;
             case "userId":
+                return $this->_userId;
             case "sectionId":
-                return $this->$name;
+                return $this->_sectionId;
             case "repeatId":
             case "timestamp":
             case "ref":
@@ -82,7 +84,7 @@ class Booking extends FFBoka {
                 return is_null( $this->userId ) ? $this->extMail : $this->user()->mail;
             default:
                 logger( __METHOD__ . " Use of undefined Booking property $name", E_ERROR );
-                throw new \Exception( "Use of undefined Booking property $name" );
+                throw new Exception( "Use of undefined Booking property $name" );
         }
     }
     
@@ -107,14 +109,14 @@ class Booking extends FFBoka {
             case "okShowContactData":
             case "dirty";
                 $stmt = self::$db->prepare( "UPDATE bookings SET $name=:name WHERE bookingId={$this->id}" );
-                if ( $name == "repeatId" ) $stmt->bindValue( ":name", $value, \PDO::PARAM_INT );
+                if ( $name == "repeatId" ) $stmt->bindValue( ":name", $value, PDO::PARAM_INT );
                 else $stmt->bindValue( ":name", $value );
                 if ( $stmt->execute() ) return $value;
                 logger( __METHOD__ . " Failed to set Booking property $name to $value. " . $stmt->errorInfo()[ 2 ], E_ERROR );
                 break;
             default:
                 logger( __METHOD__ . " Use of undefined Booking property $name", E_ERROR );
-                throw new \Exception( "Use of undefined Booking property $name" );
+                throw new Exception( "Use of undefined Booking property $name" );
         }
         return false;
     }
@@ -174,8 +176,9 @@ class Booking extends FFBoka {
      */
     public function removeItem( int $bookedItemId ) {
         $stmt = self::$db->prepare( "DELETE FROM booked_items WHERE bookedItemId=?" );
-        if ( $stmt->execute( array( $bookedItemId ) ) ) return true;
+        if ( $stmt->execute( [ $bookedItemId ] ) ) return true;
         logger( __METHOD__ . " Failed to remove item $bookedItemId from booking {$this->id}. " . $stmt->errorInfo()[ 2 ], E_ERROR );
+        return false;
     }
     
     /**
@@ -184,8 +187,8 @@ class Booking extends FFBoka {
      */
     public function items() {
         $stmt = self::$db->query( "SELECT bookedItemId, status FROM booked_items WHERE bookingId={$this->id}" );
-        $items = array();
-        while ( $row = $stmt->fetch( \PDO::FETCH_OBJ ) ) {
+        $items = [];
+        while ( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
             $items[] = new Item( $row->bookedItemId, TRUE );
         }
         return $items;
@@ -199,10 +202,10 @@ class Booking extends FFBoka {
      */
     public function addAnswer( string $question, string $answer ) {
         $stmt = self::$db->prepare( "INSERT INTO booking_answers SET bookingId={$this->id}, question=:question, answer=:answer" );
-        if ( $stmt->execute( array(
+        if ( $stmt->execute( [
             ":question"=>$question,
             ":answer"=>$answer,
-        ) ) ) return self::$db->lastInsertId();
+        ] ) ) return self::$db->lastInsertId();
         logger( __METHOD__ . " Failed to add answer to booking question. " . $stmt->errorInfo()[ 2 ], E_ERROR );
         return false;
     }
@@ -222,7 +225,7 @@ class Booking extends FFBoka {
     public function answers() {
         $ans = array();
         $stmt = self::$db->query( "SELECT answerId, question, answer FROM booking_answers WHERE bookingId={$this->id}" );
-        while ( $row = $stmt->fetch( \PDO::FETCH_OBJ ) ) {
+        while ( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
             $ans[ $row->answerId ] = $row; 
         }
         return $ans;
@@ -230,7 +233,7 @@ class Booking extends FFBoka {
     
     /**
      * Get the datetime when the first item's booking starts
-     * @return NULL|int Unix timestamp. Returns NULL if booking contains no items.
+     * @return null|int Unix timestamp. Returns NULL if booking contains no items.
      */
     public function start() {
         $start = NULL;
@@ -385,7 +388,7 @@ class Booking extends FFBoka {
      */
     public function sendNotifications( array $mailOptions, string $url ) {
         $ret = true;
-        $adminsToNotify = array(); // array where the keys are email addresses or user ids, and the values are arrays of booked item ids
+        $adminsToNotify = []; // array where the keys are email addresses or user ids, and the values are arrays of booked item ids
         // Some information about the booking user
         if ( is_null( $this->userId ) ) {
             $contactData = "Detta är en gästbokning.<br>Namn: " . htmlspecialchars( $_REQUEST[ 'extName' ] ) . "<br>Telefon: " . htmlspecialchars( $_REQUEST[ 'extPhone' ] ) . "<br>Mejl: " . htmlspecialchars( $_REQUEST[ 'extMail' ] );
@@ -470,8 +473,8 @@ class Booking extends FFBoka {
     public function getBookingSeries( bool $includeThis=FALSE ) {
         if ( is_null( $this->repeatId ) ) return FALSE;
         $stmt = self::$db->query( "SELECT bookingId FROM bookings WHERE repeatId={$this->repeatId}" . ( $includeThis ? "" : " AND bookingId != {$this->id}" ) );
-        $ret = array();
-        while ( $row = $stmt->fetch( \PDO::FETCH_OBJ ) ) {
+        $ret = [];
+        while ( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
             $ret[] = new Booking( $row->bookingId );
         }
         return $ret;
@@ -482,8 +485,8 @@ class Booking extends FFBoka {
      * @return string[] Array where the keys are item IDs and the values are the HTML escaped item captions 
      */
     public function getOverlappingItems() {
-        $itemTimes = array();
-        $overlap = array();
+        $itemTimes = [];
+        $overlap = [];
         foreach ( $this->items() as $item ) {
             $start = $item->start;
             $end = $item->end;

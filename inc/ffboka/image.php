@@ -56,7 +56,7 @@ class Image extends FFBoka {
         if ( isset( $images[ 'error' ] ) ) return $images[ 'error' ];
         // Save thumbnail to database
         $stmt = self::$db->prepare( "UPDATE item_images SET thumb=? WHERE imageID={$this->id}" );
-        if ( !$stmt->execute( array( $images[ 'thumb' ] ) ) ) {
+        if ( !$stmt->execute( [ $images[ 'thumb' ] ] ) ) {
             logger( __METHOD__ . " Failed to save thumbnail. " . $stmt->errorInfo()[ 2 ], E_ERROR );
         }
         // Save full size image to file system

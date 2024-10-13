@@ -121,7 +121,7 @@ class Section extends FFBoka {
         $user = new User( $userId ); // This will add user to database if not already there.
         if ( !$user->id ) return FALSE;
         $stmt = self::$db->prepare( "INSERT INTO section_admins SET sectionId={$this->id}, userId=?" );
-        if ( $stmt->execute( array( $userId ) ) ) return true;
+        if ( $stmt->execute( [ $userId ] ) ) return true;
         logger( __METHOD__ . " Failed to add admin, probably because he/she already is admin. " . $stmt->errorInfo()[ 2 ], E_WARNING );
         return false;
     }
@@ -134,7 +134,7 @@ class Section extends FFBoka {
      */
     public function removeAdmin( int $userId ) : bool {
         $stmt = self::$db->prepare( "DELETE FROM section_admins WHERE sectionId={$this->id} AND userId=?" );
-        if ( $stmt->execute( array( $userId ) ) ) return true;
+        if ( $stmt->execute( [ $userId ] ) ) return true;
         logger( __METHOD__ . " Failed to revoke admin access. " . $stmt->errorInfo()[ 2 ], E_ERROR );
         return false;
     }
@@ -217,7 +217,7 @@ class Section extends FFBoka {
     public function questions() : array {
         $questions = array();
         $stmt = self::$db->query( "SELECT questionId FROM questions WHERE sectionId={$this->id}" );
-        while ( $row = $stmt->fetch( \PDO::FETCH_OBJ ) ) {
+        while ( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
             $questions[] = new Question( $row->questionId );
         }
         return $questions;
@@ -232,7 +232,7 @@ class Section extends FFBoka {
     public function getUnconfirmedBookings( User $user ) : array {
         $ret = array();
         $stmt = self::$db->query( "SELECT bookingId, bookedItemId FROM bookings INNER JOIN booked_items USING (bookingId) WHERE ((status>" . FFBoka::STATUS_REJECTED . " AND status<" . FFBoka::STATUS_CONFIRMED . ") OR (status>" . FFBoka::STATUS_PENDING . " AND dirty)) AND sectionId={$this->id}" );
-        while ( $row = $stmt->fetch( \PDO::FETCH_OBJ ) ) {
+        while ( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
             $item = new Item( $row->bookedItemId, TRUE );
             if ( $item->category()->getAccess( $user ) >= FFBoka::ACCESS_CONFIRM ) $ret[] = $row->bookingId;
         }
@@ -248,7 +248,7 @@ class Section extends FFBoka {
      * @return int[] Array containing matching category and item captions as keys and the corresponding score (0-100) as value.
      */
     public function contains( string $search, User $user, int $minScore ) : array {
-        $matches = array();
+        $matches = [];
         foreach ( $this->getMainCategories() as $cat ) {
             if ( $cat->showFor( $user ) ) {
                 $cat->contains( $search, $user, $minScore, $matches );

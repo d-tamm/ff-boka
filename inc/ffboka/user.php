@@ -39,8 +39,8 @@ class User extends FFBoka {
                 $this->sectionId = $section;
             } else {
                 $stmt = self::$db->prepare( "SELECT sectionId FROM sections WHERE name=:name" );
-                $stmt->execute( array( ":name" => $section ) );
-                $row = $stmt->fetch( \PDO::FETCH_OBJ );
+                $stmt->execute( [ ":name" => $section ] );
+                $row = $stmt->fetch( PDO::FETCH_OBJ );
                 $this->sectionId = $row->sectionId;
             }
         }
@@ -84,7 +84,7 @@ class User extends FFBoka {
             case "phone":
             case "sectionId":
                 $stmt = self::$db->prepare( "UPDATE users SET $name=? WHERE userId={$this->id}" );
-                if ( $stmt->execute( array( $value ) ) ) return $value;
+                if ( $stmt->execute( [ $value ] ) ) return $value;
                 logger( __METHOD__ . " Failed to set User property $name to $value. " . $stmt->errorInfo()[ 2 ], E_ERROR );
                 break;
             default:
@@ -100,7 +100,7 @@ class User extends FFBoka {
      * @return bool Success or failure
      */
     public function getAssignments() : bool {
-        $_SESSION[ 'assignments' ] = array();
+        $_SESSION[ 'assignments' ] = [];
         if ( self::$apiFeedUserAss ) { // API URL for assignments is set. Try to get user's assignments
             $data = @file_get_contents( self::$apiFeedUserAss . $this->id );
             if ( $data === FALSE ) { // no answer
@@ -159,7 +159,7 @@ class User extends FFBoka {
     static function restorePersistentLogin( string $cookie, int $ttl ) : void {
         list( $selector, $authenticator ) = explode( ':', $cookie );
         $stmt = self::$db->prepare( "SELECT * FROM persistent_logins WHERE selector=? AND expires>NOW()" );
-        $stmt->execute( array( $selector ) );
+        $stmt->execute( [ $selector ] );
         if ( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
             if ( hash_equals( $row->authenticator, hash( 'sha256', base64_decode( $authenticator ) ) ) ) {
                 // User authenticated. Set as logged in
@@ -201,22 +201,22 @@ class User extends FFBoka {
         
         // Save token to database
         $stmt = self::$db->prepare( "INSERT INTO persistent_logins SET userId=:userId, userAgent=:userAgent, selector=:selector, authenticator=:authenticator, expires=DATE_ADD(NOW(), INTERVAL $ttl SECOND)" );
-        if ( !$stmt->execute( array(
+        if ( !$stmt->execute( [
             "userId" => $this->id,
             "userAgent" => $_SERVER[ 'HTTP_USER_AGENT' ],
             ":selector" => $selector,
             ":authenticator" => hash( 'sha256', $authenticator ),
-        ) ) ) {
+        ] ) ) {
             logger( __METHOD__ . " Failed to save persistent login cookie to db. " . $stmt->errorInfo()[ 2 ], E_ERROR );
             return false;
         }
         
         // Save userAgent string to database
         $stmt = self::$db->prepare( "INSERT IGNORE INTO user_agents SET uaHash=:hash, userAgent=:ua" );
-        $stmt->execute( array(
+        $stmt->execute( [
             ":hash" => sha1( $_SERVER[ 'HTTP_USER_AGENT' ] ),
             ":ua" => $_SERVER[ 'HTTP_USER_AGENT' ]
-        ) );
+        ] );
         return TRUE;
     }
     
@@ -269,7 +269,7 @@ class User extends FFBoka {
      * @return string
      */
     public function contactData() : string {
-        $ret = array();
+        $ret = [];
         if ( $this->name ) $ret[] = htmlspecialchars( $this->name );
         if ( $this->phone ) $ret[] = "☎ " . htmlspecialchars( $this->phone );
         if ( $this->mail ) $ret[] = "✉ " . htmlspecialchars( $this->mail );
@@ -286,7 +286,7 @@ class User extends FFBoka {
         for ( $token = '', $i = 0, $z = strlen( $a = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789') - 1; $i < 40; $x = rand( 0, $z ), $token .= $a[ $x ], $i++ );
         if ( $this->id ) $stmt = self::$db->prepare( "INSERT INTO bookings SET sectionId=?, userId={$this->id}, token='$token'" );
         else $stmt = self::$db->prepare( "INSERT INTO bookings SET sectionId=?, token='$token'" );
-        $stmt->execute( array( $sectionId ) );
+        $stmt->execute( [ $sectionId ] );
         return new Booking( self::$db->lastInsertId() );
     }
     
@@ -313,7 +313,7 @@ class User extends FFBoka {
      * @return Section[]
      */
     public function bookingAdminSections() : array {
-        $admSections = array();
+        $admSections = [];
         foreach ( $this->getAllSections() as $section ) {
             if ( $section->showFor( $this, FFBoka::ACCESS_CONFIRM ) ) {
                 $admSections[] = $section;

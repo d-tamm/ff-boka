@@ -6,7 +6,7 @@ use FFBoka\Category;
 use FFBoka\Item;
 
 session_start();
-require( __DIR__ . "/../inc/common.php" );
+require __DIR__ . "/../inc/common.php";
 global $FF, $cfg;
 
 if ( isset( $_GET[ 'sectionId' ] ) ) $_SESSION[ 'sectionId' ] = $_GET[ 'sectionId' ];
@@ -47,7 +47,7 @@ function showCat( Category $cat, User $user ) : void {
             else echo $elems[ $i ][ 'caption' ];
         }
         echo "</h2>\n";
-        echo "<div style='display:" . ( $_COOKIE[ 'bookingAdminShowCat' . $cat->id ] ? "block" : "none" ) . ";' id='cat-table-{$cat->id}'>\n";
+        echo "<div style='display:" . ( $_COOKIE[ "bookingAdminShowCat$cat->id" ] ? "block" : "none" ) . ";' id='cat-table-{$cat->id}'>\n";
         if ( $cat->getAccess( $user ) >= FFBoka::ACCESS_CONFIRM ) {
             // User has sufficient access to this category and its direct items.
             $items = $cat->items();
@@ -88,8 +88,8 @@ switch ( $_REQUEST[ 'action' ] ) {
             $day->add( new DateInterval( 'P1D' ) );
         };
         // Get Freebusy bars and compile list with unconfirmed items
-        $fbList = array(); // freebusy bars, with "item-$id" as keys
-        $unconfirmed = array(); // list of unconfirmed bookings, with booking ID as keys
+        $fbList = []; // freebusy bars, with "item-$id" as keys
+        $unconfirmed = []; // list of unconfirmed bookings, with booking ID as keys
         $dirty = false;
         $maxBookedItemId = 0;
         foreach ( $_SESSION[ 'itemIds' ] as $id ) {
@@ -143,7 +143,7 @@ switch ( $_REQUEST[ 'action' ] ) {
 ?><!DOCTYPE html>
 <html>
 <head>
-    <?php htmlHeaders( "Friluftsfrämjandets resursbokning - Bokningsadmin ".$section->name, $cfg[ 'url' ], "desktop" ) ?>
+    <?php htmlHeaders( "Friluftsfrämjandets resursbokning - Bokningsadmin {$section->name}", $cfg[ 'url' ], "desktop" ) ?>
     <script>
     var startDate,
         maxBookedItemId = 0,

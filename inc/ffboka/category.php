@@ -43,7 +43,7 @@ class Category extends FFBoka {
      * Setter function for category properties.
      * 
      * @param string $name Property name
-     * @param string|NULL $value Property value
+     * @param string|null $value Property value
      * @return string Set value on success, false on failure.
      */
     public function __set( $name, $value ) {
@@ -127,7 +127,7 @@ class Category extends FFBoka {
      * Getter function for category properties.
      * 
      * @param string $name Name of the property
-     * @return string|array|NULL Value of the property.
+     * @return string|array|null Value of the property.
      */
     public function __get( $name ) {
         switch ( $name ) {
@@ -242,7 +242,7 @@ class Category extends FFBoka {
     /**
      * Get the parent category if exists.
      * 
-     * @return \FFBoka\Category|NULL
+     * @return \FFBoka\Category|null
      */
     public function parent() : ?\FFBoka\Category {
         if ( $pId = $this->parentId ) return new Category( $pId );
@@ -261,7 +261,7 @@ class Category extends FFBoka {
             return TRUE;
         } else {
             logger( __METHOD__ . " Failed to delete category {$this->id}.", E_ERROR );
-            throw new \Exception( "Failed to delete category." );
+            throw new Exception( "Failed to delete category." );
         }
     }
     
@@ -275,9 +275,9 @@ class Category extends FFBoka {
      */
     public function getQuestions( bool $inherited = FALSE ) : array {
         if ( $this->parentId ) $ret = $this->parent()->getQuestions( TRUE );
-        else $ret = array();
+        else $ret = [];
         $stmt = self::$db->query( "SELECT questionId, required FROM cat_questions WHERE catId={$this->id}" );
-        while ( $row = $stmt->fetch( \PDO::FETCH_OBJ ) ) {
+        while ( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
             $ret[ $row->questionId ] = (object) [ "inherited" => $inherited, "required" => (bool)$row->required ];
         }
         return $ret;
@@ -292,8 +292,8 @@ class Category extends FFBoka {
      */
     public function addQuestion( int $id, bool $required = FALSE ) : bool {
         $stmt = self::$db->prepare( "INSERT INTO cat_questions SET questionId=:questionId, catId={$this->id}, required=:required ON DUPLICATE KEY UPDATE required=VALUES(required)" );
-        $stmt->bindValue( "questionId", $id, \PDO::PARAM_INT );
-        $stmt->bindValue( ":required", $required, \PDO::PARAM_BOOL );
+        $stmt->bindValue( "questionId", $id, PDO::PARAM_INT );
+        $stmt->bindValue( ":required", $required, PDO::PARAM_BOOL );
         if ( $stmt->execute() ) return true;
         logger( __METHOD__ . " Failed to add question $id to category {$this->id}. " . $stmt->errorInfo()[ 2 ], E_ERROR );
         return false;
@@ -325,37 +325,37 @@ class Category extends FFBoka {
     public function addFile( $file, $allowedFileTypes, int $maxSize = 0 ) : int {
         if ( !$this->id ) {
             logger( __METHOD__ . " Cannot add file to dummy category.", E_ERROR );
-            throw new \Exception( "Internt fel." );
+            throw new Exception( "Internt fel." );
         }
         if ( $maxSize && filesize( $file[ 'tmp_name' ] ) > $maxSize ) { 
-            throw new \Exception( "Filen är för stor. Största tillåtna storleken är " . self::formatBytes( $maxSize ) . "." );
+            throw new Exception( "Filen är för stor. Största tillåtna storleken är " . self::formatBytes( $maxSize ) . "." );
         }
         if ( !is_uploaded_file( $file[ 'tmp_name' ] ) ) {
             logger( __METHOD__ . " Trying to set non-uploaded file as attachment.", E_WARNING );
-            throw new \Exception( "This is not an uploaded file." );
+            throw new Exception( "This is not an uploaded file." );
         }
         $ext = strtolower( pathinfo( $file[ 'name' ], PATHINFO_EXTENSION ) );
         if ( !array_key_exists( $ext, $allowedFileTypes ) ) {
-            throw new \Exception( "Du kan inte ladda upp filer av typen $ext. Bara följande filtyper tillåts: " . implode( ", ", array_keys( $allowedFileTypes ) ) );
+            throw new Exception( "Du kan inte ladda upp filer av typen $ext. Bara följande filtyper tillåts: " . implode( ", ", array_keys( $allowedFileTypes ) ) );
         }
         $md5 = md5_file( $file[ 'tmp_name' ] );
         // Add post to database
         $stmt = self::$db->prepare( "INSERT INTO cat_files SET catId={$this->id}, filename=:filename, caption=:caption, md5='$md5'" );
         if ( !$stmt->execute( array( ":filename" => $file[ 'name' ], ":caption" => $file[ 'name' ] ) ) ) {
             unlink( $file[ 'tmp_name' ] );
-            throw new \Exception( "Filen kunde inte sparas, eftersom samma fil redan har laddats upp till denna kategori." );
+            throw new Exception( "Filen kunde inte sparas, eftersom samma fil redan har laddats upp till denna kategori." );
         }
         $newId = self::$db->lastInsertId();
         // Move file
         if ( !is_dir( __DIR__ . "/../../uploads" ) ) {
             if ( !mkdir( __DIR__ . "/../../uploads" ) ) {
                 logger( __METHOD__ . " Failed to create directory for uploaded files.", E_ERROR );
-                throw new \Exception( "Kan inte spara filen. Kontakta systemadministratören." );
+                throw new Exception( "Kan inte spara filen. Kontakta systemadministratören." );
             }
         }
         if ( !move_uploaded_file( $file[ 'tmp_name' ], __DIR__ . "/../../uploads/$newId" ) ) {
             logger( __METHOD__ . " Failed to save uploaded file.", E_ERROR );
-            throw new \Exception( "Kunde inte spara filen." );
+            throw new Exception( "Kunde inte spara filen." );
         }
         return $newId;
     }
@@ -375,13 +375,12 @@ class Category extends FFBoka {
         case "displayLink":
         case "attachFile":
             $stmt = self::$db->prepare( "UPDATE cat_files SET $name=:$name WHERE fileId=:fileId AND catId={$this->id}" );
-            if ( $name == "displayLink" || $name == "attachFile" ) $stmt->bindValue( ":$name", $value, \PDO::PARAM_BOOL );
+            if ( $name == "displayLink" || $name == "attachFile" ) $stmt->bindValue( ":$name", $value, PDO::PARAM_BOOL );
             else $stmt->bindValue( ":$name", $value, \PDO::PARAM_STR );
             $stmt->bindValue( ":fileId", $fileId, \PDO::PARAM_INT );
             if ( $stmt->execute() ) return true;
             logger( __METHOD__ . " Failed to set File property $name on file $fileId. " . $stmt->errorInfo()[ 2 ], E_ERROR );
             return false;
-            break;
         default: 
             logger( __METHOD__ . " Trying to set invalid property $name on file attachment {$this->id}", E_ERROR );
             return false;
@@ -412,10 +411,10 @@ class Category extends FFBoka {
      *    The array keys are the md5 checksums, so no double files should be returned.
      */
     public function files( bool $includeParents = FALSE ) : array {
-        $ret = array();
+        $ret = [];
         if ( $includeParents && !is_null( $parent = $this->parent() ) ) $ret = $parent->files( TRUE );
         $stmt = self::$db->query( "SELECT * FROM cat_files WHERE catId={$this->id}" );
-        while ( $row = $stmt->fetch( \PDO::FETCH_OBJ ) ) {
+        while ( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
             $ret[ $row->md5 ] = $row;
         }
         return $ret;
@@ -484,7 +483,7 @@ class Category extends FFBoka {
             if ( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) return $row->access;
             break;
         default:
-            throw new \Exception( "Invalid access type $type passed to " . __METHOD__ );
+            throw new Exception( "Invalid access type $type passed to " . __METHOD__ );
         }
         if ( $this->parentId ) return $this->parent()->getAccessRecursive( $user, $type );
         return FFBoka::ACCESS_NONE;
@@ -571,9 +570,9 @@ class Category extends FFBoka {
      * @return array [userId, name, access]
      */
     public function admins( int $access = FFBoka::ACCESS_READASK, bool $inherit = FALSE ) : array {
-        if ( !$this->id ) return array();
+        if ( !$this->id ) return [];
         $stmt = self::$db->prepare( "SELECT userId, name, access FROM cat_admins INNER JOIN users USING (userId) WHERE catId={$this->id} AND access>=? ORDER BY users.name" );
-        $stmt->execute( array( $access ) );
+        $stmt->execute( [ $access ] );
         $admins = $stmt->fetchAll( PDO::FETCH_ASSOC );
         if ( $inherit && $this->parentId ) {
             // Tie in admins from parent category
@@ -592,7 +591,7 @@ class Category extends FFBoka {
      * @return array with members ['assName', 'access']
      */
     public function groupPerms( bool $inherit = FALSE ) : array {
-        if ( !$this->id ) return array();
+        if ( !$this->id ) return [];
         $stmt = self::$db->query( "SELECT assName, access FROM cat_perms WHERE catId={$this->id} ORDER BY assName" );
         $perms = $stmt->fetchAll( PDO::FETCH_ASSOC );
         if ( $inherit && $this->parentId ) {
@@ -627,9 +626,9 @@ class Category extends FFBoka {
      * @return \FFBoka\Category[]
      */
     public function children() : array {
-        if ( !$this->id ) return array();
+        if ( !$this->id ) return [];
         $stmt = self::$db->query( "SELECT catId FROM categories WHERE parentId={$this->id} ORDER BY caption" );
-        $children = array();
+        $children = [];
         while ( $child = $stmt->fetch( PDO::FETCH_OBJ ) ) {
             $children[] = new Category( $child->catId );
         }
@@ -658,7 +657,7 @@ class Category extends FFBoka {
      */
     function getPath() : array {
         if ( $this->parentId ) $ret = $this->parent()->getPath();
-        else $ret = array( [ 'id' => 0, 'caption' => "LA " . $this->section()->name ] );
+        else $ret = [ [ 'id' => 0, 'caption' => "LA " . $this->section()->name ] ];
         $ret[] = [ 'id' => $this->id, 'caption' => $this->caption ];
         return $ret;
     }
@@ -672,7 +671,7 @@ class Category extends FFBoka {
     public function items() : array {
         if ( !$this->id ) return array();
         $stmt = self::$db->query( "SELECT itemId FROM items WHERE catId={$this->id}" );
-        $items = array();
+        $items = [];
         while ( $item = $stmt->fetch( PDO::FETCH_OBJ ) ) {
             $items[] = new Item( $item->itemId );
         }
@@ -692,7 +691,7 @@ class Category extends FFBoka {
             return new Item( self::$db->lastInsertId() );
         } else {
             logger( __METHOD__ . " Failed to add item to category {$this->id}. " . self::$db->errorInfo()[ 2 ], E_ERROR );
-            throw new \Exception( "Failed to create item." );
+            throw new Exception( "Failed to create item." );
         }
     }
 
@@ -732,7 +731,7 @@ class Category extends FFBoka {
      *  the anchor (start|end) of a booking when the reminder shall be sent, and message is the text to be sent.
      */
     public function reminders( bool $includeInherited = false ) : array {
-        $reminders = array();
+        $reminders = [];
         if ( $includeInherited ) {
             $parent = $this->parent();
             if ( !is_null( $parent ) ) $reminders = $parent->reminders( true );
@@ -795,7 +794,7 @@ class Category extends FFBoka {
                 while ( $row2 = $stmt->fetch( PDO::FETCH_OBJ ) ) {
                     $bookedItem = new Item( $row2->bookedItemId, true );
                     // Mark the reminder as not being sent if sending time has not passed yet.
-                    $bookedItem->setReminderSent( $id, 'cat', ( $row2->anchor + $offset < time() ) );
+                    $bookedItem->setReminderSent( $id, 'cat', $row2->anchor + $offset < time() );
                 }
             }
         }

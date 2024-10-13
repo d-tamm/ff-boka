@@ -12,7 +12,7 @@ use PDO;
  * Categories in the booking system, containing items.
  */
 class Poll extends FFBoka {
-    private $id;
+    private $_id;
     
     /**
      * Initialize poll with ID and get some static properties.
@@ -22,7 +22,7 @@ class Poll extends FFBoka {
         $stmt = self::$db->prepare( "SELECT pollId FROM polls WHERE pollId=?" );
         $stmt->execute( array( $id ) );
         if ( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
-            $this->id = $row->pollId;
+            $this->_id = $row->pollId;
         } else {
             logger( __METHOD__ . " Trying to instatiate non-existing poll with id $id", E_WARNING );
             throw new \Exception( "Poll with ID $id does not exist." );
@@ -32,7 +32,7 @@ class Poll extends FFBoka {
     /**
      * Setter function for poll properties
      * @param string $name Property name. May be 'question' or 'expires' or 'choices'.
-     * @param string|NULL|int|array $value Property value.
+     * @param string|null|int|array $value Property value.
      *  'expires' is set as YYYY-mm-dd. Set to NULL or en empty string if the poll shall not expire.
      *  Supply array of strings for 'choices'. If choices is set with this function, votes will be reset to 0.
      * @throws \Exception if an invalid property name is used.
@@ -60,7 +60,7 @@ class Poll extends FFBoka {
                     logger( __METHOD__ . " Failed to set Poll property $name to NULL. " . self::$db->errorInfo()[ 2 ], E_ERROR );
                 } else {
                     $stmt = self::$db->prepare( "UPDATE polls SET $name=? WHERE pollId={$this->id}" );
-                    if ( $stmt->execute( array( $value ) ) ) return $value;
+                    if ( $stmt->execute( [ $value ] ) ) return $value;
                 }
                 break;
             default:
@@ -83,7 +83,7 @@ class Poll extends FFBoka {
     public function __get( $name ) {
         switch ( $name ) {
             case "id":
-                return $this->id;
+                return $this->_id;
             case "question":
             case "expires":
             case "targetGroup":

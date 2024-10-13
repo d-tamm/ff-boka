@@ -30,7 +30,7 @@ class Item extends FFBoka {
         if ( $id ) { // Try to return an existing item from database
             if ( $bookedItem ) $stmt = self::$db->prepare( "SELECT bookedItemId, bookingId, itemId, catId FROM booked_items INNER JOIN items USING (itemId) WHERE bookedItemId=?" );
             else $stmt = self::$db->prepare( "SELECT itemId, catId FROM items WHERE itemId=?" );
-            $stmt->execute( array( $id ) );
+            $stmt->execute( [ $id ] );
             if ( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
                 $this->_id = $row->itemId;
                 $this->_catId = $row->catId;
@@ -68,7 +68,7 @@ class Item extends FFBoka {
             case "imageId":
                 if ( !$this->id ) throw new \Exception( "Cannot set property $name on dummy item." );
                 $stmt = self::$db->prepare( "UPDATE items SET $name=? WHERE itemId={$this->id}" );
-                if ( $stmt->execute( array( $value ) ) ) return $value;
+                if ( $stmt->execute( [ $value ] ) ) return $value;
                 logger( __METHOD__ . " Failed to set Item property $name to $value. " . $stmt->errorInfo()[ 2 ], E_ERROR );
                 break;
                 
@@ -81,7 +81,7 @@ class Item extends FFBoka {
                     if ( $name == "remindersSent" ) $value = json_encode( $value );
                     if ( ( $name == "start" || $name == "end" ) && is_numeric( $value ) ) $stmt = self::$db->prepare( "UPDATE booked_items SET $name=FROM_UNIXTIME(?) WHERE bookedItemId={$this->bookedItemId}" );
                     else $stmt = self::$db->prepare( "UPDATE booked_items SET $name=? WHERE bookedItemId={$this->bookedItemId}" );
-                    if ( $stmt->execute( array( $value ) ) ) return $this->$name;
+                    if ( $stmt->execute( [ $value ] ) ) return $this->$name;
                     logger( __METHOD__ . " Failed to set Item property $name to $value. " . $stmt->errorInfo()[ 2 ], E_ERROR );
                 } else throw new \Exception( "Cannot set $name property on item without bookedItemId." );
                 
@@ -230,8 +230,8 @@ class Item extends FFBoka {
                 $timeConstraint
             ORDER BY start" );
         if ( $days ) $stmt->execute( array( ":days" => $days ) );
-        else $stmt->execute( array() );
-        $ret = array();
+        else $stmt->execute( [] );
+        $ret = [];
         while ( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
             $ret[] = new Item( $row->bookedItemId, TRUE );
         }
@@ -351,7 +351,7 @@ class Item extends FFBoka {
         // Store start date as user defined variable because it is used multiple times
         $secs = $days * 24 * 60 * 60;
         $stmt = self::$db->prepare( "SET @start = :start" );
-        $stmt->execute( array( ":start" => $start ) );
+        $stmt->execute( [ ":start" => $start ] );
         // Get freebusy information.
         $stmt = self::$db->query( "
             SELECT bookingId, bookedItemId, status, ref, price, paid, token, bufferAfterBooking, DATE_SUB(start, INTERVAL bufferAfterBooking HOUR) start, UNIX_TIMESTAMP(start) unixStart, DATE_ADD(end, INTERVAL bufferAfterBooking HOUR) end, UNIX_TIMESTAMP(end) unixEnd, users.name username, extName 
@@ -377,7 +377,7 @@ class Item extends FFBoka {
 
         $ret = "";
         if ( $scale ) $ret .= self::freebusyWeekends( $start, $days );
-        while ( $row = $stmt->fetch( \PDO::FETCH_OBJ ) ) {
+        while ( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
             if ( $row->bufferAfterBooking ) {
                 $ret .= "<div class='freebusy-blocked' style='left:" . number_format( ( $row->unixStart - $start - $row->bufferAfterBooking * 3600 ) / $secs * 100, 2, ".", "" ) . "%; width:" . number_format( ( $row->unixEnd - $row->unixStart + 2 * $row->bufferAfterBooking * 3600 ) / $secs * 100, 2, ".", "" ) . "%' title='ej bokbar'></div>";
             }
@@ -452,7 +452,7 @@ class Item extends FFBoka {
      */
     public function isAvailable( int $start, int $end ) {
         $stmt = self::$db->prepare( "SET @start = :start, @end = :end" );
-        $stmt->execute( array( ":start" => $start, ":end" => $end ) );
+        $stmt->execute( [ ":start" => $start, ":end" => $end ] );
         $stmt = self::$db->query( "
             SELECT bookingId FROM booked_items 
                 INNER JOIN bookings USING (bookingId) 
@@ -472,7 +472,7 @@ class Item extends FFBoka {
                         AND UNIX_TIMESTAMP(end)+bufferAfterBooking*3600<=@end
                     )
                 )" );
-        return ( $stmt->rowCount() === 0 );
+        return $stmt->rowCount() === 0;
     }
 
     /**
@@ -484,7 +484,7 @@ class Item extends FFBoka {
      *  the anchor (start|end) when the reminder shall be sent, and message is the text to be sent.
      */
     public function reminders( bool $includeInherited = false ) : array {
-        $reminders = array();
+        $reminders = [];
         if ( $includeInherited ) $reminders = $this->category()->reminders( true );
         $stmt = self::$db->query( "SELECT * FROM item_reminders WHERE itemId={$this->id}" );
         while ( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
@@ -540,7 +540,7 @@ class Item extends FFBoka {
             $bookedItem = new Item( $row->bookedItemId, true );
             // Mark the reminder as not being sent if sending time has not passed yet.
 
-            $bookedItem->setReminderSent( $id, 'item', ( $row->anchor + $offset < time() ) );
+            $bookedItem->setReminderSent( $id, 'item',  $row->anchor + $offset < time() );
         }
         return $id;
     }

@@ -6,7 +6,7 @@ use FFBoka\Category;
 use FFBoka\Item;
 
 session_start();
-require( __DIR__ . "/../inc/common.php" );
+require __DIR__ . "/../inc/common.php";
 global $cfg;
 
 if ( isset( $_GET[ 'sectionId' ] ) ) $_SESSION[ 'sectionId' ] = $_GET[ 'sectionId' ];
