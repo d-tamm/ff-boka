@@ -12,14 +12,14 @@ use PDO;
  * Bookable items in the booking system.
  */
 class Item extends FFBoka {
-    private $id;
-    private $catId;
+    private $_id;
+    private $_catId;
     
     /** The following properties are only applicable if used in booking context.
      * ID of the item's booking (not to be confused with the item ID) */
-    private $bookedItemId;
+    private $_bookedItemId;
     /** The ID of the booking the item belongs to */
-    private $bookingId;
+    private $_bookingId;
     
     /**
      * Initialize item with ID and get some static properties.
@@ -32,17 +32,17 @@ class Item extends FFBoka {
             else $stmt = self::$db->prepare( "SELECT itemId, catId FROM items WHERE itemId=?" );
             $stmt->execute( array( $id ) );
             if ( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
-                $this->id = $row->itemId;
-                $this->catId = $row->catId;
+                $this->_id = $row->itemId;
+                $this->_catId = $row->catId;
                 if ( $bookedItem ) {
-                    $this->bookedItemId = $row->bookedItemId;
-                    $this->bookingId = $row->bookingId;
+                    $this->_bookedItemId = $row->bookedItemId;
+                    $this->_bookingId = $row->bookingId;
                 }
             } else {
-                $this->id = 0;
+                $this->_id = 0;
             }
         } else { // Return an empty object without link to database
-            $this->id = 0;
+            $this->_id = 0;
         }
     }    
     
@@ -58,7 +58,7 @@ class Item extends FFBoka {
             case "catId":
                 // May only be set on dummy Item
                 if ( $this->id ) throw new \Exception( "Cannot change category for existing item." );
-                $this->catId = $value;
+                $this->_catId = $value;
                 return $value;
             case "caption":
             case "description":
@@ -114,9 +114,13 @@ class Item extends FFBoka {
     public function __get( $name ) {
         switch ( $name ) {
             case "id":
+                return $this->_id;
             case "catId":
+                return $this->_catId;
             case "bookedItemId":
-                return $this->$name;
+                return $this->_bookedItemId;
+            case "bookingId":
+                return $this->_bookingId;
                 
             case "caption":
             case "description":
@@ -254,8 +258,8 @@ class Item extends FFBoka {
      */
     public function removeFromBooking() {
         if ( self::$db->exec( "DELETE FROM booked_items WHERE bookedItemId={$this->bookedItemId}" ) ) {
-            unset( $this->bookedItemId );
-            unset( $this->bookingId );
+            unset( $this->_bookedItemId );
+            unset( $this->_bookingId );
             return TRUE;
         } else {
             logger( __METHOD__ ." Failed to remove item from booking. " . self::$db->errorInfo()[ 2 ], E_ERROR );
@@ -309,9 +313,9 @@ class Item extends FFBoka {
      * @return \FFBoka\Image[]
      */
     public function images() {
-        $images = array();
+        $images = [];
         $stmt = self::$db->query( "SELECT imageId FROM item_images WHERE itemId={$this->id}" );
-        while ( $image = $stmt->fetch( \PDO::FETCH_OBJ ) ) {
+        while ( $image = $stmt->fetch( PDO::FETCH_OBJ ) ) {
             $images[] = new Image( $image->imageId );
         }
         return $images;

@@ -14,8 +14,8 @@ use PDO;
  * Categories in the booking system, containing items.
  */
 class Category extends FFBoka {
-    private $id;
-    private $sectionId;
+    private $_id;
+    private $_sectionId;
     
     /**
      * Initialize category with ID and get some static properties.
@@ -25,16 +25,16 @@ class Category extends FFBoka {
     public function __construct( $id ){
         if ( $id ) { // Try to return an existing category from database
             $stmt = self::$db->prepare( "SELECT catId, sectionId FROM categories WHERE catId=?" );
-            $stmt->execute( array( $id ) );
+            $stmt->execute( [ $id ] );
             if ( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
-                $this->id = $row->catId;
-                $this->sectionId = $row->sectionId;
+                $this->_id = $row->catId;
+                $this->_sectionId = $row->sectionId;
             } else {
                 logger( __METHOD__ . " Tried to get non-existing category with ID $id", E_ERROR );
-                throw new \Exception( "Can't instatiate category with ID $id." );
+                throw new Exception( "Can't instatiate category with ID $id." );
             }
         } else { // Return an empty object without link to database
-            $this->id = 0;
+            $this->_id = 0;
             return;
         }
     }
@@ -50,8 +50,8 @@ class Category extends FFBoka {
         switch ( $name ) {
             case "sectionId":
                 // May only be set on dummy category
-                if ( $this->id ) throw new \Exception( "Cannot change section for existing category." );
-                $this->sectionId = $value;
+                if ( $this->id ) throw new Exception( "Cannot change section for existing category." );
+                $this->_sectionId = $value;
                 return $value;
             case "parentId":
             case "caption":
@@ -132,9 +132,9 @@ class Category extends FFBoka {
     public function __get( $name ) {
         switch ( $name ) {
             case "id":
-                return $this->id;
+                return $this->_id;
             case "sectionId":
-                return $this->sectionId;
+                return $this->_sectionId;
             case "parentId":
             case "caption":
             case "prebookMsg":

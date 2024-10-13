@@ -12,8 +12,8 @@ use PDO;
  * @author Daniel Tamm
  */
 class Question extends FFBoka {
-    private $id;
-    private $sectionId;
+    private $_id;
+    private $_sectionId;
     
     /**
      * Question instantiation.
@@ -25,8 +25,8 @@ class Question extends FFBoka {
             $stmt = self::$db->prepare( "SELECT questionId, sectionId FROM questions WHERE questionId=?" );
             $stmt->execute( array( $id ) );
             if ( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
-                $this->id = $row->questionId;
-                $this->sectionId = $row->sectionId;
+                $this->_id = $row->questionId;
+                $this->_sectionId = $row->sectionId;
             } else {
                 logger( __METHOD__ . " Tried to instatiate Question with invalid id $id.", E_ERROR );
                 throw new \Exception( "Can't instatiate Question with ID $id." );
@@ -46,8 +46,9 @@ class Question extends FFBoka {
     public function __get( $name ) {
         switch ( $name ) {
             case "id":
+                return $this->_id;
             case "sectionId":
-                return $this->$name;
+                return $this->_sectionId;
             case "type":
             case "caption":
                 $stmt = self::$db->query( "SELECT $name FROM questions WHERE questionId={$this->id}" );
