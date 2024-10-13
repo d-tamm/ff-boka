@@ -142,6 +142,7 @@ case "findUser":
     
 case "addSectionAdmin":
     if ( !is_numeric( $_REQUEST[ 'id' ] ) ) { http_response_code( 400 ); die(); } // Bad request
+    header( "Content-Type: application/json" );
     if ( $section->addAdmin( $_REQUEST[ 'id' ] ) ) {
         $adm = new User( $_REQUEST[ 'id' ] );
         if ( $_REQUEST[ 'id' ] != $currentUser->id && $adm->mail) {
@@ -163,7 +164,7 @@ case "addSectionAdmin":
                 $cfg[ 'mail' ]
             );
         }
-        die( $currentUser->id );
+        die( json_encode( $currentUser->id ) );
     }
     http_response_code( 404 ); // Not found
     die( "Kunde inte lägga till administratören. Är den kanske redan med i listan? Försök ladda om sidan." );
@@ -185,7 +186,7 @@ case "removeSectionAdmin":
     
 case "getQuestion":
     if ( !isset( $_REQUEST[ 'id' ] ) ) { http_response_code( 400 ); die( "Inget ID angivet." ); } // Bad request
-    header( "Content-Type: text/plain" );
+    header( "Content-Type: application/json" );
     $question = new Question( $_REQUEST[ 'id' ] );
     die( json_encode( [
         "id" => $question->id,
@@ -303,7 +304,6 @@ case "setCatProp":
         }
         if ( $_REQUEST[ 'value' ] == "NULL" ) $cat->{$_REQUEST[ 'name' ]} = null;
         else $cat->{$_REQUEST[ 'name' ]} = $_REQUEST[ 'value' ];
-        header( "Content-Type: application/json" );
         die( json_encode( [ "status" => "OK" ] ) );
     default:
         logger( __FILE__ . "Trying to set unknown category property via ajax.", "ERROR" );
@@ -516,7 +516,7 @@ case "deleteItem":
 case "getItemImages":
     foreach ( $item->images() as $image ) {
         $caption = htmlspecialchars( $image->caption );
-        $mainImage = ( $image->id == $item->imageId ? " checked='true'" : "" );
+        $mainImage = $image->id == $item->imageId ? " checked='true'" : "";
         echo <<<EOF
         <div class='ui-body ui-body-a ui-corner-all'>
         <img class='item-img-preview' src='../image.php?type=itemImage&id={$image->id}'>

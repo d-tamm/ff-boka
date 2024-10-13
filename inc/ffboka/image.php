@@ -12,8 +12,8 @@ use PDO;
  * Class for handling item pictures
  */
 class Image extends FFBoka {
-    private $id;
-    private $itemId;
+    private $_id;
+    private $_itemId;
     
     /**
      * Initialize the image with id and itemId
@@ -25,14 +25,14 @@ class Image extends FFBoka {
             $stmt = self::$db->prepare( "SELECT imageId, itemId FROM item_images WHERE imageId=?" );
             $stmt->execute( array( $id ) );
             if ( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
-                $this->id = $row->imageId;
-                $this->itemId = $row->itemId;
+                $this->_id = $row->imageId;
+                $this->_itemId = $row->itemId;
             } else {
                 logger( __METHOD__ . " Failed to instatiate Image $id. " . self::$db->errorInfo()[ 2 ], E_ERROR );
                 throw new \Exception( "Can't instatiate image with ID $id." );
             }
         } else { // Return an empty object without link to database
-            $this->id = 0;
+            $this->_id = 0;
             return;
         }
     }
@@ -79,7 +79,7 @@ class Image extends FFBoka {
         switch ( $name ) {
             case "caption":
                 $stmt = self::$db->prepare( "UPDATE item_images SET $name=? WHERE imageId={$this->id}" );
-                if ( $stmt->execute( array( $value ) ) ) return $value;
+                if ( $stmt->execute( [ $value ] ) ) return $value;
                 logger( __METHOD__ . " Failed to set Image property $name to $value. " . $stmt->errorInfo()[ 2 ], E_ERROR );
                 break;
             default:
@@ -98,8 +98,9 @@ class Image extends FFBoka {
     public function __get( $name ) {
         switch ( $name ) {
             case "id":
+                return $this->_id;
             case "itemId":
-                return $this->$name;
+                return $this->_itemId;
             case "caption":
             case "image":
             case "thumb":

@@ -13,8 +13,8 @@ use stdClass;
  * Represents the sections (lokalavdelningar) in FF.
  */
 class Section extends FFBoka {
-    private $id;
-    private $name;
+    private $_id;
+    private $_name;
     
     /**
      * On section instantiation, get static properties.
@@ -23,10 +23,10 @@ class Section extends FFBoka {
      */
     function __construct( $id ) {
         $stmt = self::$db->prepare( "SELECT sectionId, name FROM sections WHERE sectionId=?" );
-        $stmt->execute( array( $id ) );
+        $stmt->execute( [ $id ] );
         if ( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
-            $this->id = $row->sectionId;
-            $this->name = $row->name;
+            $this->_id = $row->sectionId;
+            $this->_name = $row->name;
         } else {
             logger( __METHOD__ . " Tried to instantiate section with invalid ID $id.", E_WARNING );
             throw new \Exception( "Cannot instantiate section. Section with ID $id not found in database." );
@@ -42,9 +42,9 @@ class Section extends FFBoka {
     public function __get( $name ) {
         switch ( $name ) {
         case "id":
-            return $this->id;
+            return $this->_id;
         case "name":
-            return $this->name;
+            return $this->_name;
         case "lat":
         case "lon":
             $stmt = self::$db->query( "SELECT $name FROM sections WHERE sectionId={$this->id}" );
@@ -80,7 +80,7 @@ class Section extends FFBoka {
      * Setter function for section properties
      * 
      * @param string $name Property name
-     * @param int|string|NULL $value Property value
+     * @param int|string|null $value Property value
      * @return string Set value on success, false on failure.
      */
     public function __set( $name, $value ) {
@@ -142,11 +142,11 @@ class Section extends FFBoka {
     /**
      * Get all first level categories.
      * 
-     * @return boolean|Category[] Array of categories
+     * @return Category[]|bool Array of categories
      */
-    public function getMainCategories() : array {
-        if ( !$stmt = self::$db->query( "SELECT catId FROM categories WHERE sectionId={$this->id} AND parentId IS NULL" ) ) return false;
-        $ret = array();
+    public function getMainCategories() : ?array {
+        if ( !$stmt = self::$db->query( "SELECT catId FROM categories WHERE sectionId={$this->id} AND parentId IS NULL" ) ) return null;
+        $ret = [];
         while ( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
             $ret[] = new Category( $row->catId );
         }

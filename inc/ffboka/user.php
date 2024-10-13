@@ -12,7 +12,7 @@ use PDO;
  * Represents a user of the system (both admins and normal users)
  */
 class User extends FFBoka {
-    private $id;
+    private $_id;
     
     /**
      * On user instatiation, get some static properties.
@@ -25,13 +25,13 @@ class User extends FFBoka {
         if ( !is_numeric( $id ) ) return;
         // Check if user with that member ID exists in the database
         $stmt = self::$db->prepare( "SELECT userId FROM users WHERE userId=?" );
-        $stmt->execute( array( $id ) );
+        $stmt->execute( [ $id ] );
         if ( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) { // Return existing user
-            $this->id = $row->userId;
+            $this->_id = $row->userId;
         } else { // Create a new database entry
             $stmt = self::$db->prepare( "INSERT INTO users SET userId=?" );
-            $stmt->execute( array( $id ) );
-            $this->id = (int)$id;
+            $stmt->execute( [ $id ] );
+            $this->_id = (int)$id;
         }
         // Get home section for user
         if ( $section ) {
@@ -55,7 +55,7 @@ class User extends FFBoka {
     public function __get( $name ) {
         switch ( $name ) {
             case "id":
-                return $this->$name;
+                return $this->_id;
             case "section":
                 return new Section( $this->sectionId );
             case "sectionId":
@@ -261,7 +261,7 @@ class User extends FFBoka {
      */
     public function persistentLogins() : array {
         $stmt = self::$db->query( "SELECT userAgent, selector, UNIX_TIMESTAMP(expires) expires FROM persistent_logins WHERE userId={$this->id}" );
-        return $stmt->fetchall( \PDO::FETCH_OBJ );
+        return $stmt->fetchall( PDO::FETCH_OBJ );
     }
     
     /**
@@ -296,7 +296,7 @@ class User extends FFBoka {
      */
     public function bookingIds() : array {
         $stmt = self::$db->query( "SELECT bookingId FROM bookings WHERE userId={$this->id} AND timestamp>DATE_SUB(CURDATE(), INTERVAL 1 YEAR) ORDER BY timestamp DESC" );
-        return $stmt->fetchAll( \PDO::FETCH_COLUMN, 0 );
+        return $stmt->fetchAll( PDO::FETCH_COLUMN, 0 );
     }
     
     /**
@@ -305,7 +305,7 @@ class User extends FFBoka {
      */
     public function unfinishedBookings() : array {
         $stmt = self::$db->query( "SELECT bookingId FROM booked_items INNER JOIN bookings USING (bookingId) WHERE userId={$this->id} AND status=" . FFBoka::STATUS_PENDING );
-        return $stmt->fetchAll( \PDO::FETCH_COLUMN, 0 );
+        return $stmt->fetchAll( PDO::FETCH_COLUMN, 0 );
     }
     
     /**
@@ -330,7 +330,7 @@ class User extends FFBoka {
      */
     public function getNotifyAdminOnNewBooking( Category $cat ) : string {
         $stmt = self::$db->query( "SELECT notify FROM cat_admin_noalert WHERE userId={$this->id} AND catId={$cat->id}" );
-        if ( $row = $stmt->fetch( \PDO::FETCH_OBJ ) ) {
+        if ( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
             return $row->notify;
         } else {
             return "yes";
@@ -392,7 +392,7 @@ class User extends FFBoka {
     
     /**
      * Get a poll not yet answered by this user
-     * @return \FFBoka\Poll|NULL
+     * @return \FFBoka\Poll|null
      */
     public function getUnansweredPoll() {
         // Look for any admin assignments
@@ -405,7 +405,7 @@ class User extends FFBoka {
         }
         $stmt = self::$db->query( "SELECT polls.pollId FROM polls WHERE targetGroup<=$access AND (expires IS NULL OR expires > NOW()) AND pollId NOT IN (SELECT pollId FROM poll_answers WHERE userId={$this->id}) LIMIT 1" );
         if ( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) return new \FFBoka\Poll( $row->pollId );
-        else return NULL;
+        else return null;
     }
 
     /**
