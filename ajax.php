@@ -743,7 +743,7 @@ function getFreebusyCombined( $ids, $user, $start ) : string {
 /**
  * Show a list of bookings belonging to this series. If this is not (yet) a series, show form elements to create a series
  * @param \FFBoka\Booking $booking
- * @return HTML formatted list
+ * @return string (HTML formatted list)
  */
 function showBookingSeries( \FFBoka\Booking $booking ) {
     if( is_null( $booking->repeatId ) ) {
