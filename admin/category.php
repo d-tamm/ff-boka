@@ -5,7 +5,7 @@ use FFBoka\FFBoka;
 use FFBoka\Section;
 
 session_start();
-require( __DIR__ . "/../inc/common.php" );
+require __DIR__ . "/../inc/common.php";
 global $cfg;
 $message = "";
 
@@ -107,7 +107,8 @@ if ( isset( $_REQUEST[ 'action' ] ) && $_REQUEST[ 'action' ] == "help") {
     <p>Här laddar du upp filer som du vill skicka med bokningsbekräftelser och/eller visa som länk i bokningsflödet. Det kan vara sådant som städrutiner, en särskild blankett du vill att användaren fyller i, körinstruktioner mm. Du kan ladda upp filer av typerna $attTypes. Filstorleken får maximalt vara $fileSize. Rubriken är den text som visas för användaren på skärmen.</p>
 
     <h3>Påminnelser</h3>
-    <p>Du kan ställa in att användarna får ett meddelande ett visst antal timmar före eller efter bokningens start eller slut. Funktionen är t.ex. användbar för att skicka ut aktuell kod till kodlås, påminna om slutstädning mm. Meddelandet som skickas till användaren är det som är aktuellt vid utskickstidpunkten, inte vid bokningstidpunkten. Om du t.ex. vill skicka ut en kod som ändras varje vecka så innehåller meddelandet den kod som vid tiden för utskicket gäller, oavsett när bokningen har lagts.</p>
+    <p>Du kan ställa in att användarna får ett meddelande ett visst antal timmar före eller efter bokningens start eller slut. Funktionen är t.ex. användbar för att skicka ut aktuell kod till kodlås, påminna om slutstädning mm. Meddelandet som skickas till användaren är det som är aktuellt vid utskickstidpunkten, inte vid bokningstidpunkten. Om du t.ex. vill skicka ut en kod som ändras varje vecka så innehåller meddelandet den kod som vid tiden för utskicket gäller, oavsett när bokningen har lagts.<br>
+    Påminnelser skickas bara för de poster i bokningen som är bekräftade. Alla konfigurerade påminnelser kommer att skickas för alla bekräftade resurser, oavsett tidpunkt för bokningen; om bokningen/bekräftelsen sker efter den konfigurerade tidpunkten för en påminnelse så kommer påminnnelsen att skickas så fort posten i bokningen har bekräftats. Om du lägger upp en ny påminnelse kommer den dock bara att gälla för bokningar där påminnelsetiden inte har passerats.</p>
     <p>Påminnelser ärvs till underkategorier.</p>
     EOF;
     die( $ret );
