@@ -290,9 +290,9 @@ class Booking extends FFBoka {
         $itemList = "<tr><th>Resurs</th><th>Status</th><th>Datum</th><th></th></tr>"; // Header for table with booked items
         $leastStatus = self::STATUS_CONFIRMED;
         $rejectedItems = FALSE; // Whether there are rejected items in the booking or not
-        $messages = array(); // Postbook messages
-        $arContactData = array(); // array where the keys are contact data, and the values are the captions of the corresponding categories.
-        $attachments = array(); // array where the keys are md5 hashes of the file, and the values arrays with 'path' and 'filename' elements.
+        $messages = []; // Postbook messages
+        $arContactData = []; // array where the keys are contact data, and the values are the captions of the corresponding categories.
+        $attachments = []; // array where the keys are md5 hashes of the file, and the values arrays with 'path' and 'filename' elements.
         foreach ( $this->items() as $item ) {
             $cat = $item->category();
             // remember contact data for item
@@ -349,18 +349,18 @@ class Booking extends FFBoka {
         } else $answers = "";
         // Comment on booking status
         if ( $leastStatus == self::STATUS_CONFIRMED && $rejectedItems ) {
-            $statusText = "Din bokning har nu hanterats av bokningsansvarig, men det finns poster i bokningen som inte har kunnat bekräftas. Nedan ser du vilka av posterna som är bekräftade och vilka som har avvisats. Kolla i kommentarsfältet längre ner om handläggaren har lämnat mer information om detta.";
+            $statusText = "Din bokning har nu hanterats av bokningsansvarig, men <b>det finns avvisade poster i bokningen</b>. Nedan ser du vilka av posterna som är bekräftade och vilka som har avvisats. Kolla i kommentarsfältet längre ner om handläggaren har lämnat mer information om detta.";
         } elseif ( $leastStatus == self::STATUS_CONFIRMED ) {
             $statusText = "Alla poster i din bokning är bekräftade.";
         } else {
-            $statusText = "Några poster i bokningen är preliminära och behöver bekräftas av ansvarig handläggare.";
-            if ( $rejectedItems ) $statusText .= " OBS, det finns poster som har avvisats. Kolla i kommentarsfältet längre ner om handläggaren har lämnat mer information om detta.";
+            $statusText = "Observera att några poster i bokningen inte ännu har bekräftats av ansvarig handläggare. <b>Bokningen blir inte giltig förrän alla poster har bekräftats.</b>";
+            if ( $rejectedItems ) $statusText .= "<br><b>OBS, det finns poster som har avvisats.</b> Kolla i kommentarsfältet längre ner om handläggaren har lämnat mer information om detta.";
         }
         if ( $this->sendMail(
             is_null( $this->userId ) ? $this->extMail : $this->user()->mail, // to
-            ( $this->confirmationSent ? "Uppdaterad bokningsbekräftelse" : "Bokningsbekräftelse" ) . " #{$this->id} " . htmlspecialchars( $this->ref ), // subject
+            "Din bokning #{$this->id} " . htmlspecialchars( $this->ref ), // subject
             "confirm_booking", // template
-            array( // replace
+            [ // replace
                 "{{name}}" => htmlspecialchars( is_null( $this->userId ) ? $this->extName : $this->user()->name ),
                 "{{items}}" => $itemList,
                 "{{messages}}" => count( $messages ) ? "<li>".implode( "</li><li>", $messages )."</li>" : "",
@@ -370,7 +370,7 @@ class Booking extends FFBoka {
                 "{{ref}}" => htmlspecialchars( $this->ref ),
                 "{{commentCust}}" => $this->commentCust ? str_replace( "\n", "<br>", htmlspecialchars( $this->commentCust ) ) : "(ingen kommentar har lämnats)",
                 "{{bookingLink}}" => "{$url}book-sum.php?bookingId={$this->id}&token={$this->token}"
-            ),
+            ],
             $attachments,
             $mailOptions,
             false // send now
