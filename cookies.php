@@ -1,4 +1,4 @@
-<p?php
+<?php
 use FFBoka\User;
 
 session_start();
