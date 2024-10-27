@@ -159,7 +159,7 @@ class FFBoka {
      */
     public function getAllAssignments() {
         $stmt = self::$db->query( "SELECT assName FROM assignments ORDER BY sort, assName" );
-        return $stmt->fetchAll( \PDO::FETCH_COLUMN );
+        return $stmt->fetchAll( PDO::FETCH_COLUMN );
     }
     
     /**
@@ -176,8 +176,8 @@ class FFBoka {
             default:
                 $stmt = self::$db->prepare( "SELECT sectionId FROM sections ORDER BY sectionId!=?, `name`" );
         }
-        $stmt->execute( array( $showFirst ) );
-        $sections = array();
+        $stmt->execute( [ $showFirst ] );
+        $sections = [];
         while ( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
             $sections[] = new Section( $row->sectionId );
         }
@@ -192,8 +192,8 @@ class FFBoka {
      */
     public function getSectionIdByName( string $sectionName ) {
         $stmt = self::$db->prepare( "SELECT sectionId FROM sections WHERE name=?" );
-        $stmt->execute( array( $sectionName ) );
-        if ( $row = $stmt->fetch( \PDO::FETCH_OBJ ) ) return $row->sectionId;
+        $stmt->execute( [ $sectionName ] );
+        if ( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) return $row->sectionId;
         else return FALSE;
     }
 
@@ -221,27 +221,27 @@ class FFBoka {
             } elseif ( $data->results ) {
                 $userId = $data->results[ 0 ]->cint_username;
             } else {
-                return array( "authenticated" => FALSE, "section" => NULL );
+                return [ "authenticated" => FALSE, "section" => NULL ];
             }
         } elseif ( filter_var( $userId, FILTER_VALIDATE_EMAIL ) ) {
             // $userId given as email address. Look it up in the users table
             $stmt = self::$db->prepare( "SELECT userId FROM users WHERE mail=? LIMIT 1" );
-            $stmt->execute( array( $userId ) );
-            if ( $row = $stmt->fetch( \PDO::FETCH_OBJ ) ) $userId = $row->userId;
+            $stmt->execute( [ $userId ] );
+            if ( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) $userId = $row->userId;
             else {
-                return array( "authenticated" => false, "section" => NULL );
+                return [ "authenticated" => false, "section" => NULL ];
             }
         }
         // Check password via API and get home section
-        $options = array(
-            'http' => array(
+        $options = [
+            'http' => [
                 'header'  => "Content-Type: application/json\r\n" .
                              "Cache-Control: no-cache\r\n".
                 "Ocp-Apim-Subscription-Key: " . self::$apiAuthKey . "\r\n",
                 'method'  => 'POST',
                 'content' => json_encode( [ 'membernumber' => $userId, 'password' => $password ] )
-            )
-        );
+            ]
+        ];
         $context  = stream_context_create( $options );
         $result = @file_get_contents( self::$apiAuthUrl, false, $context );
         if ( $result === FALSE ) {
@@ -253,11 +253,11 @@ class FFBoka {
             logger( __METHOD__ . " Error from login API: " . $result->error, E_ERROR );
             return FALSE;
         }
-       return array(
+        return [
             "authenticated" => $result->isMember,
             "userId" => $userId,
             "section" => $result->isMemberOfLokalavdelning
-        );
+        ];
     }
     
 
@@ -279,10 +279,10 @@ class FFBoka {
      */
     public function findUser($q) {
         $stmt = self::$db->prepare( "SELECT userId, name FROM users WHERE userId LIKE ? OR name LIKE ?" );
-        $stmt->execute( array( "%$q%", "%$q%" ) );
-        $ret = array();
+        $stmt->execute( [ "%$q%", "%$q%" ] );
+        $ret = [];
         while ( $row = $stmt->fetch( PDO::FETCH_ASSOC ) ) {
-            $ret[] = array( "userId" => $row[ 'userId' ], "name" => htmlspecialchars( $row[ 'name' ] ) );
+            $ret[] = [ "userId" => $row[ 'userId' ], "name" => htmlspecialchars( $row[ 'name' ] ) ];
         }
         return $ret;
     }
@@ -308,11 +308,11 @@ class FFBoka {
         }
         // Get the picture and its size
         $src = @imagecreatefromstring( file_get_contents( $file[ 'tmp_name' ] ) );
-        if ( !$src ) return array( "error" => "Filformatet stöds inte. Försök med en jpg- eller png-bild." );
+        if ( !$src ) return [ "error" => "Filformatet stöds inte. Försök med en jpg- eller png-bild." ];
         $size = @getimagesize( $file[ 'tmp_name' ] );
         if ( !$size ) {
             logger( "Failed to load image for resizing.", E_WARNING );
-            return array( "error" => "Kan inte läsa filformatet." );
+            return [ "error" => "Kan inte läsa filformatet." ];
         }
         $ratio = $size[ 0 ] / $size[ 1 ];
         if ( $maxSize && ( $size[ 0 ] > $maxSize || $size[ 1 ] > $maxSize ) ) { // Resize
@@ -340,7 +340,7 @@ class FFBoka {
         ob_start();
         imagepng( $tmp );
         $thumb = ob_get_clean();
-        return array( "image" => $image, "thumb" => $thumb );
+        return [ "image" => $image, "thumb" => $thumb ];
     }
     
     
@@ -365,7 +365,7 @@ class FFBoka {
             logger( __METHOD__ . " Failed to create token. " . $stmt->errorInfo()[ 2 ], E_ERROR );
             throw new \Exception( ( string ) $stmt->errorInfo()[ 2 ] );
         }
-        return( $token );
+        return $token;
     }
     
     /**
@@ -382,7 +382,7 @@ class FFBoka {
      * Get stored information for a given token.
      * @param string $token The token
      * @throws \Exception if token not found or expired
-     * @return object { unixtime, token, timestamp, ttl, useFor, forId, data }
+     * @return object Object { unixtime, token, timestamp, ttl, useFor, forId, data }
      */
     public function getToken( string $token ) {
         $stmt = self::$db->query( "SELECT UNIX_TIMESTAMP(timestamp) AS unixtime, tokens.* FROM tokens WHERE token='" . sha1( $token ) . "'" );
@@ -398,7 +398,7 @@ class FFBoka {
      * @return string
      */
     static function formatBytes( int $bytes, int $precision = 1 ) {
-        $units = array( "B", "kB", "MB", "GB", "TB" );
+        $units = [ "B", "kB", "MB", "GB", "TB" ];
         $pow = floor( ( $bytes ? log( $bytes ) : 0 ) / log( 1024 ) );
         $pow = min( $pow, count( $units ) - 1 );
         $bytes /= ( 1 << ( 10 * $pow ) );
@@ -478,8 +478,8 @@ class FFBoka {
         default:
             $stmt = self::$db->query( "SELECT pollId FROM polls ORDER BY expires IS NULL, expires DESC" );
         }
-        $polls = array();
-        while ( $row = $stmt->fetch( \PDO::FETCH_OBJ ) ) {
+        $polls = [];
+        while ( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
             $polls[] = new Poll( $row->pollId );
         }
         return $polls;
@@ -491,7 +491,7 @@ class FFBoka {
      */
     public function getNextRepeatId() {
         $stmt = self::$db->query( "SELECT 0+MAX(repeatId) lastId FROM bookings" );
-        $row = $stmt->fetch( \PDO::FETCH_OBJ );
+        $row = $stmt->fetch( PDO::FETCH_OBJ );
         if ( is_null( $row->lastId ) ) return 1;
         else return $row->lastId + 1;
     }

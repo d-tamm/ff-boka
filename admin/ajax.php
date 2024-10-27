@@ -297,6 +297,7 @@ case "setCatProp":
     case "prebookMsg":
     case "postbookMsg":
     case "bufferAfterBooking":
+    case "active":
         header( "Content-Type: application/json" );
         // check if email is a valid email address
         if ( $_REQUEST[ 'name' ] == "contactMail" && $_REQUEST[ 'value' ] !== "" && !filter_var( $_REQUEST[ 'value' ], FILTER_VALIDATE_EMAIL ) ) {
@@ -501,7 +502,7 @@ case "saveItemProp":
             break;
         default:
             http_response_code( 405 ); // Method not allowed
-            logger( __METHOD__ . " Tried to set invalid item property {$_REQUEST[ 'name' ]}.", E_WARNING );
+            logger( "SaveItemProp: Tried to set invalid item property {$_REQUEST[ 'name' ]}.", E_WARNING );
             die( "Invalid item property." );
     }
     die();

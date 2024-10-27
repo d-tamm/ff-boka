@@ -68,6 +68,7 @@ class Category extends FFBoka {
             case "accessMember":
             case "accessLocal":
             case "hideForExt":
+            case "active":
                 if ( !$this->id ) {
                     logger( __METHOD__ . " Cannot set property $name on dummy category.", E_ERROR );
                     return false;
@@ -85,7 +86,7 @@ class Category extends FFBoka {
                 break;
             default:
                 logger( __METHOD__ . " Use of undefined Category property $name.", E_ERROR );
-                throw new \Exception( "Use of undefined Category property $name" );
+                throw new Exception( "Use of undefined Category property $name" );
         }
         return false;
     }
@@ -114,7 +115,7 @@ class Category extends FFBoka {
         if ( $images[ 'error' ] ) return $images[ 'error' ];
         // Save thumb to database
         $stmt = self::$db->prepare( "UPDATE categories SET thumb=? WHERE catID={$this->id}" );
-        if ( !$stmt->execute( array( $images[ 'thumb' ] ) ) ) {
+        if ( !$stmt->execute( [ $images[ 'thumb' ] ] ) ) {
             logger( __METHOD__ . " Failed to save thumbnail to database. " . $stmt->errorInfo()[ 2 ], E_ERROR );
             return "Kan inte spara miniaturbilden i databasen.";
         }
@@ -151,6 +152,7 @@ class Category extends FFBoka {
             case "accessMember":
             case "accessLocal":
             case "hideForExt":
+            case "active":
                 if ( !$this->id ) return "";
                 $stmt = self::$db->query( "SELECT $name FROM categories WHERE catId={$this->id}" );
                 $row = $stmt->fetch( PDO::FETCH_OBJ );
@@ -166,7 +168,7 @@ class Category extends FFBoka {
                 return $stmt->rowCount();
             default:
                 logger( __METHOD__ . " Use of undefined Category property $name.", E_ERROR );
-                throw new \Exception( "Use of undefined Category property $name" );
+                throw new Exception( "Use of undefined Category property $name" );
         }
     }
 
@@ -177,8 +179,8 @@ class Category extends FFBoka {
      */
     public function prebookMsgs() : array {
         if ( is_null( $this->parentId ) ) {
-            if ( $this->prebookMsg ) return array( $this->prebookMsg );
-            else return array();
+            if ( $this->prebookMsg ) return [ $this->prebookMsg ];
+            else return [];
         } else {
             $ret = $this->parent()->prebookMsgs();
             if ( $this->prebookMsg ) $ret[] = $this->prebookMsg;
@@ -193,8 +195,8 @@ class Category extends FFBoka {
      */
     public function postbookMsgs(): array {
         if ( is_null( $this->parentId ) ) {
-            if ( $this->postbookMsg ) return array( $this->postbookMsg );
-            else return array();
+            if ( $this->postbookMsg ) return [ $this->postbookMsg ];
+            else return [];
         } else {
             $ret = $this->parent()->postbookMsgs();
             if ( $this->postbookMsg ) $ret[] = $this->postbookMsg;
@@ -229,7 +231,7 @@ class Category extends FFBoka {
     public function contactData() : string {
         if ( is_null( $this->contactUserId ) ) {
             if ( $this->contactName == "" && $this->contactPhone == "" && $this->contactMail == "" && !is_null( $this->parentId ) ) return $this->parent()->contactData();
-            $ret = array();
+            $ret = [];
             if ( $this->contactName ) $ret[] = htmlspecialchars( $this->contactName );
             if ( $this->contactPhone ) $ret[] = "☎ " . htmlspecialchars( $this->contactPhone );
             if ( $this->contactMail ) $ret[] = "✉ " . htmlspecialchars( $this->contactMail );
@@ -270,7 +272,7 @@ class Category extends FFBoka {
      * 
      * @param bool $inherited Mark questions on this cat level as inherited.
      * Questions from parent objects will always be marked as inherited.
-     * @return Array of {inherited, required} where the key is the ID of the question.
+     * @return array of {inherited, required} where the key is the ID of the question.
      * If a question is set on several levels, the lowest level setting is returned.
      */
     public function getQuestions( bool $inherited = FALSE ) : array {
@@ -307,7 +309,7 @@ class Category extends FFBoka {
      */
     public function removeQuestion( int $id ) : bool {
         $stmt = self::$db->prepare( "DELETE FROM cat_questions WHERE questionId=? AND catId={$this->id}" );
-        if ( $stmt->execute( array( $id ) ) ) return true;
+        if ( $stmt->execute( [ $id ] ) ) return true;
         logger( __METHOD__ . " Failed to remove question $id from category {$this->id}. " . $stmt->errorInfo()[ 2 ], E_ERROR );
         return false;
     }
@@ -376,8 +378,8 @@ class Category extends FFBoka {
         case "attachFile":
             $stmt = self::$db->prepare( "UPDATE cat_files SET $name=:$name WHERE fileId=:fileId AND catId={$this->id}" );
             if ( $name == "displayLink" || $name == "attachFile" ) $stmt->bindValue( ":$name", $value, PDO::PARAM_BOOL );
-            else $stmt->bindValue( ":$name", $value, \PDO::PARAM_STR );
-            $stmt->bindValue( ":fileId", $fileId, \PDO::PARAM_INT );
+            else $stmt->bindValue( ":$name", $value, PDO::PARAM_STR );
+            $stmt->bindValue( ":fileId", $fileId, PDO::PARAM_INT );
             if ( $stmt->execute() ) return true;
             logger( __METHOD__ . " Failed to set File property $name on file $fileId. " . $stmt->errorInfo()[ 2 ], E_ERROR );
             return false;
