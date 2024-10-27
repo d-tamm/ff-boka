@@ -1176,6 +1176,13 @@ $( document ).on( 'pagecreate', "#page-admin-category", function() {
     } );
 
     /**
+     * Save item active state
+     */
+    $( "#cat-active" ).click( function() {
+        setCatProp( "active", this.checked ? 1 : 0 );
+    } );
+    
+    /**
      * Set timeout for saving prebook message
      */
     $( document ).off( 'input', "#cat-prebookMsg" ).on( 'input', "#cat-prebookMsg", function() {

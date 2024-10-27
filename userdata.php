@@ -57,7 +57,7 @@ switch ( $_REQUEST[ 'action' ] ) {
             <li><b>Bekräfta</b> innebär att du bara får meddelanden för preliminärbokningar som måste bekräftas av någon bokningsansvarig.</li>
             <li><b>Alla</b> innebär att du får en avisering för varje ny bokning, även om den inte behöver bekräftas.</li>
         </ul>
-        <p>Om du byter till <b>Av</b> och hittills har varit den enda administratören som fått aviseringar så kommer du få en varning, eftersom nya bokningar som måste bekräftas riskerar att inte bearbetas.</p>
+        <p>Om du byter till <b>Av</b> och hittills har varit den enda administratören som fått aviseringar så kommer du få en varning, eftersom nya bokningar som måste bekräftas riskerar att inte hanteras.</p>
 
         <h3>Inloggningar</h3>
         <p>Här ser du alla enheter/webbläsare där du har loggat in med "Kom ihåg mig"-funktionen. Funktionen gör att du inte behöver logga in varje gång du använder resursbokningen. Du kan ta bort enskilda poster genom att klicka på knappen längst till höger. På det viset kan du t.ex. logga ut en enhet som du inte längre har kontroll över.</p>
@@ -241,6 +241,7 @@ if ( isset( $_GET[ 'first_login' ] ) ) $message = "Välkommen till resursbokning
         if ( count( $sections ) ) { ?>
         <div data-role='collapsible'>
             <h3>Avisering vid nya bokningar</h3>
+            <p>Skicka avisering vid nya bokningar:</p>
             <?php 
             foreach ( $sections as $sec ) {
                 echo "<p><b>" . htmlspecialchars( $sec->name ) . "</b></p>";

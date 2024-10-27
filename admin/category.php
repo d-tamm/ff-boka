@@ -19,7 +19,7 @@ if ( !isset( $_SESSION[ 'sectionId' ] ) ) {
 } 
 
 if ( isset( $_REQUEST[ 'catId' ] ) ) $_SESSION[ 'catId' ] = $_REQUEST[ 'catId' ];
-$cat = new Category( isset( $_SESSION[ 'catId' ]) ? $_SESSION[ 'catId' ] : 0 );
+$cat = new Category( $_SESSION[ 'catId' ] ?? 0 );
 $currentUser = new User( $_SESSION[ 'authenticatedUser' ] );
 $section = new Section( $_SESSION[ 'sectionId' ] );
 
@@ -195,6 +195,8 @@ unset ( $_SESSION[ 'itemId' ] );
                     ?>
                 </select>
             </div>
+
+            <label><input type="checkbox" name="active" value="1" id="cat-active" <?= $cat->active ? "checked='true'" : "" ?>>Aktiv (visas i bokningsflödet)</label>
 
             <p>Bild att visa med kategorin:</p>
             <img src="../image.php?type=category&id=<?= $cat->id ?>&<?= time() ?>" id="cat-img-preview"<?= $cat->thumb ? "" : " style='display:none;'" ?>>

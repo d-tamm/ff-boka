@@ -27,7 +27,7 @@ function findCatsWithoutAdmin( Category $cat, &$catsWithoutAdmin ) : void {
 
 
 session_start();
-require( __DIR__ . "/../inc/common.php" );
+require __DIR__ . "/../inc/common.php";
 global $cfg, $FF;
 
 // Set current section
@@ -89,7 +89,7 @@ if ( isset( $_SESSION[ 'assignments' ][ $section->id ] ) && is_array( $_SESSION[
 
 if ( isset( $_REQUEST['message'] ) ) $message = $_REQUEST['message'];
 
-$catsWithoutAdmin = array();
+$catsWithoutAdmin = [];
 if ( $userAccess >= FFBoka::ACCESS_CATADMIN ) {
     foreach( $section->getMainCategories() as $cat ) {
         findCatsWithoutAdmin( $cat, $catsWithoutAdmin );
@@ -142,7 +142,7 @@ unset( $_SESSION[ 'catId' ] );
     ?>
 
     <?php
-    $unconfirmed = array();
+    $unconfirmed = [];
     foreach ( $section->getUnconfirmedBookings( $currentUser ) as $bookingId ) {
         if ( !isset( $unconfirmed[ $bookingId ] ) ) $unconfirmed[ $bookingId ] = 0;
         $unconfirmed[ $bookingId ]++;
@@ -157,12 +157,12 @@ unset( $_SESSION[ 'catId' ] );
             <?php
             foreach ( $section->getMainCategories() as $cat ) {
                 if ( $cat->showFor( $currentUser, FFBoka::ACCESS_CATADMIN ) ) {
-                    echo "<li><a data-transition='slide' href='category.php?catId={$cat->id}'>" .
+                    echo "<li class=" . ( $cat->active ? "active" : "inactive" ) . "><a data-transition='slide' href='category.php?catId={$cat->id}'>" .
                         htmlspecialchars( $cat->caption ) .
                         embedImage( $cat->thumb );
-                    $children = array();
-                    foreach ( $cat->children( TRUE ) as $child ) $children[] = htmlspecialchars( $child->caption );
-                    if ( $children ) echo "<p>" . implode( ", ", $children ) . "</p>";
+                    $children = [];
+                    foreach ( $cat->children() as $child ) $children[] = htmlspecialchars( $child->caption );
+                    echo "<p>" . ( $cat->active ? "" : "(inaktiv) " ) . ( $children ? implode( ", ", $children ) : "" ) . "</p>";
                     echo "<span class='ui-li-count'>{$cat->itemCount}</span></a></li>";
                 }
             }

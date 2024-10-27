@@ -147,7 +147,9 @@ if ( isset( $_REQUEST[ 'action' ] ) && $_REQUEST[ 'action' ] == "help" ) {
     <?php
     $numItems = 0;
     foreach ( $section->getMainCategories() as $cat ) {
-        $numItems += displayCat( $cat, $currentUser, strtotime( "last sunday +1 day" ), $cfg[ 'allowedAttTypes' ] );
+        if ( $cat->active ) {
+            $numItems += displayCat( $cat, $currentUser, strtotime( "last sunday +1 day" ), $cfg[ 'allowedAttTypes' ] );
+        }
     }
     if ( $numItems == 0 ) {
         echo "<p><i>I den här lokalavdelningen finns det inte några resurser som du kan boka. Det kan bero på att lokalavdelningen inte (ännu) använder systemet, eller att du inte har behörighet att boka de resurser som har lagts upp.</i></p>";
