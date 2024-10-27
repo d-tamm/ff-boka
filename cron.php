@@ -17,7 +17,7 @@ $stmt = $db->query( "SELECT value FROM config WHERE name='last hourly cron run'"
 $row = $stmt->fetch( PDO::FETCH_OBJ );
 $last = new DateTime( "@" . $row->value );
 $since = $last->diff( new DateTime(), true );
-logger( __METHOD__ . sprintf( "Executing cron jobs. Last cron execution was %s ago.", $since->format( "%H:%I:%S" ) ) );
+logger( sprintf( "Cron: Executing cron jobs. Last cron execution was %s ago.", $since->format( "%H:%I:%S" ) ) );
 
 /**
  * Cron jobs executed whenever this script is called
@@ -29,7 +29,7 @@ $FF->sendQueuedMails( $cfg[ 'mail' ] );
 // Send reminders
 // Get all confirmed bookedItems starting 6 months ago until 6 months ahead
 $bookings = [];
-$stmt = $db->query( "SELECT bookedItemId FROM `booked_items` WHERE DATEDIFF(start, NOW())<185 AND DATEDIFF(NOW(), start)<185 AND status=4" );
+$stmt = $db->query( "SELECT bookedItemId FROM `booked_items` WHERE DATEDIFF(start, NOW())<185 AND DATEDIFF(NOW(), start)<185 AND status=".FFBoka::STATUS_CONFIRMED );
 while ( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
     $item = new Item( $row->bookedItemId, true );
     foreach ( $item->reminders( true ) as $reminder ) {
@@ -61,7 +61,7 @@ while ( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
 foreach ( $bookings as $id=>$booking ) {
     if ( $FF->sendMail(
         $booking[ 'mail' ], // To
-        "Din bokning {$booking['ref']}", // subject
+        "Din bokning #$id {$booking['ref']}", // subject
         "reminder", // Body or template
         [ // replace
             "{{user}}" => $booking[ 'user' ],
@@ -89,7 +89,7 @@ $stmt = $db->query( "SELECT value FROM config WHERE name='last daily cron run'" 
 $row = $stmt->fetch( PDO::FETCH_OBJ );
 $midnight = new DateTime( "midnight" );
 if ( (int)$row->value < $midnight->getTimestamp() && date( "G" ) >= $cfg[ 'cronDaily' ] ) {
-    logger( __METHOD__ . " Time to execute daily jobs..." );
+    logger( "Cron: Time to execute daily jobs..." );
 
     // Lookup one missing (new) user agent (if there is any)
     fetchUA( $db );
@@ -106,7 +106,7 @@ $stmt = $db->query( "SELECT value FROM config WHERE name='last weekly cron run'"
 $row = $stmt->fetch( PDO::FETCH_OBJ );
 $monday = new DateTime( "monday this week" );
 if ( (int)$row->value < $monday->getTimestamp() && date( "N" ) >= $cfg[ 'cronWeekly' ] ) {
-    logger( __METHOD__ . " Time to execute weekly jobs..." );
+    logger( "Cron: Time to execute weekly jobs..." );
     
     $FF->updateSectionList();
     $FF->updateAssignmentList();
@@ -116,7 +116,7 @@ if ( (int)$row->value < $monday->getTimestamp() && date( "N" ) >= $cfg[ 'cronWee
     
     // Record last execution time
     $db->exec( "UPDATE config SET value=UNIX_TIMESTAMP() WHERE name='last weekly cron run'" );
-    logger( __METHOD__ . " Weekly jobs finished." );
+    logger( "Cron: Weekly jobs finished." );
 }
 
 /**
@@ -126,32 +126,32 @@ $stmt = $db->query( "SELECT value FROM config WHERE name='last monthly cron run'
 $row = $stmt->fetch( PDO::FETCH_OBJ );
 $first = new DateTime( "first day of" );
 if ( (int)$row->value < $first->getTimestamp() && date( "j" ) >= $cfg[ 'cronMonthly' ] ) {
-    logger( __METHOD__ . " Time to execute monthly jobs..." );
+    logger( "Cron: Time to execute monthly jobs..." );
 
     $numDeleted = $db->exec( "DELETE FROM persistent_logins WHERE expires < NOW()" );
-    logger( __METHOD__ . " $numDeleted expired persistent login tokens deleted." );
+    logger( "Cron: $numDeleted expired persistent login tokens deleted." );
 
     $numDeleted = $db->exec( "DELETE FROM tokens WHERE DATE_ADD(timestamp, INTERVAL ttl SECOND)<NOW()" );
-    logger( __METHOD__ . " $numDeleted other tokens deleted." );
+    logger( "Cron: $numDeleted other tokens deleted." );
     
-    logger( __METHOD__ . " Deleting records from cat_admin_noalert which do not any more belong to a user with admin rights..." );
+    logger( "Cron: Deleting records from cat_admin_noalert which do not any more belong to a user with admin rights..." );
     $stmt = $db->query( "SELECT * FROM cat_admin_noalert" );
     while ( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
         $cat = new Category( $row->catId );
         $user = new User( $row->userId );
         if ( $cat->getAccess( $user, FALSE ) < FFBoka::ACCESS_CONFIRM ) {
-            logger( __METHOD__ . " Removing record for user {$row->userId}, cat {$row->catId}" );
+            logger( "Cron: Removing record for user {$row->userId}, cat {$row->catId}" );
             $db->exec( "DELETE FROM cat_admin_noalert WHERE userId={$row->userId} AND catId={$row->catId}" );
         }
     }
     
-    logger( __METHOD__ . " Garbage collection: Delete orphaned full size images..." );
+    logger( "Cron: Garbage collection: Delete orphaned full size images..." );
     foreach ( glob( __DIR__ . "/img/cat/*" ) as $file ) {
         if ( !is_dir( $file ) ) {
             $stmt = $db->query( "SELECT catId FROM categories WHERE catId=" . basename( $file ) );
             if ( $stmt->rowCount() == 0 ) {
-                if ( unlink( $file ) ) logger( __METHOD__ . " Deleted category image $file" );
-                else logger( __METHOD__ . " Failed to delete orphaned category image $file", E_ERROR );
+                if ( unlink( $file ) ) logger( "Cron: Deleted category image $file" );
+                else logger( "Cron: Failed to delete orphaned category image $file", E_ERROR );
             }
         }
     }
@@ -159,8 +159,8 @@ if ( (int)$row->value < $first->getTimestamp() && date( "j" ) >= $cfg[ 'cronMont
         if ( !is_dir( $file ) ) {
             $stmt = $db->query( "SELECT imageId FROM item_images WHERE imageId=" . basename( $file ) );
             if ( $stmt->rowCount() == 0 ) {
-                if ( unlink( $file ) ) logger( __METHOD__ . " Deleted item image $file" );
-                else logger( __METHOD__ . " Failed to delete orphaned item image $file", E_ERROR );
+                if ( unlink( $file ) ) logger( "Cron: Deleted item image $file" );
+                else logger( "Cron: Failed to delete orphaned item image $file", E_ERROR );
             }
         }
     }
@@ -168,12 +168,12 @@ if ( (int)$row->value < $first->getTimestamp() && date( "j" ) >= $cfg[ 'cronMont
         if ( !is_dir( $file ) ) {
             $stmt = $db->query( "SELECT fileId FROM cat_files WHERE fileId=" . basename( $file ) );
             if ( $stmt->rowCount() == 0 ) {
-                if ( unlink( $file ) ) logger( __METHOD__ . " Deleted attachment file $file" );
-                else logger( __METHOD__ . " Failed to delete orphaned attachment file $file", E_ERROR );
+                if ( unlink( $file ) ) logger( "Cron: Deleted attachment file $file" );
+                else logger( "Cron: Failed to delete orphaned attachment file $file", E_ERROR );
             }
         }
     }
-    logger( __METHOD__ . " Done removing orphaned images." );
+    logger( "Cron: Done removing orphaned images." );
 
     // Number of sections with items
     $db->exec( "INSERT INTO stats SET `key`='sections', `value`=(SELECT COUNT(DISTINCT sectionId) FROM sections JOIN categories USING (sectionId) JOIN items USING (catId))" );
@@ -198,7 +198,7 @@ if ( (int)$row->value < $first->getTimestamp() && date( "j" ) >= $cfg[ 'cronMont
         $stmt = $db->query( "SELECT items.caption item, categories.caption category, COUNT(*) bookings FROM `booked_items` INNER JOIN bookings USING (bookingId) INNER JOIN items USING (itemId) INNER JOIN categories USING (catId) WHERE ADDDATE(bookings.timestamp, INTERVAL 12 MONTH)>NOW() AND categories.sectionId={$section->id} GROUP BY items.itemId ORDER BY bookings DESC LIMIT 10" );
         $db->exec( "INSERT INTO stats SET sectionId={$section->id}, `key`='favorite items', `value`='" . json_encode( $stmt->fetchAll( PDO::FETCH_OBJ ) ) . "'" );
     }
-    logger( __METHOD__ . " Saved monthly statistics." );
+    logger( "Cron: Saved monthly statistics." );
     
     // Record last execution time
     $db->exec( "UPDATE config SET value=UNIX_TIMESTAMP() WHERE name='last monthly cron run'" );
@@ -218,13 +218,13 @@ function fetchUA( PDO $db, int $updateIncomplete = 0 ) {
         $stmt1 = $db->prepare( "UPDATE user_agents SET browser=:browser, version=:version, platform=:platform, platform_version=:platform_version, platform_bits=:platform_bits, device_type=:device_type WHERE uaHash=:uaHash" );
         foreach ( $rows as $row ) {
             logger( __METHOD__ . " Resolving user agent {$row->userAgent}" );
-            $options = array(
-                'http' => array(
+            $options = [
+                'http' => [
                     'header'  => 'Content-Type: application/x-www-form-urlencoded',
                     'method'  => 'POST',
                     'content' => http_build_query( [ 'action' => 'parse', 'format' => 'json', 'string' => $row->userAgent ] )
-                )
-            );
+                ]
+            ];
             $context  = stream_context_create( $options );
             $result = file_get_contents( 'https://user-agents.net/parser', false, $context );
             if ( $result !== FALSE ) {
