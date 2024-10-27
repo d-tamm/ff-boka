@@ -23,7 +23,7 @@ if ( isset( $_REQUEST[ 'bookingId' ] ) ) {
 try {
     $booking = new Booking( $_SESSION[ 'bookingId' ] );
 } catch ( Exception $e ) {
-    logger( __METHOD__ . " User {$currentUser->id} tried to access invalid booking {$_SESSION[ 'bookingId' ]}", E_WARNING );
+    logger( "Book-sum: User {$currentUser->id} tried to access invalid booking {$_SESSION[ 'bookingId' ]}", E_WARNING );
     unset( $_SESSION[ 'bookingId' ] );
     header( "Location: index.php?action=bookingNotFound" );
     die();
@@ -41,7 +41,7 @@ if ( !(
     }
     // Last access check: current user must be admin of some category
     if ( !$booking->section()->showFor( $currentUser, FFBoka::ACCESS_CONFIRM ) ) {
-        logger( __METHOD__ . " Non-admin user {$currentUser->id} tried to access other user's booking {$_SESSION[ 'bookingId' ]}.", E_WARNING );
+        logger( "Book-sum: Non-admin user {$currentUser->id} tried to access other user's booking {$_SESSION[ 'bookingId' ]}.", E_WARNING );
         unset( $_SESSION[ 'bookingId' ] );
         header( "Location: index.php?action=accessDenied&to=bokningen" );
         die();
