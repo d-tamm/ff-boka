@@ -59,11 +59,11 @@ class Section extends FFBoka {
             $row = $stmt->fetch( PDO::FETCH_OBJ );
             return $row->activeUsers;
         case "activeItems": // number of active items
-            $stmt = self::$db->query( "SELECT COUNT(*) items FROM items INNER JOIN categories USING (catId) WHERE sectionId={$this->id} AND active=1" );
+            $stmt = self::$db->query( "SELECT COUNT(*) items FROM items INNER JOIN categories USING (catId) WHERE sectionId={$this->id} AND items.active=1 AND categories.active=1" );
             $row = $stmt->fetch( PDO::FETCH_OBJ );
             return $row->items;
         case "inactiveItems": // number of inactive items
-            $stmt = self::$db->query( "SELECT COUNT(*) items FROM items INNER JOIN categories USING (catId) WHERE sectionId={$this->id} AND active=0" );
+            $stmt = self::$db->query( "SELECT COUNT(*) items FROM items INNER JOIN categories USING (catId) WHERE sectionId={$this->id} AND items.active=0 OR categories.active=0" );
             $row = $stmt->fetch( PDO::FETCH_OBJ );
             return $row->items;
         case "numberOfCategories":
