@@ -178,7 +178,7 @@ if ( (int)$row->value < $first->getTimestamp() && date( "j" ) >= $cfg[ 'cronMont
     // Number of sections with items
     $db->exec( "INSERT INTO stats SET `key`='sections', `value`=(SELECT COUNT(DISTINCT sectionId) FROM sections JOIN categories USING (sectionId) JOIN items USING (catId))" );
     // Total number of active items
-    $db->exec( "INSERT INTO stats SET `key`='items', `value`=(SELECT COUNT(*) FROM items WHERE active)" );
+    $db->exec( "INSERT INTO stats SET `key`='items', `value`=(SELECT COUNT(*) FROM items INNER JOIN categories ON (items.catId=categories.catId) WHERE categories.active AND items.active)" );
     // Number of activated users
     $db->exec( "INSERT INTO stats SET `key`='active users', `value`=(SELECT COUNT(*) FROM users WHERE name!='')" );
     // Number of active users last month
@@ -187,7 +187,7 @@ if ( (int)$row->value < $first->getTimestamp() && date( "j" ) >= $cfg[ 'cronMont
     $db->exec( "INSERT INTO stats SET `key`='bookings', `value`=(SELECT COUNT(*) FROM bookings WHERE ADDDATE(timestamp, INTERVAL 1 MONTH)>NOW())" );
     foreach ( $FF->getAllSections() as $section ) {
         // Number of active items
-        $db->exec( "INSERT INTO stats SET sectionId={$section->id}, `key`='items', `value`=(SELECT COUNT(*) FROM items INNER JOIN categories ON (items.catId=categories.catId) WHERE sectionId={$section->id} AND active)" );
+        $db->exec( "INSERT INTO stats SET sectionId={$section->id}, `key`='items', `value`=(SELECT COUNT(*) FROM items INNER JOIN categories ON (items.catId=categories.catId) WHERE sectionId={$section->id} AND categories.active AND items.active)" );
         // Number of activated users
         $db->exec( "INSERT INTO stats SET sectionId={$section->id}, `key`='active users', `value`=(SELECT COUNT(*) FROM users WHERE sectionId={$section->id} AND name!='')" );
         // Number of active users last month
