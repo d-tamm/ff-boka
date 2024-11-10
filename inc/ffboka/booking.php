@@ -21,7 +21,7 @@ class Booking extends FFBoka {
     
     /**
      * Booking instantiation. 
-     * @param int $id ID of the booking
+     * @param string $id ID of the booking
      * @throws \Exception if no or an invalid $id is passed.
      */
     public function __construct( $id ) {
@@ -69,11 +69,11 @@ class Booking extends FFBoka {
             case "confirmationSent":
             case "okShowContactData":
             case "dirty":
-                $stmt = self::$db->query( "SELECT $name FROM bookings WHERE bookingId={$this->id}" );
+                $stmt = self::$db->query( "SELECT $name FROM bookings WHERE bookingId='{$this->id}'" );
                 $row = $stmt->fetch( PDO::FETCH_OBJ );
                 return $row->$name;
             case "price":
-                $stmt = self::$db->query( "SELECT SUM(price) price FROM booked_items WHERE bookingId={$this->id} AND NOT price IS NULL" );
+                $stmt = self::$db->query( "SELECT SUM(price) price FROM booked_items WHERE bookingId='{$this->id}' AND NOT price IS NULL" );
                 $row = $stmt->fetch( PDO::FETCH_OBJ );
                 return $row->price;
             case "userName":
@@ -108,7 +108,7 @@ class Booking extends FFBoka {
             case "confirmationSent":
             case "okShowContactData":
             case "dirty";
-                $stmt = self::$db->prepare( "UPDATE bookings SET $name=:name WHERE bookingId={$this->id}" );
+                $stmt = self::$db->prepare( "UPDATE bookings SET $name=:name WHERE bookingId='{$this->id}'" );
                 if ( $name == "repeatId" ) $stmt->bindValue( ":name", $value, PDO::PARAM_INT );
                 else $stmt->bindValue( ":name", $value );
                 if ( $stmt->execute() ) return $value;
@@ -142,7 +142,7 @@ class Booking extends FFBoka {
      * @return bool Success
      */
     public function delete() {
-        return self::$db->exec( "DELETE FROM bookings WHERE bookingId={$this->id}" );
+        return self::$db->exec( "DELETE FROM bookings WHERE bookingId='{$this->id}'" );
     }
     
     /**
@@ -163,7 +163,7 @@ class Booking extends FFBoka {
      * @return Item|bool Added item on success, false on failure
      */
     public function addItem( int $itemId ) {
-        $stmt = self::$db->prepare( "INSERT INTO booked_items SET bookingId={$this->id}, itemId=?" );
+        $stmt = self::$db->prepare( "INSERT INTO booked_items SET bookingId='{$this->id}', itemId=?" );
         if ( $stmt->execute( array( $itemId ) ) ) return new Item( self::$db->lastInsertId(), TRUE );
         logger( __METHOD__ . " Failed to add item $itemId to booking {$this->id}. " . $stmt->errorInfo()[ 2 ], E_ERROR );
         return FALSE;
@@ -186,7 +186,7 @@ class Booking extends FFBoka {
      * @return Item[]
      */
     public function items() {
-        $stmt = self::$db->query( "SELECT bookedItemId, status FROM booked_items WHERE bookingId={$this->id}" );
+        $stmt = self::$db->query( "SELECT bookedItemId, status FROM booked_items WHERE bookingId='{$this->id}'" );
         $items = [];
         while ( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
             $items[] = new Item( $row->bookedItemId, TRUE );
@@ -201,7 +201,7 @@ class Booking extends FFBoka {
      * @return int|bool ID of inserted answer, FALSE on failure
      */
     public function addAnswer( string $question, string $answer ) {
-        $stmt = self::$db->prepare( "INSERT INTO booking_answers SET bookingId={$this->id}, question=:question, answer=:answer" );
+        $stmt = self::$db->prepare( "INSERT INTO booking_answers SET bookingId='{$this->id}', question=:question, answer=:answer" );
         if ( $stmt->execute( [
             ":question"=>$question,
             ":answer"=>$answer,
@@ -215,7 +215,7 @@ class Booking extends FFBoka {
      * @return int Number of answers deleted
      */
     public function clearAnswers() {
-        return self::$db->exec( "DELETE FROM booking_answers WHERE bookingId={$this->id}" );
+        return self::$db->exec( "DELETE FROM booking_answers WHERE bookingId='{$this->id}'" );
     }
     
     /**
@@ -224,7 +224,7 @@ class Booking extends FFBoka {
      */
     public function answers() {
         $ans = array();
-        $stmt = self::$db->query( "SELECT answerId, question, answer FROM booking_answers WHERE bookingId={$this->id}" );
+        $stmt = self::$db->query( "SELECT answerId, question, answer FROM booking_answers WHERE bookingId='{$this->id}'" );
         while ( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
             $ans[ $row->answerId ] = $row; 
         }
@@ -358,7 +358,7 @@ class Booking extends FFBoka {
         }
         if ( $this->sendMail(
             is_null( $this->userId ) ? $this->extMail : $this->user()->mail, // to
-            "Din bokning #{$this->id} " . htmlspecialchars( $this->ref ), // subject
+            "Din bokning {$this->id} " . htmlspecialchars( $this->ref ), // subject
             "confirm_booking", // template
             [ // replace
                 "{{name}}" => htmlspecialchars( is_null( $this->userId ) ? $this->extName : $this->user()->name ),
@@ -367,7 +367,7 @@ class Booking extends FFBoka {
                 "{{status}}" => $statusText,
                 "{{contactData}}" => $contactData,
                 "{{answers}}" => $answers,
-                "{{ref}}" => htmlspecialchars( $this->ref ),
+                "{{ref}}" => htmlspecialchars( $this->ref ?? $this->id ),
                 "{{commentCust}}" => $this->commentCust ? str_replace( "\n", "<br>", htmlspecialchars( $this->commentCust ) ) : "(ingen kommentar har lämnats)",
                 "{{bookingLink}}" => "{$url}book-sum.php?bookingId={$this->id}&token={$this->token}"
             ],
@@ -472,7 +472,7 @@ class Booking extends FFBoka {
      */
     public function getBookingSeries( bool $includeThis=FALSE ) {
         if ( is_null( $this->repeatId ) ) return FALSE;
-        $stmt = self::$db->query( "SELECT bookingId FROM bookings WHERE repeatId={$this->repeatId}" . ( $includeThis ? "" : " AND bookingId != {$this->id}" ) );
+        $stmt = self::$db->query( "SELECT bookingId FROM bookings WHERE repeatId={$this->repeatId}" . ( $includeThis ? "" : " AND bookingId != '{$this->id}'" ) );
         $ret = [];
         while ( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
             $ret[] = new Booking( $row->bookingId );
