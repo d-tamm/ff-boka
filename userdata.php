@@ -6,7 +6,7 @@ use FFBoka\User;
 global $cfg, $FF, $db;
 
 session_start();
-require( __DIR__ . "/inc/common.php" );
+require __DIR__ . "/inc/common.php";
 
 // This page may only be accessed by registered users
 if ( !$_SESSION[ 'authenticatedUser' ] ) {
@@ -128,12 +128,12 @@ switch ( $_REQUEST[ 'action' ] ) {
                 $_POST[ 'mail' ], // To
                 "Bekräfta din epostadress", // subject
                 "confirm_mail_address", // template
-                array(
+                [
                     "{{name}}" => $currentUser->name,
                     "{{new_mail}}" => $_POST[ 'mail' ],
                     "{{link}}" => "{$cfg[ 'url' ]}index.php?t=$token",
                     "{{expires}}" => date( "Y-m-d H:i", time() + 86400 )
-                ),
+                ],
                 [], // attachments
                 $cfg[ 'mail' ],
                 false // send immediately
@@ -196,7 +196,7 @@ if ( isset( $_GET[ 'first_login' ] ) ) $message = "Välkommen till resursbokning
             usort( $bookingIds, function( $b1, $b2 ) {
                 $booking1 = new Booking( $b1 );
                 $booking2 = new Booking( $b2 );
-                return ( $booking1->start() - $booking2->start() );
+                return $booking1->start() - $booking2->start();
             } );
             if ( count( $bookingIds ) ) {
                 // Sort the bookings in unconfirmed, upcoming and completed
@@ -215,8 +215,8 @@ if ( isset( $_GET[ 'first_login' ] ) ) $message = "Välkommen till resursbokning
                         $end = is_null( $end ) ? $item->end : min( $end, $item->end );
                         $html .= "&bull; " . htmlspecialchars( $item->caption ) . ( $item->status == FFBoka::STATUS_PREBOOKED ? " (<b>obekräftat</b>)" : "" ) . "<br>";
                     }
-                    $html = "<li><a href='book-sum.php?bookingId={$b->id}'>\n" .
-                        htmlspecialchars( $b->ref ?: "" ) .
+                    $html = "<li><a href='book-sum.php?bookingId={$b->id}'>\n{$b->id}" .
+                        ( $b->ref ? " &ndash; " . htmlspecialchars( $b->ref ) : "" ) .
                         "<p>" . ( is_null( $b->repeatId ) ? "" : "🔄 " ) . "<b>" . ( is_null( $start ) ? "Bokningen är tom" : date( "Y-m-d \k\l H:00", $start ) . " &mdash; " . date( "Y-m-d \k\l H:00", $end ) ) . "</b></p>\n" .
                         "<p>$html</p>" .
                         "<p>Bokat {$b->timestamp} i LA {$b->section()->name}</p>\n" .

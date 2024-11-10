@@ -284,10 +284,15 @@ class User extends FFBoka {
     public function addBooking( int $sectionId ) : \FFBoka\Booking {
         // Create token
         for ( $token = '', $i = 0, $z = strlen( $a = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789') - 1; $i < 40; $x = rand( 0, $z ), $token .= $a[ $x ], $i++ );
-        if ( $this->id ) $stmt = self::$db->prepare( "INSERT INTO bookings SET sectionId=?, userId={$this->id}, token='$token'" );
-        else $stmt = self::$db->prepare( "INSERT INTO bookings SET sectionId=?, token='$token'" );
+        // Create unique bookingId
+        do {
+            for ( $bookingId = '', $i = 0, $z = strlen( $a = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ123456789') - 1; $i < 5; $x = rand( 0, $z ), $bookingId .= $a[ $x ], $i++ );
+            $stmt = self::$db->query("SELECT COUNT(*) FROM bookings WHERE bookingId='$bookingId'");
+        } while ( $stmt->fetchColumn() );
+        if ( $this->id ) $stmt = self::$db->prepare( "INSERT INTO bookings SET bookingId='$bookingId', sectionId=?, userId={$this->id}, token='$token'" );
+        else $stmt = self::$db->prepare( "INSERT INTO bookings SET bookingId='$bookingId', sectionId=?, token='$token'" );
         $stmt->execute( [ $sectionId ] );
-        return new Booking( self::$db->lastInsertId() );
+        return new Booking( $bookingId );
     }
     
     /**

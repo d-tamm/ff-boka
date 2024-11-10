@@ -8,7 +8,7 @@ use FFBoka\Item;
 global $cfg, $message;
 
 session_start();
-require( __DIR__ . "/inc/common.php" );
+require __DIR__ . "/inc/common.php";
 
 $currentUser = new User( $_SESSION[ 'authenticatedUser' ] ?? 0 );
 
@@ -59,7 +59,7 @@ if ( count( $items ) ) {
 }
 
 // Check if booking collides with existing ones or with itself
-$unavail = array();
+$unavail = [];
 $overlap = $booking->getOverlappingItems();
 foreach ( $booking->items() as $item ) {
     if ( $item->status !== FFBoka::STATUS_REJECTED && !$item->isAvailable( $item->start, $item->end ) ) {
@@ -69,7 +69,6 @@ foreach ( $booking->items() as $item ) {
         }
     }
 }
-
 
 if ( isset( $_REQUEST[ 'action' ] ) && $_REQUEST[ 'action' ] == "help" ) {
     echo <<<EOF

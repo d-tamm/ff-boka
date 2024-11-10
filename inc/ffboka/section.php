@@ -48,28 +48,22 @@ class Section extends FFBoka {
         case "lat":
         case "lon":
             $stmt = self::$db->query( "SELECT $name FROM sections WHERE sectionId={$this->id}" );
-            $row = $stmt->fetch( PDO::FETCH_OBJ );
-            return $row->$name;
+            return $stmt->fetchColumn();
         case "registeredUsers": // number of registered users in this section
-            $stmt = self::$db->query( "SELECT COUNT(*) users FROM users WHERE sectionID={$this->id}" );
-            $row = $stmt->fetch( PDO::FETCH_OBJ );
-            return $row->users;
+            $stmt = self::$db->query( "SELECT COUNT(*) FROM users WHERE sectionID={$this->id}" );
+            return $stmt->fetchColumn();
         case "activeUsers": // number of users which have been active during the last 12 months
-            $stmt = self::$db->query( "SELECT COUNT(*) activeUsers FROM users WHERE sectionID={$this->id} AND ADDDATE(lastLogin, INTERVAL 12 MONTH)>NOW()" );
-            $row = $stmt->fetch( PDO::FETCH_OBJ );
-            return $row->activeUsers;
+            $stmt = self::$db->query( "SELECT COUNT(*) FROM users WHERE sectionID={$this->id} AND ADDDATE(lastLogin, INTERVAL 12 MONTH)>NOW()" );
+            return $stmt->fetchColumn();
         case "activeItems": // number of active items
-            $stmt = self::$db->query( "SELECT COUNT(*) items FROM items INNER JOIN categories USING (catId) WHERE sectionId={$this->id} AND items.active=1 AND categories.active=1" );
-            $row = $stmt->fetch( PDO::FETCH_OBJ );
-            return $row->items;
+            $stmt = self::$db->query( "SELECT COUNT(*) FROM items INNER JOIN categories USING (catId) WHERE sectionId={$this->id} AND items.active=1 AND categories.active=1" );
+            return $stmt->fetchColumn();
         case "inactiveItems": // number of inactive items
-            $stmt = self::$db->query( "SELECT COUNT(*) items FROM items INNER JOIN categories USING (catId) WHERE sectionId={$this->id} AND items.active=0 OR categories.active=0" );
-            $row = $stmt->fetch( PDO::FETCH_OBJ );
-            return $row->items;
+            $stmt = self::$db->query( "SELECT COUNT(*) FROM items INNER JOIN categories USING (catId) WHERE sectionId={$this->id} AND items.active=0 OR categories.active=0" );
+            return $stmt->fetchColumn();
         case "numberOfCategories":
-            $stmt = self::$db->query( "SELECT COUNT(*) cats FROM categories WHERE sectionId={$this->id}" );
-            $row = $stmt->fetch( PDO::FETCH_OBJ );
-            return $row->cats;
+            $stmt = self::$db->query( "SELECT COUNT(*) FROM categories WHERE sectionId={$this->id}" );
+            return $stmt->fetchColumn();
         default:
             logger( __METHOD__ . " Use of undefined Section propterty $name.", E_ERROR );
             throw new \Exception( "Use of undefined Section property $name" );

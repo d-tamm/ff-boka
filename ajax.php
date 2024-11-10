@@ -10,7 +10,7 @@ use FFBoka\Section;
 use FFBoka\User;
 
 session_start();
-require( __DIR__ . "/inc/common.php" );
+require __DIR__ . "/inc/common.php";
 global $cfg, $FF;
 
 if ( !isset( $_REQUEST[ 'action' ] ) ) { http_response_code( 400 ); die( "action missing" ); } // Bad request
@@ -58,8 +58,8 @@ switch ( $_REQUEST[ 'action' ] ) {
             if ( !$booking->section()->showFor( $currentUser, FFBoka::ACCESS_CONFIRM ) ) { http_response_code( 401 ); die(); } // Unauthorized
         }
         // Check if booking collides with existing ones or with itself
-        $unavail = array();
-        $conflicts = array();
+        $unavail = [];
+        $conflicts = [];
         $overlap = $booking->getOverlappingItems();
         foreach ( $booking->items() as $item ) {
             if ( $item->status !== FFBoka::STATUS_REJECTED && !$item->isAvailable( $item->start, $item->end ) ) {
@@ -129,14 +129,14 @@ switch ( $_REQUEST[ 'action' ] ) {
         header( "Content-Type: application/json" );
         if ( !isset( $_SESSION[ 'sectionId' ] ) ) { http_response_code( 406 ); die( "SectionId missing" ); }
         $section = new Section( $_SESSION[ 'sectionId' ] );
-        $unavail = array();
+        $unavail = [];
         $minAccess = FFBoka::ACCESS_CATADMIN;
         if ( $_REQUEST[ 'ids' ] ) {
             foreach ( array_keys( $_REQUEST[ 'ids' ] ) as $id ) {
                 // For every item with visible freebusy information, check availability
                 $item = new Item( $id, $_REQUEST[ 'bookingStep' ] == 2 );
                 $acc = $item->category()->getAccess( $currentUser );
-                $minAccess = ( $minAccess & $acc );
+                $minAccess = $minAccess & $acc;
                 if ( $acc >= FFBoka::ACCESS_PREBOOK ) {
                     if ( !$item->isAvailable( $_REQUEST[ 'start' ], $_REQUEST[ 'end' ] ) ) $unavail[] = htmlspecialchars( $item->caption );
                 }
@@ -226,9 +226,9 @@ switch ( $_REQUEST[ 'action' ] ) {
         die( json_encode( [
             "caption" => htmlspecialchars( $item->caption ),
             "html" => $html,
-            "start" => isset( $start ) ? $start : "",
-            "end" => isset( $end ) ? $end : "",
-            "price" => isset( $price ) ? $price : ""
+            "start" => $start ?? "",
+            "end" => $end ?? "",
+            "price" => $price ?? ""
         ] ) );
 
     case "getFreebusyWholeSection":
@@ -240,7 +240,7 @@ switch ( $_REQUEST[ 'action' ] ) {
         if ( !isset( $_SESSION[ 'sectionId' ] ) ) { http_response_code( 406 ); die( "SectionId missing" ); }
         $section = new Section( $_SESSION[ 'sectionId' ] );
         if ( !$_REQUEST[ 'start' ] ) { http_response_code( 406 ); die( "start parameter missing" ); }
-        $freebusyBars = array();
+        $freebusyBars = [];
         foreach ( $section->getMainCategories() as $cat ) {
             getFreebusy( $freebusyBars, $cat, $currentUser, $_REQUEST[ 'start' ] );
         }
@@ -258,7 +258,7 @@ switch ( $_REQUEST[ 'action' ] ) {
         if ( !$_REQUEST[ 'ids' ] ) die( json_encode( [ "access" => $access, "freebusyBar" => "" ] ) );
         foreach ( array_keys( $_REQUEST[ 'ids' ] ) as $id ) {
             $item = new Item( $id );
-            $access = ( $access & $item->category()->getAccess( $currentUser ) );
+            $access = $access & $item->category()->getAccess( $currentUser );
         }
         header( "Content-Type: application/json" );
         die( json_encode( [
@@ -272,19 +272,18 @@ switch ( $_REQUEST[ 'action' ] ) {
         $leastStatus = FFBoka::STATUS_CONFIRMED;
         $showRepeating = isset( $_SESSION[ 'authenticatedUser' ] ) ? true : false;
         $itemList = "";
-        $itemsToConfirm = array();
-        $questions = array(); // Will be populated with $id as keys and $required as value
+        $itemsToConfirm = [];
+        $questions = []; // Will be populated with $id as keys and $required as value
         foreach ( $booking->items() as $item ) {
             $leastStatus = min( $leastStatus, $item->status );
             $showRepeating = $showRepeating && $item->category()->getAccess( $currentUser ) >= FFBoka::ACCESS_BOOK;
-            $showEditButtons = ( $item->category()->getAccess( $currentUser ) >= FFBoka::ACCESS_CONFIRM && $item->status != FFBoka::STATUS_REJECTED );
-            $unavail = (
+            $showEditButtons = $item->category()->getAccess( $currentUser ) >= FFBoka::ACCESS_CONFIRM && $item->status != FFBoka::STATUS_REJECTED;
+            $unavail =
                 $item->status !== FFBoka::STATUS_REJECTED &&
                 !$item->isAvailable( $item->start, $item->end ) &&
-                $item->category()->getAccess( $currentUser ) >= FFBoka::ACCESS_PREBOOK
-            );
+                $item->category()->getAccess( $currentUser ) >= FFBoka::ACCESS_PREBOOK;
             foreach ( $item->category()->getQuestions() as $id=>$q ) {
-                if ( isset( $questions[ $id ] ) ) $questions[ $id ] = ( $questions[ $id ] || $q->required );
+                if ( isset( $questions[ $id ] ) ) $questions[ $id ] = $questions[ $id ] || $q->required;
                 else $questions[ $id ] = $q->required;
             }
             $itemList .= "<li id='item-{$item->bookedItemId}'" . ( $unavail || array_key_exists( $item->id, $overlap ) ? " data-theme='c'" : "" ) . ( $item->status == FFBoka::STATUS_REJECTED ? " class='rejected'" : "" ) . ">";
@@ -374,13 +373,13 @@ switch ( $_REQUEST[ 'action' ] ) {
     case "confirmBooking":
     case "repeatCreate":
         // Check if all mandatory questions are answered
-        $required = array();
+        $required = [];
         foreach ( $booking->items() as $item ) {
             foreach ( $item->category()->getQuestions() as $id=>$question ) {
                 if ( $question->required ) $required[] = $id;
             }
         }
-        $missing = array();
+        $missing = [];
         foreach ( array_unique( $required ) as $id ) {
             if ( !$_POST[ "answer-$id" ][0] ) {
                 $question = new Question( $id );
@@ -466,7 +465,7 @@ switch ( $_REQUEST[ 'action' ] ) {
             $booking->copy( $interval );
         }
         // Send alerts
-        $adminsToNotify = array();
+        $adminsToNotify = [];
         foreach ( $booking->items() as $item ) {
             $cat = $item->category();
             // Collect functional email addresses to notify:  array[userId][itemId1, itemId2...]
@@ -512,7 +511,7 @@ switch ( $_REQUEST[ 'action' ] ) {
     case "deleteBooking":
         // Send confirmation to user
         $mailItems = "<tr><th>Resurs</th><th>Datum</th></tr>";
-        $adminsToNotify = array();
+        $adminsToNotify = [];
         $maxStatus = FFBoka::STATUS_PENDING;
         foreach ( $booking->items() as $item ) {
             $maxStatus = max( $maxStatus, $item->status );
@@ -540,18 +539,18 @@ switch ( $_REQUEST[ 'action' ] ) {
         if ( $maxStatus > FFBoka::STATUS_PENDING ) {
             // Send confirmation mail to booking owner
             if (!$FF->sendMail(
-                $booking->userMail, // to
-                "Bokning #{$booking->id} har raderats", // subject
-                "booking_deleted", // template name
-                array( // replace.
+                to: $booking->userMail,
+                subject: "Bokning {$booking->id} har raderats",
+                templateBody: "booking_deleted",
+                replace: [
                     "{{name}}"    => htmlspecialchars( is_null( $booking->userId ) ? $booking->extName : $booking->user()->name ),
                     "{{items}}"   => $mailItems,
                     "{{status}}"  => $statusText,
                     "{{commentCust}}" => $booking->commentCust ? str_replace( "\n", "<br>", htmlspecialchars( $booking->commentCust ) ) : "(ingen kommentar har lämnats)",
-                ),
-                [], // attachments
-                $cfg[ 'mail' ],
-                true // delayed sending
+                ],
+                attachments: [],
+                mailOptions: $cfg[ 'mail' ],
+                queue: true
             )) {
                 http_response_code( 500 ); // Internal server error
                 die( "Kunde inte skicka bekräftelsen till " . htmlspecialchars( $booking->userMail ) . "." );
@@ -571,17 +570,17 @@ switch ( $_REQUEST[ 'action' ] ) {
                 }
                 if ( $mail ) { // can only send if admin has email address
                     $FF->sendMail(
-                        $mail, // to
-                        "FF Bokning #{$booking->id} raderad", // subject
-                        "booking_deleted", // template
-                        array( // replace
+                        to: $mail,
+                        subject: "FF Bokning {$booking->id} raderad",
+                        templateBody: "booking_deleted",
+                        replace: [
                             "{{name}}"    => $name,
                             "{{items}}"   => $mailItems,
                             "{{status}}"  => "Bokningen nedan har raderats.",
                             "{{commentCust}}" => str_replace( "\n", "<br>", htmlspecialchars( $booking->commentCust ) ) . "<br><br>$contactData",
-                        ),
-                        [], // attachments
-                        $cfg[ 'mail' ]
+                        ],
+                        attachments: [],
+                        mailOptions: $cfg[ 'mail' ]
                     );
                 }
             }
@@ -627,12 +626,8 @@ switch ( $_REQUEST[ 'action' ] ) {
                 
     case "repeatPreview":
         // check availability for every item and each date
-        $unavail = array_fill( 0, $_REQUEST[ 'count' ], array());
-        switch ( $_GET[ 'type' ] ) {
-            case "day": $interval = new DateInterval( "P1D" ); break;
-            case "week": $interval = new DateInterval( "P1W" ); break;
-            case "month": $interval = new DateInterval( "P1M" ); break;
-        }
+        $unavail = array_fill( 0, $_REQUEST[ 'count' ], [] );
+        $interval = new DateInterval( match( $_GET[ 'type' ] ) { "day" => "P1D", "week" => "P1W", "month" => "P1M" } );
         foreach ( $booking->items() as $item ) {
             // Get start and end time for the original booked item
             $start = new DateTime( "@{$item->start}" );
@@ -745,7 +740,7 @@ function getFreebusyCombined( $ids, $user, $start ) : string {
  * @param \FFBoka\Booking $booking
  * @return string (HTML formatted list)
  */
-function showBookingSeries( \FFBoka\Booking $booking ) {
+function showBookingSeries( Booking $booking ) {
     if( is_null( $booking->repeatId ) ) {
         return <<<EOF
         <p style='margin:0;'>Skapa serie med <span style='display:inline-block; width:4em;'><input type='number' name='repeat-count' id='repeat-count' value='2' min='2' max='40'></span> tillfällen</p>

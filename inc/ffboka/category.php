@@ -164,8 +164,8 @@ class Category extends FFBoka {
                 return "inherited";
             case "itemCount":
                 if ( !$this->id ) return 0;
-                $stmt = self::$db->query( "SELECT itemId FROM items WHERE catId={$this->id}" );
-                return $stmt->rowCount();
+                $stmt = self::$db->query( "SELECT COUNT(*) FROM items WHERE catId={$this->id}" );
+                return $stmt->fetchColumn();
             default:
                 logger( __METHOD__ . " Use of undefined Category property $name.", E_ERROR );
                 throw new Exception( "Use of undefined Category property $name" );
