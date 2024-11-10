@@ -18,7 +18,7 @@
     --FF-unconfirmed: var(--FF-yellow);
     --FF-weekend: #E84F1C60; /* Orange with transparency */
     --FF-blocked: repeating-linear-gradient(-45deg, var(--FF-busy), var(--FF-free) 3px, var(--FF-busy) 6px);
-    --FF-unknown: url(/resources/unknown_bg.png);
+    --FF-unknown: url('../resources/unknown_bg.png');
 }
 
 /* Make more space for text in the header. */
@@ -140,23 +140,23 @@ table.alternate-rows tr:nth-child(even) {
 
 /* User defined icons */
 .ui-icon-left:after {
-    background-image: url("/resources/left.svg");
+    background-image: url('../resources/left.svg');
     background-size: 18px 18px;
 }
 .ui-icon-right:after {
-    background-image: url("/resources/right.svg");
+    background-image: url('../resources/right.svg');
     background-size: 18px 18px;
 }
 .ui-icon-leftleft:after {
-    background-image: url("/resources/leftleft.svg");
+    background-image: url('../resources/leftleft.svg');
     background-size: 18px 18px;
 }
 .ui-icon-rightright:after {
-    background-image: url("/resources/rightright.svg");
+    background-image: url('../resources/rightright.svg');
     background-size: 18px 18px;
 }
 .ui-icon-help:after {
-    background-image: url("/resources/help.svg");
+    background-image: url('../resources/help.svg');
     background-size: 18px 18px;
 }
 
@@ -298,7 +298,7 @@ table.alternate-rows tr:nth-child(even) {
     margin: 0px;
     margin-bottom:10px;
     padding: 10px 200px 10px 20px;
-    background: url("/resources/liggande-bla.png") no-repeat right;
+    background: url('../resources/liggande-bla.png') no-repeat right;
     background-size: 200px;
     background-color: var(--FF-blue);
     color: white;
