@@ -65,7 +65,6 @@ case "ajaxDeleteSection":
         if ( $stmt->rowCount() == 1 ) die( json_encode( [ "status"=>"OK", "sectionId"=>$_GET[ 'sectionId' ] ] ) );
         else die( json_encode( [ "status"=>"error", "error"=>$stmt->rowCount() . " LAs har raderats, istället för 1." ] ) );
     } else die( json_encode( [ "status"=>"error", "error"=>$db->errorInfo()[ 2 ] ] ) );
-    break;
 
 case "ajaxAddPoll":
 case "ajaxGetPoll":
@@ -116,12 +115,12 @@ case "currentLog":
 $stmt = $db->query( "SELECT value FROM config WHERE name='last hourly cron run'" );
 $row = $stmt->fetch( PDO::FETCH_OBJ );
 $lastCron = (int)$row->value;
-$cronDelayed = ( $lastCron == 0 || $lastCron < time() - 3600 );
+$cronDelayed = $lastCron == 0 || $lastCron < time() - 3600;
 
 // Check that config file is complete
 $currentCfg = $cfg;
 unset( $cfg );
-require( "../inc/config.sample.php" );
+require "../inc/config.sample.php";
 $cfgMissing = diff_key_recursive( $cfg, $currentCfg );
 $cfgObsolete = diff_key_recursive( $currentCfg, $cfg );
 $cfg = $currentCfg;

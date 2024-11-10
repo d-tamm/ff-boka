@@ -43,11 +43,11 @@ while ( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
                 // Reminder has not been sent yet. Remember booking information
                 $booking = $item->booking();
                 if ( !isset( $bookings[ $booking->id ] ) ) $bookings[ $booking->id ] = [
-                    "user" => $booking->userName,
+                    "user" => htmlspecialchars( $booking->userName ),
                     "mail" => $booking->userMail,
-                    "section" => $booking->section()->name,
+                    "section" => htmlspecialchars( $booking->section()->name ),
                     "start" => $item->start,
-                    "ref" => $booking->ref,
+                    "ref" => htmlspecialchars( $booking->ref ),
                     "reminders" => []
                 ];
                 $bookings[ $booking->id ][ "reminders" ][] = htmlspecialchars( $reminder->message );
@@ -61,12 +61,12 @@ while ( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
 foreach ( $bookings as $id=>$booking ) {
     if ( $FF->sendMail(
         $booking[ 'mail' ], // To
-        "Din bokning #$id {$booking['ref']}", // subject
+        "Din bokning $id {$booking['ref']}", // subject
         "reminder", // Body or template
         [ // replace
             "{{user}}" => $booking[ 'user' ],
             "{{link}}" => $cfg[ 'url' ] . "book-sum.php?bookingId=" . $id,
-            "{{ref}}" => $booking[ 'ref' ],
+            "{{ref}}" => $booking[ 'ref' ] ?? $id,
             "{{section}}" => $booking[ 'section' ],
             "{{date}}" => date( "j/n", $booking[ 'start' ] ),
             "{{reminders}}" => implode( "</p><p>", array_unique( $booking[ 'reminders' ] ) ),
@@ -148,8 +148,8 @@ if ( (int)$row->value < $first->getTimestamp() && date( "j" ) >= $cfg[ 'cronMont
     logger( "Cron: Garbage collection: Delete orphaned full size images..." );
     foreach ( glob( __DIR__ . "/img/cat/*" ) as $file ) {
         if ( !is_dir( $file ) ) {
-            $stmt = $db->query( "SELECT catId FROM categories WHERE catId=" . basename( $file ) );
-            if ( $stmt->rowCount() == 0 ) {
+            $stmt = $db->query( "SELECT COUNT(*) FROM categories WHERE catId=" . basename( $file ) );
+            if ( $stmt->fetchColumn() == 0 ) {
                 if ( unlink( $file ) ) logger( "Cron: Deleted category image $file" );
                 else logger( "Cron: Failed to delete orphaned category image $file", E_ERROR );
             }
@@ -157,8 +157,8 @@ if ( (int)$row->value < $first->getTimestamp() && date( "j" ) >= $cfg[ 'cronMont
     }
     foreach ( glob( __DIR__ . "/img/item/*" ) as $file ) {
         if ( !is_dir( $file ) ) {
-            $stmt = $db->query( "SELECT imageId FROM item_images WHERE imageId=" . basename( $file ) );
-            if ( $stmt->rowCount() == 0 ) {
+            $stmt = $db->query( "SELECT COUNT(*) FROM item_images WHERE imageId=" . basename( $file ) );
+            if ( $stmt->fetchColumn() == 0 ) {
                 if ( unlink( $file ) ) logger( "Cron: Deleted item image $file" );
                 else logger( "Cron: Failed to delete orphaned item image $file", E_ERROR );
             }
@@ -166,8 +166,8 @@ if ( (int)$row->value < $first->getTimestamp() && date( "j" ) >= $cfg[ 'cronMont
     }
     foreach ( glob( __DIR__ . "/uploads/*" ) as $file ) {
         if ( !is_dir( $file ) ) {
-            $stmt = $db->query( "SELECT fileId FROM cat_files WHERE fileId=" . basename( $file ) );
-            if ( $stmt->rowCount() == 0 ) {
+            $stmt = $db->query( "SELECT COUNT(*) FROM cat_files WHERE fileId=" . basename( $file ) );
+            if ( $stmt->fetchColumn() == 0 ) {
                 if ( unlink( $file ) ) logger( "Cron: Deleted attachment file $file" );
                 else logger( "Cron: Failed to delete orphaned attachment file $file", E_ERROR );
             }

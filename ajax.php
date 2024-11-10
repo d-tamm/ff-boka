@@ -58,8 +58,8 @@ switch ( $_REQUEST[ 'action' ] ) {
             if ( !$booking->section()->showFor( $currentUser, FFBoka::ACCESS_CONFIRM ) ) { http_response_code( 401 ); die(); } // Unauthorized
         }
         // Check if booking collides with existing ones or with itself
-        $unavail = array();
-        $conflicts = array();
+        $unavail = [];
+        $conflicts = [];
         $overlap = $booking->getOverlappingItems();
         foreach ( $booking->items() as $item ) {
             if ( $item->status !== FFBoka::STATUS_REJECTED && !$item->isAvailable( $item->start, $item->end ) ) {
@@ -539,18 +539,18 @@ switch ( $_REQUEST[ 'action' ] ) {
         if ( $maxStatus > FFBoka::STATUS_PENDING ) {
             // Send confirmation mail to booking owner
             if (!$FF->sendMail(
-                $booking->userMail, // to
-                "Bokning #{$booking->id} har raderats", // subject
-                "booking_deleted", // template name
-                array( // replace.
+                to: $booking->userMail,
+                subject: "Bokning {$booking->id} har raderats",
+                templateBody: "booking_deleted",
+                replace: [
                     "{{name}}"    => htmlspecialchars( is_null( $booking->userId ) ? $booking->extName : $booking->user()->name ),
                     "{{items}}"   => $mailItems,
                     "{{status}}"  => $statusText,
                     "{{commentCust}}" => $booking->commentCust ? str_replace( "\n", "<br>", htmlspecialchars( $booking->commentCust ) ) : "(ingen kommentar har lämnats)",
-                ),
-                [], // attachments
-                $cfg[ 'mail' ],
-                true // delayed sending
+                ],
+                attachments: [],
+                mailOptions: $cfg[ 'mail' ],
+                queue: true
             )) {
                 http_response_code( 500 ); // Internal server error
                 die( "Kunde inte skicka bekräftelsen till " . htmlspecialchars( $booking->userMail ) . "." );
@@ -571,7 +571,7 @@ switch ( $_REQUEST[ 'action' ] ) {
                 if ( $mail ) { // can only send if admin has email address
                     $FF->sendMail(
                         to: $mail,
-                        subject: "FF Bokning #{$booking->id} raderad",
+                        subject: "FF Bokning {$booking->id} raderad",
                         templateBody: "booking_deleted",
                         replace: [
                             "{{name}}"    => $name,

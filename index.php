@@ -5,7 +5,7 @@ use FFBoka\User;
 use FFBoka\Poll;
 
 session_start();
-require( __DIR__ . "/inc/common.php" );
+require __DIR__ . "/inc/common.php";
 global $db, $cfg, $FF;
 $message = "";
 
@@ -130,8 +130,8 @@ matchande namn och där du har behörighet att boka. Sökningen går inte ner p�
 if ( isset( $_POST[ 'login' ] ) ) {
     // User trying to log in.
     // Reject DoS attacks by throttling
-    $stmt = $db->query( "SELECT * FROM logins WHERE ip='{$_SERVER['REMOTE_ADDR']}' AND TIMESTAMPDIFF(SECOND, timestamp, NOW()) < {$cfg['DoSDelay']} AND NOT success" );
-    if ( $stmt->rowCount() > $cfg[ 'DoSCount' ] ) {
+    $stmt = $db->query( "SELECT COUNT(*) FROM logins WHERE ip='{$_SERVER['REMOTE_ADDR']}' AND TIMESTAMPDIFF(SECOND, timestamp, NOW()) < {$cfg['DoSDelay']} AND NOT success" );
+    if ( $stmt->fetchColumn() > $cfg[ 'DoSCount' ] ) {
         // Too many attempts. We do not even bother to log this to login log.
         $message = "För många inloggningsförsök. Försök igen om " . (int)($cfg[ 'DoSDelay' ] / 60 ) . " minuter.";
     } else {
@@ -140,7 +140,7 @@ if ( isset( $_POST[ 'login' ] ) ) {
             $message = "Kan inte få kontakt med inloggningsservern. Vänligen försök igen senare. Om problemet kvarstår, kontakta systemadmin.";
         }
         elseif ( $result[ 'authenticated' ] === true ) {
-            logger( __METHOD__ . " User {$result[ 'userId' ]} (LA {$result['section']}) logged in with {$_POST[ 'id' ]}." );
+            logger( __FILE__ . " User {$result[ 'userId' ]} (LA {$result['section']}) logged in with {$_POST[ 'id' ]}." );
             $_SESSION[ 'authenticatedUser' ] = $result[ 'userId' ];
             $u = new User( $_SESSION[ 'authenticatedUser' ], $result[ 'section' ] );
             $u->getAssignments();
@@ -161,13 +161,13 @@ if ( isset( $_POST[ 'login' ] ) ) {
             }
             // Redirect Ordförande etc on first login
             if ( count( array_intersect( $_SESSION[ 'assignments' ][ $u->section->id ], $cfg[ 'sectionAdmins' ] ) ) > 0 && count( $u->section->getAdmins() ) == 0 ) {
-                logger( __METHOD__ . " First login for section {$u->section->id}" );
+                logger( __FILE__ . " First login for section {$u->section->id}" );
                 header( "Location: admin/index.php?sectionId=" . $u->section->id . "&expand=admins" );
                 die();
             }
         } else {
             // Password wrong.
-            logger( __METHOD__ . " User failed to login with {$_POST['id']}." );
+            logger( __FILE__ . " User failed to login with {$_POST['id']}." );
             $message = "Fel medlemsnummer eller lösenord.";
             $stmt = $db->prepare( "INSERT INTO logins (ip, login, success, userAgent) VALUES (?, ?, 0, '{$_SERVER[ 'HTTP_USER_AGENT' ]}')" );
             $stmt->execute( [
@@ -189,11 +189,11 @@ if ( isset( $_REQUEST[ 't' ] ) ) {
                 $user->mail = $token->data;
                 $FF->deleteToken( $token->token );
                 $message = "Grattis! Din epostadress {$token->data} är nu aktiverad.";
-                logger( __METHOD__ . " User {$token->forId} activated new email address." );
+                logger( __FILE__ . " User {$token->forId} activated new email address." );
                 break;
         }
     } catch ( Exception $e ) {
-        logger( __METHOD__ . " User failed to use token. " . $e->getMessage() );
+        logger( __FILE__ . " User failed to use token. " . $e->getMessage() );
         $message = $e->getMessage();
     }
 }
@@ -288,7 +288,7 @@ if ( isset( $_REQUEST[ 'message' ] ) ) $message = ( $message ? "$message<br>" : 
             foreach ( $FF->getAllSections() as $section ) {
                 if ( $section->showFor( $currentUser, FFBoka::ACCESS_CATADMIN ) ||
                     @array_intersect( $_SESSION[ 'assignments' ][ $section->id ] ?? [], $cfg[ 'sectionAdmins' ] ) ) {
-                        $unconfirmed = array();
+                        $unconfirmed = [];
                         foreach ( $section->getUnconfirmedBookings( $currentUser ) as $bookingId ) {
                             if ( !isset( $unconfirmed[ $bookingId ] ) ) $unconfirmed[ $bookingId ] = 0;
                             $unconfirmed[ $bookingId ]++;
@@ -363,15 +363,15 @@ if ( isset( $_REQUEST[ 'message' ] ) ) $message = ( $message ? "$message<br>" : 
 
     <div class="ui-body ui-body-a">
         <?php
-		$stmt = $db->query( "SELECT COUNT(DISTINCT sectionId) sections FROM sections JOIN categories USING (sectionId) JOIN items USING (catId)" );
-		$rowSec = $stmt->fetch( PDO::FETCH_OBJ );
-		$stmt = $db->query( "SELECT COUNT(*) items FROM items WHERE active" );
-		$rowItems = $stmt->fetch( PDO::FETCH_OBJ ); ?> 
+		$stmt = $db->query( "SELECT COUNT(DISTINCT sectionId) FROM sections JOIN categories USING (sectionId) JOIN items USING (catId)" );
+		$noSections = $stmt->fetchColumn();
+		$stmt = $db->query( "SELECT COUNT(*) FROM items INNER JOIN categories USING (catId) WHERE categories.active AND items.active" );
+		$noItems = $stmt->fetchColumn(); ?> 
         <h3>Om resursbokningen</h3>
         <p>Resursbokningen på <?= $cfg[ 'url' ] ?> är Friluftsfrämjandets plattform för att hantera resurser som olika lokalföreningar har, såsom kanoter, stugor och mycket annat. Tänk om du vill boka kajaksläpet med 12 kajaker, paddlar, flytvästar, kapell mm. Det blir många resurser som ska in i bokningen, och vi har inte hittat något befintligt system där detta går att göra på ett smidigt sätt. Därför har vi skapat vårt eget system. Det ska vara enkelt att tillgängliggöra våra resurser till våra medlemmar och även till externa!</p>
         <p>Plattformen är optimerad för användning i mobilen eftersom det är där den används mest. Den fungerar lika bra i datorn, men är inte så bra på att använda stora skärmar.</p>
         <p>Systemet utvecklas av volontärer inom Friluftsfrämjandet. Du kan komma i kontakt med oss på <?= obfuscatedMaillink( $cfg[ 'mail' ][ 'replyTo' ] ) ?> samt via <a href="https://github.com/d-tamm/ff-boka/">Github</a> där källkoden ligger och där vi hanterar buggar och nya funktioner. Som ledare med FF-adress kan du också hitta oss i Teams-gruppen "Resursbokning".</p>
-        <p>Resursbokningen används för närvarande av <?= $rowSec->sections ?> lokalavdelningar som tillsammans har lagt upp <?= $rowItems->items ?> resurser.</p>
+        <p>Resursbokningen används för närvarande av <?= $noSections ?> lokalavdelningar som tillsammans har lagt upp <?= $noItems ?> resurser.</p>
     </div>
     </div><!--/main-->
 

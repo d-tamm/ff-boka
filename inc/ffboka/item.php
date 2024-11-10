@@ -454,13 +454,13 @@ class Item extends FFBoka {
         $stmt = self::$db->prepare( "SET @start = :start, @end = :end" );
         $stmt->execute( [ ":start" => $start, ":end" => $end ] );
         $stmt = self::$db->query( "
-            SELECT bookingId FROM booked_items 
+            SELECT COUNT(*) FROM booked_items 
                 INNER JOIN bookings USING (bookingId) 
                 INNER JOIN items USING (itemId)
                 INNER JOIN categories USING (catId)
             WHERE
                 itemId={$this->id} " . 
-                ( isset( $this->bookedItemId ) ? "AND bookedItemId != {$this->bookedItemId} " : "" ) . 
+                ( $this->bookedItemId ? "AND bookedItemId != {$this->bookedItemId} " : "" ) . 
                 "AND booked_items.status>=" . FFBoka::STATUS_PREBOOKED . " 
                 AND (
                     (UNIX_TIMESTAMP(start)-bufferAfterBooking*3600<=@start AND UNIX_TIMESTAMP(end)+bufferAfterBooking*3600>=@end) 
@@ -472,7 +472,7 @@ class Item extends FFBoka {
                         AND UNIX_TIMESTAMP(end)+bufferAfterBooking*3600<=@end
                     )
                 )" );
-        return $stmt->rowCount() === 0;
+        return $stmt->fetchColumn() === 0;
     }
 
     /**
