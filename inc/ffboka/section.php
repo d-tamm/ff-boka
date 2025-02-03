@@ -59,7 +59,7 @@ class Section extends FFBoka {
             $stmt = self::$db->query( "SELECT COUNT(*) FROM items INNER JOIN categories USING (catId) WHERE sectionId={$this->id} AND items.active=1 AND categories.active=1" );
             return $stmt->fetchColumn();
         case "inactiveItems": // number of inactive items
-            $stmt = self::$db->query( "SELECT COUNT(*) FROM items INNER JOIN categories USING (catId) WHERE sectionId={$this->id} AND items.active=0 OR categories.active=0" );
+            $stmt = self::$db->query( "SELECT COUNT(*) FROM items INNER JOIN categories USING (catId) WHERE sectionId={$this->id} AND (items.active=0 OR categories.active=0)" );
             return $stmt->fetchColumn();
         case "numberOfCategories":
             $stmt = self::$db->query( "SELECT COUNT(*) FROM categories WHERE sectionId={$this->id}" );
