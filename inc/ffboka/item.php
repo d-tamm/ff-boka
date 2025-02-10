@@ -387,7 +387,7 @@ class Item extends FFBoka {
                 if ( $row->status == FFBoka::STATUS_CONFLICT ) $class .= " conflict";
                 if ( $row->price ) {
                     $class .= " has-price";
-                    $stmtPrice = self::$db->query( "SELECT SUM(price) price FROM booked_items WHERE bookingId={$row->bookingId} AND NOT price IS NULL" );
+                    $stmtPrice = self::$db->query( "SELECT SUM(price) price FROM booked_items WHERE bookingId='{$row->bookingId}' AND NOT price IS NULL" );
                     $rowPrice = $stmtPrice->fetch( PDO::FETCH_OBJ );
                     if ( $rowPrice->price <= $row->paid ) $class .= " paid";
                 }
