@@ -23,7 +23,7 @@ class Image extends FFBoka {
     public function __construct( $id ) {
         if ( $id ) { // Try to return an existing image from database
             $stmt = self::$db->prepare( "SELECT imageId, itemId FROM item_images WHERE imageId=?" );
-            $stmt->execute( array( $id ) );
+            $stmt->execute( [ $id ] );
             if ( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
                 $this->_id = $row->imageId;
                 $this->_itemId = $row->itemId;

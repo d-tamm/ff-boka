@@ -1,6 +1,6 @@
 <?php
 session_start();
-require( __DIR__ . "/inc/common.php" );
+require __DIR__ . "/inc/common.php";
 global $db;
 
 // TODO: authenticate
@@ -10,7 +10,7 @@ if ( !is_readable( $path ) ) {
     die();
 }
 $stmt = $db->prepare( "SELECT * FROM cat_files WHERE fileId=?" );
-$stmt->execute( array( $_GET[ 'fileId' ] ) );
+$stmt->execute( [ $_GET[ 'fileId' ] ] );
 if ( !( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) ) {
     http_response_code( 404 );
     die();

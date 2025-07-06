@@ -66,8 +66,8 @@ if ( isset( $_REQUEST[ 'action' ] ) ) {
         case "ajaxGetFreebusy":
             header( "Content-Type: application/json" );
             // Get Freebusy bars and compile list with unconfirmed items and dirty bookings
-            $fbList = array();
-            $unconfirmed = array();
+            $fbList = [];
+            $unconfirmed = [];
             foreach ( $_SESSION[ 'itemIds' ] as $id ) {
                 $item = new Item( $id );
                 $fbList[ "item-$id" ] = $item->freebusyBar([
@@ -118,7 +118,7 @@ if ( isset( $_REQUEST[ 'action' ] ) ) {
         <ul id="bookings-list-unconfirmed" data-role='listview'></ul>
 	</div>
     <?php 
-    $_SESSION[ 'itemIds' ] = array();
+    $_SESSION[ 'itemIds' ] = [];
     foreach ( $section->getMainCategories() as $cat ) {
         showCat( $cat, $currentUser );
     }

@@ -72,7 +72,7 @@ switch ( $_REQUEST[ 'action' ] ) {
                 }
             }
         }
-        if ( $_POST[ 'extMail' ] && !filter_var( $_POST[ 'extMail' ], FILTER_VALIDATE_EMAIL ) ) {
+        if ( isset( $_POST[ 'extMail' ] ) && !filter_var( $_POST[ 'extMail' ], FILTER_VALIDATE_EMAIL ) ) {
             http_response_code( 400 ); // Bad request
             die( "Epostadressen har ett ogiltigt format." );
         }
@@ -244,7 +244,7 @@ switch ( $_REQUEST[ 'action' ] ) {
         foreach ( $section->getMainCategories() as $cat ) {
             getFreebusy( $freebusyBars, $cat, $currentUser, $_REQUEST[ 'start' ] );
         }
-        $ids = isset( $_REQUEST[ 'ids' ] ) ? array_keys( $_REQUEST[ 'ids' ] ) : array();
+        $ids = isset( $_REQUEST[ 'ids' ] ) ? array_keys( $_REQUEST[ 'ids' ] ) : [];
         header( "Content-Type: application/json" );
         die( json_encode( [
             "freebusyBars" => $freebusyBars,
@@ -406,9 +406,9 @@ switch ( $_REQUEST[ 'action' ] ) {
         if ( $booking->commentCust !== $_POST[ 'commentCust' ] && $leastAccess <= FFBoka::ACCESS_PREBOOK ) $booking->dirty = true;
         $booking->commentCust = $_POST[ 'commentCust' ];
         if ( isset( $_POST[ 'commentIntern' ] ) ) $booking->commentIntern = $_POST[ 'commentIntern' ];
-        $booking->extName = $_POST[ 'extName' ];
-        $booking->extPhone = $_POST[ 'extPhone' ];
-        $booking->extMail = $_POST[ 'extMail' ];
+        $booking->extName = $_POST[ 'extName' ] ?? "";
+        $booking->extPhone = $_POST[ 'extPhone' ] ?? "";
+        $booking->extMail = $_POST[ 'extMail' ] ?? "";
         $booking->okShowContactData = $_POST[ 'okShowContactData' ];
         // Check whether there are new, changed booking answers so we need to set the dirty flag
         if ( !$booking->dirty && isset( $_POST[ 'questionId' ] ) && $leastAccess <= FFBoka::ACCESS_PREBOOK ) {
@@ -417,7 +417,7 @@ switch ( $_REQUEST[ 'action' ] ) {
                 $question = new Question( $id );
                 if (
                     $QA[ $id ]->question !== $question->caption ||
-                    $QA[ $id ]->answer !== implode( ", ", isset( $_POST[ "answer-$id" ] ) ?: array() )
+                    $QA[ $id ]->answer !== implode( ", ", isset( $_POST[ "answer-$id" ] ) ?: [] )
                 ) $booking->dirty = true;
             }
         }
@@ -426,7 +426,7 @@ switch ( $_REQUEST[ 'action' ] ) {
         if ( isset( $_POST[ 'questionId' ] ) ) {
             foreach ( $_POST[ "questionId" ] as $id ) {
                 $question = new Question( $id );
-                $booking->addAnswer( $question->caption, implode( ", ", $_POST[ "answer-$id" ] ?: array() ) );
+                $booking->addAnswer( $question->caption, implode( ", ", $_POST[ "answer-$id" ] ?: [] ) );
             }
         }
         // Set status of pending items, except those which are openly unavailable
@@ -494,12 +494,12 @@ switch ( $_REQUEST[ 'action' ] ) {
                     $mail, // to
                     "Återkommande bokning har skapats", // subject
                     "alert_series_created", // template
-                    array(
+                    [
                         "{{name}}" => $name,
                         "{{count}}" => $_POST[ 'repeat-count' ],
                         "{{user}}" => $booking->user()->name,
                         "{{bookingLink}}" => "{$cfg[ 'url' ]}book-sum.php?bookingId={$booking->id}",
-                    ),
+                    ],
                     [], // attachments
                     $cfg[ 'mail' ],
                     true // delayed sending
@@ -702,7 +702,7 @@ function getFreebusy( &$fbList, Category $cat, $user, $start ) {
     foreach ( $cat->items() as $item ) {
         if ( $item->active ) {
             if ( $acc >= FFBoka::ACCESS_PREBOOK ) {
-                $fbList[ "item-" . $item->id ] = $item->freebusyBar( [ 'start' => $start ] );
+                $fbList[ "item-" . $item->id ] = $item->freebusyBar( [ 'start' => $start, 'scale' => true ] );
             } else {
                 $fbList[ "item-" . $item->id ] = Item::freebusyUnknown();
             }

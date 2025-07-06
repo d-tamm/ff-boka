@@ -38,8 +38,8 @@ function showCat( Category $cat, User $user ) : void {
     if ( $cat->showFor( $user, FFBoka::ACCESS_CONFIRM ) ) {
         // User has access to this or some child category
         echo "<h2><span style='cursor:pointer;'>";
-        echo "<i title='Visa kategorin' style='display:" . ( $_COOKIE[ 'bookingAdminShowCat' . $cat->id ] ? "none" : "inline" ) . ";' id='cat-opener-{$cat->id}' class='far fa-plus-square' onClick='showHideCat({$cat->id}, 1);'></i>";
-        echo "<i title='Göm kategorin' style='display:" . ( $_COOKIE[ 'bookingAdminShowCat' . $cat->id ] ? "inline" : "none" ) . ";' id='cat-closer-{$cat->id}' class='far fa-minus-square' onClick='showHideCat({$cat->id}, 0);'></i></span> ";
+        echo "<i title='Visa kategorin' style='display:" . ( ( $_COOKIE[ 'bookingAdminShowCat' . $cat->id ] ?? '' ) ? "none" : "inline" ) . ";' id='cat-opener-{$cat->id}' class='far fa-plus-square' onClick='showHideCat({$cat->id}, 1);'></i>";
+        echo "<i title='Göm kategorin' style='display:" . ( ( $_COOKIE[ 'bookingAdminShowCat' . $cat->id ] ?? '' ) ? "inline" : "none" ) . ";' id='cat-closer-{$cat->id}' class='far fa-minus-square' onClick='showHideCat({$cat->id}, 0);'></i></span> ";
         for ( $elems = $cat->getPath(), $i = 1; $i < count( $elems ); $i++ ) {
             if ( $i > 1 ) echo " &rarr; ";
             $thisCat = new Category( $elems[ $i ][ 'id' ] );
@@ -47,7 +47,7 @@ function showCat( Category $cat, User $user ) : void {
             else echo $elems[ $i ][ 'caption' ];
         }
         echo "</h2>\n";
-        echo "<div style='display:" . ( $_COOKIE[ "bookingAdminShowCat$cat->id" ] ? "block" : "none" ) . ";' id='cat-table-{$cat->id}'>\n";
+        echo "<div style='display:" . ( ( $_COOKIE[ "bookingAdminShowCat$cat->id" ] ?? '' ) ? "block" : "none" ) . ";' id='cat-table-{$cat->id}'>\n";
         if ( $cat->getAccess( $user ) >= FFBoka::ACCESS_CONFIRM ) {
             // User has sufficient access to this category and its direct items.
             $items = $cat->items();
@@ -367,7 +367,7 @@ switch ( $_REQUEST[ 'action' ] ) {
     </div>
     
     <?php 
-    $_SESSION[ 'itemIds' ] = array();
+    $_SESSION[ 'itemIds' ] = [];
     foreach ( $section->getMainCategories() as $cat ) {
         showCat( $cat, $currentUser );
     }

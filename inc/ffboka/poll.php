@@ -20,7 +20,7 @@ class Poll extends FFBoka {
      */
     public function __construct( $id ) {
         $stmt = self::$db->prepare( "SELECT pollId FROM polls WHERE pollId=?" );
-        $stmt->execute( array( $id ) );
+        $stmt->execute( [ $id ] );
         if ( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
             $this->_id = $row->pollId;
         } else {
@@ -46,7 +46,7 @@ class Poll extends FFBoka {
                 // continue
             case "question":
                 $stmt = self::$db->prepare( "UPDATE polls SET $name=? WHERE pollId={$this->id}" );
-                if ( $stmt->execute( array( $value ) ) ) {
+                if ( $stmt->execute( [ $value ] ) ) {
                     // Reset vote counts if question or choices are changed.
                     self::$db->exec( "DELETE FROM poll_answers WHERE pollId={$this->id}" );
                     $this->setVotes( array_fill( 0, count( $this->choices ), 0 ) );
@@ -108,7 +108,7 @@ class Poll extends FFBoka {
      * @throws \Exception if invalid offset is used.
      * @return int Number of choices after adding the new one
      */
-    public function addChoice( string $choice, int $offset = NULL ) {
+    public function addChoice( string $choice, ?int $offset = NULL ) {
         $choices = $this->choices;
         $votes = $this->votes;
         if ( is_null( $offset ) ) $offset = count( $choices );

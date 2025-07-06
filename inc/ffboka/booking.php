@@ -164,7 +164,7 @@ class Booking extends FFBoka {
      */
     public function addItem( int $itemId ) {
         $stmt = self::$db->prepare( "INSERT INTO booked_items SET bookingId='{$this->id}', itemId=?" );
-        if ( $stmt->execute( array( $itemId ) ) ) return new Item( self::$db->lastInsertId(), TRUE );
+        if ( $stmt->execute( [ $itemId ] ) ) return new Item( self::$db->lastInsertId(), TRUE );
         logger( __METHOD__ . " Failed to add item $itemId to booking {$this->id}. " . $stmt->errorInfo()[ 2 ], E_ERROR );
         return FALSE;
     }
@@ -223,7 +223,7 @@ class Booking extends FFBoka {
      * @return array( id => { string question, string answer }, ... )
      */
     public function answers() {
-        $ans = array();
+        $ans = [];
         $stmt = self::$db->query( "SELECT answerId, question, answer FROM booking_answers WHERE bookingId='{$this->id}'" );
         while ( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
             $ans[ $row->answerId ] = $row; 
@@ -304,7 +304,7 @@ class Booking extends FFBoka {
             } else {
                 $leastStatus = $leastStatus & $item->status;
                 // Collect postbook messages and reference numbers (e.g. (1), (2))
-                $msgRef = array();
+                $msgRef = [];
                 foreach ( $cat->postbookMsgs() as $msg ) {
                     if ( !in_array( $msg, $messages ) ) {
                         // First time we see this message. Add it to message list
@@ -331,7 +331,7 @@ class Booking extends FFBoka {
             // Add attachments to attachment list
             foreach ( $cat->files( true ) as $file ) {
                 if ( $file->attachFile ) {
-                    if ( is_readable( __DIR__ . "/../../uploads/" . $file->fileId ) ) $attachments[ $file->md5 ] = array( "path" => "uploads/{$file->fileId}", "filename" => $file->filename );
+                    if ( is_readable( __DIR__ . "/../../uploads/" . $file->fileId ) ) $attachments[ $file->md5 ] = [ "path" => "uploads/{$file->fileId}", "filename" => $file->filename ];
                     else logger( __METHOD__ . " Attachment file uploads/{$file->fileId} not found", E_WARNING );
                 }
             }
@@ -449,14 +449,14 @@ class Booking extends FFBoka {
                 $mail, // to
                 $this->confirmationSent ? "FF Uppdaterad bokning #{$this->id}" : "FF Ny bokning #{$this->id}", // subject
                 "booking_alert", // template
-                array( // replace
+                [ // replace
                     "{{name}}" => htmlspecialchars( $name ),
                     "{{contactData}}" => $contactData,
                     "{{items}}" => $itemList,
                     "{{ref}}"   => htmlspecialchars( $this->ref ),
                     "{{commentCust}}" => $this->commentCust ? str_replace( "\n", "<br>", htmlspecialchars( $this->commentCust ) ) : "(ingen kommentar har lämnats)",
                     "{{bookingLink}}" => "{$url}book-sum.php?bookingId={$this->id}",
-                ),
+                ],
                 [], // attachments
                 $mailOptions
             );

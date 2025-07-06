@@ -5,7 +5,7 @@ services:
         build:
             context: ./php-httpd
         ports:
-            - 80:80
+            - 8088:80
         volumes:
             - ..:/var/www/html
 

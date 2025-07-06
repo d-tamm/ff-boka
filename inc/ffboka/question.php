@@ -23,7 +23,7 @@ class Question extends FFBoka {
     public function __construct( $id ) {
         if ( $id ) { // Try to return an existing booking from database
             $stmt = self::$db->prepare( "SELECT questionId, sectionId FROM questions WHERE questionId=?" );
-            $stmt->execute( array( $id ) );
+            $stmt->execute( [ $id ] );
             if ( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
                 $this->_id = $row->questionId;
                 $this->_sectionId = $row->sectionId;
@@ -98,7 +98,7 @@ class Question extends FFBoka {
             case "caption":
             case "options":
                 $stmt = self::$db->prepare( "UPDATE questions SET $name=? WHERE questionId={$this->id}" );
-                if ( $stmt->execute( array( $value ) ) ) return $value;
+                if ( $stmt->execute( [ $value ] ) ) return $value;
                 logger( __METHOD__ . " Failed to set Question property $name to $value. " . $stmt->errorInfo()[ 2 ], E_ERROR );
                 break;
             default:

@@ -10,7 +10,7 @@ use FFBoka\Item;
  * call this at least every 5 minutes or so.
  */
 
-require( __DIR__ . "/inc/common.php" );
+require __DIR__ . "/inc/common.php";
 global $db, $cfg, $FF;
 
 $stmt = $db->query( "SELECT value FROM config WHERE name='last hourly cron run'" );
@@ -229,7 +229,7 @@ function fetchUA( PDO $db, int $updateIncomplete = 0 ) {
             $result = file_get_contents( 'https://user-agents.net/parser', false, $context );
             if ( $result !== FALSE ) {
                 $result = json_decode( $result );
-                $stmt1->execute( array(
+                $stmt1->execute( [
                     ":browser" => $result->browser,
                     ":version" => $result->version,
                     ":platform" => $result->platform,
@@ -237,7 +237,7 @@ function fetchUA( PDO $db, int $updateIncomplete = 0 ) {
                     ":platform_bits" => $result->platform_bits,
                     ":device_type" => $result->device_type,
                     ":uaHash" => $row->uaHash
-                ) );
+                ] );
                 // Increase lookup counter which will lower the priority of this post next time
                 $db->exec( "UPDATE user_agents SET lookups=lookups+1 WHERE uaHash='{$row->uaHash}'" );
             } else {

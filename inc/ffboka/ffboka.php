@@ -106,11 +106,11 @@ class FFBoka {
         $stmt = self::$db->prepare( "INSERT INTO sections SET sectionID=:sectionID, name=:name1, timestamp=NULL ON DUPLICATE KEY UPDATE name=:name2, timestamp=NULL" );
         foreach ( $data->results as $section ) {
             if ( $section->cint_nummer && $section->cint_name ) {
-                if ( !$stmt->execute( array(
+                if ( !$stmt->execute( [
                     ":sectionID" => $section->cint_nummer,
                     ":name1" => $section->cint_name,
                     ":name2" => $section->cint_name,
-                ) ) ) logger( __METHOD__ . " Failed to update section {$section->cint_nummer} {$section->cint_name}. " . self::$db->errorInfo()[ 2 ], E_ERROR );                ;
+                ] ) ) logger( __METHOD__ . " Failed to update section {$section->cint_nummer} {$section->cint_name}. " . self::$db->errorInfo()[ 2 ], E_ERROR );                ;
             }
         }
         // Check for outdated records
@@ -249,7 +249,7 @@ class FFBoka {
             return FALSE;
         }
         $result = json_decode( $result );
-        if ( $result->error ) {
+        if ( isset($result->error) ) {
             logger( __METHOD__ . " Error from login API: " . $result->error, E_ERROR );
             return FALSE;
         }
@@ -304,7 +304,7 @@ class FFBoka {
         }
         // reject files that are too big
         if ( $maxFileSize ) {
-            if ( filesize( $file[ 'tmp_name' ] ) > $maxFileSize ) return array( "error" => "Filen är för stor. Maximal accepterad storlek är " . round( $maxFileSize / 1024 / 1024, 0 ) . " kB." );
+            if ( filesize( $file[ 'tmp_name' ] ) > $maxFileSize ) return [ "error" => "Filen är för stor. Maximal accepterad storlek är " . round( $maxFileSize / 1024 / 1024, 0 ) . " kB." ];
         }
         // Get the picture and its size
         $src = @imagecreatefromstring( file_get_contents( $file[ 'tmp_name' ] ) );
@@ -375,7 +375,7 @@ class FFBoka {
      */
     public function deleteToken( string $token ) {
         $stmt = self::$db->prepare( "DELETE FROM tokens WHERE token=?" );
-        return $stmt->execute( array( $token ) );
+        return $stmt->execute( [ $token ] );
     }
     
     /**
@@ -467,7 +467,7 @@ class FFBoka {
      * @param string $only Set to "active" to only get non-expired polls, or "expired" to only get expired polls
      * @return \FFBoka\Poll[]
      */
-    public function polls( string $only = NULL ) {
+    public function polls( ?string $only = NULL ) {
         switch ( $only ) {
         case "active":
             $stmt = self::$db->query( "SELECT pollId FROM polls WHERE expires IS NULL OR expires > NOW()" );
@@ -545,14 +545,14 @@ class FFBoka {
         if ( $queue ) {
             // Place mail into mail queue
             $stmt = self::$db->prepare( "INSERT INTO mailq SET fromName=:fromName, `to`=:to, replyTo=:replyTo, subject=:subject, body=:body, attachments=:attachments" );
-            if ( !$stmt->execute( array(
+            if ( !$stmt->execute( [
                 ":fromName" => $mailOptions[ 'fromName' ],
                 ":to"       => $to,
                 ":replyTo"  => $mailOptions[ 'replyTo' ],
                 ":subject"  => $subject,
                 ":body"     => $body,
                 ":attachments" => json_encode( $attachments )
-            ) ) ) {
+            ] ) ) {
                 logger( __METHOD__ . " Failed to queue mail. " . $stmt->errorInfo()[ 2 ], E_ERROR );
                 return false;
             }
@@ -585,7 +585,7 @@ class FFBoka {
                 $mail->isHTML( true );
                 $mail->Subject = $subject;
                 $mail->Body = $body;
-                $mail->AltBody = strip_tags( str_replace( array( "</p>", "<br>" ), array( "</p>\r\n\r\n", "\r\n" ), $body ) );
+                $mail->AltBody = strip_tags( str_replace( [ "</p>", "<br>" ], [ "</p>\r\n\r\n", "\r\n" ], $body ) );
                 if ( !$mail->send() ) {
                     logger( __METHOD__ . " Failed to send mail '$subject' to $to. " . $mail->ErrorInfo, E_WARNING );
                     return false;

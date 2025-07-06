@@ -34,9 +34,9 @@ if ( !$cat->showFor( $currentUser, FFBoka::ACCESS_CATADMIN ) ) {
  * @param Category $parent Output the tree from here downwards
  * @param Category $currentCat Do not include this category, but preselect option for this category's parent
  * @param User $user Only categories where this user is at least CATADMIN will be shown.
- * @param number $indent Indentation for visual arrangement.
+ * @param int $indent Indentation for visual arrangement.
  */
-function showCatTree( Category $parent, Category $currentCat, User $user, $indent = 0 ) : void {
+function showCatTree( Category $parent, Category $currentCat, User $user, int $indent = 0 ) : void {
     if ( $parent->getAccess( $user ) >= FFBoka::ACCESS_CATADMIN || $parent->id == $currentCat->parentId ) {
         echo "<option value='{$parent->id}'" . ( $parent->id == $currentCat->parentId ? " selected='true'" : "" ) . ">" . str_repeat( "&mdash;", $indent ) . " " . htmlspecialchars( $parent->caption ) . "</option>";
     } else {
@@ -167,7 +167,7 @@ unset ( $_SESSION[ 'itemId' ] );
 
     <div data-role="collapsibleset" data-inset="false">
         <?php if ( $cat->getAccess( $currentUser ) >= FFBoka::ACCESS_CATADMIN ) { ?>
-        <div data-role="collapsible" <?= $_GET[ 'action' ] === "new" ? "data-collapsed='false'" : "" ?>>
+        <div data-role="collapsible" <?= ( $_GET[ 'action' ] ?? '' ) === "new" ? "data-collapsed='false'" : "" ?>>
             <h2>Allmänt</h2>
 
             <p id="cat-breadcrumb"><?php
@@ -269,7 +269,7 @@ unset ( $_SESSION[ 'itemId' ] );
                         echo "<li><a data-transition='slide' href='category.php?catId={$child->id}'>" .
                             embedImage( $child->thumb ) .
                             "<h3>" . htmlspecialchars( $child->caption ) . "</h3>";
-                        $subcats = array();
+                        $subcats = [];
                         foreach ( $child->children() as $grandchild ) $subcats[] = htmlspecialchars( $grandchild->caption );
                         if ( $subcats ) echo "<p>" . implode( ", ", $subcats ) . "</p>";
                         echo "<span class='ui-li-count'>{$child->itemCount}</span></a></li>\n";

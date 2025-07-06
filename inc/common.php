@@ -9,7 +9,7 @@ require_once __DIR__ . "/config.php";
 if ( $cfg[ 'maintenance' ] && basename( $_SERVER[ 'PHP_SELF' ] ) !== "superadmin.php" ) die( "<html><head><title>Resursbokning - Underhåll</title></head><body><h1>Underhåll</h1><p>Vi utför underhållsarbeten på bokningssystemet. Välkommen åter inom kort!</body></html>" );
 
 global $cfg;
-
+//error_reporting(E_ERROR | E_WARNING);
 require __DIR__ . "/version.php";
 
 // Set locale
@@ -62,6 +62,7 @@ function connectDb( string $host, string $dbname, string $user, string $pass, in
         logger( __METHOD__ . " Can't connect to database. " . $e->getMessage(), E_ERROR );
         die( "<html><body><h1>Can't Connect to Database</h1><p>If this is a fresh installation, create a database named <tt>$dbname</tt> on host <tt>$host</tt>, and create a user named <tt>$user</tt> with complete access to that database. Set the user's password in <tt>config.php</tt>. You can also change the database and user name there.</p><p>When done, <a href='javascript:location.reload();'>reload this page</a> to continue installation.</p></body></html>" );
     }
+	$db->SetAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_SILENT);
     $stmt = $db->query( "SELECT value FROM config WHERE name='db-version'" );
     if ( $stmt === FALSE ) {
         // No tables? Try to install base skeleton
@@ -81,6 +82,8 @@ function connectDb( string $host, string $dbname, string $user, string $pass, in
     } elseif ( $curVer < $reqVer ) {
         echo( str_pad( "<html><body><h1>Database Upgrade</h1><p>The current database version (v $curVer) is lower than the expected one (v $reqVer). I will now try to upgrade the database to v $reqVer. Please wait...</p>", 4096 ) ); flush();
         while ( $curVer < $reqVer ) {
+			// Give each upgrade one minute
+			set_time_limit(60);
             // Check that upgrade sql file exists
             $curVer++;
             if ( !is_readable( __DIR__ . "/../resources/db/$curVer.sql" ) ) {
@@ -174,7 +177,7 @@ function htmlHeaders( string $title, string $baseUrl, string $mode = "mobile" ) 
  * @param string $baseUrl Base URL of the installation
  * @param array[int] $superAdmins Member IDs giving superadmin access 
  */
-function head( string $caption, string $baseUrl, $superAdmins = array() ) {
+function head( string $caption, string $baseUrl, $superAdmins = [] ) {
     // Declare side panel
     ?>
     <div data-role="panel" data-theme="b" data-position-fixed="true" data-display="push" id="navpanel">
@@ -219,7 +222,7 @@ function head( string $caption, string $baseUrl, $superAdmins = array() ) {
  */
 function embedImage( $data, $overlay = "" ) {
     // Returns string for embedded img tag.
-    if ( !in_array( $overlay, array( "accepted", "rejected", "new" ) ) ) $overlay = "";
+    if ( !in_array( $overlay, [ "accepted", "rejected", "new" ] ) ) $overlay = "";
     if ( !$data ) $data = file_get_contents( __DIR__ . "/../resources/noimage.png" );
     $info = getimagesizefromstring( $data );
     if ( $overlay ) {
@@ -258,7 +261,7 @@ function obfuscatedMaillink( string $to, string $subject = "" ) {
 function resolveUserAgent( string $userAgent, PDO $db, string $format='%browser% %version% på %platform% %platform_version%, %platform_bits% bits (%device_type%)' ) {
     $ret = $format;
     $stmt = $db->prepare( "SELECT * FROM user_agents WHERE uaHash=?" );
-    $stmt->execute( array( sha1( $userAgent ) ) );
+    $stmt->execute( [ sha1( $userAgent ) ] );
     if ( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
         // Found userAgent in database. Return a readable representation of it
         if ( $row->browser == "" ) return "($userAgent)";
@@ -275,10 +278,10 @@ function resolveUserAgent( string $userAgent, PDO $db, string $format='%browser%
     } else {
         // This userAgent is not yet known. Save it in database an let it be resolved by cron job later.
         $stmt = $db->prepare( "INSERT INTO user_agents SET uaHash=:hash, userAgent=:ua" );
-        $stmt->execute( array(
+        $stmt->execute( [
             ":hash" => sha1( $userAgent ),
             ":ua" => $userAgent
-        ) );
+        ] );
         return $userAgent;
     }
 }

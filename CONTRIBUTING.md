@@ -120,7 +120,7 @@ och [composer](https://getcomposer.org).
 * Installera docker och docker-compose, och starta docker som tjänst.
 * Kopiera filen `docker/.env.sample` till `docker/.env` och skriv in samma lösenord till databasen som i `config.php`. OBS, eventuellt behöver du maskera tecken då lösenordet i `.env` tolkas av ett shell.
 * Starta containrarna: `docker-compose up -d --build`
-* Med webbläsaren, gå till http://localhost. Om allt fungerar möts du av dialogen som installerar databasen. Du behöver ladda om sidan några gånger tills allt är klart.
+* Med webbläsaren, gå till http://localhost:8088. Om allt fungerar möts du av dialogen som installerar databasen. Du behöver ladda om sidan några gånger tills allt är klart.
 
 ## Installera lokalt
 ff-boka baseras på en så kallad LAMP stack (Linux Apache MariaDB PHP). För att installera systemet, följ stegen nedan.

@@ -151,7 +151,7 @@ case "addSectionAdmin":
                 $adm->mail, // to
                 "Du är nu administratör för " . $section->name, // subject
                 "notify_new_admin", // template
-                array( // replace
+                [ // replace
                     "{{name}}" => $adm->name,
                     "{{role}}" => "lokalavdelnings-admin",
                     "{{link}}" => $cfg[ 'url' ],
@@ -159,7 +159,7 @@ case "addSectionAdmin":
                     "{{superadmin-name}}" => $currentUser->name,
                     "{{superadmin-mail}}" => $currentUser->mail,
                     "{{superadmin-phone}}" => $currentUser->phone
-                ),
+                ],
                 [], // attachments
                 $cfg[ 'mail' ]
             );
@@ -236,7 +236,7 @@ case "deleteQuestion":
 // ===== CATEGORY/ITEM LEVEL AJAX REQUESTS =====
 
 case "getReminders":
-    $reminders = array();
+    $reminders = [];
     header( "Content-Type: text/html" );
     // Collect reminders for item
     foreach( $catOrItem->reminders() as $r ) {
@@ -355,19 +355,19 @@ case "getCatAccess":
     foreach ( $cat->getAccessAll() as $key => $access ) {
         $acc = $cfg[ 'catAccessLevels' ][ $access[ 'level' ] ];
         if ( $key === "accessExternal" ) {
-            if ( $access[ 'inherited' ] ) $ret .= "<li class='wrap'>Icke-medlemmar (ärvd behörighet)<p>{$acc}</p></li>";
+            if ( isset( $access[ 'inherited' ] ) ) $ret .= "<li class='wrap'>Icke-medlemmar (ärvd behörighet)<p>{$acc}</p></li>";
             else $ret .= "<li class='wrap'><a href='#' class='ajax-input'>Icke-medlemmar<p>{$acc}</p></a><a href='#' onclick=\"unsetAccess('accessExternal');\">Återkalla behörighet</a></li>";
         } elseif ( $key === "accessMember" ) {
-            if ( $access[ 'inherited' ] ) $ret .= "<li class='wrap'>Medlem i valfri lokalavdelning (ärvd behörighet)<p>{$acc}</p></li>";
+            if ( isset( $access[ 'inherited' ] ) ) $ret .= "<li class='wrap'>Medlem i valfri lokalavdelning (ärvd behörighet)<p>{$acc}</p></li>";
             else $ret .= "<li class='wrap'><a href='#' class='ajax-input'>Medlem i valfri lokalavdelning<p>{$acc}</p></a><a href='#' onclick=\"unsetAccess('accessMember');\">Återkalla behörighet</a></li>";
         } elseif ( $key === "accessLocal" ) {
-            if ( $access[ 'inherited' ] ) $ret .= "<li class='wrap'>Lokal medlem (ärvd behörighet)<p>{$acc}</p></li>";
+            if ( isset( $access[ 'inherited' ] ) ) $ret .= "<li class='wrap'>Lokal medlem (ärvd behörighet)<p>{$acc}</p></li>";
             else $ret .= "<li class='wrap'><a href='#' class='ajax-input'>Lokal medlem<p>{$acc}</p></a><a href='#' onclick=\"unsetAccess('accessLocal');\">Återkalla behörighet</a></li>";
         } elseif ( is_numeric( $key ) ) {
-            if ( $access[ 'inherited' ]) $ret .= "<li class='wrap'>$key " . ( $access[ 'name' ] ? htmlspecialchars( $access[ 'name' ] ) : "(ingen persondata tillgänglig)" ) . " (ärvd behörighet)<p>{$acc}</p></li>";
+            if ( isset( $access[ 'inherited' ] ) ) $ret .= "<li class='wrap'>$key " . ( $access[ 'name' ] ? htmlspecialchars( $access[ 'name' ] ) : "(ingen persondata tillgänglig)" ) . " (ärvd behörighet)<p>{$acc}</p></li>";
             else $ret .= "<li class='wrap'><a href='#' class='ajax-input'>$key " . ($access[ 'name' ] ? htmlspecialchars( $access[ 'name' ] ) : "(ingen persondata tillgänglig)") . "<p>{$acc}</p></a><a href='#' onclick=\"unsetAccess('$key');\">Återkalla behörighet</a></li>";    
         } else {
-            if ( $access[ 'inherited' ] ) $ret .= "<li class='wrap'>$key (ärvd behörighet)<p>{$acc}</p></li>";
+            if ( isset( $access[ 'inherited' ] ) ) $ret .= "<li class='wrap'>$key (ärvd behörighet)<p>{$acc}</p></li>";
             else $ret .= "<li class='wrap'><a href='#' class='ajax-input'>$key<p>{$acc}</p></a><a href='#' onclick=\"unsetAccess('$key');\">Återkalla behörighet</a></li>";    
         }
     }
@@ -394,7 +394,7 @@ case "setCatAccess":
                     $adm->mail, // to
                     "Du är nu bokningsansvarig", // subject
                     "notify_new_admin", // template
-                    array( // replace
+                    [ // replace
                         "{{name}}" => $adm->name,
                         "{{role}}" => "bokningsansvarig för kategorin {$cat->caption}",
                         "{{link}}" => $cfg[ 'url' ],
@@ -402,7 +402,7 @@ case "setCatAccess":
                         "{{superadmin-name}}" => $currentUser->name,
                         "{{superadmin-mail}}" => $currentUser->mail,
                         "{{superadmin-phone}}" => $currentUser->phone
-                    ),
+                    ],
                     [], // attachments
                     $cfg[ 'mail' ]
                 );

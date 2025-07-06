@@ -228,7 +228,7 @@ class User extends FFBoka {
      * @throws \Exception if database post cannot be deleted
      */
     public function removePersistentLogin( string $selector = "" ) {
-        $currentSelector = explode( ":", $_COOKIE[ 'remember' ] )[ 0 ];
+        $currentSelector = explode( ":", $_COOKIE[ 'remember' ] ?? "" )[ 0 ];
         if ( $selector == "" ) {
             if ( $currentSelector == "" ) return false; // No information available on which login to remove
             $selector = $currentSelector;
@@ -428,7 +428,7 @@ class User extends FFBoka {
         $homeSec = $this->section;
         $homeLat = pi() * $homeSec->lat / 180;
         $homeLon = pi() * $homeSec->lon / 180;
-        $ret = array();
+        $ret = [];
         foreach ( $this->getAllSections() as $sec ) {
             $matches = $sec->contains( $search, $this, 70 );
             if ( count( $matches ) ) {

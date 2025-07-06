@@ -229,7 +229,7 @@ class Item extends FFBoka {
                 AND status>0
                 $timeConstraint
             ORDER BY start" );
-        if ( $days ) $stmt->execute( array( ":days" => $days ) );
+        if ( $days ) $stmt->execute( [ ":days" => $days ] );
         else $stmt->execute( [] );
         $ret = [];
         while ( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
@@ -396,7 +396,7 @@ class Item extends FFBoka {
             if ( $adminView ) $title .= "\n" . htmlspecialchars( $row->extName ? $row->extName : $row->username ) . "\n" . htmlspecialchars( $row->ref ) . ( is_null( $row->price ) ? "\nInget pris satt" : "\nPris: {$row->price} kr" );
             $ret .= "<div class='$class' data-booking-id='{$row->bookingId}' data-booked-item-id='{$row->bookedItemId}' " . ( $includeTokens ? "data-token='{$row->token}' " : "" ) . "style='left:" . number_format( ( $row->unixStart - $start ) / $secs * 100, 2, ".", "" ) . "%; width:" . number_format( ( $row->unixEnd - $row->unixStart ) / $secs * 100, 2, ".", "" ) . "%;' title='$title'></div>";
         }
-        if ( $scale ) $ret .= self::freebusyScale( false, $days );
+        if ( $scale ) $ret .= self::freebusyScale( true, $days );
         return $ret;
     }
 
@@ -407,7 +407,8 @@ class Item extends FFBoka {
      * @return string HTML code
      */
     public static function freebusyScale( bool $weekdays = FALSE, int $days = 7 ) {
-        $dayNames = $weekdays ? array( "<span>mån</span>", "<span>tis</span>", "<span>ons</span>", "<span>tor</span>", "<span>fre</span>", "<span>lör</span>", "<span>sön</span>" ) : array_fill( 0, $days, "" );
+        if ( $weekdays && $days == 7 ) $dayNames = [ "<span>mån</span>", "<span>tis</span>", "<span>ons</span>", "<span>tor</span>", "<span>fre</span>", "<span>lör</span>", "<span>sön</span>" ];
+        else $dayNames = array_fill( 0, $days, "" );
         $noborder = "border-left:none;";
         $ret = "";
         for ( $day = 0; $day < $days; $day++ ) {

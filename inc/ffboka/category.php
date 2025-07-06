@@ -343,7 +343,7 @@ class Category extends FFBoka {
         $md5 = md5_file( $file[ 'tmp_name' ] );
         // Add post to database
         $stmt = self::$db->prepare( "INSERT INTO cat_files SET catId={$this->id}, filename=:filename, caption=:caption, md5='$md5'" );
-        if ( !$stmt->execute( array( ":filename" => $file[ 'name' ], ":caption" => $file[ 'name' ] ) ) ) {
+        if ( !$stmt->execute( [ ":filename" => $file[ 'name' ], ":caption" => $file[ 'name' ] ] ) ) {
             unlink( $file[ 'tmp_name' ] );
             throw new Exception( "Filen kunde inte sparas, eftersom samma fil redan har laddats upp till denna kategori." );
         }
@@ -508,7 +508,7 @@ class Category extends FFBoka {
             $access = $this->parent()->getAccessAll();
             // add inherited flags to each member
             foreach ( $access as &$acc ) $acc[ 'inherited' ] = true;
-        } else $access = array();
+        } else $access = [];
         // Basic access
         if ( !is_null( $this->accessExternal ) ) $access[ 'accessExternal' ] = [ "level" => $this->accessExternal ];
         if ( !is_null( $this->accessMember ) ) $access[ 'accessMember' ] = [ "level" => $this->accessMember ];
@@ -671,7 +671,7 @@ class Category extends FFBoka {
      * @return array|\FFBoka\Item[] Items sorted by caption
      */
     public function items() : array {
-        if ( !$this->id ) return array();
+        if ( !$this->id ) return [];
         $stmt = self::$db->query( "SELECT itemId FROM items WHERE catId={$this->id}" );
         $items = [];
         while ( $item = $stmt->fetch( PDO::FETCH_OBJ ) ) {
