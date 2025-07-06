@@ -124,7 +124,7 @@ if ( (int)$row->value < $monday->getTimestamp() && date( "N" ) >= $cfg[ 'cronWee
  */
 $stmt = $db->query( "SELECT MONTH(FROM_UNIXTIME(value)) month FROM `config` WHERE `name`='last monthly cron run';" );
 $row = $stmt->fetch( PDO::FETCH_OBJ );
-if ( date( "n" ) > (int)$row->month && date( "j" ) >= $cfg[ 'cronMonthly' ] ) {
+if ( date( "n" ) != (int)$row->month && date( "j" ) >= $cfg[ 'cronMonthly' ] ) {
     logger( "Cron: Time to execute monthly jobs..." );
 
     $numDeleted = $db->exec( "DELETE FROM persistent_logins WHERE expires < NOW()" );
