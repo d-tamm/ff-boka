@@ -211,8 +211,8 @@ class FFBoka {
         $userId = trim( $userId );
         if ( preg_match( "/^(19|20)?(\d{6})-?(\d{4})$/", $userId, $matches ) ) {
             // $userId is given as personnummer.
-            // Convert to 10 digits if given as 12 digits
-            $userId = $matches[ 2 ].$matches[ 3 ];
+            // Convert to 12 digits yyyymmddnnnn
+            $userId = ( $matches[1] ?: "19" ) . $matches[ 2 ] . $matches[ 3 ];
             // Convert to member number via API
             $data = json_decode( @file_get_contents( self::$apiFeedSocnr . $userId ) );
             if ( $data === FALSE ) {
