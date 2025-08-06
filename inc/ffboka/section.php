@@ -261,7 +261,7 @@ class Section extends FFBoka {
      *  bookedItems - total number of items in those bookings
      *  duration - total time as a sum of all items [hours]
      */
-    public function usageOverview( int $year = null, int $month = null ) : stdClass {
+    public function usageOverview( ?int $year = null, ?int $month = null ) : stdClass {
         // Sanitize parameters
         if ( !is_null( $year ) ) $year = (int)$year;
         if ( !is_null( $month ) ) $month = (int)$month;
@@ -291,7 +291,7 @@ class Section extends FFBoka {
      *  * bookings (number of times the item has been booked)
      *  * duration (total number of hours the item has been booked)
      */
-    public function usageDetails( int $year = null, int $month = null ) : array {
+    public function usageDetails( ?int $year = null, ?int $month = null ) : array {
         $query = "SELECT catId, categories.caption category, items.itemId, items.caption item, COUNT(booked_items.bookedItemId) bookings, SUM(UNIX_TIMESTAMP(`end`)-UNIX_TIMESTAMP(`start`))/3600 duration FROM items INNER JOIN categories USING (catId) LEFT JOIN booked_items ON items.itemId=booked_items.itemId";
         if ( !is_null( $year ) ) $query .= " AND YEAR(`start`)=$year";
         if ( !is_null( $month ) ) $query .= " AND MONTH(`start`)=$month";
