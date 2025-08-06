@@ -467,7 +467,7 @@ class FFBoka {
      * @param string $only Set to "active" to only get non-expired polls, or "expired" to only get expired polls
      * @return \FFBoka\Poll[]
      */
-    public function polls( string $only = NULL ) {
+    public function polls( ?string $only = NULL ) {
         switch ( $only ) {
         case "active":
             $stmt = self::$db->query( "SELECT pollId FROM polls WHERE expires IS NULL OR expires > NOW()" );
