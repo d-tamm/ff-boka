@@ -180,7 +180,7 @@ $cfg = $currentCfg;
     </div>
 
     <?php
-    if ( $cronDelayed || $cfgMissing || $cfg_obsolete ) {
+    if ( $cronDelayed || $cfgMissing || $cfgObsolete ) {
         echo "<div class='ui-body ui-body-c'><p>Det finns några problem:</p><ul>";
         if ( $cronDelayed ) echo "<li><a href='#' onclick=\"$('#superadmin-systeminfo').collapsible('expand');\">Cron</a> utförs inte.</li>";
         if ( $cfgMissing || $cfgObsolete ) echo "<li><a href='#' onclick=\"$('#superadmin-config').collapsible('expand');\">Konfigurationen</a> är inte uppdaterad.</li>";
