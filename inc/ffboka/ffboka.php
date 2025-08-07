@@ -249,7 +249,7 @@ class FFBoka {
             return FALSE;
         }
         $result = json_decode( $result );
-        if ( $result->error ) {
+        if ( isset( $result->error ) ) {
             logger( __METHOD__ . " Error from login API: " . $result->error, E_ERROR );
             return FALSE;
         }
