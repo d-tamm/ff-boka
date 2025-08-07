@@ -195,7 +195,7 @@ if ( date( "n" ) != (int)$row->month && date( "j" ) >= $cfg[ 'cronMonthly' ] ) {
         $db->exec( "INSERT INTO stats SET sectionId={$section->id}, `key`='bookings', `value`=(SELECT COUNT(*) FROM bookings WHERE sectionId={$section->id} AND ADDDATE(timestamp, INTERVAL 1 MONTH)>NOW())" );
         // 10 most frequently booked items last year
         $stmt = $db->query( "SELECT items.caption item, categories.caption category, COUNT(*) bookings FROM `booked_items` INNER JOIN bookings USING (bookingId) INNER JOIN items USING (itemId) INNER JOIN categories USING (catId) WHERE ADDDATE(bookings.timestamp, INTERVAL 12 MONTH)>NOW() AND categories.sectionId={$section->id} GROUP BY items.itemId ORDER BY bookings DESC LIMIT 10" );
-        $db->exec( "INSERT INTO stats SET sectionId={$section->id}, `key`='favorite items', `value`='" . json_encode( $stmt->fetchAll( PDO::FETCH_OBJ ) ) . "'" );
+        $db->exec( "INSERT INTO stats SET sectionId={$section->id}, `key`='favorite items', `value`='" . json_encode( $stmt->fetchAll( PDO::FETCH_OBJ ), JSON_HEX_APOS ) . "'" );
     }
     logger( "Cron: Saved monthly statistics." );
     
