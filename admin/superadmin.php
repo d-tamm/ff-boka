@@ -112,9 +112,8 @@ case "currentLog":
 }
 
 // Check last cron execution
-$stmt = $db->query( "SELECT value FROM config WHERE name='last hourly cron run'" );
-$row = $stmt->fetch( PDO::FETCH_OBJ );
-$lastCron = (int)$row->value;
+$stmt = $db->query( "SELECT value FROM config WHERE name='last cron job finished'" );
+$lastCron =  $stmt->fetchColumn();
 $cronDelayed = $lastCron == 0 || $lastCron < time() - 3600;
 
 // Check that config file is complete

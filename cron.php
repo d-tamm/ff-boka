@@ -91,8 +91,8 @@ foreach ( $bookings as $id=>$booking ) {
  * Hourly cron jobs
  */
 $stmt = $db->query( "SELECT value FROM config WHERE name='last hourly cron run'" );
-$row = $stmt->fetch( PDO::FETCH_OBJ );
-if ( date("YmdH") > $row->value && date("i") >= $cfg['cronHourly'] ) {
+$last = $stmt->fetchColumn();
+if ( date("YmdH") > $last && date("i") >= $cfg['cronHourly'] ) {
     //
 }
 // Record last execution time
@@ -103,8 +103,8 @@ $db->exec( "UPDATE config SET value=" . date("YmdH") . " WHERE name='last hourly
  * Daily cron jobs
  */
 $stmt = $db->query( "SELECT value FROM config WHERE name='last daily cron run'" );
-$row = $stmt->fetch( PDO::FETCH_OBJ );
-if ( date("Ymd") > $row->value && date("H") >= $cfg[ 'cronDaily' ] ) {
+$last = $stmt->fetchColumn();
+if ( date("Ymd") > $last && date("H") >= $cfg[ 'cronDaily' ] ) {
     logger( "Cron: Time to execute daily jobs..." );
 
     // Lookup one missing (new) user agent (if there is any)
@@ -120,8 +120,8 @@ if ( date("Ymd") > $row->value && date("H") >= $cfg[ 'cronDaily' ] ) {
  * Weekly cron jobs
  */
 $stmt = $db->query( "SELECT value FROM config WHERE name='last weekly cron run'" );
-$row = $stmt->fetch( PDO::FETCH_OBJ );
-if ( date("oW") > $row->value && date("N") >= $cfg[ 'cronWeekly' ] ) {
+$last = $stmt->fetchColumn();
+if ( date("oW") > $last && date("N") >= $cfg[ 'cronWeekly' ] ) {
     logger( "Cron: Time to execute weekly jobs..." );
     
     $FF->updateSectionList();
@@ -139,8 +139,8 @@ if ( date("oW") > $row->value && date("N") >= $cfg[ 'cronWeekly' ] ) {
  * Monthly cron jobs
  */
 $stmt = $db->query( "SELECT value FROM `config` WHERE `name`='last monthly cron run';" );
-$row = $stmt->fetch( PDO::FETCH_OBJ );
-if ( date( "Ym" ) > $row->value && date( "d" ) >= $cfg[ 'cronMonthly' ] ) {
+$last = $stmt->fetchColumn();
+if ( date( "Ym" ) > $last && date( "d" ) >= $cfg[ 'cronMonthly' ] ) {
     logger( "Cron: Time to execute monthly jobs..." );
 
     $numDeleted = $db->exec( "DELETE FROM persistent_logins WHERE expires < NOW()" );
@@ -219,6 +219,7 @@ if ( date( "Ym" ) > $row->value && date( "d" ) >= $cfg[ 'cronMonthly' ] ) {
     $db->exec( "UPDATE config SET value=" . date( "Ym" ) . " WHERE name='last monthly cron run'" );
 }
 
+$db->exec( "UPDATE config SET value=UNIX_TIMESTAMP() WHERE name='last cron job finished'" );
 // Clear flag for running cron job
 $db->exec( "UPDATE config SET value=0 WHERE name='current cron job'" );
 
