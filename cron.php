@@ -26,7 +26,10 @@ if ( $currentCron > 0 ) {   // Other unfinished job exists
 // Set flag for running cron job
 $db->exec( "UPDATE config SET value=UNIX_TIMESTAMP() WHERE name='current cron job'" );
 
-logger( sprintf( "Cron: Executing cron jobs.") );
+$stmt = $db->query( "SELECT value FROM config WHERE name='last cron job finished'" );
+$last = new DateTime( "@" . $stmt->fetchColumn() );
+$since = $last->diff( new DateTime(), true );
+logger( sprintf( "Cron: Executing cron jobs. Last cron execution was %s ago.", $since->format( "%H:%I:%S" ) ) );
 
 /**
  * Cron jobs executed whenever this script is called
