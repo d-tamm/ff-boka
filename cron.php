@@ -13,11 +13,20 @@ use FFBoka\Item;
 require( __DIR__ . "/inc/common.php" );
 global $db, $cfg, $FF;
 
-$stmt = $db->query( "SELECT value FROM config WHERE name='last hourly cron run'" );
-$row = $stmt->fetch( PDO::FETCH_OBJ );
-$last = new DateTime( "@" . $row->value );
-$since = $last->diff( new DateTime(), true );
-logger( sprintf( "Cron: Executing cron jobs. Last cron execution was %s ago.", $since->format( "%H:%I:%S" ) ) );
+// Check that not another cron job still is running
+$stmt = $db->query( "SELECT value FROM config WHERE name='current cron job'" );
+$currentCron = $stmt->fetchColumn();
+if ( $currentCron > 0 ) {   // Other unfinished job exists
+    if ( time() < $currentCron+30*60 ) {  // that job started is less than 30 minutes old.
+        die("Other cron job still running. Come back later.");
+    } else {
+        logger( "Cron: Other running cron job found running for more than 30 minutes. Starting new cron job anyway.", E_ERROR );
+    }
+}
+// Set flag for running cron job
+$db->exec( "UPDATE config SET value=UNIX_TIMESTAMP() WHERE name='current cron job'" );
+
+logger( sprintf( "Cron: Executing cron jobs.") );
 
 /**
  * Cron jobs executed whenever this script is called
@@ -78,8 +87,16 @@ foreach ( $bookings as $id=>$booking ) {
     else logger( "Failed to send reminder for booking $id to {$booking[ 'mail' ]}", E_ERROR );
 }
 
+/**
+ * Hourly cron jobs
+ */
+$stmt = $db->query( "SELECT value FROM config WHERE name='last hourly cron run'" );
+$row = $stmt->fetch( PDO::FETCH_OBJ );
+if ( date("YmdH") > $row->value && date("i") >= $cfg['cronHourly'] ) {
+    //
+}
 // Record last execution time
-$db->exec( "UPDATE config SET value=UNIX_TIMESTAMP() WHERE name='last hourly cron run'" );
+$db->exec( "UPDATE config SET value=" . date("YmdH") . " WHERE name='last hourly cron run'" );
 
 
 /**
@@ -87,15 +104,15 @@ $db->exec( "UPDATE config SET value=UNIX_TIMESTAMP() WHERE name='last hourly cro
  */
 $stmt = $db->query( "SELECT value FROM config WHERE name='last daily cron run'" );
 $row = $stmt->fetch( PDO::FETCH_OBJ );
-$midnight = new DateTime( "midnight" );
-if ( (int)$row->value < $midnight->getTimestamp() && date( "G" ) >= $cfg[ 'cronDaily' ] ) {
+if ( date("Ymd") > $row->value && date("H") >= $cfg[ 'cronDaily' ] ) {
     logger( "Cron: Time to execute daily jobs..." );
 
     // Lookup one missing (new) user agent (if there is any)
     fetchUA( $db );
 
     // Record last execution time
-    $db->exec( "UPDATE config SET value=UNIX_TIMESTAMP() WHERE name='last daily cron run'" );
+    $db->exec( "UPDATE config SET value=" . date("Ymd") . " WHERE name='last daily cron run'" );
+    logger( "Cron: Daily jobs finished." );
 }
 
 
@@ -104,8 +121,7 @@ if ( (int)$row->value < $midnight->getTimestamp() && date( "G" ) >= $cfg[ 'cronD
  */
 $stmt = $db->query( "SELECT value FROM config WHERE name='last weekly cron run'" );
 $row = $stmt->fetch( PDO::FETCH_OBJ );
-$monday = new DateTime( "monday this week" );
-if ( (int)$row->value < $monday->getTimestamp() && date( "N" ) >= $cfg[ 'cronWeekly' ] ) {
+if ( date("oW") > $row->value && date("N") >= $cfg[ 'cronWeekly' ] ) {
     logger( "Cron: Time to execute weekly jobs..." );
     
     $FF->updateSectionList();
@@ -115,16 +131,16 @@ if ( (int)$row->value < $monday->getTimestamp() && date( "N" ) >= $cfg[ 'cronWee
     fetchUA( $db, 5 );
     
     // Record last execution time
-    $db->exec( "UPDATE config SET value=UNIX_TIMESTAMP() WHERE name='last weekly cron run'" );
+    $db->exec( "UPDATE config SET value=" . date("oW") . " WHERE name='last weekly cron run'" );
     logger( "Cron: Weekly jobs finished." );
 }
 
 /**
  * Monthly cron jobs
  */
-$stmt = $db->query( "SELECT MONTH(FROM_UNIXTIME(value)) month FROM `config` WHERE `name`='last monthly cron run';" );
+$stmt = $db->query( "SELECT value FROM `config` WHERE `name`='last monthly cron run';" );
 $row = $stmt->fetch( PDO::FETCH_OBJ );
-if ( date( "n" ) != (int)$row->month && date( "j" ) >= $cfg[ 'cronMonthly' ] ) {
+if ( date( "Ym" ) > $row->value && date( "d" ) >= $cfg[ 'cronMonthly' ] ) {
     logger( "Cron: Time to execute monthly jobs..." );
 
     $numDeleted = $db->exec( "DELETE FROM persistent_logins WHERE expires < NOW()" );
@@ -200,8 +216,11 @@ if ( date( "n" ) != (int)$row->month && date( "j" ) >= $cfg[ 'cronMonthly' ] ) {
     logger( "Cron: Saved monthly statistics." );
     
     // Record last execution time
-    $db->exec( "UPDATE config SET value=UNIX_TIMESTAMP() WHERE name='last monthly cron run'" );
+    $db->exec( "UPDATE config SET value=" . date( "Ym" ) . " WHERE name='last monthly cron run'" );
 }
+
+// Clear flag for running cron job
+$db->exec( "UPDATE config SET value=0 WHERE name='current cron job'" );
 
 
 /**

@@ -91,6 +91,7 @@ $cfg = array(
     "TtlPersistentLogin" => 60 * 60 * 24 * 365,
     
     // When to do recurring jobs
+    "cronHourly" => 24, // Minute of the hour 0..59
     "cronDaily" => 2, // Hour of day 0...23
     "cronWeekly" => 7, // Day of week, Monday=1, Sunday=7
     "cronMonthly" => 1, // Day of month, 1...31
