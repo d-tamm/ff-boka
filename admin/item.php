@@ -161,8 +161,8 @@ switch ( $_REQUEST[ 'action' ] ) {
         </div>
         
         <div class="ui-field-contain">
-            <label for="item-description">Beskrivning (formatera med <a target="_blank" href="https://commonmark.org/help/">Markdown</a>):</label>
-            <textarea name="description" class="ajax-input" id="item-description" placeholder="Beskrivning"><?= htmlspecialchars( $item->description ) ?></textarea>
+            <label for="item-description">Beskrivning:</label>
+            <textarea name="description" class="ajax-input" id="item-description" placeholder="Beskrivning (använd Markdown om du vill formatera den)"><?= htmlspecialchars( $item->description ) ?></textarea>
         </div>
         <label for="item-desc-preview">Förhandsgranskning:</label>
         <div class="ui-body ui-body-a" id="item-desc-preview"><?= $Parsedown->text( $item->description ) ?></div>
