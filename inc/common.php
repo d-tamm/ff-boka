@@ -27,6 +27,7 @@ use FFBoka\FFBoka;
 use FFBoka\User;
 
 // Initialize Markdown
+include __DIR__ . "/../inc/parsedown/Parsedown.php";
 $Parsedown = new Parsedown();
 $Parsedown->setBreaksEnabled(true);
 $Parsedown->setSafeMode(true);

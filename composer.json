@@ -3,8 +3,7 @@
 		"phpmailer/phpmailer" : "^6.1",
 		"components/jquery": "2.1.*",
 		"components/jqueryui": "^1.12",
-		"components/font-awesome": "^6.1",
-		"erusev/parsedown": "^1.7"
+		"components/font-awesome": "^6.1"
 	},
 	"repositories" : [{
 			"type" : "git",
