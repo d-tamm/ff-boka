@@ -154,6 +154,8 @@ function htmlHeaders( string $title, string $baseUrl, string $mode = "mobile" ) 
         <script src="<?= $baseUrl ?>vendor/components/jqueryui/jquery-ui.min.js"></script>
         <link rel="stylesheet" href="<?= $baseUrl ?>vendor/components/font-awesome/css/all.css">        
     <?php } ?>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.js"></script>
     <link rel="stylesheet" href="<?= $baseUrl ?>css/ff-boka.css" />
     <script>
         // Lift in some constants from PHP
