@@ -56,7 +56,7 @@ switch ( $_REQUEST[ 'action' ] ) {
         <h3>Allmänt</h3>
         <p>Inställningarna här sparas direkt. Du behöver inte trycka på någon spara-knapp. Längst upp ser du var i strukturen resursen är placerad, med klickbara överordnade element. Det är användbart för att snabbt navigera upp i hirarkin. Klicka på knappen med pennsymbol till höger om sökvägen för att flytta resursen till en annan kategori.</p>
         <p><b>Rubriken</b> visas i listor och bör hållas kort och tydlig. Har du flera resurser av samma typ kan det vara bra att lägga till ett löpnummer eller dylikt  som hjälper dig att identifiera resurserna.</p>
-        <p><b>Beskrivningen</b> kan vara en längre text. Här kan du samla all information om resursen som kan vara användbar för användaren. Texten visas bara i resursens detailjvy, inte i listor.</p>
+        <p><b>Beskrivningen</b> kan vara en längre text. Här kan du samla all information om resursen som kan vara användbar för användaren. Texten visas bara i resursens detailjvy, inte i listor. I beskrivningen kan du använda formatering med hjälp av <a target="_blank" href="https://commonmark.org/help/">Markdown</a>.</p>
         <p><b>Text i bokningsbekräftelse:</b> Du kan lägga in en text som skickas med i den bekräftelse som användaren får när hen har lagt en bokning. Fungerar på samma sätt som motsvarande fält på kategorinivå.</p>
         <p>Med <b>Aktiv (kan bokas)</b> bestämmer du om resursen ska visas för bokning. Det kan vara användbart under tiden du lägger upp resursen tills all information är på plats, eller när en resurs inte är tillgänglig på grund av skada, förlust mm.</p>
         <p>Du kan även lägga in <b>interna anteckningar</b>. De visas bara för administratörer.</p>
@@ -161,10 +161,12 @@ switch ( $_REQUEST[ 'action' ] ) {
         </div>
         
         <div class="ui-field-contain">
-            <label for="item-description">Beskrivning:</label>
+            <label for="item-description">Beskrivning (formatera med <a target="_blank" href="https://commonmark.org/help/">Markdown</a>):</label>
             <textarea name="description" class="ajax-input" id="item-description" placeholder="Beskrivning"><?= htmlspecialchars( $item->description ) ?></textarea>
         </div>
-
+        <label for="item-desc-preview">Förhandsgranskning:</label>
+        <div class="ui-body ui-body-a" id="item-desc-preview"><?= $Parsedown->text( $item->description ) ?></div>
+    
         <div class="ui-field-contain">
             <label for="item-postbookMsg">Text som ska skickas med bokningsbekräftelsen:</label>
             <textarea name="postbookMsg" class="ajax-input" id="item-postbookMsg" placeholder="T.ex. kod till hänglås"><?= htmlspecialchars( $item->postbookMsg ) ?></textarea>
