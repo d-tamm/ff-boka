@@ -20,12 +20,16 @@ date_default_timezone_set ( $cfg[ 'timezone' ] );
 $message = "";
 
 // Load mail functions
-
 use Exception as GlobalException;
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 use FFBoka\FFBoka;
 use FFBoka\User;
+
+// Initialize Markdown
+$Parsedown = new Parsedown();
+$Parsedown->setBreaksEnabled(true);
+$Parsedown->setSafeMode(true);
 
 // Connect to database
 $db = connectDb( $cfg[ 'dbhost' ], $cfg[ 'dbname' ], $cfg[ 'dbuser' ], $cfg[ 'dbpass' ], $dbVersion, $cfg[ 'dbport' ] );

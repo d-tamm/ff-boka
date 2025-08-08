@@ -167,7 +167,7 @@ unset ( $_SESSION[ 'itemId' ] );
 
     <div data-role="collapsibleset" data-inset="false">
         <?php if ( $cat->getAccess( $currentUser ) >= FFBoka::ACCESS_CATADMIN ) { ?>
-        <div data-role="collapsible" <?= $_GET[ 'action' ] === "new" ? "data-collapsed='false'" : "" ?>>
+        <div data-role="collapsible" <?= ( isset($_GET['action']) && $_GET[ 'action' ] === "new" ) ? "data-collapsed='false'" : "" ?>>
             <h2>Allmänt</h2>
 
             <p id="cat-breadcrumb"><?php

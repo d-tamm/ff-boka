@@ -1813,8 +1813,9 @@ function setItemProp( name, val ) {
     $.get( "ajax.php",
         { action: "saveItemProp", name: name, value: val }
     )
-    .done( function() {
+    .done( function(data) {
         if ( name == "caption" ) $( "#page-caption" ).text( val );
+        if ( name == "description" ) $( "#item-desc-preview").html( data );
         $( "#item-saved-indicator" ).addClass( "saved" );
         setTimeout( function() { $( "#item-saved-indicator" ).removeClass( "saved" ); }, 1000 );
     } )

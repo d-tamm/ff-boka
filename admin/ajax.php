@@ -499,6 +499,7 @@ case "saveItemProp":
         case "imageId":
             if ( $_REQUEST[ 'value' ] == "NULL" ) $item->{$_REQUEST[ 'name' ]} = null;
             else $item->{$_REQUEST[ 'name' ]} = $_REQUEST[ 'value' ];
+            if ( $_REQUEST['name']=='description' ) echo $Parsedown->text( $_REQUEST['value']);
             break;
         default:
             http_response_code( 405 ); // Method not allowed

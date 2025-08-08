@@ -206,7 +206,7 @@ switch ( $_REQUEST[ 'action' ] ) {
             }
         }
         $cat = $item->category();
-        $html = str_replace( "\n", "<br>", htmlspecialchars( $item->description ) );
+        $html = $Parsedown->text( $item->description );
         foreach ( $item->images() as $img ) {
             $html .= "<div class='item-image'><img src='image.php?type=itemImage&id={$img->id}'><label>" . htmlspecialchars( $img->caption ) . "</label></div>";
         }

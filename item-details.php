@@ -44,7 +44,7 @@ if ( $access < FFBoka::ACCESS_READASK ) {
     <?= head( $item->caption, $cfg[ 'url' ], $cfg[ 'superAdmins' ] ) ?>
     <div role="main" class="ui-content">
     
-    <?php echo str_replace( "\n", "<br>", htmlspecialchars( $item->description ) );
+    <?php echo $Parsedown->text( $item->description );
     
     if ( $access >= FFBoka::ACCESS_CONFIRM && $item->note ) echo "<p class='ui-body ui-body-a'><i>" . htmlspecialchars( $item->note ) . "</i></p>";
     
