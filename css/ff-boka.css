@@ -119,6 +119,17 @@ table.alternate-rows tr:nth-child(even) {
     white-space:normal;
 }
 
+/* Adjust placement of Markdown editor */
+@media (min-width: 28em) {
+    .ui-field-contain .EasyMDEContainer {
+        float:left;
+        width:78%;
+    }
+}
+.EasyMDEContainer .editor-toolbar button.ui-btn {
+    width: auto;
+}
+
 .item-img-preview {
     width:100%;
 }

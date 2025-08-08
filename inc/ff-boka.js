@@ -1688,8 +1688,14 @@ function deleteReminder( reminderClass, id ) {
 
 // ========== admin/item.php ==========
 $( document ).on( 'pagecreate', "#page-admin-item", function() {
-    // Bind events
-    
+    const easyMDE = new EasyMDE({
+        element: document.getElementById('item-description'),
+        status: false,
+        toolbar: [ "heading", "bold", "italic", "strikethrough", "|", "code", "unordered-list", "ordered-list", "|", "link", "image", "table", "horizontal-rule", "|", "preview", "guide", "undo", "redo" ]
+        //hideIcons: ["fullscreen", "side-by-side"]
+    });
+
+    // Bind events    
     /**
      * Set timeout for saving item caption
      */
@@ -1701,10 +1707,10 @@ $( document ).on( 'pagecreate', "#page-admin-item", function() {
     /**
      * Set timeout for saving item description
      */
-    $( "#item-description" ).on( 'input', function() {
+    easyMDE.codemirror.on("change", () => { 
         clearTimeout( toutSetValue );
-        toutSetValue = setTimeout( setItemProp, 1000, "description", this.value );
-    } );
+        toutSetValue = setTimeout( setItemProp, 1000, "description", easyMDE.value() );
+    });
 
     /**
      * Set timeout for saving item postbook message
@@ -1815,7 +1821,6 @@ function setItemProp( name, val ) {
     )
     .done( function(data) {
         if ( name == "caption" ) $( "#page-caption" ).text( val );
-        if ( name == "description" ) $( "#item-desc-preview").html( data );
         $( "#item-saved-indicator" ).addClass( "saved" );
         setTimeout( function() { $( "#item-saved-indicator" ).removeClass( "saved" ); }, 1000 );
     } )
