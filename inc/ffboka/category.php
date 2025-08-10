@@ -510,16 +510,16 @@ class Category extends FFBoka {
             foreach ( $access as &$acc ) $acc[ 'inherited' ] = true;
         } else $access = array();
         // Basic access
-        if ( !is_null( $this->accessExternal ) ) $access[ 'accessExternal' ] = [ "level" => $this->accessExternal ];
-        if ( !is_null( $this->accessMember ) ) $access[ 'accessMember' ] = [ "level" => $this->accessMember ];
-        if ( !is_null( $this->accessLocal ) ) $access[ 'accessLocal' ] = [ "level" => $this->accessLocal ];
+        if ( !is_null( $this->accessExternal ) ) $access[ 'accessExternal' ] = [ "level" => $this->accessExternal, "inherited" => false ];
+        if ( !is_null( $this->accessMember ) ) $access[ 'accessMember' ] = [ "level" => $this->accessMember, "inherited" => false ];
+        if ( !is_null( $this->accessLocal ) ) $access[ 'accessLocal' ] = [ "level" => $this->accessLocal, "inherited" => false ];
         // Group access
         foreach ( $this->groupPerms() as $perm ) {
-            $access[ $perm[ 'assName' ] ] = [ "level" => $perm[ 'access' ] ];
+            $access[ $perm[ 'assName' ] ] = [ "level" => $perm[ 'access' ], "inherited" => false ];
         }
         // Individual access
         foreach ( $this->admins( FFBoka::ACCESS_NONE ) as $adm) {
-            $access[ $adm[ 'userId' ] ] = [ "level" => $adm[ 'access' ], "name" => $adm[ 'name' ] ];
+            $access[ $adm[ 'userId' ] ] = [ "level" => $adm[ 'access' ], "name" => $adm[ 'name' ], "inherited" => false ];
         }
         return $access;
     }
