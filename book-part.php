@@ -126,7 +126,7 @@ if ( isset( $_REQUEST[ 'action' ] ) && $_REQUEST[ 'action' ] == "help" ) {
 
 <body>
 <div data-role="page" id="page-book-part">
-    <?= head( "Lägg till resurser", $cfg[ 'url' ], $cfg[ 'superAdmins' ] ) ?>
+    <?= head( "Lägg till resurser", $cfg[ 'url' ], $cfg[ 'sysAdmins' ] ) ?>
     <div role="main" class="ui-content">
 
     <div data-role="popup" data-history="false" data-overlay-theme="b" id="popup-msg-page-book-part" class="ui-content">

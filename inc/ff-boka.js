@@ -1880,11 +1880,11 @@ $( document ).on( 'pageshow', "#page-admin-usage", function() {
 } );
 
 
-//========== superadmin.php ==========
-$( document ).on( 'pagecreate', "#page-super-admin", function() {
+//========== sysadmin.php ==========
+$( document ).on( 'pagecreate', "#page-sys-admin", function() {
     // Bind events
     
-	$( ".superadmin-login-post" ).on( "click", function() {
+	$( ".sysadmin-login-post" ).on( "click", function() {
 		$( "#admin-impersonate-userId" ).val( this.dataset.userid );
 		$( "#admin-section-misc" ).collapsible( "expand" );
 	} );
@@ -1908,26 +1908,26 @@ $( document ).on( 'pagecreate', "#page-super-admin", function() {
      */
     $( "#add-poll" ).on( 'click', function() {
         $.getJSON( "?action=ajaxAddPoll", function( data, status ) {
-        	$( "#super-admin-poll-id" ).val( data.id );
-        	$( "#super-admin-poll-question" ).val( data.question );
-        	$( "#super-admin-poll-choices" ).val( data.choices.join( "\n" ) );
-        	$( "#super-admin-poll-expires" ).val( data.expires );
-            $( "#super-admin-poll-targetgroup" ).val( data.targetGroup ).selectmenu( "refresh", true );
-	        $( "#popup-super-admin-poll" ).popup( 'open' );
+        	$( "#sys-admin-poll-id" ).val( data.id );
+        	$( "#sys-admin-poll-question" ).val( data.question );
+        	$( "#sys-admin-poll-choices" ).val( data.choices.join( "\n" ) );
+        	$( "#sys-admin-poll-expires" ).val( data.expires );
+            $( "#sys-admin-poll-targetgroup" ).val( data.targetGroup ).selectmenu( "refresh", true );
+	        $( "#popup-sys-admin-poll" ).popup( 'open' );
         } );
     } );
 } );
 
-$( document ).on( 'pageshow', "#page-super-admin", function() {
+$( document ).on( 'pageshow', "#page-sys-admin", function() {
     // Show message if there is any
-    if ( $( "#msg-page-super-admin" ).html() ) {
-        $( "#popup-msg-page-super-admin" ).popup( 'open' );
+    if ( $( "#msg-page-sys-admin" ).html() ) {
+        $( "#popup-msg-page-sys-admin" ).popup( 'open' );
     }
 } );
 
 function gotoSection( sectionId, name ) {
     if ( confirm( `Om du fortsätter läggs du till som LA-admin på LA ${name}, så att du kan rensa bort kategorier. Sedan kan du återvända hit och ta bort lokalavdelningen. Vill du det?` ) ) {
-        $.getJSON( "superadmin.php", { action: "ajaxMakeMeAdmin", sectionId: sectionId }, function( data, status ) {
+        $.getJSON( "sysadmin.php", { action: "ajaxMakeMeAdmin", sectionId: sectionId }, function( data, status ) {
             location.href = "index.php?sectionId=" + sectionId;
         } );
     }
@@ -1937,7 +1937,7 @@ function deleteSection( sectionId, name ) {
     var input = prompt( `OBS! Du håller på att radera lokalavdelningen ${name}. Allt innehåll knytet till ${name} kommer att tas bort, såsom kategorier, behörigheter och resurser. Återställning kan bara ske från backupfiler!\n\nBekräfta genom att knappa in avdelningens ID som är ${sectionId}` );
     if ( input != null ) {
         if ( input == sectionId ) {
-	        $.getJSON( "superadmin.php", { action: "ajaxDeleteSection", sectionId: sectionId }, function( data, status ) {
+	        $.getJSON( "sysadmin.php", { action: "ajaxDeleteSection", sectionId: sectionId }, function( data, status ) {
                 if ( data.status == "OK" ) {
                     $( "#admin-section-" + data.sectionId ).hide();
                 } else alert( "Något har gått fel. " + data.error );
@@ -1948,25 +1948,25 @@ function deleteSection( sectionId, name ) {
 
 function editPoll( id ) {
     $.getJSON( "?action=ajaxGetPoll&id=" + id, function( data, status ) {
-    	$( "#super-admin-poll-id" ).val( data.id );
-    	$( "#super-admin-poll-question" ).val( data.question );
-    	$( "#super-admin-poll-choices" ).val( data.choices.join( "\n" ) );
-    	$( "#super-admin-poll-expires" ).val( data.expires );
-        $( "#super-admin-poll-targetgroup" ).val( data.targetGroup ).selectmenu( "refresh", true );
-        $( "#popup-super-admin-poll" ).popup( 'open' );
+    	$( "#sys-admin-poll-id" ).val( data.id );
+    	$( "#sys-admin-poll-question" ).val( data.question );
+    	$( "#sys-admin-poll-choices" ).val( data.choices.join( "\n" ) );
+    	$( "#sys-admin-poll-expires" ).val( data.expires );
+        $( "#sys-admin-poll-targetgroup" ).val( data.targetGroup ).selectmenu( "refresh", true );
+        $( "#popup-sys-admin-poll" ).popup( 'open' );
     } );
 }
 
 function showPollResults( id ) {
     $.getJSON( "?action=ajaxGetPoll&id=" + id, function( data, status ) {
-    	$( "#super-admin-pollresults-question" ).html( data.question );
-    	$( "#super-admin-pollresults-votes" ).html( "<tr><th>Svar</th><th colspan=2>Antal</th></tr>" );
+    	$( "#sys-admin-pollresults-question" ).html( data.question );
+    	$( "#sys-admin-pollresults-votes" ).html( "<tr><th>Svar</th><th colspan=2>Antal</th></tr>" );
     	var voteCount = 0;
     	$.each( data.choices, function( index, value ) {
     		voteCount += data.votes[ index ];
-    		$( "#super-admin-pollresults-votes" ).append( "<tr><td>" + value + "</td><td title='" + data.votes[ index ] + " röster' style='width:40%;'><span style='display:inline-block; align:right; background-color:gray; width:" + ( data.votes[ index ] / data.voteMax * 100 ) + "%'>&nbsp;</span></td><td>" + data.votes[ index ] + "</td></tr>" );
+    		$( "#sys-admin-pollresults-votes" ).append( "<tr><td>" + value + "</td><td title='" + data.votes[ index ] + " röster' style='width:40%;'><span style='display:inline-block; align:right; background-color:gray; width:" + ( data.votes[ index ] / data.voteMax * 100 ) + "%'>&nbsp;</span></td><td>" + data.votes[ index ] + "</td></tr>" );
     	} );
-        $( "#popup-super-admin-pollresults" ).popup( 'open' );
+        $( "#popup-sys-admin-pollresults" ).popup( 'open' );
     } );
 }
 

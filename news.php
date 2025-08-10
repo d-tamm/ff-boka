@@ -12,7 +12,7 @@ global $cfg;
 
 <body>
 <div data-role="page" id="page-news">
-    <?= head( "Nyhetsarkiv", $cfg[ 'url' ], $cfg[ 'superAdmins' ] ) ?>
+    <?= head( "Nyhetsarkiv", $cfg[ 'url' ], $cfg[ 'sysAdmins' ] ) ?>
     <div role="main" class="ui-content">
 
     <?php

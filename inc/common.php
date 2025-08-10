@@ -6,7 +6,7 @@ spl_autoload_register( function( $class ) {
 
 if ( !file_exists( __DIR__ . "/config.php" ) ) die( "Det finns ingen konfigurationsfil än. Kopiera <tt>inc/config.sample.php</tt> till <tt>inc/config.php</tt> och redigera den. Sedan kan du komma tillbaka hit igen." );
 require_once __DIR__ . "/config.php";
-if ( $cfg[ 'maintenance' ] && basename( $_SERVER[ 'PHP_SELF' ] ) !== "superadmin.php" ) die( "<html><head><title>Resursbokning - Underhåll</title></head><body><h1>Underhåll</h1><p>Vi utför underhållsarbeten på bokningssystemet. Välkommen åter inom kort!</body></html>" );
+if ( $cfg[ 'maintenance' ] && basename( $_SERVER[ 'PHP_SELF' ] ) !== "sysadmin.php" ) die( "<html><head><title>Resursbokning - Underhåll</title></head><body><h1>Underhåll</h1><p>Vi utför underhållsarbeten på bokningssystemet. Välkommen åter inom kort!</body></html>" );
 
 global $cfg;
 
@@ -179,9 +179,9 @@ function htmlHeaders( string $title, string $baseUrl, string $mode = "mobile" ) 
  * Output HTML code for the common page heading and side panel
  * @param string $caption
  * @param string $baseUrl Base URL of the installation
- * @param array[int] $superAdmins Member IDs giving superadmin access 
+ * @param array $sysAdmins Member IDs giving sysadmin access 
  */
-function head( string $caption, string $baseUrl, $superAdmins = array() ) {
+function head( string $caption, string $baseUrl, array $sysAdmins = array() ) {
     // Declare side panel
     ?>
     <div data-role="panel" data-theme="b" data-position-fixed="true" data-display="push" id="navpanel">
@@ -190,8 +190,8 @@ function head( string $caption, string $baseUrl, $superAdmins = array() ) {
             if ( isset( $_SESSION[ 'authenticatedUser' ] ) ) { ?>
                 <li data-icon="user"><a href="<?= $baseUrl ?>userdata.php" data-transition='slide' data-rel="close">Min sida</a></li>
                 <li data-icon="power"><a href="<?= $baseUrl ?>index.php?logout" data-rel="close">Logga ut</a></li><?php
-                if ( in_array( $_SESSION[ 'authenticatedUser' ], $superAdmins ) ) {
-                    echo "<li data-icon='alert'><a href='{$baseUrl}admin/superadmin.php' data-transition='slide' data-rel='close'>Super-Admin</a></li>";
+                if ( in_array( $_SESSION[ 'authenticatedUser' ], $sysAdmins ) ) {
+                    echo "<li data-icon='alert'><a href='{$baseUrl}admin/sysadmin.php' data-transition='slide' data-rel='close'>System-Admin</a></li>";
                 }
                 if ( isset( $_SESSION[ 'impersonate_realUserId' ] ) ) {
                     echo "<li data-icon='action'><a href='{$baseUrl}?action=exit_impersonate' data-transition='slide' data-rel='close' data-ajax='false'>Sluta imitera {$_SESSION[ 'authenticatedUser' ]}</a></li>";

@@ -98,7 +98,7 @@ switch ( $_REQUEST[ 'action' ] ) {
 
 <body>
 <div data-role="page" id="page-admin-item">
-    <?= head( $item->caption ? htmlspecialchars( $item->caption ) : "Ny utrustning", $cfg[ 'url' ], $cfg[ 'superAdmins' ] ) ?>
+    <?= head( $item->caption ? htmlspecialchars( $item->caption ) : "Ny utrustning", $cfg[ 'url' ], $cfg[ 'sysAdmins' ] ) ?>
     <div role="main" class="ui-content">
     
         <div data-role="popup" data-history="false" data-overlay-theme="b" id="popup-msg-page-admin-item" class="ui-content">

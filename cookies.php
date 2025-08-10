@@ -23,7 +23,7 @@ switch ( $_REQUEST[ 'action' ] ) {
 
 <body>
 <div data-role="page" id="page-cookies">
-    <?= head( "Om kakor", $cfg[ 'url' ], $cfg[ 'superAdmins' ] ) ?>
+    <?= head( "Om kakor", $cfg[ 'url' ], $cfg[ 'sysAdmins' ] ) ?>
     <div role="main" class="ui-content">
     
     <h3>Vad är kakor?</h3>

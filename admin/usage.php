@@ -56,7 +56,7 @@ $sum = $section->usageOverview( $year );
 
 <body>
 <div data-role="page" id="page-admin-usage">
-    <?= head( "Användningsstatistik", $cfg[ 'url' ], $cfg[ 'superAdmins' ] ) ?>
+    <?= head( "Användningsstatistik", $cfg[ 'url' ], $cfg[ 'sysAdmins' ] ) ?>
     <div role="main" class="ui-content">
 
     <div data-role="popup" data-history="false" data-overlay-theme="b" id="popup-msg-page-admin-usage" class="ui-content">

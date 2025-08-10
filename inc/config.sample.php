@@ -70,8 +70,8 @@ $cfg = array(
     // Section bound assignments always giving admin access to section
     "sectionAdmins" => array( 'Ordförande', 'Vice ordförande' ),
     
-    // UserIDs of users with superAdmin access (will display a superAdmin section on Admin page)
-    "superAdmins" => array( 0 ),
+    // UserIDs of users with system admin access (will display a sysAdmin section on Admin page)
+    "sysAdmins" => array( 0 ),
     
     // Textual representations of access levels
     "catAccessLevels" => array(

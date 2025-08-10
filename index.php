@@ -71,7 +71,7 @@ matchande namn och där du har behörighet att boka. Sökningen går inte ner p�
                 unset( $_SESSION[ 'impersonate_realUserId' ] );
                 $currentUser = new User( $_SESSION[ 'authenticatedUser' ] );
                 $currentUser->getAssignments();
-                header( "Location: {$cfg[ 'url' ]}admin/superadmin.php" );
+                header( "Location: {$cfg[ 'url' ]}admin/sysadmin.php" );
                 die();
             }
             break;
@@ -233,7 +233,7 @@ if ( isset( $_REQUEST[ 'message' ] ) ) $message = ( $message ? "$message<br>" : 
 
 <body>
 <div data-role="page" id="page-start">
-    <?= head( "Resursbokning", $cfg[ 'url' ], $cfg[ 'superAdmins' ] ) ?>
+    <?= head( "Resursbokning", $cfg[ 'url' ], $cfg[ 'sysAdmins' ] ) ?>
     <div role="main" class="ui-content">
 
     <div data-role="popup" data-history="false" data-overlay-theme="b" id="popup-msg-page-start" class="ui-content">

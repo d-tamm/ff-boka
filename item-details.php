@@ -41,7 +41,7 @@ if ( $access < FFBoka::ACCESS_READASK ) {
 
 <body>
 <div data-role="page" id="page-book-part">
-    <?= head( $item->caption, $cfg[ 'url' ], $cfg[ 'superAdmins' ] ) ?>
+    <?= head( $item->caption, $cfg[ 'url' ], $cfg[ 'sysAdmins' ] ) ?>
     <div role="main" class="ui-content">
     
     <?php echo $Parsedown->text( $item->description );

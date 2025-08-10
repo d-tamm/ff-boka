@@ -9,9 +9,9 @@ session_start();
 require( __DIR__ . "/../inc/common.php" );
 global $cfg, $db, $FF;
 
-// This page may only be accessed by superadmins
-if ( !isset( $_SESSION[ 'authenticatedUser' ] ) || !in_array( $_SESSION[ 'authenticatedUser' ], $cfg[ 'superAdmins' ] ) ) {
-    header( "Location: {$cfg[ 'url' ]}?redirect=" . urlencode( "admin/superadmin.php" ) );
+// This page may only be accessed by sysadmins
+if ( !isset( $_SESSION[ 'authenticatedUser' ] ) || !in_array( $_SESSION[ 'authenticatedUser' ], $cfg[ 'sysAdmins' ] ) ) {
+    header( "Location: {$cfg[ 'url' ]}?redirect=" . urlencode( "admin/sysadmin.php" ) );
 }
 $currentUser = new User( $_SESSION[ 'authenticatedUser' ] );
 
@@ -127,40 +127,40 @@ $cfg = $currentCfg;
 ?><!DOCTYPE html>
 <html>
 <head>
-    <?php htmlHeaders( "Friluftsfrämjandets resursbokning - Superadmin", $cfg[ 'url' ] ) ?>
+    <?php htmlHeaders( "Friluftsfrämjandets resursbokning - Systemadmin", $cfg[ 'url' ] ) ?>
 </head>
 
 
 <body>
-<div data-role="page" id="page-super-admin">
-    <?= head( "Super-Admin", $cfg[ 'url' ], $cfg[ 'superAdmins' ] ) ?>
+<div data-role="page" id="page-sys-admin">
+    <?= head( "System-Admin", $cfg[ 'url' ], $cfg[ 'sysAdmins' ] ) ?>
     <div role="main" class="ui-content">
 
-    <div data-role="popup" data-history="false" data-overlay-theme="b" id="popup-msg-page-super-admin" class="ui-content">
-        <p id="msg-page-super-admin"><?= $message ?></p>
+    <div data-role="popup" data-history="false" data-overlay-theme="b" id="popup-msg-page-sys-admin" class="ui-content">
+        <p id="msg-page-sys-admin"><?= $message ?></p>
         <a href='#' data-rel='back' class='ui-btn ui-btn-icon-left ui-btn-inline ui-corner-all ui-icon-check'>OK</a>
     </div>
 
-    <div data-role="popup" data-overlay-theme="b" id="popup-super-admin-poll" class="ui-content">
+    <div data-role="popup" data-overlay-theme="b" id="popup-sys-admin-poll" class="ui-content">
         <h3>Bearbeta enkät</h3>
-        <form action='superadmin.php' data-ajax='false' method='POST'>
+        <form action='sysadmin.php' data-ajax='false' method='POST'>
 	        <input type="hidden" name="action" value="savePoll">
-	        <input type="hidden" name="id" id="super-admin-poll-id">
+	        <input type="hidden" name="id" id="sys-admin-poll-id">
             <div class="ui-field-contain">
-                <label for="super-admin-poll-question">Fråga<br><small>Här kan du använda valfri HTML-kod.</small></label>
-                <textarea name="question" id="super-admin-poll-question"></textarea>
+                <label for="sys-admin-poll-question">Fråga<br><small>Här kan du använda valfri HTML-kod.</small></label>
+                <textarea name="question" id="sys-admin-poll-question"></textarea>
             </div>
             <div class="ui-field-contain">
-                <label for="super-admin-poll-choices">Svarsalternativ<br><small>1 alternativ per rad</small></label>
-                <textarea name="choices" id="super-admin-poll-choices"></textarea>
+                <label for="sys-admin-poll-choices">Svarsalternativ<br><small>1 alternativ per rad</small></label>
+                <textarea name="choices" id="sys-admin-poll-choices"></textarea>
             </div>
             <div class="ui-field-contain">
-                <label for="super-admin-poll-expires">Aktiv t.o.m.<br><small>Tomt = inget slutdatum</small></label>
-                <input name="expires" type="date" id="super-admin-poll-expires">
+                <label for="sys-admin-poll-expires">Aktiv t.o.m.<br><small>Tomt = inget slutdatum</small></label>
+                <input name="expires" type="date" id="sys-admin-poll-expires">
             </div>
             <div class="ui-field-contain">
-                <label for="super-admin-poll-targetgroup">Målgrupp</label>
-                <select name="targetGroup" id="super-admin-poll-targetgroup">
+                <label for="sys-admin-poll-targetgroup">Målgrupp</label>
+                <select name="targetGroup" id="sys-admin-poll-targetgroup">
                     <option value="<?= FFBoka::ACCESS_BOOK ?>">Alla inloggade användare</option>
                     <option value="<?= FFBoka::ACCESS_CONFIRM ?>">Bokningsansvariga</option>
                     <option value="<?= FFBoka::ACCESS_CATADMIN ?>">Kategori-admin</option>
@@ -172,23 +172,23 @@ $cfg = $currentCfg;
         </form>
     </div>
 
-    <div data-role="popup" data-overlay-theme="b" id="popup-super-admin-pollresults" class="ui-content">
+    <div data-role="popup" data-overlay-theme="b" id="popup-sys-admin-pollresults" class="ui-content">
         <h3>Enkätresultat</h3>
-        <p>Fråga:<br><span id="super-admin-pollresults-question"></span></p>
-        <table id="super-admin-pollresults-votes" style="width:100%;"></table>
+        <p>Fråga:<br><span id="sys-admin-pollresults-question"></span></p>
+        <table id="sys-admin-pollresults-votes" style="width:100%;"></table>
     </div>
 
     <?php
     if ( $cronDelayed || $cfgMissing || $cfgObsolete ) {
         echo "<div class='ui-body ui-body-c'><p>Det finns några problem:</p><ul>";
-        if ( $cronDelayed ) echo "<li><a href='#' onclick=\"$('#superadmin-systeminfo').collapsible('expand');\">Cron</a> utförs inte.</li>";
-        if ( $cfgMissing || $cfgObsolete ) echo "<li><a href='#' onclick=\"$('#superadmin-config').collapsible('expand');\">Konfigurationen</a> är inte uppdaterad.</li>";
+        if ( $cronDelayed ) echo "<li><a href='#' onclick=\"$('#sysadmin-systeminfo').collapsible('expand');\">Cron</a> utförs inte.</li>";
+        if ( $cfgMissing || $cfgObsolete ) echo "<li><a href='#' onclick=\"$('#sysadmin-config').collapsible('expand');\">Konfigurationen</a> är inte uppdaterad.</li>";
         echo "<ul></div>";
     } ?>
     
     <div data-role="collapsibleset" data-inset="false">
         
-        <div data-role="collapsible" id="superadmin-systeminfo">
+        <div data-role="collapsible" id="sysadmin-systeminfo">
             <h2>Systeminfo</h2>
             <?= $cronDelayed ? "<div style='float:left; font-size:3em; color:var(--FF-orange);'>⚠ </div>" : "" ?>
             <h3>Cron <span style='color:var(<?= $cronDelayed ? "--FF-orange" : "--FF-green" ?>);'>■</span></h3>
@@ -230,7 +230,7 @@ $cfg = $currentCfg;
 		</ul>
         </div>
 
-        <div data-role="collapsible" id="superadmin-config">
+        <div data-role="collapsible" id="sysadmin-config">
             <h2>Konfiguration</h2>
             
             <?php
@@ -308,7 +308,7 @@ $cfg = $currentCfg;
             while ( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
                 echo "<tr><td>{$row->timestamp}</td>
                     <td>{$row->ip}</td>
-                    <td class='superadmin-login-post'" . ( $row->name ? " title='Login: {$row->login}, medlemsnr: {$row->userId}'" : "" ) . " data-userid='{$row->userId}'>" . ( $row->name ? htmlspecialchars($row->name) : ( is_null( $row->userId ) ? $row->login : $row->userId ) ) . "</td>
+                    <td class='sysadmin-login-post'" . ( $row->name ? " title='Login: {$row->login}, medlemsnr: {$row->userId}'" : "" ) . " data-userid='{$row->userId}'>" . ( $row->name ? htmlspecialchars($row->name) : ( is_null( $row->userId ) ? $row->login : $row->userId ) ) . "</td>
                     <td title='" . htmlspecialchars( $row->section ) . "'>" . substr( htmlspecialchars( $row->section ), 0, 10 ) . "</td>
                     <td>{$row->success}</td>
                     <td>" . resolveUserAgent( $row->userAgent, $db ) . "</td></tr>";
