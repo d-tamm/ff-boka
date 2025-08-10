@@ -53,7 +53,7 @@ function displayCat( Category $cat, $user, $fbStart, $fileTypes = [] ) {
                     echo "<li data-catid='{$cat->id}' class='book-item' id='book-item-{$item->id}'><a href=\"javascript:toggleItem({$item->id});\">";
                     echo embedImage( $item->getFeaturedImage()->thumb );
                     echo "<h4>" . htmlspecialchars( $item->caption ) . "</h4>";
-                    if ( $cat->getAccess( $user ) >= FFBoka::ACCESS_PREBOOK ) echo "<div class='freebusy-bar'><div id='freebusy-item-{$item->id}'></div>" . Item::freebusyScale() . "</div>";
+                    if ( $cat->getAccess( $user ) >= FFBoka::ACCESS_PREBOOK ) echo "<div class='freebusy-bar'><div id='freebusy-item-{$item->id}'></div>" . Item::freebusyScale( $weekdays = true ) . "</div>";
                     echo "</a><a href='javascript:popupItemDetails({$item->id})'></a>";
                     echo "</li>";
                 }
